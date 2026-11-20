@@ -21,6 +21,7 @@
 #include "vela/equation/Tri3LocalForwardAD.h"
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/mesh/DeviceMesh.h"
+#include "vela/mesh/ContactCell.h"
 #include "vela/mesh/BoxGeometryBuilder.h"
 #include "vela/material/Material.h"
 #include "vela/material/MaterialDatabase.h"
@@ -1375,8 +1376,7 @@ inline void updateElementHighFieldGeometry(MobilityModelConfig& config,
     if(!config.jacobianFieldDerivatives || config.highFieldDrivingForce!="quasi_fermi_gradient")
         throw std::invalid_argument("Element HFS requires full QF derivatives");
     const auto cellEdges=buildCellEdgeMap(edgeCells,mesh);
-    std::vector<bool> contact(mesh.numNodes(),false);
-    for(const auto& c:mesh.contacts())for(Index n:c.node_ids)contact[n]=true;
+    const auto contact = contactNodeMask(mesh);
     config.highFieldCells.resize(mesh.numCells());
     for(Index cid=0;cid<mesh.numCells();++cid) {
         if(!isTransportMaterial(materials.at(cid)))continue;
@@ -1384,7 +1384,7 @@ inline void updateElementHighFieldGeometry(MobilityModelConfig& config,
             throw std::invalid_argument("Element HFS currently qualifies 300 K only");
         const auto& cell=mesh.getCell(cid);auto& out=config.highFieldCells[cid];
         if(cell.node_ids.size()!=3)throw std::invalid_argument("Element HFS requires triangles");
-        for(Index n:cell.node_ids)out.contact=out.contact||contact[n];
+        out.contact=cellTouchesContact(cell,contact);
         const auto& a=mesh.getNode(cell.node_ids[0]);const auto& b=mesh.getNode(cell.node_ids[1]);const auto& c=mesh.getNode(cell.node_ids[2]);
         Real x1=b.x-a.x,y1=b.y-a.y,x2=c.x-a.x,y2=c.y-a.y,det=x1*y2-x2*y1;
         if(det==0.)throw std::invalid_argument("Degenerate HFS cell");
@@ -1411,11 +1411,12 @@ struct ElementHighFieldDrive {Real field=0.;std::array<Real,3> derivative{};bool
 inline ElementHighFieldDrive elementHighFieldDrive(const MobilityModelConfig& config,
     const DeviceMesh& mesh,Index cid,const VectorXd& psi,const VectorXd* qf) {
     const auto& g=config.highFieldCells.at(cid);const auto& cell=mesh.getCell(cid);
-    if(!g.contact && (!qf || qf->size()!=psi.size()))throw std::invalid_argument("Element HFS requires live physical quasi-Fermi potentials");
-    const auto& z=g.contact?psi:*qf;auto i=cell.node_ids[0],j=cell.node_ids[1],k=cell.node_ids[2];
+    const bool useElectric=g.contact && config.useElectricFieldAtGradQfContacts(true);
+    if(!useElectric && (!qf || qf->size()!=psi.size()))throw std::invalid_argument("Element HFS requires live physical quasi-Fermi potentials");
+    const auto& z=useElectric?psi:*qf;auto i=cell.node_ids[0],j=cell.node_ids[1],k=cell.node_ids[2];
     const auto& s=g.stencil;
     const Real gx=(z(j)-z(i))*s[0]+(z(k)-z(i))*s[2],gy=(z(j)-z(i))*s[1]+(z(k)-z(i))*s[3];
-    ElementHighFieldDrive out;out.contact=g.contact;out.field=std::hypot(gx,gy);
+    ElementHighFieldDrive out;out.contact=useElectric;out.field=std::hypot(gx,gy);
     if(out.field>=100./config.internalFieldToVPerM) {
         out.derivative[1]=(gx*s[0]+gy*s[1])/out.field;
         out.derivative[2]=(gx*s[2]+gy*s[3])/out.field;
@@ -2554,7 +2555,7 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
          config.sourceGeometryScale!=1. || config.edgeSourcePartition!="symmetric" ||
          config.currentMagnitudeMode!="edge_scalar_abs" || config.sourceVolumePolicy!="genius_truncated" ||
          config.debugRawVanOverstraeten || config.temperature_K!=300. || config.referenceTemperature_K!=300. ||
-         (config.contactElectricFieldFallback &&
+         (!config.gradQfContactField && config.contactElectricFieldFallback &&
           (config.contactElectricFieldFallbackScope!="contact_node_cell" ||
            config.contactElectricFieldFallbackMode!="cell_gradient_magnitude"))))
         throw std::invalid_argument(std::string(context)+": PhuMob source requires its explicit 300 K GradQF/local_ad profile");
@@ -2564,7 +2565,7 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
          config.quasiFermiGradientDiscretization!="cell_gradient" ||
          config.sourceMappingMode!="element_vertex_box_measure" ||
          config.sourceJacobianMode!="local_ad" ||
-         !config.contactElectricFieldFallback || !config.ialmobBoundaryFieldProjection ||
+         !config.ialmobBoundaryFieldProjection ||
          config.contactElectricFieldFallbackScope!="contact_node_cell" ||
          config.contactElectricFieldFallbackMode!="cell_gradient_magnitude" ||
          config.drivingForceInterpolation!="none" ||
@@ -2621,7 +2622,7 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
             ": contact-face fallback modes require scope 'contact_boundary_face'.");
     }
 
-    if (config.contactElectricFieldFallback &&
+    if (!config.gradQfContactField && config.contactElectricFieldFallback &&
         (config.drivingForce != "quasi_fermi_gradient" ||
          config.quasiFermiGradientDiscretization != "cell_gradient" ||
          config.generation != "current_density" ||
@@ -3124,17 +3125,6 @@ inline bool usesCellGradientQuasiFermiAvalancheDrive(
            config.quasiFermiGradientDiscretization == "cell_gradient";
 }
 
-inline std::vector<bool> contactNodeMask(const DeviceMesh& mesh)
-{
-    std::vector<bool> mask(static_cast<std::size_t>(mesh.numNodes()), false);
-    for (const Contact& contact : mesh.contacts()) {
-        for (Index nodeId : contact.node_ids) {
-            if (nodeId < mesh.numNodes())
-                mask[static_cast<std::size_t>(nodeId)] = true;
-        }
-    }
-    return mask;
-}
 inline bool cellTouchesContact(const DeviceMesh& mesh, const Cell& cell)
 {
     for (const Contact& contact : mesh.contacts()) {
@@ -3146,17 +3136,6 @@ inline bool cellTouchesContact(const DeviceMesh& mesh, const Cell& cell)
         }
     }
     return false;
-}
-
-inline bool cellTouchesContact(
-    const Cell& cell,
-    const std::vector<bool>& contactNodes)
-{
-    return std::any_of(
-        cell.node_ids.begin(), cell.node_ids.end(),
-        [&](Index node) {
-            return node < contactNodes.size() && contactNodes[node];
-        });
 }
 
 inline bool cellTouchesContactBoundaryFace(
@@ -3259,8 +3238,7 @@ inline bool cellUsesContactElectricFieldFallback(
     const DeviceMesh& mesh,
     const Cell& cell)
 {
-    return config.contactElectricFieldFallback &&
-           config.drivingForce == "quasi_fermi_gradient" &&
+    return config.useElectricFieldAtGradQfContacts() &&
            (config.contactElectricFieldFallbackScope == "contact_boundary_face"
                 ? cellTouchesContactBoundaryFace(mesh, cell)
                 : cellTouchesContact(mesh, cell));
@@ -3331,11 +3309,12 @@ inline Real edgeHighFieldDrivingField(bool qfDrivingForce,
                                       const std::vector<std::vector<Index>>& edgeCells,
                                       const DeviceMesh& mesh,
                                       Index edgeId,
-                                      const std::vector<bool>& contactNodes)
+                                      const std::vector<bool>& contactNodes,
+                                      bool useContactElectricField = true)
 {
     if (!qfDrivingForce)
         return electricField;
-    if (edgeTouchesContactElement(mesh, edgeCells, edgeId, contactNodes))
+    if (useContactElectricField && edgeTouchesContactElement(mesh, edgeCells, edgeId, contactNodes))
         return electricField;
     return qfField;
 }
@@ -3946,8 +3925,7 @@ inline Real contactCellElectricFieldMagnitudeForMobility(
 {
     if (applied != nullptr)
         *applied = false;
-    if (!config.contactElectricFieldFallback ||
-        config.highFieldDrivingForce != "quasi_fermi_gradient" ||
+    if (!config.useElectricFieldAtGradQfContacts() ||
         edgeId >= edgeCells.size()) {
         return fallbackField;
     }
@@ -3989,9 +3967,9 @@ inline std::vector<Real> contactCellElectricFieldEdgeMagnitudesForMobility(
     const VectorXd&                          potential,
     Real                                     fieldFactor)
 {
-    std::vector<Real> fields(mesh.numEdges(), 0.0);
-    if (!config.contactElectricFieldFallback ||
-        config.highFieldDrivingForce != "quasi_fermi_gradient") {
+    // A valid contact field can be exactly zero. A negative entry means no sample.
+    std::vector<Real> fields(mesh.numEdges(), -1.0);
+    if (!config.useElectricFieldAtGradQfContacts()) {
         return fields;
     }
     const std::vector<bool> contactNodes = contactNodeMask(mesh);
@@ -4029,9 +4007,9 @@ inline Real mobilityHighFieldDrivingField(
 {
     if (config.highFieldDrivingForce != "quasi_fermi_gradient")
         return electricField;
-    if (config.contactElectricFieldFallback &&
+    if (config.useElectricFieldAtGradQfContacts() &&
         edgeId < contactElectricFields.size() &&
-        contactElectricFields[edgeId] > 0.0) {
+        contactElectricFields[edgeId] >= 0.0) {
         return contactElectricFields[edgeId];
     }
     return quasiFermiField;
@@ -4188,6 +4166,9 @@ inline Real edgeQuasiFermiCoefficientField(
     Real                                   fieldFactor)
 {
     if (usesCellGradientQuasiFermiAvalancheDrive(config)) {
+        if (config.useElectricFieldAtGradQfContacts() &&
+            edgeTouchesContactElement(mesh, edgeCells, edgeId, contactNodes))
+            return electricField;
         bool validGradient = false;
         const Point2 gradient = edgeAveragedCellScalarGradient(
             edgeCells, edgeId, qfGradientCache, validGradient);
@@ -4196,7 +4177,8 @@ inline Real edgeQuasiFermiCoefficientField(
     if (config.debugRawVanOverstraeten)
         return edgeQfField;
     return edgeHighFieldDrivingField(
-        true, edgeQfField, electricField, edgeCells, mesh, edgeId, contactNodes);
+        true, edgeQfField, electricField, edgeCells, mesh, edgeId, contactNodes,
+        config.useElectricFieldAtGradQfContacts(true));
 }
 
 inline std::vector<Real> computeElectronAvalancheNodeQuasiFermiDrivingFields(
@@ -6302,16 +6284,17 @@ inline std::vector<Real> buildValidatedEffectiveNodeNi(
  * (e.g. insulator nodes in continuity assemblies where all adjacent edges
  * were skipped due to zero mobility).
  */
-inline void applyDirichletBC(SparseMatrixd&                         A,
-                              VectorXd&                              b,
-                              const std::unordered_map<Index, Real>& bcs)
+template<class Scalar>
+void applyDirichletBC(Eigen::SparseMatrix<Scalar>& A,
+                      Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& b,
+                      const std::unordered_map<Index, std::type_identity_t<Scalar>>& bcs)
 {
     A.makeCompressed();
 
     // Step 1: propagate prescribed values into free-node RHS
     for (const auto& [nodeId, value] : bcs) {
         const int i = static_cast<int>(nodeId);
-        for (SparseMatrixd::InnerIterator it(A, i); it; ++it) {
+        for (typename Eigen::SparseMatrix<Scalar>::InnerIterator it(A, i); it; ++it) {
             const int k = static_cast<int>(it.row());
             if (k == i) continue;
             if (bcs.count(static_cast<Index>(k)) == 0)
@@ -6326,14 +6309,14 @@ inline void applyDirichletBC(SparseMatrixd&                         A,
 
     for (int col = 0; col < A.outerSize(); ++col) {
         const bool colIsDirichlet = dirichletSet.count(col) > 0;
-        for (SparseMatrixd::InnerIterator it(A, col); it; ++it) {
+        for (typename Eigen::SparseMatrix<Scalar>::InnerIterator it(A, col); it; ++it) {
             const int  row          = static_cast<int>(it.row());
             const bool rowIsDirichlet = dirichletSet.count(row) > 0;
             if (rowIsDirichlet || colIsDirichlet)
                 it.valueRef() = (row == col) ? 1.0 : 0.0;
         }
     }
-    A.prune(0.0);
+    A.prune(Scalar{0});
 
     // Explicitly ensure A(i,i) = 1 even if the node had no prior entries.
     for (const auto& [nodeId, value] : bcs) {

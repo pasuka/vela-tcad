@@ -749,6 +749,10 @@ MobilityModelConfig mobilityModelConfigFromJson(
         "doping_concentration_basis", config.dopingConcentrationBasis);
     config.jacobianFieldDerivatives = value.value(
         "jacobian_field_derivatives", config.jacobianFieldDerivatives);
+    config.ialmobTransportFeedbackDerivatives=value.value(
+        "ialmob_transport_feedback_derivatives",true);
+    if(!config.ialmobTransportFeedbackDerivatives && config.model!="ialmob")
+        throw std::invalid_argument("ialmob_transport_feedback_derivatives=false requires ialmob");
     validateHighFieldDrivingForce(config.highFieldDrivingForce);
     validateHighFieldGradientDiscretization(
         config.highFieldGradientDiscretization);
@@ -812,7 +816,7 @@ MobilityModelConfig mobilityModelConfigFromJson(
         if (config.carrierCurrentDiscretization != "scharfetter_gummel_edge" ||
             config.highFieldDrivingForce != "quasi_fermi_gradient")
             throw std::invalid_argument("IALMob requires SG edge transport and QF high-field drive");
-        config.ialmob = ialTransportOptionsFromJson(value.at("ialmob"));
+        config.ialmob = ialTransportOptionsFromJson(value.at("ialmob"), &value, scaling);
     } else if (value.contains("ialmob") && !isIALMobilityModel(config)) {
         throw std::invalid_argument("ialmob block requires model=ialmob");
     }

@@ -54,6 +54,13 @@ CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
     const std::filesystem::path& configDirectory,
     UnitScalingConfig scaling = {});
 
+/// Preserve external CSV literals through SI-to-internal conversion. Negative
+/// entries denote edges with no external override; a zero couple is explicit.
+CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
+    DeviceMesh& mesh, const nlohmann::json& cfg,
+    const std::filesystem::path& configDirectory, UnitScalingConfig scaling,
+    std::vector<long double>& arithmeticCouples);
+
 struct PoissonCoupleProfileReport {
     std::string profile = "mesh_default";
     std::string sourceFile;

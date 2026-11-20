@@ -98,6 +98,24 @@ vela::ArithmeticReal longDoubleBernoulli(vela::ArithmeticReal value)
     return value / std::expm1(value);
 }
 
+ArithmeticReal arithmeticBernoulliDerivative(ArithmeticReal x)
+{
+    if (std::abs(x) < VELA_ARITHMETIC_LITERAL(0.01)) {
+        const ArithmeticReal x2 = x * x;
+        return -VELA_ARITHMETIC_LITERAL(0.5) + x *
+            (ArithmeticReal(1) / 6 - x2 * (ArithmeticReal(1) / 180 -
+                x2 * (ArithmeticReal(1) / 5040 - x2 / 151200)));
+    }
+    if (x > 0) {
+        const ArithmeticReal e = std::exp(-x);
+        const ArithmeticReal d = -std::expm1(-x);
+        return e * (d - x) / (d * d);
+    }
+    const ArithmeticReal e = std::exp(x);
+    const ArithmeticReal d = std::expm1(x);
+    return (d - x * e) / (d * d);
+}
+
 Real finiteRealFromLongDouble(vela::ArithmeticReal value)
 {
     const vela::ArithmeticReal maximum =
@@ -134,7 +152,7 @@ Real sgHoleContinuityFlux(Real p0, Real p1, Real dpsi, Real Vt, Real coef)
     return coef * (w.b_plus * p0 - w.b_minus * p1);
 }
 
-vela::ArithmeticReal sgPopulationLogRatio(Real numerator, Real denominator)
+ArithmeticReal arithmeticPopulationLogRatio(ArithmeticReal numerator, ArithmeticReal denominator)
 {
     const vela::ArithmeticReal low = std::min(numerator, denominator);
     const vela::ArithmeticReal high = std::max(numerator, denominator);
@@ -142,6 +160,11 @@ vela::ArithmeticReal sgPopulationLogRatio(Real numerator, Real denominator)
     const vela::ArithmeticReal magnitude = std::isfinite(relativeDifference)
         ? std::log1p(relativeDifference) : std::log(high) - std::log(low);
     return numerator < denominator ? -magnitude : magnitude;
+}
+
+ArithmeticReal sgPopulationLogRatio(Real numerator, Real denominator)
+{
+    return arithmeticPopulationLogRatio(numerator, denominator);
 }
 
 numerics::SplitCoordinate sgPopulationLogRatioCompensated(Real numerator, Real denominator)
@@ -187,16 +210,52 @@ numerics::SplitCoordinate sgPopulationLogRatioCompensated(Real numerator, Real d
 }
 
 namespace {
-Real populationFluxFromLogImbalance(Real population0, Real population1, ArithmeticReal eta,
-                                   Real coef, Real correction0, Real correction1, ArithmeticReal logRatio)
+ArithmeticReal populationFluxFromLogImbalance(
+    ArithmeticReal population0, ArithmeticReal population1, ArithmeticReal eta,
+    ArithmeticReal coef, ArithmeticReal correction0, ArithmeticReal correction1, ArithmeticReal logRatio)
 {
     if (logRatio >= 0.)
-        return static_cast<Real>(coef * longDoubleBernoulli(-eta) * population0
-            * (ArithmeticReal(1.) + correction0) * (-std::expm1(-logRatio)));
-    return static_cast<Real>(coef * longDoubleBernoulli(eta) * population1
-        * (ArithmeticReal(1.) + correction1) * std::expm1(logRatio));
+        return coef * longDoubleBernoulli(-eta) * population0
+            * (ArithmeticReal(1.) + correction0) * (-std::expm1(-logRatio));
+    return coef * longDoubleBernoulli(eta) * population1
+        * (ArithmeticReal(1.) + correction1) * std::expm1(logRatio);
 }
 } // namespace
+
+SGPopulationEdgeDifferential sgBoltzmannPopulationEdge(
+    ArithmeticReal psi0, ArithmeticReal psi1, ArithmeticReal population0,
+    ArithmeticReal population1, ArithmeticReal ni0, ArithmeticReal ni1,
+    ArithmeticReal signedPotentialScale, ArithmeticReal Vt, ArithmeticReal coefficient,
+    bool includeNiGradientDrift)
+{
+    if (!(Vt > 0) || !std::isfinite(Vt))
+        throw std::domain_error("SG population edge requires finite positive thermal voltage");
+    // Keep the coordinate difference before any conversion to volts.
+    auto eta = (psi1 - psi0) * signedPotentialScale / Vt;
+    if (includeNiGradientDrift && ni0 > 0 && ni1 > 0)
+        eta += arithmeticPopulationLogRatio(ni1, ni0);
+    const auto left = coefficient * longDoubleBernoulli(-eta);
+    const auto right = -coefficient * longDoubleBernoulli(eta);
+    const auto flux = population0 > 0 && population1 > 0
+        ? populationFluxFromLogImbalance(population0, population1, eta, coefficient, 0, 0,
+                                         eta + arithmeticPopulationLogRatio(population0, population1))
+        : left * population0 + right * population1;
+    const auto potential1 = -coefficient * signedPotentialScale / Vt *
+        (arithmeticBernoulliDerivative(-eta) * population0 +
+         arithmeticBernoulliDerivative(eta) * population1);
+    return {flux, left, right, potential1};
+}
+
+numerics::SplitCoordinate sgPopulationEdgeDrift(
+    Real psi0, Real psi1, Real signedPotentialScale, Real Vt,
+    Real ni0, Real ni1, bool includeNiGradientDrift)
+{
+    auto eta = numerics::SplitCoordinate::sum(psi1, -psi0)
+        .scaled(signedPotentialScale).divided(Vt);
+    if (includeNiGradientDrift && ni0 > 0. && ni1 > 0.)
+        eta = eta.added(sgPopulationLogRatioCompensated(ni1, ni0));
+    return eta;
+}
 
 Real sgBoltzmannPopulationContinuityFlux(
     Real population0, Real population1, Real ni0, Real ni1,

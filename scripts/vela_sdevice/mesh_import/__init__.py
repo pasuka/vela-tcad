@@ -38,6 +38,7 @@ normalized material name.
 from __future__ import annotations
 
 import csv
+from decimal import Decimal, localcontext
 import json
 import math
 import os
@@ -53,6 +54,7 @@ if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
 from compare_sentaurus_tdr_tdx import iter_dat_datasets, parse_grd  # noqa: E402
+from .doping import DopingPolicy
 
 SCHEMA_ID = "vela.mesh_qualification.v1"
 MATERIAL_MAP = {"silicon": "Si", "si": "Si", "oxide": "SiO2", "sio2": "SiO2",
@@ -156,11 +158,12 @@ def _triangle_from_edges(record: List[int], edges: List[List[int]]) -> List[int]
     return nodes
 
 
-def _load_dfise(grd_path: Path) -> dict:
+def _load_dfise(grd_path: Path, *, decimal_doping: bool = False,
+                decimal_coordinates: bool = False, doping_policy=None) -> dict:
     dat_path = grd_path.with_suffix(".dat")
     if not dat_path.is_file():
         raise MeshImportError("E304", f"DF-ISE companion file '{dat_path.name}' not found")
-    grid = parse_grd(grd_path)
+    grid = parse_grd(grd_path, coordinate=str if decimal_coordinates else float)
     vertices = grid["vertices"]
     if not vertices:
         raise MeshImportError("E402", f"no vertices found in '{grd_path.name}'")
@@ -249,25 +252,52 @@ def _load_dfise(grd_path: Path) -> dict:
                 raise MeshImportError("E402", f"interface '{interface['name']}' must separate two volume regions")
             interface["adjacent_regions"].update(adjacent)
 
-    doping, source_fields, net_only = _read_dfise_doping(dat_path, len(coords), regions, triangles)
-    return {
+    model = {
         "format": "dfise", "coords": coords, "triangles": triangles, "regions": regions,
-        "contacts": contacts, "interfaces": interfaces, "by_kind": by_kind, "doping": doping, "source_fields": source_fields,
-        "net_only": net_only, "unit_declared": "um", "unit_scale": 1.0,
-        "companion": dat_path,
+        "contacts": contacts, "interfaces": interfaces, "by_kind": by_kind,
+        "unit_declared": "um", "unit_scale": 1.0,
+        "companion": dat_path, "decimal_doping": decimal_doping,
+        "coordinate_literals": vertices if decimal_coordinates else None,
     }
+    if doping_policy is None or doping_policy.mode == "reported":
+        doping, fields, net_only = _read_dfise_doping(
+            dat_path, len(coords), regions, triangles, decimal_doping=decimal_doping)
+        model.update(doping=doping, source_fields=fields, net_only=net_only)
+    else:
+        number = Decimal if decimal_doping else float
+        records = [(name, item) for name, item in iter_dat_datasets(dat_path, number=number)
+                   if doping_policy.is_candidate(name)]
+        _resolve_doping(model, records, doping_policy, number(0))
+    return model
 
 
-def _read_dfise_doping(path: Path, vertex_count: int, regions: List[dict], triangles: List[dict]):
+def _read_dfise_doping(path: Path, vertex_count: int, regions: List[dict], triangles: List[dict],
+                      *, decimal_doping: bool = False):
     names = {*DONOR_DATASETS, *ACCEPTOR_DATASETS, "DopingConcentration"}
-    records = [(name, item) for name, item in iter_dat_datasets(path) if name in names]
+    records = [(name, item) for name, item in iter_dat_datasets(
+        path, number=Decimal if decimal_doping else float) if name in names]
+    if not decimal_doping:
+        return _merge_dfise_doping(records, vertex_count, regions, triangles, 0.0)
+    low, high = 0, 0
+    for _, item in records:
+        for value in item["values"]:
+            if value:
+                low = min(low, value.as_tuple().exponent)
+                high = max(high, value.adjusted())
+    # Retain all input digits through same-sign species sums and net-only splitting.
+    with localcontext() as context:
+        context.prec = max(1, high - low + len(str(len(records))) + 1)
+        return _merge_dfise_doping(records, vertex_count, regions, triangles, Decimal(0))
+
+
+def _merge_dfise_doping(records, vertex_count, regions, triangles, zero):
     for name, item in records:
         if (item["dimension"] != 1 or item["location"] not in {None, "vertex"} or
                 item["count"] != len(item["values"])):
             raise MeshImportError("E402", f"invalid DF-ISE scalar vertex dataset '{name}'")
     unique = dict(records)
     if len(unique) == len(records) and all(len(item["values"]) == vertex_count for item in unique.values()):
-        return _doping_from_datasets(unique, list(range(vertex_count)))
+        return _doping_from_datasets(unique, list(range(vertex_count)), zero)
 
     nodes_by_region = {
         region["name"]: sorted({node for cell in region["cell_ids"] for node in triangles[cell]["node_ids"]})
@@ -283,7 +313,7 @@ def _read_dfise_doping(path: Path, vertex_count: int, regions: List[dict], trian
             raise MeshImportError("E402", f"duplicate or incomplete dataset '{name}' in region '{region}'")
         regional[region][name] = item
 
-    rows = [{"node_id": node, "donors_cm3": 0.0, "acceptors_cm3": 0.0} for node in range(vertex_count)]
+    rows = [{"node_id": node, "donors_cm3": zero, "acceptors_cm3": zero} for node in range(vertex_count)]
     assigned = set()
     used = []
     net_only = False
@@ -291,7 +321,7 @@ def _read_dfise_doping(path: Path, vertex_count: int, regions: List[dict], trian
         name = region["name"]
         if region["material"] not in SEMICONDUCTOR_MATERIALS:
             continue
-        local_rows, fields, local_net_only = _doping_from_datasets(regional[name], nodes_by_region[name])
+        local_rows, fields, local_net_only = _doping_from_datasets(regional[name], nodes_by_region[name], zero)
         used.extend(field for field in fields if field not in used)
         net_only |= local_net_only
         for row in local_rows:
@@ -305,13 +335,13 @@ def _read_dfise_doping(path: Path, vertex_count: int, regions: List[dict], trian
     return rows, used, net_only
 
 
-def _doping_from_datasets(datasets: dict, node_ids: Sequence[int]):
+def _doping_from_datasets(datasets: dict, node_ids: Sequence[int], zero: float | Decimal = 0.0):
     vertex_count = len(node_ids)
-    def values_of(name: str) -> Optional[List[float]]:
+    def values_of(name: str) -> Optional[List[float | Decimal]]:
         return datasets[name]["values"] if name in datasets else None
 
-    donors = [0.0] * vertex_count
-    acceptors = [0.0] * vertex_count
+    donors = [zero] * vertex_count
+    acceptors = [zero] * vertex_count
     used: List[str] = []
     for name in DONOR_DATASETS:
         values = values_of(name)
@@ -333,8 +363,8 @@ def _doping_from_datasets(datasets: dict, node_ids: Sequence[int]):
         if net is None:
             raise MeshImportError("E402", "no doping dataset (DonorConcentration/AcceptorConcentration/"
                                   "DopingConcentration) found in the DF-ISE data file")
-        donors = [max(v, 0.0) for v in net]
-        acceptors = [max(-v, 0.0) for v in net]
+        donors = [max(v, zero) for v in net]
+        acceptors = [max(-v, zero) for v in net]
         used = ["DopingConcentration"]
         net_only = True
     rows = [{"node_id": node, "donors_cm3": donors[index], "acceptors_cm3": acceptors[index]}
@@ -344,7 +374,8 @@ def _doping_from_datasets(datasets: dict, node_ids: Sequence[int]):
 
 # --- TDR path ------------------------------------------------------------------------------
 
-def _load_tdr(tdr_path: Path, importer: Optional[str], work_dir: Path) -> dict:
+def _load_tdr(tdr_path: Path, importer: Optional[str], work_dir: Path,
+              *, doping_policy=None, decimal_doping=False) -> dict:
     with tdr_path.open("rb") as stream:
         if stream.read(5) == b"Ogawa":
             raise MeshImportError("E402", "Ogawa TDR is unsupported; convert to DF-ISE GRD/DAT with TDX. "
@@ -359,7 +390,83 @@ def _load_tdr(tdr_path: Path, importer: Optional[str], work_dir: Path) -> dict:
                            "--compensated-doping-policy", "reported"], capture_output=True, text=True)
     if proc.returncode != 0:
         raise MeshImportError("E402", f"sentaurus_import failed ({proc.returncode}): {proc.stderr.strip()[:400]}")
-    return _load_export_dir(export_dir)
+    model = _load_export_dir(export_dir)
+    if doping_policy is not None and doping_policy.mode != "reported":
+        records = _tdr_doping_records(export_dir, model, doping_policy, decimal_doping)
+        _resolve_doping(model, records, doping_policy, Decimal(0) if decimal_doping else 0.0)
+        model["decimal_doping"] = decimal_doping
+    return model
+
+
+def _region_nodes(model):
+    triangles = model["triangles"]
+    return {region["name"]: sorted({node for cell in region["cell_ids"]
+                                    for node in triangles[cell]["node_ids"]})
+            for region in model["regions"] if region["material"] in SEMICONDUCTOR_MATERIALS}
+
+
+def _tdr_doping_records(export_dir, model, policy, wide):
+    manifest = export_dir / "field_manifest.json"
+    if not manifest.is_file():
+        raise MeshImportError("E402", "TDR importer lacks field_manifest.json required for Sentaurus doping resolution")
+    nodes = _region_nodes(model)
+    records = []
+    for field in json.loads(manifest.read_text(encoding="utf-8"))["fields"]:
+        name, region = field["name"], field.get("region_name")
+        if region not in nodes or not policy.is_candidate(name):
+            continue
+        if field["support_kind"] != "node" or field["mapping_status"] != "complete" or field["components"] != 1:
+            raise MeshImportError("E402", f"TDR doping field '{name}' in region '{region}' is not complete scalar nodal data")
+        unit = field.get("unit", "").replace(" ", "")
+        if unit not in ("", "cm^-3", "cm-3", "1/cm^3", "cm**-3", "cm^(-3)", "/cm3", "cm<sup>-3</sup>"):
+            raise MeshImportError("E402", f"TDR doping field '{name}' in region '{region}' has unsupported unit {unit!r}")
+        with (export_dir / "fields" / field["csv_file"]).open(newline="", encoding="utf-8") as handle:
+            values = {int(row["node_id"]): float(row["component0"]) for row in csv.DictReader(handle)}
+        if any(node not in values for node in nodes[region]):
+            raise MeshImportError("E402", f"TDR doping field '{name}' does not cover region '{region}'")
+        ordered = [values[node] for node in nodes[region]]
+        records.append((name, {"regions": [region], "dimension": 1, "location": "vertex",
+                               "count": len(ordered), "values": [Decimal.from_float(v) for v in ordered] if wide else ordered}))
+    return records
+
+
+def _resolve_doping(model, records, policy, zero):
+    nodes_by_region = _region_nodes(model)
+    used, resolved, region_report = set(), {}, {}
+    num_nodes = len(model["coords"])
+    for region in model["regions"]:
+        name = region["name"]
+        if name not in nodes_by_region:
+            continue
+        nodes = nodes_by_region[name]
+        datasets = {}
+        for field, record in records:
+            if record["regions"] and name not in record["regions"]:
+                continue
+            values = record["values"]
+            if (record["dimension"] != 1 or record["location"] not in (None, "vertex") or
+                    record["count"] != len(values) or field in datasets):
+                raise MeshImportError("E402", f"invalid or duplicate doping field '{field}' in region '{name}'")
+            if len(values) == num_nodes:
+                values = [values[node] for node in nodes]
+            elif len(values) != len(nodes) or record["regions"] != [name]:
+                raise MeshImportError("E402", f"doping field '{field}' does not cover region '{name}'")
+            datasets[field] = values
+        try:
+            pairs, mode, fields = policy.resolve(datasets, nodes, name, region["source_material"], zero)
+        except ValueError as error:
+            raise MeshImportError("E402", str(error)) from error
+        region_report[name] = {"mode": mode, "fields": fields}
+        used.update(fields)
+        for node, value in zip(nodes, pairs):
+            if node in resolved and resolved[node] != value:
+                raise MeshImportError("E402", f"conflicting region-local doping at shared vertex {node}")
+            resolved[node] = value
+    model.update(doping=[dict(node_id=node, donors_cm3=d, acceptors_cm3=a)
+                         for node in sorted(model["coords"]) for d, a in [resolved.get(node, (zero, zero))]],
+                 source_fields=sorted(used), net_only=any(entry["mode"] == "net_split" for entry in region_report.values()),
+                 doping_resolution={"mode": policy.mode, "compute_net": policy.compute_net,
+                                    "registry": list(policy.registry_sources), "regions": region_report})
 
 
 def _load_export_dir(export_dir: Path) -> dict:
@@ -437,6 +544,9 @@ def _write_outputs(model: dict, grid_path: Path, out_dir: Path) -> dict:
                     for r in regions],
         "contacts": contacts_out,
     }
+    if model.get("coordinate_literals") is not None:
+        for node in mesh["nodes"]:
+            node["coordinate_literals"] = model["coordinate_literals"][node["id"]]
     if model.get("interfaces"):
         # Boundary provenance is not a material or a cell-bearing solver region.
         mesh["interfaces"] = [{"name": item["name"], "node_ids": item["node_ids"],
@@ -447,9 +557,10 @@ def _write_outputs(model: dict, grid_path: Path, out_dir: Path) -> dict:
     with (out_dir / "doping.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=DOPING_COLUMNS)
         writer.writeheader()
+        number_text = str if model.get("decimal_doping") else lambda value: repr(float(value))
         for row in model["doping"]:
-            writer.writerow({"node_id": row["node_id"], "donors_cm3": repr(float(row["donors_cm3"])),
-                             "acceptors_cm3": repr(float(row["acceptors_cm3"]))})
+            writer.writerow({"node_id": row["node_id"], "donors_cm3": number_text(row["donors_cm3"]),
+                             "acceptors_cm3": number_text(row["acceptors_cm3"])})
 
     xs = [xy[0] for xy in coords.values()]
     ys = [xy[1] for xy in coords.values()]
@@ -505,11 +616,19 @@ def _write_outputs(model: dict, grid_path: Path, out_dir: Path) -> dict:
     if model.get("companion") is not None:
         report["source"]["companion_file"] = Path(model["companion"]).name
         report["source"]["companion_sha256"] = _sha256(Path(model["companion"]))
+    if model.get("decimal_doping"):
+        report["doping"]["number_encoding"] = "decimal"
+    if "doping_resolution" in model:
+        report["doping"]["resolution"] = model["doping_resolution"]
+    if model.get("coordinate_literals") is not None:
+        report["coordinate_unit"]["number_encoding"] = "decimal"
     (out_dir / "mesh_qualification.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
 
 
-def import_grid(grid_path: os.PathLike, out_dir: os.PathLike, *, importer: Optional[str] = None) -> dict:
+def import_grid(grid_path: os.PathLike, out_dir: os.PathLike, *, importer: Optional[str] = None,
+                decimal_doping: bool = False, decimal_coordinates: bool = False,
+                doping_policy: Optional[DopingPolicy] = None) -> dict:
     """Convert a Sentaurus grid into mesh.json / doping.csv / mesh_qualification.json in ``out_dir``."""
     grid_path = Path(grid_path)
     out_dir = Path(out_dir)
@@ -517,13 +636,16 @@ def import_grid(grid_path: os.PathLike, out_dir: os.PathLike, *, importer: Optio
     if not grid_path.is_file():
         raise MeshImportError("E302", f"Grid file '{grid_path.name}' not found")
     if suffix == ".grd":
-        model = _load_dfise(grid_path)
+        model = _load_dfise(grid_path, decimal_doping=decimal_doping,
+                            decimal_coordinates=decimal_coordinates, doping_policy=doping_policy)
     elif suffix == ".tdr":
-        model = _load_tdr(grid_path, importer, out_dir)
+        model = _load_tdr(grid_path, importer, out_dir, doping_policy=doping_policy, decimal_doping=decimal_doping)
     else:
         raise MeshImportError("E114", f"Grid file '{grid_path.name}' has an unsupported extension (expected .tdr or .grd)")
     if not model["triangles"]:
         raise MeshImportError("E402", "grid contains no triangles")
+    if doping_policy is not None and doping_policy.mode == "reported":
+        model["doping_resolution"] = {"mode": "reported", "compute_net": False, "registry": [], "regions": {}}
     return _write_outputs(model, grid_path, out_dir)
 
 

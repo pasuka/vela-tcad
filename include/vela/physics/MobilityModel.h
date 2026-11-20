@@ -1,5 +1,8 @@
 #pragma once
 
+#include "vela/physics/GradQfContactField.h"
+#include <optional>
+
 #include "vela/core/UnitScaling.h"
 #include "vela/core/Types.h"
 #include "vela/material/Material.h"
@@ -199,6 +202,14 @@ struct MobilityModelConfig {
     /// This is deliberately independent of the impact-ionization contact
     /// fallback and remains disabled unless a template opts in explicitly.
     bool contactElectricFieldFallback = false;
+    // JSON resolves this explicitly. Direct C++ callers can retain their kernel default.
+    std::optional<GradQfContactField> gradQfContactField;
+
+    bool useElectricFieldAtGradQfContacts(bool kernelDefault = false) const {
+        return highFieldDrivingForce == "quasi_fermi_gradient" &&
+            (gradQfContactField ? *gradQfContactField == GradQfContactField::ElectricField
+                               : kernelDefault || contactElectricFieldFallback);
+    }
     std::string contactElectricFieldFallbackScope = "contact_node_cell";
     std::string contactElectricFieldFallbackMode = "cell_gradient_magnitude";
     /// Spatial support used by the carrier continuity operator and terminal
@@ -208,6 +219,8 @@ struct MobilityModelConfig {
     std::string carrierCurrentDiscretization = "scharfetter_gummel_edge";
     std::string dopingConcentrationBasis = "net_doping";
     bool jacobianFieldDerivatives = true;
+    // Omit only transport feedback; preserve values and source AD caches.
+    bool ialmobTransportFeedbackDerivatives = true;
     // Geometry only: two independent gradient columns, in active field/V.
     struct HighFieldCell {bool contact=false; std::array<Real,4> stencil{};};
     std::vector<HighFieldCell> highFieldCells;

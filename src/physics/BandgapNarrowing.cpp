@@ -1,4 +1,5 @@
 #include "vela/physics/BandgapNarrowing.h"
+#include "vela/physics/BandgapNarrowingArithmetic.h"
 #include "vela/physics/CarrierStatistics.h"
 #include <algorithm>
 #include <cmath>
@@ -35,14 +36,8 @@ SlotboomBandgapNarrowing::SlotboomBandgapNarrowing(BandgapNarrowingConfig config
 Real SlotboomBandgapNarrowing::deltaEg(Real impurityConcentration, Real n, Real p) const
 {
     const Real effectiveConcentration = std::max({std::abs(impurityConcentration), n, p});
-    if (effectiveConcentration <= 0.0 || config_.coefficient == 0.0)
-        return 0.0;
-
-    const Real x = std::log(effectiveConcentration / config_.referenceDoping);
-    const Real delta =
-        config_.offset +
-        config_.coefficient * (x + std::sqrt(x * x + config_.smoothing));
-    return std::max(delta, 0.0);
+    return detail::slotboomNarrowing(effectiveConcentration, config_.referenceDoping,
+                                   config_.coefficient, config_.smoothing, config_.offset);
 }
 
 BennettWilsonBandgapNarrowing::BennettWilsonBandgapNarrowing(BandgapNarrowingConfig config)

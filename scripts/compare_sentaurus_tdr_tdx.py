@@ -35,7 +35,7 @@ def parse_ise_list(text: str, name: str) -> list[str]:
     return [token[0] or token[1] for token in re.findall(r'"([^"]+)"|([A-Za-z0-9_.:+-]+)', raw)]
 
 
-def parse_grd(path: Path) -> dict[str, Any]:
+def parse_grd(path: Path, *, coordinate=float) -> dict[str, Any]:
     text = path.read_text(errors="replace")
     regions = parse_ise_list(text, "regions")
     materials = parse_ise_list(text, "materials")
@@ -62,7 +62,7 @@ def parse_grd(path: Path) -> dict[str, Any]:
         for name, info in region_blocks.items()
         if str(info.get("material", "")).lower() == "contact" and info.get("elements") is not None
     }
-    vertices = parse_numeric_rows(text, "Vertices")
+    vertices = parse_numeric_rows(text, "Vertices", number=coordinate)
     edges = [[int(value) for value in row] for row in parse_numeric_rows(text, "Edges")]
     elements = [[int(value) for value in row] for row in parse_numeric_rows(text, "Elements")]
     region_elements = parse_region_elements(text)
@@ -82,13 +82,13 @@ def parse_grd(path: Path) -> dict[str, Any]:
     }
 
 
-def parse_numeric_rows(text: str, block_name: str) -> list[list[float]]:
+def parse_numeric_rows(text: str, block_name: str, *, number=float) -> list[list[Any]]:
     match = re.search(rf"\b{block_name}\s*\((\d+)\)\s*\{{(?P<body>.*?)\n\s*\}}", text, re.S)
     if not match:
         return []
-    rows: list[list[float]] = []
+    rows: list[list[Any]] = []
     for line in match.group("body").splitlines():
-        values = [float(item) for item in NUMBER_RE.findall(line)]
+        values = [number(item) for item in NUMBER_RE.findall(line)]
         if values:
             rows.append(values)
     return rows
@@ -109,7 +109,7 @@ def parse_region_elements(text: str) -> dict[str, list[int]]:
     return elements_by_region
 
 
-def iter_dat_datasets(path: Path):
+def iter_dat_datasets(path: Path, *, number=float):
     """Yield each dataset block, including repeated names with regional validity."""
     text = path.read_text(errors="replace")
     pattern = re.compile(
@@ -121,7 +121,7 @@ def iter_dat_datasets(path: Path):
         header = match.group("header")
         dimension_match = re.search(r"\bdimension\s*=\s*(\d+)", header)
         dimension = int(dimension_match.group(1)) if dimension_match else 1
-        values = [float(item) for item in NUMBER_RE.findall(match.group("values"))]
+        values = [number(item) for item in NUMBER_RE.findall(match.group("values"))]
         count = int(match.group(3))
         location = re.search(r"\blocation\s*=\s*(\w+)", header)
         yield name, {

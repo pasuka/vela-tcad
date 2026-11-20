@@ -23,6 +23,26 @@
       "description": "Explicit qualified 300 K Tri3 numerical operator and Fermi approximation; cmd/par retain physical laws and coefficients. Basic state Plot fields only."
     },
     "description": {"type": "string"},
+    "slot_ialmob": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference_deck", "dfise_grid", "parameter_sha256"],
+      "properties": {
+        "reference_deck": {"type": "string", "minLength": 1},
+        "dfise_grid": {"type": "string", "minLength": 1},
+        "parameter_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "poly_material_parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["file", "sha256"],
+          "properties": {
+            "file": {"type": "string", "minLength": 1},
+            "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+          }
+        },
+        "load_states": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}}
+      }
+    },
     "apply_to": {
       "type": "array",
       "description": "Stage plan indices the overrides apply to; absent or empty means every stage.",

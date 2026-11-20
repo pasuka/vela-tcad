@@ -7,6 +7,7 @@ inline IalElementAvalancheOptions ialElementAvalancheOptionsFromConfig(
     const auto a=[&](Real v){return units.internalInverseLengthToMInv(v);};
     const auto b=[&](Real v){return units.internalElectricFieldToVPerM(v);};
     IalElementAvalancheOptions options;
+    options.contactField=impact.gradQfContactField.value_or(GradQfContactField::ElectricField);
     options.electron={a(impact.electronALow),b(impact.electronBLow),a(impact.electronAHigh),b(impact.electronBHigh),b(impact.switchField)};
     options.hole={a(impact.holeALow),b(impact.holeBLow),a(impact.holeAHigh),b(impact.holeBHigh),b(impact.switchField)};
     options.minimumField_V_per_m=b(impact.minimumField);

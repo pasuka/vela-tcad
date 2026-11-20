@@ -29,29 +29,31 @@ Real limitedExcessValue(Real value)
 
 // Value and density derivative of C*n*(1+H*exp(-n/N0)). A constant
 // coefficient continuation below zero keeps trial-state evaluation finite.
-std::pair<Real, Real> augerCarrierFactor(
-    Real density, Real coefficient, Real enhancement, Real referenceDensity)
+template<class Scalar>
+std::pair<Scalar, Scalar> augerCarrierFactor(
+    Scalar density, Scalar coefficient, Scalar enhancement, Scalar referenceDensity)
 {
-    const Real n = limitedAugerCarrier(density);
-    const Real active = std::abs(density) < kMaxAugerCarrier ? 1.0 : 0.0;
+    const Scalar maxCarrier = static_cast<Scalar>(1.0e30L);
+    const Scalar n = std::clamp(density, -maxCarrier, maxCarrier);
+    const Scalar active = std::abs(density) < maxCarrier ? 1 : 0;
     if (enhancement == 0.0)
         return {coefficient * n, coefficient * active};
-    const Real ratio = std::max(n, 0.0) / referenceDensity;
+    const Scalar ratio = std::max(n, Scalar{0}) / referenceDensity;
     if (ratio > 700.0)
         return {coefficient * n, coefficient * active};
-    const Real term = enhancement * std::exp(-ratio);
+    const Scalar term = enhancement * std::exp(-ratio);
     return {coefficient * n * (1.0 + term),
             coefficient * (1.0 + term * (1.0 - ratio)) * active};
 }
 
-Real dopingDependentLifetime(Real concentration,
-                             const SRHLifetimeParameters& parameters)
+template<class Scalar, class Parameters>
+Scalar dopingDependentLifetime(Scalar concentration, const Parameters& parameters)
 {
-    const Real doping = std::abs(concentration);
-    const Real ratio = doping / parameters.referenceDoping;
-    return parameters.tauMin +
-        (parameters.tauMax - parameters.tauMin) /
-            (1.0 + std::pow(ratio, parameters.gamma));
+    const Scalar doping = std::abs(concentration);
+    const Scalar ratio = doping / parameters.referenceDoping;
+    const Scalar tauMin = parameters.tauMin, tauMax = parameters.tauMax;
+    return tauMin + (tauMax - tauMin) /
+            (1.0 + std::pow(ratio, static_cast<Scalar>(parameters.gamma)));
 }
 
 void validateLifetimeParameters(const SRHLifetimeParameters& parameters,
@@ -373,6 +375,88 @@ RecombinationModel::augerRateDerivativesFromExcessProduct(
     derivatives.dRateDn = electron.second * limitedExcess;
     derivatives.dRateDp = hole.second * limitedExcess;
     return derivatives;
+}
+
+BoltzmannRecombinationLinearization RecombinationModel::boltzmannPopulationLinearization(
+    ArithmeticReal n, ArithmeticReal p, ArithmeticReal ni,
+    ArithmeticReal donors, ArithmeticReal acceptors) const
+{
+    const auto& srh = config_.srhDopingDependence;
+    const auto& auger = config_.augerDensityDependence;
+    const auto lifetime = [](const SRHLifetimeParameters& p) -> ArithmeticBoltzmannSourceCoefficients::Lifetime {
+        return {p.tauMin, p.tauMax, p.referenceDoping, p.gamma};
+    };
+    const ArithmeticBoltzmannSourceCoefficients coefficients{config_.taun, config_.taup,
+        {lifetime(srh.electron), lifetime(srh.hole)}, {config_.augerCn, config_.augerCp},
+        {auger.electronEnhancement, auger.holeEnhancement},
+        {auger.electronReferenceDensity, auger.holeReferenceDensity}};
+    return boltzmannPopulationLinearization(n, p, ni, donors, acceptors, coefficients);
+}
+
+BoltzmannRecombinationLinearization RecombinationModel::boltzmannPopulationLinearization(
+    ArithmeticReal n, ArithmeticReal p, ArithmeticReal ni,
+    ArithmeticReal donors, ArithmeticReal acceptors,
+    const ArithmeticBoltzmannSourceCoefficients& coefficients) const
+{
+    using Scalar = ArithmeticReal;
+    for (const auto value : {n,p,ni,donors,acceptors})
+        if (!std::isfinite(value) || value < 0)
+            throw std::invalid_argument("Boltzmann source requires finite nonnegative concentrations");
+    if (bandToBandEnabled())
+        throw std::invalid_argument("Boltzmann source applies to SRH and Auger");
+
+    BoltzmannRecombinationLinearization out;
+    const auto cap = static_cast<Scalar>(1.0e30L);
+    const auto excessCap = cap*cap;
+    const auto equilibrium = ni*ni;
+    const auto equilibriumRounding = std::fma(ni,ni,-equilibrium);
+    const auto excess = [&](Scalar electrons, Scalar holes) {
+        return std::fma(electrons,holes,-equilibrium)-equilibriumRounding;
+    };
+    if (srhEnabled_) {
+        const auto& cfg = config_.srhDopingDependence;
+        const auto impurities = cfg.concentrationBasis == "net_doping"
+            ? std::abs(donors-acceptors) : donors+acceptors;
+        auto taun = cfg.enabled ? dopingDependentLifetime(impurities, coefficients.lifetime[0]) : coefficients.taun;
+        auto taup = cfg.enabled ? dopingDependentLifetime(impurities, coefficients.lifetime[1]) : coefficients.taup;
+        if (cfg.temperatureDependence) {
+            const auto ratio = Scalar(cfg.temperature_K)/cfg.referenceTemperature_K;
+            taun *= std::pow(ratio,Scalar(cfg.electronTemperatureExponent));
+            taup *= std::pow(ratio,Scalar(cfg.holeTemperatureExponent));
+        }
+        const auto denominator = taup*(n+ni)+taun*(p+ni);
+        if (std::abs(denominator) >= static_cast<Scalar>(1.0e-100L)) {
+            const auto exact = excess(n,p);
+            const auto clipped = std::clamp(exact,-excessCap,excessCap);
+            const auto inv = Scalar(1)/denominator;
+            const auto slope = std::abs(exact)<excessCap ? inv : Scalar(0);
+            out.srh = clipped*inv;
+            out.dSrhDn = slope*p-out.srh*inv*taup;
+            out.dSrhDp = slope*n-out.srh*inv*taun;
+        }
+    }
+    if (augerEnabled_) {
+        const bool classical = usesClassicalAugerExcessProduct();
+        const auto electrons = classical ? std::min(n,cap) : n;
+        const auto holes = classical ? std::min(p,cap) : p;
+        const auto exact = excess(electrons,holes);
+        if (config_.augerWithGeneration || exact > 0) {
+            const auto clipped = std::clamp(exact,-excessCap,excessCap);
+            const auto& a=config_.augerDensityDependence;
+            const auto cn = augerCarrierFactor(n, coefficients.augerCoefficient[0],
+                a.enabled ? coefficients.enhancement[0] : Scalar{0}, coefficients.referenceDensity[0]);
+            const auto cp = augerCarrierFactor(p, coefficients.augerCoefficient[1],
+                a.enabled ? coefficients.enhancement[1] : Scalar{0}, coefficients.referenceDensity[1]);
+            const auto scale = cn.first+cp.first;
+            const auto slope = std::abs(exact)<excessCap ? scale : Scalar(0);
+            out.auger = scale*clipped;
+            out.dAugerDn = cn.second*clipped + ((!classical || n<cap) ? slope*holes : Scalar(0));
+            out.dAugerDp = cp.second*clipped + ((!classical || p<cap) ? slope*electrons : Scalar(0));
+        }
+    }
+    for (const auto value : {out.srh,out.auger,out.dSrhDn,out.dSrhDp,out.dAugerDn,out.dAugerDp})
+        if (!std::isfinite(value)) throw std::runtime_error("Nonfinite Boltzmann source or derivative");
+    return out;
 }
 
 RecombinationLinearization RecombinationModel::electronLinearization(

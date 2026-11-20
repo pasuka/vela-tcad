@@ -25,4 +25,19 @@ std::vector<IalInterfaceNode> buildIalInterfaceGeometry(
     const std::vector<IalInterfaceSegment>& segments,
     const std::array<Real,3>& crystalX = {1.,0.,0.},
     const std::array<Real,3>& crystalY = {0.,1.,0.});
+struct ExtendedIalInterfaceSegment {
+    std::size_t node0, node1;
+    std::array<long double, 2> semiconductorPoint_m;
+};
+struct ExtendedIalInterfaceNode {
+    long double distance_m;
+    int orientationFamily;
+    std::size_t nearestInterfaceVertex;
+    bool onInterface;
+};
+std::vector<ExtendedIalInterfaceNode> buildIalInterfaceGeometry(
+    const std::vector<std::array<long double, 2>>& coordinates_m,
+    const std::vector<ExtendedIalInterfaceSegment>& segments,
+    const std::array<long double, 3>& crystalX,
+    const std::array<long double, 3>& crystalY);
 } // namespace vela

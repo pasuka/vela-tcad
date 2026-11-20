@@ -1,5 +1,22 @@
 # Vela Documentation
 
+- [SLOT 5740/1759源项与保护后更新验证，2026-11-10](validation/slot_ldmos_critical_source_derivatives_2026-11-10.md)：局部导数45组配对、17份保存态更新回放，以及大方向和窄线性区间的区分。
+
+- [SLOT权威人口状态残差方向核查，2026-11-10](validation/slot_ldmos_authoritative_population_direction_audit_2026-11-10.md)：冻结态多幅度差分、生产残差与端口反力、局部偏导及全局人口可行域。
+
+- [SLOT逐迭代矩阵与失败邻域对照，2026-11-10](validation/slot_ldmos_iteration_matrix_chain_2026-11-10.md)：原生80位19份系统、浓度/QF合同、固定矩阵精度回放及独立失败捕获。
+
+- [SLOT IALMob输运反馈对照，2026-11-10](validation/slot_ldmos_ial_transport_feedback_2026-11-10.md)：保留完整物理残差的独立近似Jacobian选项、回归与四小时受控验证。
+- [SLOT E判据BVDS修复记录，2026-11-09](validation/slot_ldmos_e_bvds_repair_2026-11-09.md)：线性失败捕获、宽精度回退及62.6 mV后的更新控制对照。
+
+- [Sentaurus SLOT BVDS逐点停止原因，2026-11-09](validation/slot_ldmos_sentaurus_bvds_stop_audit_2026-11-09.md)：完整参考轨迹75次内层尝试、60个非零接受点及实际更新误差停止分支。
+
+- [SLOT线性分量门与80位完整更新计数，2026-11-09](validation/slot_ldmos_linear_backward_native80_norm_2026-11-09.md)：解释增广线性后向误差检查，并记录原参数80位范数与计数核查。
+
+- [SLOT负载线report重跑与原生接触缩放，2026-11-09](validation/slot_ldmos_load_report_native_scale_2026-11-09.md)：独立0–1 V重跑、同次接触RHS到电压的复算及原生停止/输出口径限制。
+
+- [原始SLOT CMD转换与浓度变量BVDS，2026-11-09](validation/slot_ldmos_original_cmd_density_bvds_2026-11-09.md)：13881节点原器件、原物理及增广外电阻框架，记录转换边界、预检修正及两小时启动状态。
+
 - [SLOT main合并与BVMethods外电阻重跑，2026-11-09](validation/slot_ldmos_main_bvmethods_restart_2026-11-09.md)：保留原SLOT适配、算子默认隔离、验证结果与两小时独立参考配置重跑。
 - [BVMethods电子797与接触234/235局部项补证，2026-11-10](validation/bvmethods_native_local_terms_2026-11-10.md)：
   两份真实RHS停止后态的源项/输运分账、8单元散射与同态Vela对照；主要差收窄到输运形成与边界合同，严格RHSMin等价仍未取得。

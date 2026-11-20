@@ -381,7 +381,7 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
               mesh_, edgeCells_, cellMaterials, phinForMobility, fieldFactor)
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
-        mobilityConfig_.contactElectricFieldFallback
+        mobilityConfig_.useElectricFieldAtGradQfContacts()
         ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
               mobilityConfig_, mesh_, edgeCells_, cellMaterials,
               psiForMobility, fieldFactor)
@@ -635,7 +635,7 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
               mesh_, edgeCells_, cellMaterials, phipForMobility, fieldFactor)
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
-        mobilityConfig_.contactElectricFieldFallback
+        mobilityConfig_.useElectricFieldAtGradQfContacts()
         ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
               mobilityConfig_, mesh_, edgeCells_, cellMaterials,
               psiForMobility, fieldFactor)

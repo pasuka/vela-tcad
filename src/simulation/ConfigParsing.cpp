@@ -1,4 +1,5 @@
 #include "vela/simulation/ConfigParsing.h"
+#include "vela/core/ArithmeticDecimal.h"
 #include "vela/io/CsvUtils.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/physics/ImpactIonizationModel.h"
@@ -293,13 +294,15 @@ PoissonChargeVolumePolicy parsePoissonChargeVolumePolicy(
     return PoissonChargeVolumePolicy::MaterialLocalBarycentric;
 }
 
-CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
+static CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfileImpl(
     DeviceMesh& mesh,
     const nlohmann::json& cfg,
     const std::filesystem::path& configDirectory,
-    UnitScalingConfig scaling)
+    UnitScalingConfig scaling, std::vector<long double>* arithmeticCouples)
 {
     CarrierTransportCoupleProfileReport report;
+    if (arithmeticCouples)
+        arithmeticCouples->clear();
     if (!cfg.contains("mesh_geometry"))
         return report;
 
@@ -381,6 +384,9 @@ CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
         edgeByNodes[{std::min(edge.n0, edge.n1), std::max(edge.n0, edge.n1)}] = edgeId;
     }
     std::map<std::pair<Index, Index>, Real> overrides;
+    std::vector<long double> wide;
+    if (arithmeticCouples)
+        wide.assign(mesh.numEdges(), -1.L);
     Index lineNumber = 1;
     while (std::getline(input, line)) {
         ++lineNumber;
@@ -395,10 +401,16 @@ CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
         Index node0 = 0;
         Index node1 = 0;
         Real coupleM = 0.0;
+        long double wideCoupleM = 0;
         try {
             node0 = static_cast<Index>(std::stoull(fields[0]));
             node1 = static_cast<Index>(std::stoull(fields[1]));
-            coupleM = std::stod(fields[2]);
+            if (arithmeticCouples) {
+                wideCoupleM = parseArithmeticDecimal<long double>(trimCsvToken(fields[2]));
+                coupleM = static_cast<Real>(wideCoupleM);
+            } else {
+                coupleM = std::stod(fields[2]);
+            }
         } catch (const std::exception&) {
             throw std::runtime_error(
                 "ConfigParsing: invalid external AverageBox CSV value at row " +
@@ -418,6 +430,16 @@ CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
                 std::to_string(lineNumber) + " references a non-mesh edge.");
         }
         const Real internal = scaling.unitSystem().metersToInternalLength(coupleM);
+        if (arithmeticCouples) {
+            if (wideCoupleM < 0 || !std::isfinite(wideCoupleM))
+                throw std::runtime_error("Invalid extended AverageBox couple at row " + std::to_string(lineNumber));
+            const auto legacyLength = scaling.unitSystem().lengthMPerInternal();
+            const auto length = legacyLength == 1e-6 ? 1e-6L : static_cast<long double>(legacyLength);
+            const auto converted = wideCoupleM / length;
+            if (!std::isfinite(converted))
+                throw std::runtime_error("Unrepresentable extended AverageBox couple at row " + std::to_string(lineNumber));
+            wide[edgeByNodes.at(pair)] = converted;
+        }
         if (!overrides.emplace(pair, internal).second) {
             throw std::runtime_error(
                 "ConfigParsing: duplicate external AverageBox edge at row " +
@@ -446,7 +468,23 @@ CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
             report.maximumCouple = std::max(report.maximumCouple, couple);
         }
     }
+    if (arithmeticCouples)
+        *arithmeticCouples = std::move(wide);
     return report;
+}
+
+CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
+    DeviceMesh& mesh, const nlohmann::json& cfg, const std::filesystem::path& directory,
+    UnitScalingConfig scaling)
+{
+    return applyCarrierTransportCoupleProfileImpl(mesh, cfg, directory, scaling, nullptr);
+}
+
+CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
+    DeviceMesh& mesh, const nlohmann::json& cfg, const std::filesystem::path& directory,
+    UnitScalingConfig scaling, std::vector<long double>& arithmeticCouples)
+{
+    return applyCarrierTransportCoupleProfileImpl(mesh, cfg, directory, scaling, &arithmeticCouples);
 }
 
 PoissonCoupleProfileReport applyPoissonCoupleProfile(

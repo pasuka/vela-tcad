@@ -276,6 +276,13 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         return runtime->contact(x,contactName);
     }
     std::unordered_set<Index> contactNodes(contact->node_ids.begin(), contact->node_ids.end());
+    const bool ialPopulationSg = solution.stateVariables == "potential_density" &&
+        !usesFermiDirac(carrierStatistics_) && mobilityConfig_.model == "ialmob" &&
+        mobilityConfig_.carrierCurrentDiscretization == "scharfetter_gummel_edge";
+    const bool hasPackedPopulationPotential =
+        ialPopulationSg && solution.hasConsistentPopulationPotential();
+    const auto& sgPotential = hasPackedPopulationPotential ? solution.populationPsi : solution.psi;
+    const Real sgPotentialScale = hasPackedPopulationPotential ? solution.populationPotentialScale_V : 1.;
     const Real temperature_K = thermalVoltage_ * constants::q / constants::kb;
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh_, matdb_, temperature_K);
@@ -317,7 +324,7 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
               fieldFactor)
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
-        mobilityConfig_.contactElectricFieldFallback
+        mobilityConfig_.useElectricFieldAtGradQfContacts()
         ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
               mobilityConfig_, mesh_, edgeCells_, cellMaterials,
               solution.psi, fieldFactor)
@@ -648,8 +655,13 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                         n_j, fermiDensityI, fermiDensityJ,
                         etaI, etaJ, driftPotential,
                         electronQfDropLong, thermalVoltage_, coef, carrierStatistics_.transport == "effective_band_sg");
-            } else if (solution.stateVariables == "potential_density" &&
-                       (mobilityConfig_.model == "masetti" || mobilityConfig_.model == "masetti_field")) {
+            } else if (ialPopulationSg) {
+                const auto drift = sgPopulationEdgeDrift(sgPotential[i], sgPotential[j],
+                    sgPotentialScale, thermalVoltage_, niElectron_[idxI], niElectron_[idxJ], bgnEnabled_);
+                electronContinuityFlux01 = sgBoltzmannPopulationContinuityFluxFromDrift(
+                    n_i, n_j, drift, thermalVoltage_, coef, 0., 0., 0.);
+            } else if (solution.stateVariables == "potential_density") {
+                // Match the population residual even when the mobility is constant.
                 electronContinuityFlux01 = sgBoltzmannPopulationContinuityFlux(
                     n_i, n_j, ni_i, ni_j,
                     dpsi, thermalVoltage_, coef, bgnEnabled_);
@@ -696,8 +708,12 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                     sgHoleFermiDiracContinuityFluxLongDouble(
                         p_i, p_j, etaI, etaJ, driftPotential,
                         holeQfDropForFluxLong, thermalVoltage_, coef, carrierStatistics_.transport == "effective_band_sg");
-            } else if (solution.stateVariables == "potential_density" &&
-                       (mobilityConfig_.model == "masetti" || mobilityConfig_.model == "masetti_field") && !holeQfDropOverrideApplied) {
+            } else if (ialPopulationSg && !holeQfDropOverrideApplied) {
+                const auto drift = sgPopulationEdgeDrift(sgPotential[i], sgPotential[j],
+                    -sgPotentialScale, thermalVoltage_, niHole_[idxI], niHole_[idxJ], bgnEnabled_);
+                holeContinuityFlux01 = sgBoltzmannPopulationContinuityFluxFromDrift(
+                    p_i, p_j, drift, thermalVoltage_, coef, 0., 0., 0.);
+            } else if (solution.stateVariables == "potential_density" && !holeQfDropOverrideApplied) {
                 holeContinuityFlux01 = sgBoltzmannPopulationContinuityFlux(
                     p_i, p_j, ni_i, ni_j,
                     -dpsi, thermalVoltage_, coef, bgnEnabled_);

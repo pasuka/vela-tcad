@@ -655,6 +655,9 @@ void encodeSyntheticSeed(const std::filesystem::path& path, const std::filesyste
 TEST_CASE("DCSweep frozen-state mode preserves the supplied diagnostic state",
           "[dc_sweep][frozen_state]")
 {
+    std::string coordinates = "potential_quasi_fermi";
+    SECTION("quasi-Fermi coordinates") {}
+    SECTION("legacy population coordinates") { coordinates = "potential_density"; }
     const std::filesystem::path dir = makeUniqueSweepDir();
     std::filesystem::create_directories(dir);
     const ScopedDirectoryCleanup cleanup{dir};
@@ -686,6 +689,9 @@ TEST_CASE("DCSweep frozen-state mode preserves the supplied diagnostic state",
         },
         {
             {"method", "frozen_state"},
+            {"state_variables", coordinates},
+            {"coupled_operator", "legacy"},
+            {"carrier_statistics", {{"model", "boltzmann"}}},
             {"impact_ionization", "none"},
         });
 
@@ -703,6 +709,8 @@ TEST_CASE("DCSweep frozen-state mode preserves the supplied diagnostic state",
     REQUIRE(replayed.psi(1) == Catch::Approx(0.22));
     REQUIRE(replayed.psi(2) == Catch::Approx(0.33));
     REQUIRE(replayed.psi(3) == Catch::Approx(0.44));
+    REQUIRE(replayed.n(0) == Catch::Approx(1e10));
+    REQUIRE(replayed.p(0) == Catch::Approx(1e10));
 }
 
 TEST_CASE("DCSweep frozen-state mode requires an explicit state file",
@@ -7105,6 +7113,43 @@ TEST_CASE("External resistor step policy distinguishes native and explicit inner
     REQUIRE(externalResistorStepControl(c)=="legacy_inner_guard");
     c["coupled_step_control"]="unknown";
     REQUIRE_THROWS_AS(externalResistorStepControl(c),std::invalid_argument);
+}
+
+TEST_CASE("DCSweep: extended circuit refinement requires explicit direct bordering",
+          "[dc_sweep][external_circuit][extended_refinement]") {
+    const auto dir=makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath=writePNMeshMicrometers(dir);
+    const auto cfgPath=writeUnitScalingSweepConfig(dir,meshPath,dir/"iv.csv",{
+        {"start",0.0},{"stop",0.0},{"step",0.1},
+        {"external_circuit",{{"mode","series_resistor"},{"solver","coupled_newton"},
+            {"resistance_ohm_um",1e3},{"coupled_linear_solver","schur"},
+            {"coupled_extended_precision_fallback",true}}}
+    },{{"method","newton"}});
+    DCSweep sweep;
+    REQUIRE_THROWS_WITH(sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring("coupled_extended_precision_fallback requires direct_bordered"));
+}
+
+TEST_CASE("DCSweep: retaining contact potentials requires direct coupled load-line solves",
+          "[dc_sweep][external_circuit][preserve_contact_potential]") {
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, dir / "iv.csv", {
+        {"start", 0.0}, {"stop", 0.0}, {"step", 0.1},
+        {"external_circuit", {
+            {"mode", "series_resistor"}, {"solver", "coupled_newton"},
+            {"resistance_ohm_um", 1.0e3}, {"coupled_linear_solver", "schur"},
+            {"coupled_preserve_contact_potential", true}
+        }}
+    }, {{"method", "newton"}});
+    DCSweep sweep;
+    REQUIRE_THROWS_WITH(sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "coupled_preserve_contact_potential requires coupled_newton and direct_bordered"));
 }
 
 TEST_CASE("Quasistationary failed outer steps stop when division crosses MinStep", "[dc_sweep][quasistationary]") {

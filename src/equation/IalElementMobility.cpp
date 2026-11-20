@@ -1,6 +1,8 @@
 #include "vela/equation/IalElementMobility.h"
 #include "vela/physics/IalHighFieldMobility.h"
 #include "vela/core/IalKernelProfiling.h"
+#include "vela/discretization/ScharfetterGummel.h"
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <stdexcept>
@@ -8,7 +10,6 @@
 namespace vela {
 namespace {
 using D=detail::Tri3LocalForwardDual;
-using Vec=std::array<D,2>;
 struct PassTimer {
     using Clock=std::chrono::steady_clock;
     int phase;bool enabled;Clock::time_point start;
@@ -17,17 +18,62 @@ struct PassTimer {
     }
     ~PassTimer(){if(enabled)ialKernelProfile.seconds[phase]+=std::chrono::duration<double>(Clock::now()-start).count();}
 };
-D norm(const Vec& v) { return detail::dualSqrt(v[0]*v[0]+v[1]*v[1]); }
-D dot(const Vec& v, const std::array<Real,2>& g) { return v[0]*D(g[0])+v[1]*D(g[1]); }
-void nonnegative(Real v) {
+template<class Dual> Dual norm(const std::array<Dual,2>& v) {
+    return detail::dualSqrt(v[0]*v[0]+v[1]*v[1]);
+}
+template<class Dual, class Scalar>
+Dual dot(const std::array<Dual,2>& v, const std::array<Scalar,2>& g) {
+    return v[0]*Dual(g[0])+v[1]*Dual(g[1]);
+}
+template<class Scalar, class Dual>
+std::array<Dual,4> drives(const BasicIalElementGeometry<Scalar>& geometry,
+    const std::array<Dual,3>& psi, const std::array<Dual,3>& fn,
+    const std::array<Dual,3>& fp, GradQfContactField contactField) {
+    const detail::IalTri3Gradient gradient(geometry.coordinates_m);
+    const std::array<Dual,3> distance{Dual(geometry.interfaceDistance_m[0]),
+        Dual(geometry.interfaceDistance_m[1]), Dual(geometry.interfaceDistance_m[2])};
+    const auto e=gradient(psi), gn=gradient(fn), gp=gradient(fp), gd=gradient(distance);
+    const std::array<Scalar,2> normal{gd[0].value,gd[1].value};
+    const auto normalComponent=dot(e,normal);
+    const auto parallel=norm(std::array{e[0]-normalComponent*Dual(normal[0]),
+                                       e[1]-normalComponent*Dual(normal[1])});
+    const bool tangential=geometry.partialBoundaryLayer && !geometry.touchesEffectiveElectrode;
+    auto driveN=tangential?detail::dualAbs(dot(gn,geometry.boundaryTangent)):norm(gn);
+    auto driveP=tangential?detail::dualAbs(dot(gp,geometry.boundaryTangent)):norm(gp);
+    if (geometry.touchesEffectiveElectrode && contactField==GradQfContactField::ElectricField)
+        driveN=driveP=norm(e);
+    return {detail::dualAbs(normalComponent),parallel,driveN,driveP};
+}
+template<class Scalar> void nonnegative(Scalar v) {
     if (!std::isfinite(v) || v<0.) throw std::invalid_argument("IALMob element expects finite nonnegative SI inputs");
 }
-void finite(Real v) {
+template<class Scalar> void finite(Scalar v) {
     if (!std::isfinite(v)) throw std::invalid_argument("IALMob element expects finite potentials and geometry");
 }
 D limited(const D& mu, const D& drive, const FieldMobilityParameters& p) {
     if (drive.value==0.) return mu;
     return mu/detail::dualPow(D(1.)+detail::dualPow(mu*drive/D(p.saturationVelocity),p.beta),1./p.beta);
+}
+template<class Scalar>
+detail::BasicTri3LocalForwardDual<Scalar> limited(
+    const detail::BasicTri3LocalForwardDual<Scalar>& mu,
+    const detail::BasicTri3LocalForwardDual<Scalar>& drive,
+    const IalHighFieldDecimal& parameters)
+{
+    if (drive.value == 0.)
+        return mu;
+    const auto field = static_cast<ArithmeticReal>(drive.value);
+    const auto mobility = static_cast<ArithmeticReal>(mu.value);
+    const auto power = std::pow(mobility * field / parameters.velocity_m_s, parameters.beta);
+    const auto denominator = VELA_ARITHMETIC_LITERAL(1.0) + power;
+    const auto scale = std::pow(denominator, -VELA_ARITHMETIC_LITERAL(1.0) / parameters.beta);
+    const auto value = mobility * scale;
+    const auto dMobility = scale / denominator;
+    const auto dField = -value * (power / denominator) / field;
+    detail::BasicTri3LocalForwardDual<Scalar> result(static_cast<Scalar>(value));
+    for (std::size_t i = 0; i < result.derivative.size(); ++i)
+        result.derivative[i] = static_cast<Scalar>(dMobility * mu.derivative[i] + dField * drive.derivative[i]);
+    return result;
 }
 }
 
@@ -44,6 +90,8 @@ static IalElementMobilityResult evaluateImpl(
     nonnegative(options.referenceDensity_m3);
     if(options.temperatureDerivatives && !options.spatialDerivatives)
         throw std::invalid_argument("IALMob values-only evaluation cannot request temperature columns");
+    if (options.decimalHighField && options.temperatureDependentHighField)
+        throw std::invalid_argument("IALMob decimal high-field coefficients require the isothermal SLOT evaluation");
     for (const auto& p:{options.electronField,options.holeField})
         if (!std::isfinite(p.saturationVelocity)||p.saturationVelocity<=0.||
             !std::isfinite(p.beta)||p.beta<=0.)
@@ -73,16 +121,7 @@ static IalElementMobilityResult evaluateImpl(
         if(options.highField && !options.temperatureDependentHighField && v.temperature_K!=300.)
             throw std::invalid_argument("Hot IALMob element requires explicit temperature-dependent HFS");
     }
-    const auto& xy=geometry.coordinates_m;
-    const Real ax=xy[1][0]-xy[0][0], ay=xy[1][1]-xy[0][1];
-    const Real bx=xy[2][0]-xy[0][0], by=xy[2][1]-xy[0][1];
-    const Real det=ax*by-ay*bx;
-    if (!std::isfinite(det)||det==0.) throw std::invalid_argument("IALMob requires a nondegenerate triangle");
-    const auto gradient=[&](const std::array<D,3>& v)->Vec {
-        const D a=v[1]-v[0], b=v[2]-v[0];
-        return {(a*D(by)-b*D(ay))/D(det),(b*D(ax)-a*D(bx))/D(det)};
-    };
-    std::array<D,3> psi,qfn,qfp,n,p,distance,temperature;
+    std::array<D,3> psi,qfn,qfp,n,p,temperature;
     for (int i=0;i<3;++i) {
         psi[i]=D::variable(state[i].potential_V,3*i);
         qfn[i]=D::variable(state[i].electronQf_V,3*i+1);
@@ -93,6 +132,9 @@ static IalElementMobilityResult evaluateImpl(
         p[i]=D(state[i].holes_m3);
         p[i].derivative[3*i]=-state[i].holeResponse_m3_per_V;
         p[i].derivative[3*i+2]=state[i].holeResponse_m3_per_V;
+        if (options.populationThermalVoltage_V>0.)
+            detail::seedBoltzmannPopulationVertex(
+                i,options.populationThermalVoltage_V,psi[i],qfn[i],qfp[i],n[i],p[i]);
         temperature[i]=D(state[i].temperature_K);
         if(!options.spatialDerivatives){
             psi[i]=D(state[i].potential_V);qfn[i]=D(state[i].electronQf_V);qfp[i]=D(state[i].holeQf_V);
@@ -105,16 +147,8 @@ static IalElementMobilityResult evaluateImpl(
             p[i].derivative[i]=state[i].holeTemperatureResponse_m3_per_K;
             temperature[i].derivative[i]=1.;
         }
-        distance[i]=D(geometry.interfaceDistance_m[i]);
     }
-    const Vec e=gradient(psi), gn=gradient(qfn), gp=gradient(qfp), gd=gradient(distance);
-    const std::array<Real,2> normal{gd[0].value,gd[1].value};
-    const D en=detail::dualAbs(dot(e,normal));
-    const D normalComponent=dot(e,normal);
-    const D parallel=norm({e[0]-normalComponent*D(normal[0]),e[1]-normalComponent*D(normal[1])});
-    D driveN=geometry.partialBoundaryLayer?detail::dualAbs(dot(gn,geometry.boundaryTangent)):norm(gn);
-    D driveP=geometry.partialBoundaryLayer?detail::dualAbs(dot(gp,geometry.boundaryTangent)):norm(gp);
-    if (geometry.touchesEffectiveElectrode) driveN=driveP=norm(e);
+    const auto [en,parallel,driveN,driveP] = drives(geometry,psi,qfn,qfp,options.contactField);
     IalElementMobilityResult result;
     for (int i=0;i<3;++i) {
         const IalMobilityState local{state[i].donors_m3,state[i].acceptors_m3,n[i].value,p[i].value,
@@ -157,6 +191,9 @@ static IalElementMobilityResult evaluateImpl(
                 };
                 finalN=hot(lowN,fieldN,options.electronField,options.electronVelocityTemperatureExponent,options.electronBetaTemperatureExponent,0);
                 finalP=hot(lowP,fieldP,options.holeField,options.holeVelocityTemperatureExponent,options.holeBetaTemperatureExponent,1);
+            } else if (options.decimalHighField) {
+                finalN = limited(lowN, fieldN, (*options.decimalHighField)[0]);
+                finalP = limited(lowP, fieldP, (*options.decimalHighField)[1]);
             }else{
                 finalN=limited(lowN,fieldN,options.electronField);
                 finalP=limited(lowP,fieldP,options.holeField);
@@ -190,6 +227,105 @@ IalElementMobilityResult evaluateIalElementMobility(
             result.holeTemperatureDerivative[i]=t.hole.derivative[i];
             result.electronLowTemperatureDerivative[i]=t.electronLowField.derivative[i];
             result.holeLowTemperatureDerivative[i]=t.holeLowField.derivative[i];
+        }
+    }
+    return result;
+}
+
+detail::IalPopulationFields detail::buildIalPopulationFields(
+    const std::array<IalPopulationVertex,3>& state,
+    ArithmeticReal potentialScale_V, ArithmeticReal thermalVoltage_V)
+{
+    using Dual = IalPopulationDual;
+    if (!(potentialScale_V > 0) || !std::isfinite(potentialScale_V) ||
+        !(thermalVoltage_V > 0) || !std::isfinite(thermalVoltage_V))
+        throw std::invalid_argument("IALMob population basis requires positive potential and thermal scales");
+    for (const auto& vertex : state) {
+        finite(vertex.potential);
+        for (const auto value : {vertex.electrons_m3, vertex.holes_m3,
+                                 vertex.electronIntrinsic_m3, vertex.holeIntrinsic_m3})
+            if (!(value > 0) || !std::isfinite(value))
+                throw std::invalid_argument("IALMob population basis requires finite positive populations");
+    }
+    IalPopulationFields out;
+    const auto& ref = state.front();
+    for (std::size_t i = 0; i < state.size(); ++i) {
+        const auto& vertex = state[i];
+        // An element gradient only depends on differences. Subtract the
+        // reference in the solver coordinate before converting to volts.
+        const auto delta = (vertex.potential - ref.potential) * potentialScale_V;
+        out.psi[i] = Dual::variable(delta, 3*i);
+        out.electronQf[i] = Dual(delta - thermalVoltage_V *
+            (arithmeticPopulationLogRatio(vertex.electrons_m3, ref.electrons_m3) -
+             arithmeticPopulationLogRatio(vertex.electronIntrinsic_m3, ref.electronIntrinsic_m3)));
+        out.holeQf[i] = Dual(delta + thermalVoltage_V *
+            (arithmeticPopulationLogRatio(vertex.holes_m3, ref.holes_m3) -
+             arithmeticPopulationLogRatio(vertex.holeIntrinsic_m3, ref.holeIntrinsic_m3)));
+        out.electrons[i] = Dual(vertex.electrons_m3);
+        out.holes[i] = Dual(vertex.holes_m3);
+        seedBoltzmannPopulationVertex(i, thermalVoltage_V, out.psi[i],
+                                      out.electronQf[i], out.holeQf[i], out.electrons[i], out.holes[i]);
+        for (auto* value : {&out.psi[i], &out.electronQf[i], &out.holeQf[i]})
+            value->derivative[3*i] *= potentialScale_V;
+    }
+    return out;
+}
+
+IalPopulationMobility evaluateIalPopulationMobility(
+    const BasicIalElementGeometry<ArithmeticReal>& geometry,
+    const detail::IalPopulationFields& fields,
+    const std::array<std::array<ArithmeticReal,2>,3>& doping_m3,
+    const std::array<const BasicIalMobilityParameters<long double>*,3>& electrons,
+    const std::array<const BasicIalMobilityParameters<long double>*,3>& holes,
+    ArithmeticReal temperature_K, ArithmeticReal referenceDensity_m3,
+    const std::optional<std::array<IalHighFieldDecimal,2>>& highField,
+    GradQfContactField contactField, IalScreeningMethod method)
+{
+    using Dual = detail::IalPopulationDual;
+    if constexpr (compiledArithmeticPrecision != ArithmeticPrecision::Extended80)
+        throw std::logic_error("SLOT population mobility requires the extended80 runner");
+    nonnegative(referenceDensity_m3);
+    if (highField && temperature_K != 300.L)
+        throw std::invalid_argument("SLOT population HFS requires 300 K");
+    if (highField)
+        for (const auto& value : *highField)
+            if (!std::isfinite(value.velocity_m_s) || value.velocity_m_s <= 0 ||
+                !std::isfinite(value.beta) || value.beta <= 0)
+                throw std::invalid_argument("SLOT population HFS requires positive velocity and beta");
+    const auto [normal, parallel, driveN, driveP] = drives(
+        geometry, fields.psi, fields.electronQf, fields.holeQf, contactField);
+    IalPopulationMobility result;
+    for (std::size_t i = 0; i < doping_m3.size(); ++i) {
+        if (!electrons[i] || !holes[i])
+            throw std::invalid_argument("SLOT population mobility lacks a bound orientation model");
+        const auto& n = fields.electrons[i];
+        const auto& p = fields.holes[i];
+        const BasicIalMobilityState<long double> local{
+            doping_m3[i][0], doping_m3[i][1], n.value, p.value,
+            normal.value, geometry.interfaceDistance_m[i], temperature_K};
+        const auto low = [&](const auto& parameters, bool electron) {
+            const auto value = evaluateExtendedSlotIalMobility(local, parameters, electron, method);
+            Dual out(static_cast<ArithmeticReal>(value.result.mobility_m2_per_Vs));
+            for (std::size_t k = 0; k < out.derivative.size(); ++k)
+                out.derivative[k] = static_cast<ArithmeticReal>(
+                    value.derivative_SI[2]*n.derivative[k] + value.derivative_SI[3]*p.derivative[k]
+                    + value.derivative_SI[4]*normal.derivative[k]);
+            return out;
+        };
+        result.electronLowField[i] = low(*electrons[i], true);
+        result.holeLowField[i] = low(*holes[i], false);
+        const auto applyHighField = [&](const Dual& mu, const Dual& density, const Dual& drive, std::size_t carrier) {
+            if (!highField) return mu;
+            const auto fraction = referenceDensity_m3 == 0
+                ? Dual(1) : density/(density+Dual(referenceDensity_m3));
+            return limited(mu, fraction*drive + (Dual(1)-fraction)*parallel, (*highField)[carrier]);
+        };
+        result.electron[i] = applyHighField(result.electronLowField[i], n, driveN, 0);
+        result.hole[i] = applyHighField(result.holeLowField[i], p, driveP, 1);
+        for (const auto& value : {result.electron[i], result.hole[i]}) {
+            if (!std::isfinite(value.value) || value.value <= 0 ||
+                !std::ranges::all_of(value.derivative, [](auto derivative) { return std::isfinite(derivative); }))
+                throw std::runtime_error("Invalid SLOT population mobility or derivative");
         }
     }
     return result;

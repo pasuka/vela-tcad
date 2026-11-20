@@ -10,6 +10,7 @@
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/io/VTKWriter.h"
 #include "vela/io/VtuWriter.h"
+#include "vela/post/ContactCurrent.h"
 #include "vela/post/ElectricFieldDiagnostics.h"
 #include "vela/post/PathIonizationIntegral.h"
 #include <nlohmann/json.hpp>
@@ -59,14 +60,6 @@ void parseImpactIonizationDrivingForceInterpolation(
         config.holeDrivingForceRefDensity = scaling.concentrationToInternal(
             interpolation.at("hole_ref_density_m3").get<Real>());
     }
-}
-
-/// Thermal voltage at temperature T [K].
-inline double thermalVoltage(double T)
-{
-    if (T <= 0.0)
-        throw std::invalid_argument("thermalVoltage: temperature_K must be positive.");
-    return constants::kb * T / constants::q;
 }
 
 Real ohmicContactNetDoping(const DopingModel& doping,
@@ -353,6 +346,10 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "gummelConfigFromJson: impact_ionization must be a string or object.");
         }
     }
+    const auto contactField = gradQfContactFieldFromString(
+        json.value("grad_qf_contact_field", std::string{"electric_field"}));
+    cfg.mobility.gradQfContactField = contactField;
+    cfg.impactIonization.gradQfContactField = contactField;
     detail::validateImpactIonizationDrivingForce(cfg.impactIonization, "gummelConfigFromJson");
     (void)BandToBandTunnelingModel(cfg.bandToBand);
 
@@ -389,7 +386,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
                          std::vector<InterfaceSheetChargeSpec>        sheetCharges)
 {
     const Index  N   = mesh.numNodes();
-    const double Vt  = thermalVoltage(cfg.temperature_K);
+    const double Vt  = thermalVoltageForInputs(cfg.temperature_K, cfg.unitScalingRefs);
 
     // Per-node effective ni, including optional bandgap narrowing.
     std::vector<double> ni_v = detail::buildValidatedEffectiveNodeNi(
@@ -1234,6 +1231,12 @@ void writeDDSolutionVTK(const std::string& filename,
         makeBandgapNarrowingModel(bandgapNarrowingConfig);
     const auto edgeCells = detail::buildEdgeCellMap(mesh);
     MobilityModelConfig resolvedMobilityConfig = mobilityConfig;
+    const bool hasIalMobility = resolvedMobilityConfig.model == "ialmob";
+    if (hasIalMobility) {
+        const ContactCurrent transport(mesh, matdb, doping, resolvedMobilityConfig,
+            temperature_K, {}, bandgapNarrowingConfig, carrierStatistics);
+        resolvedMobilityConfig = transport.prepareMobility(sol);
+    }
     std::vector<Real> nodeSurfaceNormalField_V_cm(N, 0.0);
     if (isSurfaceMobilityModel(resolvedMobilityConfig)) {
         auto& surface = resolvedMobilityConfig.surface;
@@ -1307,6 +1310,36 @@ void writeDDSolutionVTK(const std::string& filename,
         makeMobilityModel(resolvedMobilityConfig);
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh, matdb, temperature_K);
+    const auto nodalMobility = [&](Index node, CarrierType carrier, Real drivingField, bool lowField) {
+        if (!hasIalMobility)
+            return detail::nodeMobility(nodeCells, mesh, doping, *mobility, cellMaterials, node,
+                carrier, drivingField, &resolvedMobilityConfig, sol.n[node], sol.p[node]);
+        const auto& geometry = *resolvedMobilityConfig.ialmobGeometry;
+        const auto& transport = *resolvedMobilityConfig.ialmobState;
+        Real sum = 0;
+        std::size_t cells = 0;
+        for (auto cell : nodeCells[node]) {
+            Real value = 0;
+            const auto support = geometry.cellSupportIndex.at(cell);
+            if (support >= 0) {
+                const auto& cellMobility = transport.cells.at(support);
+                const auto& electron = lowField ? cellMobility.electronLowField : cellMobility.electron;
+                const auto& hole = lowField ? cellMobility.holeLowField : cellMobility.hole;
+                value = (carrier == CarrierType::Electron ? electron : hole).value;
+            } else {
+                const auto& constants = resolvedMobilityConfig.ialmob->constantMaterialMobility;
+                const auto it = constants.find(mesh.getRegion(mesh.getCell(cell).region_id).material);
+                if (it != constants.end())
+                    value = it->second[carrier == CarrierType::Electron ? 0 : 1] * 1e-4 /
+                        resolvedMobilityConfig.internalMobilityToM2PerVS;
+            }
+            if (value > 0) {
+                sum += value;
+                ++cells;
+            }
+        }
+        return cells == 0 ? Real{0} : sum / static_cast<Real>(cells);
+    };
     const auto recombinationMask=detail::recombinationNodeMask(mesh,cellMaterials,recombinationConfig.activeMaterials);
     const std::vector<Real> effectiveNi = detail::buildValidatedEffectiveNodeNi(
         "writeDDSolutionVTK",
@@ -1429,7 +1462,7 @@ void writeDDSolutionVTK(const std::string& filename,
         : std::vector<detail::TriangleGssAvalancheSourceRecord>{};
     const std::vector<detail::SgEdgeCurrentAvalancheSourceRecord> sgAvalancheRecords =
         detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig)
-            && !triangleGssAvalanche
+            && !triangleGssAvalanche && !detail::usesIalElementAvalancheSource(impactIonizationConfig)
         ? detail::sgEdgeCurrentAvalancheSourceRecords(
             impactIonizationConfig,
             *impact,
@@ -1572,18 +1605,10 @@ void writeDDSolutionVTK(const std::string& filename,
         const Real holeMobilityField = holeMobilityDrive_V_m[i];
         electronHighFieldDrive_V_cm[i] = electronMobilityField * scaleToVcm;
         holeHighFieldDrive_V_cm[i] = holeMobilityField * scaleToVcm;
-        electronLowFieldMobility[i] = detail::nodeMobility(
-            nodeCells, mesh, doping, *mobility, cellMaterials, i,
-            CarrierType::Electron, 0.0, &resolvedMobilityConfig, n, p);
-        holeLowFieldMobility[i] = detail::nodeMobility(
-            nodeCells, mesh, doping, *mobility, cellMaterials, i,
-            CarrierType::Hole, 0.0, &resolvedMobilityConfig, n, p);
-        electronMobility[i] = detail::nodeMobility(
-            nodeCells, mesh, doping, *mobility, cellMaterials, i,
-            CarrierType::Electron, electronMobilityField, &resolvedMobilityConfig, n, p);
-        holeMobility[i] = detail::nodeMobility(
-            nodeCells, mesh, doping, *mobility, cellMaterials, i,
-            CarrierType::Hole, holeMobilityField, &resolvedMobilityConfig, n, p);
+        electronLowFieldMobility[i] = nodalMobility(i, CarrierType::Electron, 0.0, true);
+        holeLowFieldMobility[i] = nodalMobility(i, CarrierType::Hole, 0.0, true);
+        electronMobility[i] = nodalMobility(i, CarrierType::Electron, electronMobilityField, false);
+        holeMobility[i] = nodalMobility(i, CarrierType::Hole, holeMobilityField, false);
         electronMobility_cm2_V_s[i] =
             units.internalMobilityToM2PerVS(electronMobility[i]) * 1.0e4;
         holeMobility_cm2_V_s[i] =

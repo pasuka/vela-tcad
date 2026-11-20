@@ -382,6 +382,8 @@ add_library(vela_core STATIC
     src/equation/BvMethodsCoupledRuntime.cpp
     src/equation/LegacyPopulationRuntime.cpp
     src/equation/IalTransport.cpp
+    src/equation/IalPopulationContinuity.cpp
+    src/equation/ExtendedBoltzmannMaterials.cpp
     src/physics/RecombinationModel.cpp
     src/physics/ImpactIonizationModel.cpp
     src/physics/BandgapNarrowing.cpp
@@ -396,6 +398,7 @@ add_library(vela_core STATIC
     src/discretization/ScharfetterGummel.cpp
     src/discretization/ThermalSgCurrent.cpp
     src/solver/LinearSolver.cpp
+    src/solver/ExtendedSparseLu.cpp
     src/solver/EftLinearDefect.cpp
     src/solver/ConstraintElimination.cpp
     src/solver/GummelSolver.cpp
@@ -420,6 +423,8 @@ add_library(vela_core STATIC
     src/simulation/ElectrothermalSimulation.cpp
     src/simulation/ElectrothermalSweep.cpp
     src/simulation/DCSweep.cpp
+    src/simulation/DCSweepStepControl.cpp
+    src/simulation/ExtendedBorderedLoadLine.cpp
 )
 
 target_include_directories(vela_core PUBLIC
@@ -691,6 +696,11 @@ if(VELA_HAS_EXTENDED80)
         get_property(_value TARGET vela_core PROPERTY ${_property})
         set_property(TARGET vela_core_extended80 PROPERTY ${_property} "${_value}")
     endforeach()
+    target_sources(vela_core_extended80 PRIVATE
+        src/solver/ExtendedBoltzmannColdStart.cpp
+        src/solver/ExtendedFixedBiasNewton.cpp
+        src/equation/ExtendedAveragePoissonGeometry.cpp
+        src/equation/ExtendedPopulationDevice.cpp)
     target_compile_definitions(vela_core_extended80 PUBLIC VELA_ARITHMETIC_EXTENDED80=1)
     add_executable(vela_example_runner_extended80 src/tools/vela_example_runner.cpp)
     target_link_libraries(vela_example_runner_extended80 PRIVATE vela_core_extended80)
@@ -1238,6 +1248,12 @@ vela_catch_discover_tests(test_split_dd_runtime)
 vela_catch_discover_tests(test_permittivity_assembly)
 vela_catch_discover_tests(test_element_box_transport)
 vela_catch_discover_tests(test_sg_flux)
+if(TARGET vela_core_extended80)
+    add_executable(test_extended80_local_contract tests/test_extended80_local_contract.cpp)
+    target_link_libraries(test_extended80_local_contract PRIVATE vela_core_extended80 Catch2::Catch2WithMain)
+    vela_catch_discover_tests(test_extended80_local_contract)
+endif()
+
 vela_catch_discover_tests(test_joyce_dixon_contract)
 vela_catch_discover_tests(test_legacy_population_runtime)
 vela_catch_discover_tests(test_bvmethods_av_contract)

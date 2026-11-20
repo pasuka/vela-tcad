@@ -1,6 +1,8 @@
 #pragma once
 
 #include "vela/mesh/MeshEntity.h"
+#include "vela/core/ArithmeticPrecision.h"
+#include <optional>
 #include "vela/mesh/BoxGeometryBuilder.h"
 #include <vector>
 #include <unordered_map>
@@ -23,7 +25,9 @@ public:
     // ------------------------------------------------------------------
     // Population helpers
     // ------------------------------------------------------------------
-    void addNode   (const Node&    node);
+    using ArithmeticPoint = std::array<ArithmeticReal, 2>;
+    void addNode(const Node& node);
+    void addNode(const Node& node, ArithmeticPoint coordinates);
     void addCell   (const Cell&    cell);
     void addRegion (const Region&  region);
     void addContact(const Contact& contact);
@@ -63,6 +67,9 @@ public:
     Index numContacts() const { return contacts_.size(); }
 
     const Node&    getNode   (Index id) const;
+    bool hasDecimalCoordinates(Index id) const;
+    ArithmeticPoint arithmeticCoordinates(Index id) const;
+    ArithmeticReal arithmeticEdgeLength(Index edgeId) const;
     const Edge&    getEdge   (Index id) const;
     const Cell&    getCell   (Index id) const;
     const Region&  getRegion (Index id) const;
@@ -86,6 +93,8 @@ private:
     void buildEdgesOnly();
 
     std::vector<Node>    nodes_;
+    // Allocated only when an input supplies coordinates in decimal form.
+    std::vector<std::optional<ArithmeticPoint>> decimalCoordinates_;
     std::vector<Edge>    edges_;
     std::vector<Cell>    cells_;
     std::vector<Region>  regions_;

@@ -36,7 +36,7 @@ inline ElementEdgeGssLauxLocalSourceIntegrals<S> phumobElementAvalancheSourceInt
     const S en=norm(gn),eh=norm(gh),electric=norm(gp);
     const bool contact=mobility.highFieldCells.at(cid).contact;
     const auto highField=[&](const std::array<S,3>& qf) {
-        const auto& z=contact?psi:qf;
+        const auto& z=contact && mobility.useElectricFieldAtGradQfContacts(true)?psi:qf;
         const auto& s=mobility.highFieldCells.at(cid).stencil;
         return localAdNorm2((z[1]-z[0])*S(s[0])+(z[2]-z[0])*S(s[2]),
                             (z[1]-z[0])*S(s[1])+(z[2]-z[0])*S(s[3]));
@@ -47,8 +47,8 @@ inline ElementEdgeGssLauxLocalSourceIntegrals<S> phumobElementAvalancheSourceInt
         return localAdNorm2((z[1]-z[0])*S(st[0])+(z[2]-z[0])*S(st[2]),
                             (z[1]-z[0])*S(st[1])+(z[2]-z[0])*S(st[3]));
     };
-    const S forceN=impact.contactElectricFieldFallback&&contact?electric:(sg?projected(fn):en);
-    const S forceP=impact.contactElectricFieldFallback&&contact?electric:(sg?projected(fp):eh);
+    const S forceN=impact.useElectricFieldAtGradQfContacts()&&contact?electric:(sg?projected(fn):en);
+    const S forceP=impact.useElectricFieldAtGradQfContacts()&&contact?electric:(sg?projected(fp):eh);
     const S alphaN=localAdImpactCoefficient(impact,CarrierType::Electron,
         forceN);
     const S alphaP=localAdImpactCoefficient(impact,CarrierType::Hole,

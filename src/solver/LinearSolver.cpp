@@ -1,4 +1,5 @@
 #include "vela/solver/LinearSolver.h"
+#include "vela/solver/ExtendedSparseLu.h"
 #include "DirectBackend.h"
 #include "LinearCapture.h"
 #if defined(VELA_HAS_UMFPACK)
@@ -34,6 +35,32 @@ extern "C" int openblas_get_num_threads();
 namespace vela {
 
 namespace {
+
+// Use the same exact structure/value cache as other persistent direct solvers.
+// Iterative refinement changes only the RHS; rebuilding these wide factors
+// on every correction is unnecessary and can dominate a TCAD target.
+class LongDoubleSparseLU final : public detail::DirectBackend {
+    using Matrix=Eigen::SparseMatrix<long double>;
+    using Vector=Eigen::Matrix<long double,Eigen::Dynamic,1>;
+    Eigen::SparseLU<Matrix,Eigen::COLAMDOrdering<int>> solver_;
+public:
+    void analyze(const SparseMatrixd& a) override {
+        if(std::numeric_limits<long double>::digits<=std::numeric_limits<double>::digits)
+            throw std::runtime_error("sparselu_long_double requires long double wider than double.");
+        Matrix wide=a.cast<long double>();solver_.analyzePattern(wide);
+    }
+    void factor(const SparseMatrixd& a) override {
+        Matrix wide=a.cast<long double>();solver_.factorize(wide);
+        if(solver_.info()!=Eigen::Success)throw std::runtime_error("long double factorisation failed");
+    }
+    VectorXd solve(const VectorXd& b) override {
+        Vector wide=solver_.solve(b.cast<long double>());
+        VectorXd result=wide.cast<double>();
+        if(solver_.info()!=Eigen::Success || !wide.allFinite() || !result.allFinite())
+            throw std::runtime_error("long double solve failed or cannot be represented");
+        return result;
+    }
+};
 
 bool sparseAllFinite(const SparseMatrixd& matrix) {
     // Uncompressed Eigen matrices can contain unused capacity between columns.
@@ -277,18 +304,9 @@ VectorXd solveWithAlternateBackend(const std::string& backend,
     if (backend == "sparselu_long_double") {
         if (std::numeric_limits<long double>::digits <= std::numeric_limits<double>::digits)
             throw std::runtime_error("sparselu_long_double requires long double wider than double.");
-        using ExtendedMatrix = Eigen::SparseMatrix<long double>;
-        using ExtendedVector = Eigen::Matrix<long double, Eigen::Dynamic, 1>;
-        ExtendedMatrix extendedA = A.cast<long double>();
-        ExtendedVector extendedB = b.cast<long double>();
-        Eigen::SparseLU<ExtendedMatrix, Eigen::COLAMDOrdering<int>> lu;
-        lu.compute(extendedA);
-        checkSolved(lu.info(), "long double factorisation");
-        ExtendedVector extendedX = lu.solve(extendedB);
-        checkSolved(lu.info(), "long double solve");
-        VectorXd x = extendedX.cast<double>();
-        if (!extendedX.allFinite() || !x.allFinite())
-            throw std::runtime_error("sparselu_long_double produced a nonfinite or unrepresentable solution.");
+        const VectorXd x = solveExtendedSparseLu(A.cast<long double>(), b.cast<long double>()).cast<double>();
+        if (!x.allFinite())
+            throw std::runtime_error("sparselu_long_double produced an unrepresentable solution.");
         // Assembly and the public state remain binary64. No claim of a full
         // extended-precision nonlinear solve is made by this explicit backend.
         return x;
@@ -388,7 +406,7 @@ LinearSolver::LinearSolver(const std::string& backend)
         else if (*flag && std::strcmp(flag, "1") != 0)
             throw std::invalid_argument("VELA_LINEAR_FACTOR_STATISTICS must be 0 or 1");
     }
-    if (backend_ == "pardiso_mkl" || backend_ == "sparselu_metis" || backend_ == "mumps" || backend_ == "mumps_metis" || backend_ == "superlu_mt" || backend_ == "superlu_mt_metis" || backend_ == "strumpack") createDirectBackend();
+    if (backend_ == "sparselu_long_double" || backend_ == "pardiso_mkl" || backend_ == "sparselu_metis" || backend_ == "mumps" || backend_ == "mumps_metis" || backend_ == "superlu_mt" || backend_ == "superlu_mt_metis" || backend_ == "strumpack") createDirectBackend();
     if (backend_ == "umfpack" || backend_ == "umfpack_metis") {
 #if defined(VELA_HAS_UMFPACK)
         umfpack_ = std::make_unique<UmfPackState>();
@@ -403,7 +421,8 @@ LinearSolver::LinearSolver(const std::string& backend)
 LinearSolver::~LinearSolver() = default;
 
 void LinearSolver::createDirectBackend() {
-    if (backend_ == "pardiso_mkl") {
+    if (backend_ == "sparselu_long_double") direct_=std::make_unique<LongDoubleSparseLU>();
+    else if (backend_ == "pardiso_mkl") {
 #ifdef VELA_HAS_MKL_PARDISO
         direct_ = detail::makeMklPardiso();
 #else
@@ -718,7 +737,7 @@ VectorXd LinearSolver::solveUnreduced(const SparseMatrixd& A, const VectorXd& b)
     };
     if (backend_ == "umfpack" || backend_ == "umfpack_metis")
         return finish(solveUmfPack(*matrix, b));
-    if (backend_ == "pardiso_mkl" || backend_ == "sparselu_metis" || backend_ == "mumps" || backend_ == "mumps_metis" || backend_ == "superlu_mt" || backend_ == "superlu_mt_metis" || backend_ == "strumpack") return finish(solveDirect(*matrix,b));
+    if (backend_ == "sparselu_long_double" || backend_ == "pardiso_mkl" || backend_ == "sparselu_metis" || backend_ == "mumps" || backend_ == "mumps_metis" || backend_ == "superlu_mt" || backend_ == "superlu_mt_metis" || backend_ == "strumpack") return finish(solveDirect(*matrix,b));
     if (backend_ != "sparselu") {
         if(backend_=="umfpack_eliminated" || backend_=="pardiso_mkl_eliminated" || backend_=="pardiso_mkl_eliminated_keep_psi"){
             if(!eliminatedDirect_)eliminatedDirect_=std::make_unique<LinearSolver>(backend_=="umfpack_eliminated"?"umfpack":"pardiso_mkl");

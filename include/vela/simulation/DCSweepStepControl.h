@@ -4,24 +4,28 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace vela::detail {
 
-struct DCSweepStepControlEvent;
-struct DCSweepStepControlConfig {
+template<class Scalar>
+struct BasicDCSweepStepControlEvent;
+
+template<class Scalar>
+struct BasicDCSweepStepControlConfig {
     /// Read-only observer of every attempt, including intermediate failed retries.
-    std::function<void(const DCSweepStepControlEvent&)> attemptObserved;
-    Real start = 0.0;
-    Real stop = 0.0;
-    Real step = 0.0;
-    Real initialStep = 0.0;
-    Real minStep = 0.0;
-    Real maxStep = 0.0;
-    Real growthFactor = 1.0;
+    std::function<void(const BasicDCSweepStepControlEvent<Scalar>&)> attemptObserved;
+    Scalar start = 0.0;
+    Scalar stop = 0.0;
+    Scalar step = 0.0;
+    Scalar initialStep = 0.0;
+    Scalar minStep = 0.0;
+    Scalar maxStep = 0.0;
+    Scalar growthFactor = 1.0;
     std::string growthMode = "fixed";
     int newtonIterationLimit = 0;
-    Real shrinkFactor = 0.5;
+    Scalar shrinkFactor = 0.5;
     int maxRetries = 5;
     bool stopOnFailure = true;
     /// Quasistationary exits when division by Decrement crosses MinStep.
@@ -32,30 +36,32 @@ struct DCSweepStepControlConfig {
     std::function<bool()> stopRequested;
     /// Optional state-dependent cap on the proposed step magnitude. Empty
     /// means no representable step respecting both state and minimum limits.
-    std::function<std::optional<Real>(Real proposed, Real remaining)> stepLimit;
+    std::function<std::optional<Scalar>(Scalar proposed, Scalar remaining)> stepLimit;
     /// Biases strictly between start and stop that the controller must land
     /// on exactly (merged into the nominal target sequence).  Points outside
     /// the swept interval are ignored. A nominal target at the same voltage
     /// also counts as an output point.
-    std::vector<Real> mandatoryPoints;
+    std::vector<Scalar> mandatoryPoints;
 };
 
-struct DCSweepStepControlState {
-    Real adaptiveStep = 0.0;
+template<class Scalar>
+struct BasicDCSweepStepControlState {
+    Scalar adaptiveStep = 0.0;
     bool initialized = false;
 };
 
-struct DCSweepStepControlEvent {
-    Real voltage = 0.0;
+template<class Scalar>
+struct BasicDCSweepStepControlEvent {
+    Scalar voltage = 0.0;
     bool converged = false;
-    Real attemptedStep = 0.0;
-    Real acceptedStep = 0.0;
+    Scalar attemptedStep = 0.0;
+    Scalar acceptedStep = 0.0;
     int retryCount = 0;
     std::string failureReason;
     int newtonIterations = -1;
-    Real growthFactor = 1.0;
-    Real nextStepMagnitude = 0.0;
-    Real proposedStepMagnitude = 0.0;
+    Scalar growthFactor = 1.0;
+    Scalar nextStepMagnitude = 0.0;
+    Scalar proposedStepMagnitude = 0.0;
     bool targetClipped = false;
     bool recovered = false;
 };
@@ -70,9 +76,25 @@ struct DCSweepStepAttemptResult {
         : converged(ok), newtonIterations(iterations), recovered(usedRecovery) {}
 };
 
-using DCSweepStepAttempt =
-    std::function<DCSweepStepAttemptResult(Real voltage, Real attemptedStep, int retryCount)>;
-using DCSweepStepRecorder = std::function<void(const DCSweepStepControlEvent& event)>;
+template<class Scalar>
+using BasicDCSweepStepAttempt =
+    std::function<DCSweepStepAttemptResult(Scalar voltage, Scalar attemptedStep, int retryCount)>;
+template<class Scalar>
+using BasicDCSweepStepRecorder =
+    std::function<void(const BasicDCSweepStepControlEvent<Scalar>& event)>;
+
+using DCSweepStepControlConfig = BasicDCSweepStepControlConfig<Real>;
+using DCSweepStepControlState = BasicDCSweepStepControlState<Real>;
+using DCSweepStepControlEvent = BasicDCSweepStepControlEvent<Real>;
+using DCSweepStepAttempt = BasicDCSweepStepAttempt<Real>;
+using DCSweepStepRecorder = BasicDCSweepStepRecorder<Real>;
+
+template<class Scalar>
+void runTypedDCSweepStepControl(
+    const BasicDCSweepStepControlConfig<Scalar>& cfg,
+    const std::type_identity_t<BasicDCSweepStepAttempt<Scalar>>& attempt,
+    const std::type_identity_t<BasicDCSweepStepRecorder<Scalar>>& record,
+    std::type_identity_t<BasicDCSweepStepControlState<Scalar>*> state = nullptr);
 
 void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
                            const DCSweepStepAttempt& attempt,

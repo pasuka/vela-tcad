@@ -7,12 +7,14 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
+from decimal import Decimal, localcontext
 import json
 import math
 from pathlib import Path
 import re
 
 from .. import schema_validator as sv
+from ..cmd_parser.syntax import SourceNumber
 from ..resources import resource_root
 from .bvmethods import apply_bvmethods_profile
 
@@ -120,7 +122,31 @@ def _set(doc: dict, path: str, value: object) -> None:
 def _finite(value: object, label: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (float, int)) or not math.isfinite(value):
         raise DeckEmitError("E407", detail=f"{label} must be a finite number")
-    return float(value)
+    return value if isinstance(value, SourceNumber) else float(value)
+
+
+def _decimal(value: float) -> Decimal:
+    if isinstance(value, SourceNumber):
+        return Decimal(value.literal)
+    if isinstance(value, int):
+        return Decimal(value)
+    return Decimal.from_float(value)
+
+
+def _voltage_steps(v0, v1, controls, intervals, wide):
+    if not wide:
+        delta = abs(v1 - v0)
+        spacing = delta / intervals if intervals else delta * controls["max_step"]
+        return (spacing if v1 > v0 else -spacing,
+                *(delta * controls[key] for key in ("initial_step", "min_step", "max_step")),
+                1.0 / controls["decrement"])
+    with localcontext() as context:
+        context.prec = 80
+        span = _decimal(v1) - _decimal(v0)
+        nominal = abs(span) / intervals if intervals else abs(span) * _decimal(controls["max_step"])
+        absolute = [abs(span) * _decimal(controls[key]) for key in ("initial_step", "min_step", "max_step")]
+        return tuple(SourceNumber(str(value)) for value in (
+            nominal.copy_sign(span), *absolute, Decimal(1) / _decimal(controls["decrement"])))
 
 
 def _basename(value: str, label: str) -> str:
@@ -129,7 +155,14 @@ def _basename(value: str, label: str) -> str:
     return value
 
 
-def expand_times(spec: dict | None) -> list[float]:
+def _ordered_times(values, wide):
+    if wide:
+        unique = {_decimal(_finite(value, "Time")): value for value in values}
+        return [unique[key] for key in sorted(unique)]
+    return sorted(set(_finite(value, "Time") for value in values))
+
+
+def expand_times(spec: dict | None, *, wide: bool = False) -> list[float]:
     """Expand a C1 Time list/range with exact declared endpoints."""
     if spec is None:
         return []
@@ -138,17 +171,30 @@ def expand_times(spec: dict | None) -> list[float]:
     else:
         a, b = spec["range"]
         count = spec["intervals"]
-        if isinstance(count, bool) or not isinstance(count, int) or count < 1 or a > b:
+        start, end = (_decimal(a), _decimal(b)) if wide else (a, b)
+        if isinstance(count, bool) or not isinstance(count, int) or count < 1 or start > end:
             raise DeckEmitError("E407", detail="invalid Time range or interval count")
-        values = [a + (b - a) * i / count for i in range(count + 1)]
-        values[0], values[-1] = a, b
-    result = sorted(set(_finite(v, "Time") for v in values))
-    if not result or result[0] < 0 or result[-1] > 1:
+        with localcontext() as context:
+            context.prec = 80
+            interior = [start + (end - start) * i / count for i in range(1, count)]
+        values = [a, *(SourceNumber(str(value)) for value in interior), b] if wide else [a, *interior, b]
+    result = _ordered_times(values, wide)
+    if not result or (wide and (_decimal(result[0]) < 0 or _decimal(result[-1]) > 1)) or (
+            not wide and (result[0] < 0 or result[-1] > 1)):
         raise DeckEmitError("E407", detail="Time points must lie in [0,1]")
     return result
 
 
-def _bias(v0: float, v1: float, t: float) -> float:
+def _bias(v0: float, v1: float, t: float, *, wide: bool = False) -> float:
+    if wide:
+        with localcontext() as context:
+            context.prec = 80
+            start, end, position = _decimal(v0), _decimal(v1), _decimal(t)
+            if position == 0:
+                return v0
+            if position == 1:
+                return v1
+            return SourceNumber(str(start + position * (end - start)))
     return v0 if t == 0 else v1 if t == 1 else v0 + t * (v1 - v0)
 
 
@@ -368,6 +414,7 @@ def _merge(dst: dict, src: dict, prefix: str, overridden: list, decisions: list,
 
 def _validate_result(result: StagePlanResult) -> None:
     try:
+        bound_slot = result._context.get("slot_context") is not None
         if len(result.stage_plan["stages"]) != len(result.decks):
             raise ValueError("stage/deck counts differ")
         sv.validate(sv.load_schema(REPO / "schemas/vela.stage_plan.v1.schema.json"), result.stage_plan)
@@ -378,7 +425,7 @@ def _validate_result(result: StagePlanResult) -> None:
                 if isinstance(node, dict):
                     for key, value in node.items():
                         path = f"{prefix}.{key}" if prefix else key
-                        if key == "scaling" or v2_key(path) != path:
+                        if not bound_slot and (key == "scaling" or v2_key(path) != path):
                             raise ValueError(f"legacy v1 key {path}")
                         check(value, path)
                 elif isinstance(node, list):
@@ -393,11 +440,12 @@ def _validate_result(result: StagePlanResult) -> None:
 
 def emit_stage_plan(ir: dict, *, mesh_qualification: dict, materials_report: dict,
                     work_dir: str, cmd_basename: str, cmd_sha256: str,
-                    options: EmitOptions | None = None, sidecar: dict | None = None) -> StagePlanResult:
+                    options: EmitOptions | None = None, sidecar: dict | None = None,
+                    slot_context: dict | None = None) -> StagePlanResult:
     """Generate a deterministic C4 plan and runner decks without mutating inputs."""
     try:
         return _emit(ir, mesh_qualification, materials_report, work_dir, cmd_basename,
-                     cmd_sha256, options or EmitOptions(), sidecar, {})
+                     cmd_sha256, options or EmitOptions(), sidecar, {}, slot_context=slot_context)
     except DeckEmitError:
         raise
     except (KeyError, TypeError, IndexError, ValueError, OverflowError) as error:
@@ -406,7 +454,8 @@ def emit_stage_plan(ir: dict, *, mesh_qualification: dict, materials_report: dic
 
 def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha: str,
           options: EmitOptions, sidecar: dict | None, rebases: dict,
-          current_starts: dict | None = None, saved_voltages: dict | None = None) -> StagePlanResult:
+          current_starts: dict | None = None, saved_voltages: dict | None = None,
+          slot_context: dict | None = None) -> StagePlanResult:
     current_starts = current_starts or {}
     saved_voltages = saved_voltages or {}
     if not ir["verdict"]["accepted"]:
@@ -432,19 +481,30 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         except (sv.SchemaError, sv.ValidationError) as error:
             raise DeckEmitError("E409", file="sidecar", detail=str(error)) from error
         protected = {"tau_n_s", "tau_p_s", "auger_cn_cm6_per_s", "auger_cp_cm6_per_s",
-                     "srh_doping_dependence", "hole_quantum_potential", "arithmetic_precision"}
+                     "srh_doping_dependence", "hole_quantum_potential", "arithmetic_precision",
+                     "grad_qf_contact_field", "require_end_to_end_precision"}
         if protected.intersection(sidecar.get("solver", {})):
             raise DeckEmitError("E409", file="sidecar", detail="physical parameters and arithmetic precision belong to the cmd/par")
     decisions = []
-    solver = _physics(ir, report, decisions)
+    if slot_context:
+        reference = slot_context["reference"]
+        solver = deepcopy(reference["solver"])
+        solver.pop("arithmetic_precision", None)
+        solver.pop("require_end_to_end_precision", None)
+    else:
+        solver = _physics(ir, report, decisions)
+    if "grad_qf_contact_field" in ir["math"]:
+        solver["grad_qf_contact_field"] = ir["math"]["grad_qf_contact_field"]
     if "arithmetic_precision" in ir["math"]:
         solver["arithmetic_precision"] = ir["math"]["arithmetic_precision"]
+        if solver["arithmetic_precision"] == "extended80":
+            solver["require_end_to_end_precision"] = True
     contacts, electrodes = _contacts(ir, mesh, report, decisions)
     if mesh["angles"]["obtuse_element_count"]:
         _decision(decisions, "mesh.angles", mesh["angles"], "mesh_geometry.node_volume_policy",
                   "barycentric", "Imported obtuse elements retained with barycentric volumes")
     fields = [f["data_name"] + ("/Vector" if f["component"] == "vector" else "")
-              for f in ir["plot"]["fields"]]
+              for f in ir["plot"]["fields"] if f["data_name"] is not None]
     if not ir["plot"]["explicit"]:
         added = [name for name in IMPLICIT_FIELDS if name not in fields]
         fields.extend(added)
@@ -482,7 +542,19 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             "solver": solver, **_charges(ir, mesh)}
     if report.get("physical_constants_profile", "codata2018") != "codata2018":
         base["physical_constants_profile"] = report["physical_constants_profile"]
+    if (not slot_context and solver.get("arithmetic_precision") == "extended80"
+            and mesh["doping"].get("number_encoding") == "decimal"):
+        base["node_doping_decimal_input"] = True
+    if slot_context:
+        base.pop("format_version")
+        for key in ("scaling", "physical_constants_profile", "mesh_geometry", "discretization",
+                    "node_doping_decimal_input"):
+            if key in reference:
+                base[key] = deepcopy(reference[key])
+        _decision(decisions, "Enormal(IALMob)", True, "solver.mobility.model", "ialmob",
+                  "Use the validated SLOT mesh, doping, material and IALMob bundle")
     voltages = {e["name"]: e["initial_voltage_V"] for e in electrodes}
+    wide_stage_controls = solver.get("arithmetic_precision") == "extended80"
     sources = deepcopy(ir["stages"])
     groups = []
     for source in sources:
@@ -518,9 +590,12 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         input_state = plan["stages"][-1]["output_state"] if decks else None
         if kind == "load":
             prefix = ir["solve"]["statements"][source["statement_index"]]["file_prefix"]
-            if prefix not in snapshots:
+            if prefix in snapshots:
+                input_state, voltages = deepcopy(snapshots[prefix])
+            elif slot_context and prefix in slot_context["load_states"]:
+                input_state = slot_context["load_states"][prefix]
+            else:
                 raise DeckEmitError("E407", detail=f"Load has no earlier Save: {prefix}")
-            input_state, voltages = deepcopy(snapshots[prefix])
             _decision(decisions, "Load", prefix, "contacts.bias", voltages, "Saved voltages restored", "W208", index)
         start = deepcopy(voltages)
         goal = source.get("goal")
@@ -532,9 +607,11 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             raise DeckEmitError("E407", detail="Current goal requires Set(mode current)")
         v0 = start[contact]
         v1 = _finite(goal["voltage_V"], "Goal") if goal and not current else v0
+        has_voltage_span = _decimal(v0) != _decimal(v1) if wide_stage_controls else v0 != v1
+        wide_checkpoints = wide_stage_controls and not current
         voltages[contact] = v1
         entry = {"index": index, "ir_stage_index": group[0]["index"],
-            "kind": "load" if kind == "load" else "equilibrium" if kind == "initial" or (goal and v0 == v1 and not current) else "sweep",
+            "kind": "load" if kind == "load" else "equilibrium" if kind == "initial" or (goal and not has_voltage_span and not current) else "sweep",
             "deck": f"simulation_stage{index:02d}.json", "csv": f"stage{index:02d}.csv",
             "input_state": input_state, "output_state": f"stage{index:02d}_state.h5",
             "electrode_voltages_start_V": start, "electrode_voltages_goal_V": deepcopy(voltages),
@@ -547,27 +624,27 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 if plot["time"] is None:
                     entry["vtu_write"]["after_stage"].append(plot["vela_pattern"])
                 else:
-                    t = expand_times(plot["time"])
+                    t = expand_times(plot["time"], wide=wide_checkpoints)
                     entry["vtu_write"]["series"].append({"file_prefix": plot["file_prefix"], "t": t,
                         "global_index_start": global_plot, "pattern": plot["vela_pattern"]})
                     global_plot += len(t)
                     times.extend(t)
         current_times = source["outputs"]["current_plot_times"]
         if current_times is not None:
-            entry["plt_write"] = expand_times(current_times)
+            entry["plt_write"] = expand_times(current_times, wide=wide_checkpoints)
             times.extend(entry["plt_write"])
-        entry["required_t"] = sorted(set(times))
+        entry["required_t"] = _ordered_times(times, wide_checkpoints)
         deck = deepcopy(base)
         deck["output_csv"] = entry["csv"]
         deck["contacts"] = [dict(c, bias=start[c["name"]]) for c in contacts]
-        method = "newton" if any(c["type"] == "schottky" for c in contacts) else "gummel_newton"
+        method = "newton" if slot_context or any(c["type"] == "schottky" for c in contacts) else "gummel_newton"
         if kind == "load":
             method = "frozen_state"
         elif source["equations"] == ["Poisson"]:
             method = "poisson_only"
         cmd_iterations = source["iterations"] or math_cfg["iterations"] or 100
         deck["solver"].update(method=method, max_iter=cmd_iterations)
-        if input_state and method in ("gummel_newton", "newton"):
+        if input_state and not slot_context and method in ("gummel_newton", "newton"):
             # Coupled continuation must preserve the accepted state. A fresh
             # Gummel pass can destroy a good high-injection Newton predictor.
             deck["solver"].update(method="newton", warm_start=True,
@@ -607,15 +684,29 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             # The preceding nonlinear Poisson solve supplies a converged
             # state. Preserve it for Coupled instead of re-running Gummel.
             deck["solver"].update(method="newton", warm_start=True)
+        if (slot_context and wide_stage_controls and kind == "initial" and method == "newton"
+                and deck["solver"].get("population_stopping_rule") == "native_approx"):
+            if not math_cfg["rel_err_control"]:
+                raise DeckEmitError("E407", detail="SLOT extended80 update stopping requires RelErrControl")
+            update = deck["solver"].setdefault("population_update_convergence", {})
+            update["digits"] = math_cfg["digits"]
+            for metric_key, source_key in (("potential_reference_V", "err_ref_poisson_V"),
+                                           ("electron_reference_cm3", "err_ref_electron_cm3"),
+                                           ("hole_reference_cm3", "err_ref_hole_cm3")):
+                if math_cfg.get(source_key) is not None:
+                    update[metric_key] = math_cfg[source_key]
+            _decision(decisions, "RelErrControl", True, "solver.population_update_convergence",
+                      update, "Use the CMD update metric for the bound SLOT equilibrium stage", stage=index)
         if entry["kind"] in ("equilibrium", "load") or current:
             sweep["bias_points"] = [v0]
         if kind == "sweep":
             control = source["t_control"]
-            controls = {k: control[k] if control[k] is not None else default for k, default in
-                        (("initial_step", .1), ("min_step", .001), ("max_step", 1.0), ("increment", 2.0), ("decrement", 2.0))}
-            if not 0 < controls["min_step"] <= controls["initial_step"] <= controls["max_step"] <= 1 or controls["increment"] < 1 or controls["decrement"] <= 1:
+            controls = {key: control[key] if control[key] is not None else SourceNumber(default)
+                        for key, default in (("initial_step", ".1"), ("min_step", ".001"),
+                                             ("max_step", "1"), ("increment", "2"), ("decrement", "2"))}
+            limits = {key: _decimal(value) for key, value in controls.items()} if wide_stage_controls else controls
+            if not 0 < limits["min_step"] <= limits["initial_step"] <= limits["max_step"] <= 1 or limits["increment"] < 1 or limits["decrement"] <= 1:
                 raise DeckEmitError("E407", detail="invalid Quasistationary step controls")
-            delta = abs(v1 - v0)
             if current:
                 if index not in current_starts and not options.defer_current_times and any(t != 1 for t in times):
                     raise DeckEmitError("E407", detail="current-goal Time points need the measured initial current (WP5)")
@@ -632,20 +723,20 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                     "current_points_A_per_um": current_points, "current_direction": direction}
                 _decision(decisions, "Current", goal["current_A_per_um"], "sweep.voltage_to_current",
                           sweep["voltage_to_current"], "Runner closes the final current goal; subsequent stages must rebase measured voltages", stage=index)
-            elif delta:
+            elif has_voltage_span:
                 intervals = current_times.get("intervals") if current_times else None
-                spacing = delta / intervals if intervals else delta * controls["max_step"]
-                step = spacing if v1 > v0 else -spacing
+                step, initial, minimum, maximum, shrink = _voltage_steps(
+                    v0, v1, controls, intervals, wide_stage_controls)
                 converted = {"contact": contact, "mode": "voltage", "start_V": v0, "stop_V": v1,
-                    "step_V": step, "initial_step_V": delta * controls["initial_step"],
-                    "min_step_V": delta * controls["min_step"], "max_step_V": delta * controls["max_step"],
+                    "step_V": step, "initial_step_V": initial,
+                    "min_step_V": minimum, "max_step_V": maximum,
                     "growth_factor": controls["increment"], "shrink_factor": controls["decrement"],
                     "t_to_bias": {"v0": v0, "v1": v1}}
                 entry["sweep"] = converted
                 sweep.update(step=step, initial_step=converted["initial_step_V"],
                     min_step=converted["min_step_V"], max_step=converted["max_step_V"],
-                    growth_factor=converted["growth_factor"], shrink_factor=1.0 / converted["shrink_factor"],
-                    vtk_bias_points=[_bias(v0, v1, t) for t in entry["required_t"]])
+                    growth_factor=converted["growth_factor"], shrink_factor=shrink,
+                    vtk_bias_points=[_bias(v0, v1, t, wide=wide_checkpoints) for t in entry["required_t"]])
                 _decision(decisions, "Decrement", controls["decrement"], "sweep.shrink_factor",
                           sweep["shrink_factor"], "C4 retains the divisor; runner uses its reciprocal", stage=index)
             else:
@@ -657,8 +748,19 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             if resistance:
                 if current:
                     raise DeckEmitError("E407", detail="current control and series resistance are mutually exclusive")
-                sweep["external_circuit"] = {"mode": "series_resistor", "resistance_ohm_um": resistance}
-                sweep.setdefault("boundary_control", {})["adaptive_outer_continuation"] = True
+                if slot_context:
+                    circuit = deepcopy(reference["sweep"]["external_circuit"])
+                    if circuit["resistance_ohm_um"] != resistance:
+                        raise DeckEmitError("E409", file="sidecar", detail="SLOT reference and CMD resistor differ")
+                    circuit["resistance_ohm_um"] = resistance
+                    circuit["max_iterations"] = cmd_iterations
+                    circuit.get("coupled_update_convergence", {}).pop("diagnostic_csv", None)
+                    sweep["external_circuit"] = circuit
+                    if "boundary_control" in reference["sweep"]:
+                        sweep["boundary_control"] = deepcopy(reference["sweep"]["boundary_control"])
+                else:
+                    sweep["external_circuit"] = {"mode": "series_resistor", "resistance_ohm_um": resistance}
+                    sweep.setdefault("boundary_control", {})["adaptive_outer_continuation"] = True
         if current:
             entry["sweep"] = {"contact": contact, "mode": "current", "start_V": v0, "stop_V": v0,
                 "stop_current_A_per_um": goal["current_A_per_um"], "step_V": 1.0,
@@ -687,7 +789,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         if not math_cfg["aval_derivatives"] and "impact_ionization" in deck["solver"]:
             deck["solver"]["impact_ionization"]["source_jacobian"] = "frozen"
         deck["sweep"] = sweep
-        if sidecar is not None and (not sidecar.get("apply_to") or index in sidecar["apply_to"]):
+        if not slot_context and sidecar is not None and (not sidecar.get("apply_to") or index in sidecar["apply_to"]):
             overrides = {k: deepcopy(v) for k, v in sidecar.items() if k not in ("schema", "description", "apply_to", "avalanche_current_support_profile", "high_field_gradient_discretization", "bvmethods_operator_profile")}
             if "external_circuit" not in sweep and "sweep" in overrides:
                 overrides["sweep"].pop("external_circuit", None)
@@ -747,6 +849,8 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                     or population_solver.get("electron_quantum_potential", {}).get("enabled", False)
                     or kind == "load" or current or "external_circuit" in sweep):
                 raise DeckEmitError("E407", detail="PN2D population mode requires a classical two-contact silicon voltage deck")
+            population_solver.setdefault("coupled_operator", "legacy")
+            population_solver.setdefault("carrier_statistics", {"model": "boltzmann"})
             population_solver.update(state_variables="potential_density", quasi_fermi_reference="none",
                                      primary_variable_coordinates="unit", quasi_fermi_update_limit_V=0.0,
                                      continuity_row_scaling={"enabled": False})
@@ -780,7 +884,10 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                     raise DeckEmitError("E407", detail="PN2D population sweep requires coupled continuity equations")
                 # Use the CMD Goal and requested output biases as the only
                 # landing targets. Do not insert a second MaxStep-based grid.
-                sweep.update(step=v1 - v0, step_growth_mode="newton_iterations",
+                span = v1 - v0
+                if wide_stage_controls and not span:
+                    span = _voltage_steps(v0, v1, controls | {"max_step": 1}, None, True)[0]
+                sweep.update(step=span, step_growth_mode="newton_iterations",
                              stop_below_minimum_step=True, preserve_step_after_output_clip=True)
                 predictor = sweep.pop("predictor")
                 sweep.setdefault("continuation", {})["predictor"] = {"mode": predictor}
@@ -795,18 +902,47 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 if retries > 2_147_483_647:
                     raise DeckEmitError("E407", detail="Quasistationary controls imply an unrepresentable retry count")
                 sweep["max_retries"] = retries
-                entry["sweep"]["step_V"] = v1 - v0
+                entry["sweep"]["step_V"] = span
             _decision(decisions, "PN2D population", True, "solver.primary_variable_coordinates", "unit",
                       "Scale the primary potential and concentrations with the existing Unit references", stage=index)
         if any(c["type"] == "schottky" for c in contacts) and deck["solver"]["method"] not in ("newton", "frozen_state"):
             raise DeckEmitError("E407", detail="thermionic Schottky contacts require the Newton path")
         geometry = deck["mesh_geometry"]
-        if geometry.get("node_volume_policy") == "mixed_voronoi":
+        if not slot_context and geometry.get("node_volume_policy") == "mixed_voronoi":
             if mesh["angles"]["obtuse_element_count"] or not mesh["qualification"]["non_obtuse"]:
                 raise DeckEmitError("E408", policy="mixed_voronoi", n=mesh["angles"]["obtuse_element_count"])
             geometry["require_non_obtuse"] = True
         if sidecar and kind == "load" and deck["solver"]["method"] != "frozen_state":
             raise DeckEmitError("E409", file="sidecar", detail="Load must retain frozen_state")
+        if wide_stage_controls and not current:
+            fields = ("start", "stop", "step", "initial_step", "min_step", "max_step",
+                      "growth_factor", "shrink_factor")
+            decimal_sweep = {key: str(_decimal(sweep[key])) for key in fields if key in sweep}
+            if "external_circuit" in sweep:
+                decimal_sweep["resistance_ohm_um"] = str(_decimal(sweep["external_circuit"]["resistance_ohm_um"]))
+            temperature = deck["solver"].get("temperature_K", 300)
+            command_temperature = ir["physics"].get("temperature_K")
+            if isinstance(command_temperature, SourceNumber) and temperature == command_temperature:
+                temperature = command_temperature
+            decimal_solver = {"temperature_K": str(_decimal(temperature))}
+            if slot_context and kind == "initial" and method == "newton":
+                update = deck["solver"].get("population_update_convergence", {})
+                references = {key: str(_decimal(update[key]))
+                              for key in ("potential_reference_V", "electron_reference_cm3", "hole_reference_cm3")
+                              if key in update}
+                if references:
+                    decimal_solver["population_update_convergence"] = references
+            if slot_context and slot_context.get("source_coefficients"):
+                decimal_solver["slot_source_coefficients"] = slot_context["source_coefficients"]
+                deck["solver"]["extended80_stage_profile"] = "slot_population_bvds_v1"
+            deck["decimal_stage_controls"] = {
+                "contacts": {item["name"]: str(_decimal(item["bias"])) for item in deck["contacts"]},
+                "sweep": decimal_sweep,
+                "solver": decimal_solver,
+            }
+            for key in ("bias_points", "vtk_bias_points"):
+                if key in sweep:
+                    decimal_sweep[key] = [str(_decimal(value)) for value in sweep[key]]
         plan["stages"].append(entry)
         decks.append(deck)
     if not decks:
@@ -816,7 +952,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
     result = StagePlanResult(plan, decks, decisions, deepcopy({"ir": ir, "mesh": mesh, "report": report,
         "work_dir": work_dir, "cmd_name": cmd_name, "sha": sha, "options": options,
         "sidecar": sidecar, "rebases": rebases, "current_starts": current_starts,
-        "saved_voltages": saved_voltages}))
+        "saved_voltages": saved_voltages, "slot_context": slot_context}))
     try:
         _validate_result(result)
     except DeckEmitError as error:

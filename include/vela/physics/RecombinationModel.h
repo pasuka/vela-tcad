@@ -1,9 +1,11 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/UnitScaling.h"
 #include "vela/physics/BandToBandTunnelingModel.h"
 #include <nlohmann/json_fwd.hpp>
+#include <array>
 #include <string>
 #include <vector>
 
@@ -35,11 +37,25 @@ struct RecombinationLinearization {
     Real rhs = 0.0;      ///< Source contribution moved to the RHS [m^-3 s^-1]
 };
 
+struct BoltzmannRecombinationLinearization {
+    ArithmeticReal srh = 0, auger = 0;
+    ArithmeticReal dSrhDn = 0, dSrhDp = 0, dAugerDn = 0, dAugerDp = 0;
+};
+
 struct SRHLifetimeParameters {
     Real tauMin = 0.0;  ///< High-doping lifetime limit [s]
     Real tauMax = 1.0e-7; ///< Low-doping lifetime limit [s]
     Real referenceDoping = 1.0e22; ///< Reference concentration [m^-3]
     Real gamma = 1.0; ///< Doping roll-off exponent [-]
+};
+
+struct ArithmeticBoltzmannSourceCoefficients {
+    struct Lifetime {
+        ArithmeticReal tauMin, tauMax, referenceDoping, gamma;
+    };
+    ArithmeticReal taun, taup;
+    std::array<Lifetime, 2> lifetime;
+    std::array<ArithmeticReal, 2> augerCoefficient, enhancement, referenceDensity;
 };
 
 struct SRHDopingDependenceConfig {
@@ -163,6 +179,17 @@ public:
         Real excessProduct,
         Real n,
         Real p) const;
+
+    /// Evaluate the classical direct-population source and its derivatives at
+    /// fixed effective intrinsic density and impurities. Uses the configured
+    /// SRH and Auger branch, including generation clipping and carrier limits.
+    BoltzmannRecombinationLinearization boltzmannPopulationLinearization(
+        ArithmeticReal n, ArithmeticReal p, ArithmeticReal ni,
+        ArithmeticReal donors, ArithmeticReal acceptors) const;
+    BoltzmannRecombinationLinearization boltzmannPopulationLinearization(
+        ArithmeticReal n, ArithmeticReal p, ArithmeticReal ni,
+        ArithmeticReal donors, ArithmeticReal acceptors,
+        const ArithmeticBoltzmannSourceCoefficients& coefficients) const;
 
     RecombinationLinearization electronLinearization(
         Real n, Real p, Real ni, Real dopingConcentration = 0.0) const;

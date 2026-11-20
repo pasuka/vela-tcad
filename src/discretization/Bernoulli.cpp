@@ -20,4 +20,17 @@ double bernoulli(double x)
     return x / std::expm1(x);
 }
 
+double bernoulliDerivative(double x)
+{
+    if (std::abs(x) < 1.0e-8)
+        return -0.5 + x / 6.0 - x * x * x / 180.0;
+    if (x > 500.0)
+        return (1.0 - x) * std::exp(-x);
+    if (x < -500.0)
+        return -1.0;
+    const double em1=std::expm1(x);
+    const double ex=em1+1.0;
+    return (em1-x*ex)/(em1*em1);
+}
+
 } // namespace vela

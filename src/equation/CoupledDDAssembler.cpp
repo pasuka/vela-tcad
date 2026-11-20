@@ -95,21 +95,6 @@ Point2 perturbedEdgeCellCurrent(Index edgeId, FluxAt fluxAt,
     return fluxAt(edgeId)*Point2{(p1.x-p0.x)/edge.length,(p1.y-p0.y)/edge.length};
 }
 
-Real bernoulliDerivative(Real x)
-{
-    const Real ax = std::abs(x);
-    if (ax < 1.0e-8)
-        return -0.5 + x / 6.0 - x * x * x / 180.0;
-    if (x > 500.0)
-        return (1.0 - x) * std::exp(-x);
-    if (x < -500.0)
-        return -1.0;
-
-    const Real em1 = std::expm1(x);
-    const Real ex = em1 + 1.0;
-    return (em1 - x * ex) / (em1 * em1);
-}
-
 Real limitedExp(Real value)
 {
     return std::exp(std::clamp(value, -500.0, 500.0));
@@ -255,7 +240,7 @@ bool transportMobilityDependsOnPotentials(const MobilityModelConfig& config)
         return true;
     if (!config.jacobianFieldDerivatives)
         return false;
-    if (config.contactElectricFieldFallback)
+    if (config.useElectricFieldAtGradQfContacts())
         return true;
     return config.model == "ialmob" || config.model == "constant_field" ||
            config.model == "constant_field_lombardi" ||
@@ -962,7 +947,8 @@ std::vector<std::uint64_t> CoupledDDAssembler::jacobianStructureKey(
         const auto real = [&](Real value) { key.push_back(std::bit_cast<std::uint64_t>(value)); };
         key = {mesh_.numNodes(), mesh_.numEdges(), mesh_.numCells(),
                transportMobilityDerivativeEnabled_, highFieldMobilityEnabled_,
-               vectorQfMobilityEnabled_, impactIonizationCoupled_};
+               vectorQfMobilityEnabled_, impactIonizationCoupled_,
+               mobilityConfig_.ialmobTransportFeedbackDerivatives};
         real(Vt_);
         for (Index i = 0; i < mesh_.numNodes(); ++i) {
             const auto& node = mesh_.getNode(i);
@@ -2113,7 +2099,7 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
             poissonPair[i].add(-fixedInterfaceChargeRhs_[i]);
             result.residual[i] = poissonPair[i].value() / poissonScale;
         } else {
-            const ArithmeticReal netDoping = doping_.netDoping(i);
+            const ArithmeticReal netDoping = doping_.netDopingForAssembly(i);
             const ArithmeticReal charge =
                 (netDoping >= 0.
                     ? (static_cast<ArithmeticReal>(n[i])-netDoping)-p[i]
@@ -2614,7 +2600,7 @@ VectorXd CoupledDDAssembler::residualImpl(
               fieldFactor))
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
-        mobilityConfig_.contactElectricFieldFallback
+        mobilityConfig_.useElectricFieldAtGradQfContacts()
         ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
               mobilityConfig_, mesh_, edgeCells_, cellMaterials_, psi, fieldFactor)
         : std::vector<Real>{};
@@ -2805,6 +2791,11 @@ VectorXd CoupledDDAssembler::residualImpl(
                     (carrierStatisticsModel_==CarrierStatisticsModel::FermiDiracJoyceDixon?Nc_[idxJ]*fermiDiracHalf(etaJ,carrierStatisticsModel_):scaledFermiDiracHalf(Nc_[idxJ],etaJ)),
                     etaI, etaJ, driftPotential,
                     phin_i, phin_j, Vt_, coef, effectiveBandSg_);
+            } else if (usesIalPopulationEdgeSg()) {
+                nFlux = sgBoltzmannPopulationContinuityFluxFromDrift(
+                    n(i), n(j), sgPopulationEdgeDrift(x(psiOffset() + i), x(psiOffset() + j),
+                        potentialScale, Vt_, niElectron_[idxI], niElectron_[idxJ], bgnEnabled_),
+                    Vt_, coef, 0., 0., 0.);
             } else if (usesLegacyPopulationState()) {
                 nFlux = sgBoltzmannPopulationContinuityFlux(
                     n(i), n(j), ni_[idxI], ni_[idxJ],
@@ -2844,6 +2835,11 @@ VectorXd CoupledDDAssembler::residualImpl(
                 pFlux = sgHoleFermiDiracContinuityFlux(
                     p(i), p(j), etaI, etaJ, driftPotential,
                     phip_i, phip_j, Vt_, coef, effectiveBandSg_);
+            } else if (usesIalPopulationEdgeSg()) {
+                pFlux = sgBoltzmannPopulationContinuityFluxFromDrift(
+                    p(i), p(j), sgPopulationEdgeDrift(x(psiOffset() + i), x(psiOffset() + j),
+                        -potentialScale, Vt_, niHole_[idxI], niHole_[idxJ], bgnEnabled_),
+                    Vt_, coef, 0., 0., 0.);
             } else if (usesLegacyPopulationState()) {
                 pFlux = sgBoltzmannPopulationContinuityFlux(
                     p(i), p(j), ni_[idxI], ni_[idxJ],
@@ -2949,7 +2945,11 @@ VectorXd CoupledDDAssembler::residualImpl(
         // Poisson. All continuity/source and transport assembly retains the
         // production node volume.
         add(psiOffset() + ii, -constants::q * p(ii) * poissonHoleVol_[i] * chargeAreaFactor);
-        add(psiOffset() + ii, -constants::q * doping_.netDoping(i) * poissonDopantVol_[i] * chargeAreaFactor);
+        const Real dopingCharge = doping_.hasDecimalNodeDoping()
+            ? static_cast<Real>(-constants::arithmeticConstants<ArithmeticReal>().q *
+                                doping_.netDopingForAssembly(i) * poissonDopantVol_[i] * chargeAreaFactor)
+            : -constants::q * doping_.netDoping(i) * poissonDopantVol_[i] * chargeAreaFactor;
+        add(psiOffset() + ii, dopingCharge);
         add(psiOffset() + ii, constants::q * n(ii) * poissonElectronVol_[i] * chargeAreaFactor);
 
         const Real ni = ni_[i];
@@ -3371,7 +3371,7 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
               fieldFactor))
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
-        mobilityConfig_.contactElectricFieldFallback
+        mobilityConfig_.useElectricFieldAtGradQfContacts()
         ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
               mobilityConfig_, mesh_, edgeCells_, cellMaterials_, psi, fieldFactor)
         : std::vector<Real>{};
@@ -3480,6 +3480,11 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
                     scaledFermiDiracHalf(Nc_[idxI], etaI),
                     scaledFermiDiracHalf(Nc_[idxJ], etaJ),
                     etaI, etaJ, drift, phin_i, phin_j, Vt_, coef, effectiveBandSg_);
+            } else if (usesIalPopulationEdgeSg()) {
+                nFlux = sgBoltzmannPopulationContinuityFluxFromDrift(
+                    n(i), n(j), sgPopulationEdgeDrift(x(psiOffset() + i), x(psiOffset() + j),
+                        potentialScale, Vt_, niElectron_[idxI], niElectron_[idxJ], bgnEnabled_),
+                    Vt_, coef, 0., 0., 0.);
             } else if (usesLegacyPopulationState()) {
                 nFlux = sgBoltzmannPopulationContinuityFlux(
                     n(i), n(j), ni_[idxI], ni_[idxJ],
@@ -3516,6 +3521,11 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
                 const Real drift = dpsi + edgeKernel.holeDriftOffset;
                 pFlux = sgHoleFermiDiracContinuityFlux(
                     p(i), p(j), etaI, etaJ, drift, phip_i, phip_j, Vt_, coef, effectiveBandSg_);
+            } else if (usesIalPopulationEdgeSg()) {
+                pFlux = sgBoltzmannPopulationContinuityFluxFromDrift(
+                    p(i), p(j), sgPopulationEdgeDrift(x(psiOffset() + i), x(psiOffset() + j),
+                        -potentialScale, Vt_, niHole_[idxI], niHole_[idxJ], bgnEnabled_),
+                    Vt_, coef, 0., 0., 0.);
             } else if (usesLegacyPopulationState()) {
                 pFlux = sgBoltzmannPopulationContinuityFlux(
                     p(i), p(j), ni_[idxI], ni_[idxJ],
@@ -3776,7 +3786,7 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
               fieldFactor)
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
-        mobilityConfig_.contactElectricFieldFallback
+        mobilityConfig_.useElectricFieldAtGradQfContacts()
         ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
               mobilityConfig_, mesh_, edgeCells_, cellMaterials_, psi, fieldFactor)
         : std::vector<Real>{};
@@ -3887,6 +3897,11 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                     electronFermiDensityI, electronFermiDensityJ,
                     electronEtaI, electronEtaJ, electronDriftPotential,
                     phin_i, phin_j, Vt_, coef, effectiveBandSg_);
+            } else if (usesIalPopulationEdgeSg()) {
+                nFlux = sgBoltzmannPopulationContinuityFluxFromDrift(
+                    n(i), n(j), sgPopulationEdgeDrift(x(psiOffset() + i), x(psiOffset() + j),
+                        potentialScale, Vt_, niElectron_[idxI], niElectron_[idxJ], bgnEnabled_),
+                    Vt_, coef, 0., 0., 0.);
             } else if (usesLegacyPopulationState()) {
                 nFlux = sgBoltzmannPopulationContinuityFlux(
                     n(i), n(j), ni_[idxI], ni_[idxJ],
@@ -3920,6 +3935,11 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                             electronEtaI, electronEtaJ,
                             electronDriftPotential,
                             phin_i, phin_j, Vt_, unitCoef, effectiveBandSg_);
+            } else if (usesIalPopulationEdgeSg()) {
+                    nFluxPerInternalCouple = sgBoltzmannPopulationContinuityFluxFromDrift(
+                        n(i), n(j), sgPopulationEdgeDrift(x(psiOffset() + i), x(psiOffset() + j),
+                            potentialScale, Vt_, niElectron_[idxI], niElectron_[idxJ], bgnEnabled_),
+                        Vt_, unitCoef, 0., 0., 0.);
             } else if (usesLegacyPopulationState()) {
                     nFluxPerInternalCouple = sgBoltzmannPopulationContinuityFlux(
                         n(i), n(j), ni_[idxI], ni_[idxJ],
@@ -3948,6 +3968,11 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                 pFlux = sgHoleFermiDiracContinuityFlux(
                     p(i), p(j), etaI, etaJ, drift,
                     phip_i, phip_j, Vt_, coef, effectiveBandSg_);
+            } else if (usesIalPopulationEdgeSg()) {
+                pFlux = sgBoltzmannPopulationContinuityFluxFromDrift(
+                    p(i), p(j), sgPopulationEdgeDrift(x(psiOffset() + i), x(psiOffset() + j),
+                        -potentialScale, Vt_, niHole_[idxI], niHole_[idxJ], bgnEnabled_),
+                    Vt_, coef, 0., 0., 0.);
             } else if (usesLegacyPopulationState()) {
                 pFlux = sgBoltzmannPopulationContinuityFlux(
                     p(i), p(j), ni_[idxI], ni_[idxJ],
@@ -3977,6 +4002,11 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                         sgHoleFermiDiracContinuityFlux(
                             p(i), p(j), etaI, etaJ, drift,
                             phip_i, phip_j, Vt_, unitCoef, effectiveBandSg_);
+            } else if (usesIalPopulationEdgeSg()) {
+                    pFluxPerInternalCouple = sgBoltzmannPopulationContinuityFluxFromDrift(
+                        p(i), p(j), sgPopulationEdgeDrift(x(psiOffset() + i), x(psiOffset() + j),
+                            -potentialScale, Vt_, niHole_[idxI], niHole_[idxJ], bgnEnabled_),
+                        Vt_, unitCoef, 0., 0., 0.);
             } else if (usesLegacyPopulationState()) {
                     pFluxPerInternalCouple = sgBoltzmannPopulationContinuityFlux(
                         p(i), p(j), ni_[idxI], ni_[idxJ],
@@ -4665,7 +4695,8 @@ VectorXd CoupledDDAssembler::impactIonizationSourceResidual(
 }
 
 CoupledDDAssembler::NodeRecombinationDifferential
-CoupledDDAssembler::nodeRecombinationDifferential(Index i,const VectorXd& x,Real nValue,Real pValue) const
+CoupledDDAssembler::nodeRecombinationDifferential(Index i,const VectorXd& x,Real nValue,Real pValue,
+                                                  bool populationColumns) const
 {
     NodeRecombinationDifferential result;
     if (!recombinationNodes_[i]) return result;
@@ -4759,6 +4790,26 @@ CoupledDDAssembler::nodeRecombinationDifferential(Index i,const VectorXd& x,Real
         recombination_.augerRateDerivativesFromExcessProduct(
             augerExcessProduct, nValue, pValue);
     const Real recombinationRate = nodeRecombinationRate(i,nValue,nSrh,pValue,dPhi,&srhState,&augerState);
+    if (populationColumns) {
+        // Fixed Boltzmann band parameters and no quantum correction:
+        // d(np-ni^2)/dn=p and d(np-ni^2)/dp=n.
+        const Real srhProductN=pValue*(nSrh/nValue);
+        const Real augerProductN=recombination_.usesClassicalAugerExcessProduct()
+            ? classicalAuger.dN : pValue;
+        const Real augerProductP=recombination_.usesClassicalAugerExcessProduct()
+            ? classicalAuger.dP : nValue;
+        if (recombination_.srhEnabled()) {
+            result.derivative[1]=srhDerivatives.dRateDn*(nSrh/nValue)+
+                srhDerivatives.dRateDExcess*srhProductN;
+            result.derivative[2]=srhDerivatives.dRateDp+srhDerivatives.dRateDExcess*nSrh;
+        }
+        if (recombination_.augerEnabled()) {
+            result.derivative[1]+=augerDerivatives.dRateDn+augerDerivatives.dRateDExcess*augerProductN;
+            result.derivative[2]+=augerDerivatives.dRateDp+augerDerivatives.dRateDExcess*augerProductP;
+        }
+        result.rate=recombinationRate;
+        return result;
+    }
     for (int k = 0; k < 3; ++k) {
         Real derivative = 0.0;
         if (recombination_.srhEnabled()) {
@@ -5162,7 +5213,7 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
         (mobilityConfig_.model == "masetti" || mobilityConfig_.model == "masetti_field") &&
         mobilityConfig_.edgeAveraging == "legacy" &&
         mobilityConfig_.carrierCurrentDiscretization == "scharfetter_gummel_edge" &&
-        !mobilityConfig_.contactElectricFieldFallback && !carrierDiagonalFloor_.enabled;
+        !mobilityConfig_.useElectricFieldAtGradQfContacts() && !carrierDiagonalFloor_.enabled;
     experimental::AssemblyPopulationCaptureScope::record(x, n, p);
     refreshIalMobility(x);
     const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
@@ -5310,7 +5361,7 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
               mesh_, edgeCells_, cellMaterials_, holeCellGradients, fieldFactor)
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
-        mobilityConfig_.contactElectricFieldFallback
+        mobilityConfig_.useElectricFieldAtGradQfContacts()
         ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
               mobilityConfig_, mesh_, edgeCells_, cellMaterials_, psi, fieldFactor)
         : std::vector<Real>{};
@@ -5918,6 +5969,9 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
         const Real holeQfField = std::abs((holeQf_j - holeQf_i) / h) * fieldFactor;
         auto coefficientField = [&](Real edgeQfField, auto&& qfAt) {
             if (cellGradientQfAvalancheDrive) {
+                if (impactIonizationConfig_.useElectricFieldAtGradQfContacts() &&
+                    detail::edgeTouchesContactElement(mesh_, edgeCells_, e, contactNodes))
+                    return electricField;
                 bool validGradient = false;
                 const Point2 gradient = detail::edgeAveragedCellScalarGradient(
                     edgeCells_, mesh_, e, qfAt, validGradient);
@@ -5928,7 +5982,8 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
             if (rawVanOverstraetenDebug)
                 return edgeQfField;
             return detail::edgeHighFieldDrivingField(
-                qfImpact, edgeQfField, electricField, edgeCells_, mesh_, e, contactNodes);
+                qfImpact, edgeQfField, electricField, edgeCells_, mesh_, e, contactNodes,
+                impactIonizationConfig_.useElectricFieldAtGradQfContacts(true));
         };
         const Real electronCoefficientField = evaluateElectronCarrier
             ? coefficientField(electronQfField, electronQfAt) : 0.0;
@@ -6763,6 +6818,7 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
     };
 
     const auto addIalFeedback = [&](Index edgeId,CarrierType carrier,Real mu,Real flux,int offset) {
+        if(!mobilityConfig_.ialmobTransportFeedbackDerivatives) return;
         if (mobilityConfig_.model != "ialmob" || !transportMobilityDerivative || mu<=0.) return;
         const auto& geometry=*mobilityConfig_.ialmobGeometry;
         const auto& state=*mobilityConfig_.ialmobState;
@@ -6815,7 +6871,7 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
                              : std::abs((phip_j_from_i - phip_i) / h) * fieldFactor,
             electricField, contactElectricMobilityFields);
         const bool contactMobilityFallbackActive = mobilityConfig_.model != "ialmob" && transportMobilityDerivative &&
-            mobilityConfig_.contactElectricFieldFallback && qfMobility &&
+            mobilityConfig_.useElectricFieldAtGradQfContacts() && qfMobility &&
             edgeKernel.touchesTransportContact;
         const bool analyticQfMobilityFeedback =
             !isPhuMobModel(mobilityConfig_) && mobilityConfig_.model != "ialmob" && transportMobilityDerivative && qfMobility && !vectorQfMobility &&
@@ -6967,7 +7023,7 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
                 const Real fixedMobility =
                     elementBoxPhuMob || mobilityConfig_.model == "ialmob" || analyticQfMobilityFeedback || !transportMobilityDerivative ||
                         (vectorQfMobility && !surfaceMobilityEnabled_ && !densityMobility &&
-                         (!mobilityConfig_.contactElectricFieldFallback ||
+                         (!mobilityConfig_.useElectricFieldAtGradQfContacts() ||
                           (!surfaceMobilityEnabled_ && !contactMobilityFallbackActive)))
                     ? mun : -1.0;
                 const Real mobilityFeedback = analyticQfMobilityFeedback
@@ -7147,7 +7203,7 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
                 const Real fixedMobility =
                     elementBoxPhuMob || mobilityConfig_.model == "ialmob" || analyticQfMobilityFeedback || !transportMobilityDerivative ||
                         (vectorQfMobility && !surfaceMobilityEnabled_ && !densityMobility &&
-                         (!mobilityConfig_.contactElectricFieldFallback ||
+                         (!mobilityConfig_.useElectricFieldAtGradQfContacts() ||
                           (!surfaceMobilityEnabled_ && !contactMobilityFallbackActive)))
                     ? mup : -1.0;
                 const Real mobilityFeedback = analyticQfMobilityFeedback

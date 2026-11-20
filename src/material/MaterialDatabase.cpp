@@ -1,4 +1,7 @@
 #include "vela/material/MaterialDatabase.h"
+#include "vela/material/SemiconductorArithmetic.h"
+#include "vela/core/ArithmeticDecimal.h"
+#include "vela/core/ArithmeticStageInput.h"
 #include "vela/core/PhysicalConstants.h"
 
 #include <fstream>
@@ -9,6 +12,77 @@
 #include <vector>
 
 namespace vela {
+
+SemiconductorArithmetic evaluateSemiconductorArithmetic(
+    const nlohmann::json& material, ArithmeticReal temperature)
+{
+    if (!(temperature > 0) || !std::isfinite(temperature))
+        throw std::invalid_argument("Arithmetic material temperature must be positive and finite");
+    using Real = vela::ArithmeticReal;
+    const auto& sections = material.at("sections");
+    const auto param = [](const nlohmann::json& section, const char* name) {
+        return parseArithmeticDecimal(section.at(name).at("literals").at(0).get<std::string>());
+    };
+    const auto paramOrZero = [&param](const nlohmann::json& section, const char* name) {
+        return section.contains(name) ? param(section, name) : Real{0};
+    };
+    const auto& band = sections.at("Bandgap");
+    const auto& electron = sections.at("eDOSMass");
+    const auto& hole = sections.at("hDOSMass");
+    if (param(electron, "Formula") != 1 || param(hole, "Formula") != 1)
+        throw std::invalid_argument("Arithmetic DOS input requires Formula 1");
+
+    const Real tpar = param(band, "Tpar");
+    const Real beta = param(band, "beta");
+    const Real alpha = param(band, "alpha");
+    if (beta + tpar <= 0 || beta + temperature <= 0)
+        throw std::invalid_argument("Arithmetic Bandgap input has nonpositive Varshni denominator");
+    const Real gapZero = param(band, "Eg0") + alpha * tpar * tpar / (beta + tpar);
+    const Real gap = gapZero - alpha * temperature * temperature / (beta + temperature);
+    const Real offset = material.at("fold_old_slotboom").get<bool>() ? paramOrZero(band, "dEg0(OldSlotboom)") : Real{0};
+    if (gap + offset <= 0 || gapZero + offset <= 0)
+        throw std::invalid_argument("Arithmetic DOS input has nonpositive effective gap");
+    const Real mt = param(electron, "a") * (gapZero + offset) / (gap + offset);
+    const Real sixMt = 6 * mt;
+    const Real me = std::cbrt(sixMt * sixMt * param(electron, "ml")) + param(electron, "mm");
+
+    Real numerator = param(hole, "a");
+    Real denominator = 1;
+    Real power = temperature;
+    const char* numeratorFields[]{"b", "c", "d", "e"};
+    const char* denominatorFields[]{"f", "g", "h", "i"};
+    for (int i = 0; i < 4; ++i) {
+        numerator += paramOrZero(hole, numeratorFields[i]) * power;
+        denominator += paramOrZero(hole, denominatorFields[i]) * power;
+        power *= temperature;
+    }
+    if (numerator < 0 || denominator <= 0)
+        throw std::invalid_argument("Arithmetic DOS input has invalid hole mass ratio");
+    const Real mh = std::pow(numerator / denominator, Real{2} / 3) + paramOrZero(hole, "mm");
+    if (me <= 0 || mh <= 0) throw std::invalid_argument("Arithmetic DOS masses must be positive");
+
+    const auto constants = vela::constants::arithmeticConstants<Real>();
+    const auto dos = [temperature, constants](Real mass) {
+        const Real x = 2 * constants.dosPi * (mass * constants.m0) * constants.kb * temperature /
+                       (constants.h * constants.h);
+        return 2 * x * std::sqrt(x) / 1000000;
+    };
+    const Real nc = dos(me);
+    const Real nv = dos(mh);
+    const Real vt = vela::constants::thermalVoltage(temperature);
+    const Real ni = std::sqrt(nc * nv) * std::exp(-(gap + offset) / (2 * vt));
+    const Real affinity = param(band, "Chi0");
+    const Real ratio = me / mh;
+    const Real reference = affinity + gapZero / 2 + vt / 2 * std::log(ratio * std::sqrt(ratio));
+    if (!(nc > 0) || !(nv > 0) || !(ni > 0) || !std::isfinite(nc) ||
+        !std::isfinite(nv) || !std::isfinite(ni) || !std::isfinite(reference))
+        throw std::invalid_argument("Arithmetic semiconductor outputs must be finite with positive concentrations");
+    if (material.value("poly_bound_convention", false)) {
+        return {gap + offset, affinity + param(band, "Bgn2Chi") * (gapZero - gap),
+                nc, nv, ni, reference};
+    }
+    return {gap, affinity, nc, nv, ni, reference};
+}
 
 namespace {
 
@@ -105,9 +179,54 @@ void validateTemplatesLdmosMaterialRoot(const nlohmann::json& root)
     }
 }
 
+std::optional<MaterialDatabase::DecimalSemiconductor> applyDecimalSemiconductor(
+    const nlohmann::json& j, Material& mat, UnitScalingConfig scaling)
+{
+    if (!j.contains("decimal_semiconductor"))
+        return std::nullopt;
+    if (compiledArithmeticPrecision != ArithmeticPrecision::Extended80)
+        throw std::invalid_argument("decimal_semiconductor requires an extended80 build");
+    if (j.value("role", std::string{}) == "dielectric")
+        throw std::invalid_argument("decimal_semiconductor requires a semiconductor material");
+    const auto& input = j.at("decimal_semiconductor");
+    const auto temperatureText = input.at("temperature_K").get<std::string>();
+    const auto temperature = parseArithmeticDecimal(temperatureText);
+    if (temperature < 1 || temperature > 1.0e5 || !mat.temperature_K ||
+        parseArithmeticDecimal<Real>(temperatureText) != *mat.temperature_K)
+        throw std::invalid_argument("decimal_semiconductor temperature differs from the material deck");
+    const auto values = evaluateSemiconductorArithmetic(input, temperature);
+    const auto inRange = [](ArithmeticReal value, ArithmeticReal maximum) {
+        return value >= 0 && value <= maximum;
+    };
+    if (!inRange(values.bandgap_eV, 100) || !inRange(values.affinity_eV, 100) ||
+        !inRange(values.electronsDOS_cm3, VELA_ARITHMETIC_LITERAL(1e30)) ||
+        !inRange(values.holesDOS_cm3, VELA_ARITHMETIC_LITERAL(1e30)) ||
+        !inRange(values.intrinsicDensity_cm3, VELA_ARITHMETIC_LITERAL(1e30)))
+        throw std::invalid_argument("decimal_semiconductor derived values are outside the material ranges");
+    const auto concentrationFactor =
+        VELA_ARITHMETIC_LITERAL(1e6) / scaling.unitSystem().concentrationM3PerInternal();
+    const MaterialDatabase::DecimalSemiconductor exact{
+        temperature, values.bandgap_eV, values.affinity_eV,
+        values.electronsDOS_cm3 * concentrationFactor,
+        values.holesDOS_cm3 * concentrationFactor,
+        values.intrinsicDensity_cm3 * concentrationFactor,
+        j.contains("decimal_intrinsic_reference_potential_V")
+            ? decimalCompatibilityNumber(j.at("decimal_intrinsic_reference_potential_V"),
+                mat.name + ".intrinsic_reference_potential_V", mat.intrinsic_reference_potential_V)
+            : static_cast<ArithmeticReal>(mat.intrinsic_reference_potential_V)
+    };
+    mat.bandgap_eV = static_cast<Real>(exact.bandgap_eV);
+    mat.electron_affinity_eV = static_cast<Real>(exact.affinity_eV);
+    mat.Nc_m3 = static_cast<Real>(exact.electronsDOS_internal);
+    mat.Nv_m3 = static_cast<Real>(exact.holesDOS_internal);
+    mat.ni = static_cast<Real>(exact.intrinsicDensity_internal);
+    return exact;
+}
+
 Material templatesLdmosMaterialFromJson(const nlohmann::json& j,
                                         const Material* base,
-                                        UnitScalingConfig scaling)
+                                        UnitScalingConfig scaling,
+                                        std::optional<MaterialDatabase::DecimalSemiconductor>& decimal)
 {
     const std::string context = "MaterialDatabase: versioned material";
     rejectUnknownKeys(
@@ -120,7 +239,8 @@ Material templatesLdmosMaterialFromJson(const nlohmann::json& j,
          "electron_quantum_gamma", "electron_quantum_dos_mass_ratio",
          "electron_quantum_coefficient_mass_ratio",
          "thermal_conductivity_W_per_m_K", "specific_heat_J_per_kg_K",
-         "mass_density_kg_per_m3", "provenance"},
+         "mass_density_kg_per_m3", "provenance", "decimal_semiconductor",
+         "decimal_eps_r", "decimal_intrinsic_reference_potential_V"},
         context);
     if (!j.contains("name") || !j.at("name").is_string() ||
         j.at("name").get<std::string>().empty()) {
@@ -177,6 +297,7 @@ Material templatesLdmosMaterialFromJson(const nlohmann::json& j,
     }
     if (j.contains("temperature_K"))
         mat.temperature_K = finiteInRange(j, "temperature_K", 1.0, 1.0e5, context);
+    decimal = applyDecimalSemiconductor(j, mat, scaling);
     if (j.contains("electron_quantum_gamma"))
         mat.electron_quantum_gamma = finiteInRange(
             j, "electron_quantum_gamma", 0.0, 1.0e6, context);
@@ -200,7 +321,8 @@ Material templatesLdmosMaterialFromJson(const nlohmann::json& j,
 
 Material materialFromJson(const nlohmann::json& j,
                           const Material* base,
-                          UnitScalingConfig scaling)
+                          UnitScalingConfig scaling,
+                          std::optional<MaterialDatabase::DecimalSemiconductor>& decimal)
 {
     Material mat = base != nullptr ? *base : Material{};
     mat.name = j.at("name").get<std::string>();
@@ -225,6 +347,7 @@ Material materialFromJson(const nlohmann::json& j,
     setOptionalReal(
         j, "electron_quantum_coefficient_mass_ratio",
         mat.electron_quantum_coefficient_mass_ratio);
+    decimal = applyDecimalSemiconductor(j, mat, scaling);
     return mat;
 }
 
@@ -358,9 +481,12 @@ void MaterialDatabase::loadJson(const std::string& jsonPath, UnitScalingConfig s
             auto it = db_.find(name);
             if (it != db_.end())
                 base = &it->second;
+            std::optional<DecimalSemiconductor> decimal;
             addMaterial(versionedTemplatesLdmos
-                ? templatesLdmosMaterialFromJson(entry, base, scaling)
-                : materialFromJson(entry, base, scaling));
+                ? templatesLdmosMaterialFromJson(entry, base, scaling, decimal)
+                : materialFromJson(entry, base, scaling, decimal));
+            if (decimal)
+                decimalSemiconductors_.insert_or_assign(name, *decimal);
         }
     } catch (const std::exception& e) {
         throw std::runtime_error(
@@ -373,6 +499,7 @@ void MaterialDatabase::addMaterial(const Material& mat)
     if (mat.name.empty())
         throw std::invalid_argument("MaterialDatabase: material name must not be empty.");
     db_[mat.name] = mat;
+    decimalSemiconductors_.erase(mat.name);
 }
 
 const Material& MaterialDatabase::getMaterial(const std::string& name) const
@@ -386,6 +513,14 @@ const Material& MaterialDatabase::getMaterial(const std::string& name) const
 Material MaterialDatabase::getMaterial(const std::string& name, Real temperature_K) const
 {
     return getMaterial(name).atTemperature(temperature_K);
+}
+
+const MaterialDatabase::DecimalSemiconductor* MaterialDatabase::decimalSemiconductor(
+    const std::string& name, ArithmeticReal temperature_K) const
+{
+    const auto it = decimalSemiconductors_.find(name);
+    return it != decimalSemiconductors_.end() && it->second.temperature_K == temperature_K
+        ? &it->second : nullptr;
 }
 
 bool MaterialDatabase::hasMaterial(const std::string& name) const

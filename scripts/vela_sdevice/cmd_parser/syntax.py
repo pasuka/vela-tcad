@@ -11,6 +11,14 @@ from .lexer import Source, Token
 
 _NUMBER_RE = re.compile(r"^[+-]?(?:\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)$")
 
+class SourceNumber(float):
+    """A legacy numeric view with the original decimal operand attached."""
+
+    def __new__(cls, literal):
+        number = super().__new__(cls, literal)
+        number.literal = literal if isinstance(literal, str) else str(literal)
+        return number
+
 
 class SyntaxIssue(Exception):
     """A structural problem that becomes an E104 finding."""
@@ -164,7 +172,7 @@ def is_number(text: str) -> bool:
 def parse_number(token: Token, what: str = "number") -> float:
     if token.kind != "word" or not is_number(token.value):
         raise SyntaxIssue(f"invalid {what} '{token.value}'", token.line, token.value)
-    return float(token.value)
+    return SourceNumber(token.value)
 
 
 def parse_int(token: Token, what: str = "integer") -> int:

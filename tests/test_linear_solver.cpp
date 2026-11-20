@@ -4,7 +4,11 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "vela/core/PerformanceProfiler.h"
+#include "vela/solver/ConstraintElimination.h"
 #include "vela/solver/LinearSolver.h"
+#include "vela/solver/ExtendedSparseLu.h"
+#include "vela/solver/LinearRefinement.h"
+#include "vela/solver/PopulationState.h"
 
 TEST_CASE("Selected backend handles a scalar left by exact constraint substitution", "[linear_solver][constraints]") {
     using namespace vela;
@@ -237,6 +241,8 @@ TEST_CASE("Direct backend preference honors explicit overrides without failover"
 
 TEST_CASE("Optional direct backends preserve equations caches and failure recovery", "[linear_solver][backend_contract]") {
     std::vector<std::string> backends;
+    if(std::numeric_limits<long double>::digits>std::numeric_limits<double>::digits)
+        backends.push_back("sparselu_long_double");
 #if defined(VELA_HAS_STRUMPACK)
     backends.push_back("strumpack");
 #endif
@@ -1000,4 +1006,101 @@ TEST_CASE("SLOT diagnostic hold preserves population while potential and neighbo
     const double dpsi=.0259*std::log1p(2./.0259);
     const double dq=dpsi+relativeInverse(1e-20,0.);
     CHECK(dq-dpsi==0.);
+}
+
+TEST_CASE("Extended SparseLU retains assembled coefficients and direction during population writeback",
+          "[linear_solver][extended80]") {
+    using namespace vela;
+    if (std::numeric_limits<long double>::digits < 64) {
+        SKIP("80-bit long double is unavailable");
+    }
+    const long double low = std::ldexp(1.0L, -60);
+    ExtendedSparseMatrix matrix(3, 3);
+    matrix.insert(0, 0) = 1 + low;
+    matrix.insert(0, 1) = -1;
+    matrix.insert(1, 1) = 1;
+    matrix.insert(2, 2) = 1;
+    ExtendedVector rhs(3);
+    rhs << 0, low, -low;
+    const auto direction = solveExtendedSparseLu(matrix, rhs);
+    CHECK(direction[0] < low);
+    CHECK(direction[1] == low);
+    CHECK(direction[2] == -low);
+    const ExtendedVector negativeRhs = -rhs;
+    const auto defect = linear_refinement::computeHighPrecisionDefect(matrix, negativeRhs, direction);
+    const ExtendedVector narrowed = direction.cast<double>().cast<long double>();
+    const auto rounded = linear_refinement::computeHighPrecisionDefect(matrix, negativeRhs, narrowed);
+    CHECK(defect.backwardMax < rounded.backwardMax);
+    const ExtendedSparseLu factors(matrix);
+    const ExtendedVector refined = linear_refinement::refineWithSolve(
+        matrix, negativeRhs, ExtendedVector::Ones(3), ExtendedVector::Zero(3),
+        [&](const ExtendedSparseMatrix&, const ExtendedVector& correction) {
+            return factors.solve(correction);
+        }, 1, [](int, const ExtendedVector&, const auto&) {});
+    CHECK(refined == direction);
+    const ExtendedVector parent = ExtendedVector::Ones(3);
+    const auto trial = makePopulationTrial(parent, direction, 1.0L, {true}, {true}, {});
+    CHECK(trial.state[0] - parent[0] == low);
+    CHECK(trial.state[1] - parent[1] == low);
+    CHECK(trial.state[2] - parent[2] == -low);
+    CHECK_THROWS(solveExtendedSparseLu(matrix, ExtendedVector::Ones(2)));
+    matrix.coeffRef(0, 0) = std::numeric_limits<long double>::infinity();
+    CHECK_THROWS(solveExtendedSparseLu(matrix, rhs));
+}
+
+TEST_CASE("Wide affine elimination preserves contact and circuit corrections through recovery",
+          "[linear_solver][constraints][extended80]") {
+    if (std::numeric_limits<long double>::digits < 64) {
+        SKIP("80-bit long double is unavailable");
+    }
+    const long double low = std::ldexp(1.0L, -60);
+    ExtendedSparseMatrix matrix(3, 3);
+    matrix.insert(0, 0) = 1;
+    matrix.insert(0, 2) = -1;
+    matrix.insert(1, 0) = -2;
+    matrix.insert(1, 1) = 1;
+    matrix.insert(2, 0) = 1;
+    matrix.insert(2, 2) = 1;
+    ExtendedVector rhs(3);
+    rhs << 1 + low, -2, 1;
+    const auto reduced = reduceLinearConstraints(matrix, rhs, {0, 1});
+    REQUIRE(reduced.kept == std::vector<int>{2});
+    CHECK(reduced.rhs[0] == -low);
+    const auto direction = reduced.recover(solveExtendedSparseLu(reduced.matrix, reduced.rhs));
+    CHECK(direction[2] == -low / 2);
+    CHECK(direction[1] == low);
+    CHECK(direction[0] - 1 == low / 2);
+    CHECK(((matrix * direction).eval() == rhs));
+}
+
+TEST_CASE("Retained independent contact rows restore the exact correction",
+          "[linear_solver][constraints][extended80]") {
+    if (std::numeric_limits<long double>::digits < 64)
+        SKIP("80-bit long double is unavailable");
+    constexpr auto low = 0x1p-60L;
+    ExtendedSparseMatrix matrix(3, 3);
+    matrix.insert(0, 0) = 1;
+    matrix.insert(0, 1) = 0;
+    matrix.insert(1, 1) = 2;
+    matrix.insert(2, 0) = 1;
+    matrix.insert(2, 1) = 1;
+    matrix.insert(2, 2) = 1;
+    ExtendedVector rhs(3), direction(3);
+    rhs << 0, 2 + 2 * low, 2 + low;
+    direction << 0x1p-149L, 1 + low, 1;
+    const ExtendedVector residual = -rhs;
+    const auto raw = linear_refinement::computeHighPrecisionDefect(matrix, residual, direction);
+    CHECK(raw.backwardMax == 1.L);
+    CHECK(std::abs(raw.values[0]) < 1e-40L);
+    const auto original = direction;
+    const std::array<int, 2> coupled{0, 2};
+    CHECK_THROWS(restoreIndependentConstraintRows(matrix, rhs, coupled, direction));
+    CHECK(direction == original);
+    const std::array<int, 2> fixed{0, 1};
+    restoreIndependentConstraintRows(matrix, rhs, fixed, direction);
+    CHECK(direction[0] == 0);
+    CHECK(direction[1] == 1 + low);
+    CHECK(direction[2] == original[2]);
+    CHECK(matrix.rows() == 3);
+    CHECK(linear_refinement::computeHighPrecisionDefect(matrix, residual, direction).backwardMax == 0.L);
 }

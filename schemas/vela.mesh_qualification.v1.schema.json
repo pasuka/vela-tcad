@@ -43,7 +43,8 @@
       "additionalProperties": false,
       "properties": {
         "declared": {"type": ["string", "null"], "description": "Unit attribute found in the file (TDR) or the DF-ISE convention 'um'; null when absent."},
-        "applied_scale_to_um": {"type": "number", "exclusiveMinimum": 0, "description": "Factor applied to the stored coordinates to obtain micrometres in mesh.json."}
+        "applied_scale_to_um": {"type": "number", "exclusiveMinimum": 0, "description": "Factor applied to the stored coordinates to obtain micrometres in mesh.json."},
+        "number_encoding": {"const": "decimal", "description": "Original DF-ISE coordinate operands accompany the compatibility coordinates."}
       }
     },
     "bounding_box_um": {
@@ -142,6 +143,7 @@
       "additionalProperties": false,
       "properties": {
         "file": {"type": "string", "description": "doping.csv basename."},
+        "number_encoding": {"const": "decimal", "description": "DF-ISE doping operands preserved as decimal text."},
         "columns": {
           "type": "array",
           "items": {"type": "string"},
@@ -152,7 +154,17 @@
           "items": {"type": "string"},
           "description": "Grid datasets consumed (e.g. DonorConcentration, AcceptorConcentration, DopingConcentration)."
         },
-        "net_only": {"type": "boolean", "description": "True when only the net DopingConcentration was available and donors/acceptors were split by sign."}
+        "net_only": {"type": "boolean", "description": "True when at least one region uses a sign split of net doping."},
+        "resolution": {
+          "type": "object",
+          "required": ["mode", "compute_net", "registry", "regions"],
+          "properties": {
+            "mode": {"enum": ["auto", "net-only", "reported"]},
+            "compute_net": {"type": "boolean"},
+            "registry": {"type": "array"},
+            "regions": {"type": "object"}
+          }
+        }
       }
     },
     "outputs": {

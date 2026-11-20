@@ -208,11 +208,17 @@ public:
     auto field=[&](const auto& z) {
      return std::hypot((z[1]-z[0])*s[0]+(z[2]-z[0])*s[2],(z[1]-z[0])*s[1]+(z[2]-z[0])*s[3]);
     };
-    const double en=field(cell.contact?psi:fn),hp=field(cell.contact?psi:fp);
+    const bool contactMobilityField=cell.contact && cfg_.useElectricFieldAtGradQfContacts(true);
+    const double en=field(contactMobilityField?psi:fn),hp=field(contactMobilityField?psi:fp);
     const double rawNormal=(psi[1]-psi[0])*(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)
                           +(psi[2]-psi[0])*(a.shape[2].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor);
     const double normal=rawNormal>0.?rawNormal:(rawNormal<0.?-rawNormal:0.);
-    if(safe&&experimental::avFieldSafe(en)&&experimental::avFieldSafe(hp)) {
+    const bool contactAvalancheField=cell.contact &&
+        problem_.newton.impactIonization.useElectricFieldAtGradQfContacts(true);
+    const double alphaEn=contactAvalancheField==contactMobilityField?en:field(contactAvalancheField?psi:fn);
+    const double alphaHp=contactAvalancheField==contactMobilityField?hp:field(contactAvalancheField?psi:fp);
+    if(safe&&experimental::avFieldSafe(en)&&experimental::avFieldSafe(hp)&&
+       experimental::avFieldSafe(alphaEn)&&experimental::avFieldSafe(alphaHp)) {
      const auto rep=a.geometry.representative;
      const auto node=a.nodes[rep];
      const double scale=units.internalMobilityToM2PerVS(1.)*1e4;
@@ -245,7 +251,7 @@ public:
      }
      const auto jn=experimental::avParticleCurrentValues(a.geometry,ns,fn,tn,vt_,true);
      const auto jp=experimental::avParticleCurrentValues(a.geometry,ps,fp,tp,vt_,false);
-     const auto value=experimental::avGenerationValues(a.geometry,jn,jp,mn,mp,en,hp,electron_,hole_);
+     const auto value=experimental::avGenerationValues(a.geometry,jn,jp,mn,mp,alphaEn,alphaHp,electron_,hole_);
      out.zeroNormElectron+=value.electronZero;
      out.zeroNormHole+=value.holeZero;
      out.zeroActiveElectron+=value.electronActive;
@@ -274,7 +280,8 @@ public:
    }
    const auto& s=geo_.highFieldCells[a.id].stencil;
    auto field=[&](const std::array<AvJet,3>& z){return experimental::avNorm({(z[1]-z[0])*AvJet(s[0])+(z[2]-z[0])*AvJet(s[2]),(z[1]-z[0])*AvJet(s[1])+(z[2]-z[0])*AvJet(s[3])});};
-   const auto en=field(geo_.highFieldCells[a.id].contact?psi:fn),hp=field(geo_.highFieldCells[a.id].contact?psi:fp);
+   const bool contactMobilityField=geo_.highFieldCells[a.id].contact && cfg_.useElectricFieldAtGradQfContacts(true);
+   const auto en=field(contactMobilityField?psi:fn),hp=field(contactMobilityField?psi:fp);
    const auto rawNormal=(psi[1]-psi[0])*AvJet(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)+(psi[2]-psi[0])*AvJet(a.shape[2].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor);
    const auto normal=detail::dualAbs(rawNormal);int rep=a.geometry.representative;auto node=a.nodes[rep];
    auto mobility=[&](bool e,const AvJet& drive){
@@ -302,7 +309,11 @@ public:
     directN=experimental::populationAvCurrent(a.geometry,ns,psi,ni,nc,vt_,true);
     directP=experimental::populationAvCurrent(a.geometry,ps,psi,ni,nv,vt_,false);
    }
-   const auto result=experimental::evaluateBvMethodsTri3Avalanche(a.geometry,ns,ps,fn,fp,mn,mp,en,hp,vt_,electron_,hole_,
+   const bool contactAvalancheField=geo_.highFieldCells[a.id].contact &&
+       problem_.newton.impactIonization.useElectricFieldAtGradQfContacts(true);
+   const auto alphaEn=contactAvalancheField==contactMobilityField?en:field(contactAvalancheField?psi:fn);
+   const auto alphaHp=contactAvalancheField==contactMobilityField?hp:field(contactAvalancheField?psi:fp);
+   const auto result=experimental::evaluateBvMethodsTri3Avalanche(a.geometry,ns,ps,fn,fp,mn,mp,alphaEn,alphaHp,vt_,electron_,hole_,
        directPopulationSg_?&directN:nullptr,directPopulationSg_?&directP:nullptr);
    out.zeroNormElectron+=result.electronZeroNorm;
    out.zeroNormHole+=result.holeZeroNorm;
@@ -311,10 +322,10 @@ public:
     out.zeroActiveElectron+=result.electronActiveAtZero;
     out.zeroActiveHole+=result.holeActiveAtZero;
    } else {
-    if(result.electronZeroNorm&&experimental::avCoefficient(en,electron_).value>0)++out.zeroActiveElectron;
-    if(result.holeZeroNorm&&experimental::avCoefficient(hp,hole_).value>0)++out.zeroActiveHole;
-    genN=(experimental::avCoefficient(en,electron_)*mn*experimental::avNorm(result.electronParticleCurrentWithoutMobility)).value;
-    genP=(experimental::avCoefficient(hp,hole_)*mp*experimental::avNorm(result.holeParticleCurrentWithoutMobility)).value;
+    if(result.electronZeroNorm&&experimental::avCoefficient(alphaEn,electron_).value>0)++out.zeroActiveElectron;
+    if(result.holeZeroNorm&&experimental::avCoefficient(alphaHp,hole_).value>0)++out.zeroActiveHole;
+    genN=(experimental::avCoefficient(alphaEn,electron_)*mn*experimental::avNorm(result.electronParticleCurrentWithoutMobility)).value;
+    genP=(experimental::avCoefficient(alphaHp,hole_)*mp*experimental::avNorm(result.holeParticleCurrentWithoutMobility)).value;
    }
    accumulate(genN,genP,[&](int k){return result.nodeGeneration_per_cm_s[k].value;});
    if(derivatives)for(int k=0;k<3;++k) {
@@ -355,7 +366,8 @@ public:
    }
    const auto& s=geo_.highFieldCells[a.id].stencil;
    auto field=[&](const std::array<AvJet,3>& z){return experimental::avNorm({(z[1]-z[0])*AvJet(s[0])+(z[2]-z[0])*AvJet(s[2]),(z[1]-z[0])*AvJet(s[1])+(z[2]-z[0])*AvJet(s[3])});};
-   const auto en=field(geo_.highFieldCells[a.id].contact?psi:fn),hp=field(geo_.highFieldCells[a.id].contact?psi:fp);
+   const bool contactMobilityField=geo_.highFieldCells[a.id].contact && cfg_.useElectricFieldAtGradQfContacts(true);
+   const auto en=field(contactMobilityField?psi:fn),hp=field(contactMobilityField?psi:fp);
    const auto rawNormal=(psi[1]-psi[0])*AvJet(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)+(psi[2]-psi[0])*AvJet(a.shape[2].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor);
    const auto normal=detail::dualAbs(rawNormal);int rep=a.geometry.representative;auto node=a.nodes[rep];
    std::optional<LombardiCellPowers> powers;
@@ -452,7 +464,8 @@ public:
    auto field=[&](const std::array<double,3>& z) {
     return std::hypot((z[1]-z[0])*s[0]+(z[2]-z[0])*s[2],(z[1]-z[0])*s[1]+(z[2]-z[0])*s[3]);
    };
-   const double en=field(cell.contact?psi:fn),hp=field(cell.contact?psi:fp);
+   const bool contactMobilityField=cell.contact && cfg_.useElectricFieldAtGradQfContacts(true);
+    const double en=field(contactMobilityField?psi:fn),hp=field(contactMobilityField?psi:fp);
    const double rawNormal=(psi[1]-psi[0])*(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)
                          +(psi[2]-psi[0])*(a.shape[2].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor);
    const double normal=rawNormal>0.?rawNormal:(rawNormal<0.?-rawNormal:0.);

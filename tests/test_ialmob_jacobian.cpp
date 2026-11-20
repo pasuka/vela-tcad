@@ -121,9 +121,15 @@ TEST_CASE("IALMob element nine potential columns match live Fermi and Boltzmann 
     for (bool fermi:{false,true})
     for (bool highField:{false,true})
     for (bool boundary:{false,true})
-    for (bool contact:{false,true}) {
+    for (bool contact:{false,true})
+    for (bool decimalHfs:{false,true}) {
+        if (decimalHfs && !highField) continue;
         auto g=geometry(); g.partialBoundaryLayer=boundary;g.touchesEffectiveElectrode=contact;
         IalElementMobilityOptions options; options.highField=highField;options.referenceDensity_m3=1e23;
+        if (decimalHfs)
+            options.decimalHighField = std::array<IalHighFieldDecimal, 2>{{
+                {VELA_ARITHMETIC_LITERAL(1.07e5), VELA_ARITHMETIC_LITERAL(1.109)},
+                {VELA_ARITHMETIC_LITERAL(8.37e4), VELA_ARITHMETIC_LITERAL(1.213)}}};
         std::array<IalElementVertexState,3> state;
         for (int i=0;i<3;++i) {
             state[i].potential_V=.12+.017*i;
@@ -135,7 +141,7 @@ TEST_CASE("IALMob element nine potential columns match live Fermi and Boltzmann 
         populate(state,fermi);
         const auto r=evaluateIalElementMobility(g,state,em,hm,options);
         for (int k=0;k<9;++k) {
-            INFO("Fermi="<<fermi<<" HFS="<<highField<<" partial="<<boundary<<" contact="<<contact<<" column="<<k);
+            INFO("Fermi="<<fermi<<" HFS="<<highField<<" decimalHfs="<<decimalHfs<<" partial="<<boundary<<" contact="<<contact<<" column="<<k);
             for (Real step:{2e-6,5e-7}) {
                 auto plus=state,minus=state;
                 plus[k/3].*variables[k%3]+=step;minus[k/3].*variables[k%3]-=step;

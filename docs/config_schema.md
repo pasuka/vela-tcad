@@ -737,6 +737,13 @@ Newton numerical and geometry controls added for explicit validation profiles:
   full-derivative recovery restores all feedback, and an edge above the floor
   also restores it. This does not change the automatic recovery controller or
   guarantee convergence. It has no mutable cross-stage selection history.
+- `solver.mobility.ialmob_transport_feedback_derivatives`: boolean, default
+  `true`. Setting `false` is an opt-in quasi-Newton approximation limited to
+  IALMob: omit its transport mobility feedback terms from the Jacobian.
+  Mobility values, source AD caches, avalanche Jacobian, physical residual,
+  contact current and stopping gates are unchanged. Keep the existing
+  `jacobian_field_derivatives=true` requirement for the IALMob avalanche
+  profile; this option does not bypass it or enable BVMethods-only recovery.
 - `solver.population_update`: population-mode-only object. `protection` is
   `local_nonpositive` (default) or `fraction_to_boundary`. The former changes
   only free nodes with c+αδc≤0 to `local_retained_fraction*c` (default 0.01).
@@ -804,12 +811,48 @@ Newton numerical and geometry controls added for explicit validation profiles:
   raw/constrained updates, 100-digit linear defects and per-row backward
   errors, central residual changes and free continuity-row masks. These
   diagnostics do not establish nonlinear or external-load convergence.
-- `solver.arithmetic_precision` selects `double` (default) or `extended80`
-  for intermediate arithmetic. State vectors, sparse matrices and direct
-  linear solver interfaces use binary64 in both modes. For native JSON runs,
-  use `vela_example_runner` for `double` and `vela_example_runner_extended80`
+- `solver.arithmetic_precision` selects `double` (default) or `extended80`.
+  Use `vela_example_runner` for `double` and `vela_example_runner_extended80`
   for `extended80`. The extended runner is built when the compiler provides
   a 64-bit significand and an 80-bit extended exponent range in `long double`.
+  Legacy mixed-precision paths still use binary64 state and linear interfaces.
+- `solver.require_end_to_end_precision` defaults to `false` in native JSON.
+  `sd-sim` sets it when a command file requests `ExtendedPrecision`.
+  The bound SLOT LDMOS potential-density BVDS stages are identified by
+  `solver.extended80_stage_profile: "slot_population_bvds_v1"`. The runner uses
+  wide state, SparseLU, original-system refinement, and exact HDF5 state
+  for these stages. The profile covers a zero-bias Poisson/coupled start,
+  constant-seed series-resistor voltage continuation, and accepted-state
+  reload. The profile is emitted by the SLOT binding. The runner checks the
+  stage and its inputs before accepting or reloading a state.
+  Use `--arithmetic-capabilities` to inspect the scope and backends.
+  Strict requests outside validated scope are rejected before acceptance.
+  The profile exports a subset of the Plot fields as Float64 display arrays
+  and reports skipped fields. HDF5 remains the authoritative restart state.
+  This profile enables coupled equation normalization when any normalization
+  reference is supplied. For example, set
+  `"scaling": {"mode":"unit_scaling","reference_concentration_cm3":"auto"}`
+  or use `solver.normalization.reference_concentration_cm3` in a v2 deck.
+  The solve uses `psi / V_T`, `n / C0` and `p / C0`. The reference temperature
+  determines `V_T`. The concentration reference `C0` accepts a positive
+  concentration in cm^-3 or `"auto"` (the larger of the maximum absolute net
+  doping and the intrinsic-density fallback). The length and mobility
+  references determine the Poisson and continuity row scales. Output concentrations
+  use cm^-3, and the load line uses volts and A/um. The normalized HDF5 state
+  stores its concentration scale and resumes with matching normalization references.
+  A new normalized run starts from 0 V to produce its own accepted archive.
+  The series-resistor stage accepts
+  `sweep.external_circuit.coupled_rhs_growth`. For example,
+  `{"mode":"report","factor":1e10}` reports RHS growth without affecting the
+  outcome. With `"mode":"enforce"`, a strict exceedance returns
+  `rhs_growth_limit` and the quasistationary controller retries from the last
+  accepted state. Omitting the object disables the check. The factor must be
+  finite and at least one. The norm is the maximum absolute augmented residual,
+  including the load-line equation, with the initial trial's row scales held
+  fixed. It is evaluated after each accepted Newton update and before the update
+  convergence check. A zero initial norm has no growth ratio and does not
+  trigger the guard. Each enabled trial logs the initial and peak norms, peak
+  ratio, and the first update above the limit. This is the Vela norm definition.
 - `solver.poisson_residual_precision`: `double` (default) or `binary128`.
   The latter forms physical potential and Boltzmann charge from the packed
   state and retained quasi-Fermi references in software binary128 arithmetic,
@@ -1857,6 +1900,14 @@ With `scaling.mode: "unit_scaling"`, the donor and acceptor concentrations in
 the CSV use the same external concentration convention as deck-level doping:
 `cm^-3` and are kept internally as `cm^-3`. In legacy SI mode, the same values are
 read through the legacy concentration path.
+
+`node_doping_decimal_input: true` opts an authoritative decimal CSV into
+extended-precision parsing in the `extended80` runner. The Poisson charge
+assembly subtracts donor and acceptor concentrations before rounding the
+resulting charge contribution. The default remains false. This option is
+for decimal source data. A CSV formatted from binary64 TDR data cannot
+restore digits that were absent from the source. Mobility, band-edge models
+and contact population targets still use the existing concentration view.
 
 ### regions[] entries
 
@@ -3294,8 +3345,9 @@ It requires the observed avalanche geometry above, `van_overstraeten`,
 `generation: "current_density"`, `driving_force: "quasi_fermi_gradient"`,
 `quasi_fermi_gradient_discretization: "cell_gradient"`,
 `source_mapping_mode: "element_vertex_box_measure"`, and `source_jacobian: "local_ad"`.
-Set `contact_electric_field_fallback: true`, fallback scope `contact_node_cell`,
-fallback mode `cell_gradient_magnitude`, and `ialmob_boundary_field_projection: true`.
+Use fallback scope `contact_node_cell`, fallback mode `cell_gradient_magnitude`,
+and `ialmob_boundary_field_projection: true`. The solver-level
+`grad_qf_contact_field` selects the contact field.
 The IALMob reference density and avalanche interpolation/truncation must be zero;
 complete mobility derivatives are required. The identified HFS parameters are
 electron/hole saturation velocities `1.07e5`/`8.37e4 m/s` and beta `1.109`/`1.213`,
@@ -3303,7 +3355,7 @@ at 300 K. Source-volume scaling overrides, directional partition, debug raw
 alpha and alternative current-magnitude policies are unsupported.
 The source is restricted to Si and uses extrema-based harmonic carrier density,
 the observed vertex mobility, full contact QF current gradient, and tangential
-non-contact interface gradients. Contact alpha uses the electric field. All
+non-contact interface gradients. Contact alpha uses the electric field by default. All
 nine local potential derivatives include carrier density and live IALMob/HFS.
 The production mobility retains the mathematical screening minimum; inferred
 native numerical clipping constants are diagnostic evidence only. This source
@@ -3405,6 +3457,21 @@ For bulk/prototype field-saturation models, `high_field_driving_force` is `elect
 by default and may be set to `quasi_fermi_gradient` to match Sentaurus
 `HighFieldSaturation`; electrons use `|grad(phin)|` and holes use
 `|grad(phip)|`.
+The solver-level `grad_qf_contact_field` applies to quasi-Fermi-gradient
+driving for both high-field mobility and impact ionization. All JSON decks
+default to `"electric_field"`. With `"quasi_fermi_gradient"` the contact
+stencil uses the quasi-Fermi field. The Sentaurus command frontend emits the
+override for `Math { ComputeGradQuasiFermiAtContacts = UseQuasiFermi }`.
+This setting takes precedence over the legacy per-model
+`contact_electric_field_fallback` booleans in JSON. It selects the driving
+field without replacing the carrier current used to evaluate ionization.
+
+The BVMethods Tri3 and SLOT IALMob element kernels classify a cell as touching
+an electrode when at least one vertex belongs to an applicable contact.
+BVMethods uses mesh contacts and SLOT uses the configured effective electrodes.
+Each cell selects its own field, including cells that share an edge. Legacy
+edge-assembled profiles retain their edge field reconstruction and weighting.
+
 When quasi-Fermi driving is selected, `high_field_gradient_discretization`
 controls how that magnitude is recovered. `edge_projection` (default) uses the
 potential difference projected onto each edge and preserves legacy Vela
@@ -4728,6 +4795,51 @@ must reduce the worst componentwise backward error; the result must satisfy
 and nonlinear convergence, line search, physical gates and default profiles
 remain unchanged. This control does not certify the device Jacobian or a BV
 trajectory.
+
+`sweep.external_circuit.coupled_state_predictor: "constant"` explicitly starts
+each coupled target from the last accepted state, suppressing the built-in
+secant extrapolation. The default `"none"` retains the existing secant policy;
+the unrelated top-level sweep predictor does not control this coupled branch.
+`"tangent"` retains its existing guarded prediction and accepted-state fallback.
+When resuming, bind `initial_inner_voltage_V` to the saved device voltage,
+separately from `sweep.start`, which is an outer supply voltage.
+
+`sweep.external_circuit.coupled_preserve_contact_potential` (boolean, default
+`false`) retains the contact potential rows and columns in direct bordered
+`coupled_newton` solves with `solver.state_variables: potential_density`.
+The carrier constraints still undergo exact affine substitution, including
+their coupling to the retained potential and external circuit voltage.
+This option can match a reference solver's system layout in a matrix audit.
+
+For bounded backend diagnostics, set `VELA_PARDISO_INPUT_CAPTURE_DIR` to an
+existing, empty output directory. The MKL adapter records the first four
+solves of dimension at least 30,000 per process before it calls phase 33.
+Each `VELAPD01` file contains the two little-endian 64-bit integers
+`dimension` and `stored_nonzeros`, followed by one-based 32-bit CSR row
+pointers and columns, binary64 coefficients, and the binary64 RHS.
+
+`sweep.external_circuit.coupled_extended_precision_fallback` (boolean, default
+`false`) is an independent direct-bordered recovery option. If the ordinary
+solve and refinement fail the existing original-system linear gates, it tries
+`sparselu_long_double` with up to eight corrections. It requires
+`coupled_linear_solver: "direct_bordered"` and a platform with a wider
+`long double`. Only a direction improving the original-system defect score is
+retained; the `1e-10` componentwise gate and scaled absolute gate are unchanged.
+Assembly, affine constraint substitution, public directions and nonlinear
+states remain binary64. This is not full extended-precision TCAD. Update
+diagnostics record whether recovery was selected and its correction count.
+It adds no new nonlinear stopping rule and changes no default profile.
+The persistent `sparselu_long_double` solver reuses factors for bitwise
+identical matrices with different RHS. Changed values invalidate numeric
+factors; changed sparsity invalidates symbolic analysis. This also applies
+after the common prescribed-row substitution, and does not cache physical
+evaluations or carry factors between different Newton matrices.
+
+For isolated failure investigations, `VELA_BORDERED_FAILURE_DUMP` may name a
+private output directory. A rejected componentwise solve then writes its raw
+augmented matrix, RHS, direction, scales and row defects in a fresh child
+directory. Export is disabled when the variable is unset; it cannot accept a
+failed direction or alter thresholds. Keep generated systems outside Git.
 
 Coupled outer-voltage continuation is controlled by
 `coupled_initial_outer_step_V`, `coupled_min_outer_step_V`,

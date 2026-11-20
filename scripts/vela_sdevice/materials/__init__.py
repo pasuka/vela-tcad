@@ -441,6 +441,7 @@ class _Param:
     scope_name: Optional[str]
     source: Dict[str, Any]
     formula: Optional[str]
+    raw_lexeme: str
 
     @property
     def key(self) -> Tuple[str, Optional[str]]:
@@ -488,7 +489,7 @@ def _params_of(block: dict, origin: str) -> List[_Param]:
             base_name=item.get("base_name", item["raw_name"]), variant=item.get("variant"),
             values=list(item.get("values") or []), value_kind=item.get("value_kind", ""),
             origin=origin, scope_name=block["scope"].get("name"), source=dict(item.get("source", {})),
-            formula=formula,
+            formula=formula, raw_lexeme=item["raw_lexeme"],
         ))
     return out
 
@@ -520,6 +521,27 @@ def _merge_layers(layers: Sequence[Dict[str, List[_Param]]]) -> Dict[str, Dict[T
             for param in params:
                 target.setdefault(param.key, param)
     return merged
+
+
+_ARITHMETIC_MATERIAL_SECTIONS = frozenset({"Bandgap", "eDOSMass", "hDOSMass"})
+
+
+def _arithmetic_operand(param: _Param) -> dict:
+    literals = pir.parameter_number_lexemes({"value_kind": param.value_kind, "raw_lexeme": param.raw_lexeme})
+    return {"literals": literals, "origin": param.origin, "source": param.source}
+
+
+def project_material_arithmetic(par_path: Path, material: str, *, fold_old_slotboom: bool) -> dict:
+    """Read effective band/DOS parameters without interpreting unrelated models."""
+    user = pir.parse_parameter_ir(par_path, sections=_ARITHMETIC_MATERIAL_SECTIONS)
+    default = pir.parse_parameter_ir(default_models_par_path(), sections=_ARITHMETIC_MATERIAL_SECTIONS)
+    names = _sentaurus_names(material)
+    merged = _merge_layers([_collect(user, "material", names, "user_material"),
+                            _collect(user, "global", None, "user_global"),
+                            _collect(default, "material", names, "vela_default")])
+    return {"sections": {name: {p.raw_name: _arithmetic_operand(p) for p in values.values()}
+                          for name, values in merged.items()},
+            "fold_old_slotboom": fold_old_slotboom}
 
 
 def _classify(param: _Param, models: Sequence[str]) -> pmap.Classification:
@@ -582,7 +604,9 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
                    allow_lossy: bool = False, band_edge_sensitive: bool = False,
                    default_par: Optional[Path] = None, benchmark: Optional[str] = None,
                    effective_models: Optional[Sequence[dict]] = None,
-                   constants_profile: str = "sentaurus_u2022_12") -> EmitResult:
+                   constants_profile: str = "sentaurus_u2022_12",
+                   capture_arithmetic_inputs: bool = False,
+                   extended80_temperature_literal: Optional[str] = None) -> EmitResult:
     """Emit the C3 material file and the per-parameter report.
 
     ``active_models`` are mapping-matrix model names (see
@@ -668,6 +692,7 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
             "sections": {}, "parameters": [], "derivation": None,
         }
         sections_numeric: Dict[str, Dict[str, Any]] = {}
+        arithmetic_sections = {}
         relevant_sections = set(MATERIAL_SECTIONS)
         if role != ROLE_DIELECTRIC:
             for model, section in MODEL_SECTIONS.items():
@@ -709,6 +734,11 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
                     raise MaterialsError("E404", path=path, model=model_name, status=status)
                 if section in relevant_sections:
                     numeric[param.raw_name] = param.values
+                    if ((capture_arithmetic_inputs or extended80_temperature_literal is not None)
+                            and section in _ARITHMETIC_MATERIAL_SECTIONS):
+                        operand = _arithmetic_operand(param)
+                        if operand["literals"]:
+                            arithmetic_sections.setdefault(section, {})[param.raw_name] = operand
                     if classification.entry and classification.entry.target and \
                             classification.entry.target.startswith("solver."):
                         _route_solver_parameter(report, vela_name, section, param, classification.entry.target,
@@ -721,6 +751,12 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
                 }
         entry = _emit_material_entry(vela_name, role, sections_numeric, ctx, model_set, material_report,
                                      par_path, report)
+        if role != ROLE_DIELECTRIC and (capture_arithmetic_inputs or extended80_temperature_literal is not None):
+            arithmetic = {"sections": arithmetic_sections, "fold_old_slotboom": "OldSlotboom" in model_set}
+            if capture_arithmetic_inputs:
+                material_report["arithmetic_input"] = arithmetic
+            if extended80_temperature_literal is not None:
+                entry["decimal_semiconductor"] = {**arithmetic, "temperature_K": extended80_temperature_literal}
         materials_out.append(entry)
         report["materials"].append(material_report)
 

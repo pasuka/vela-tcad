@@ -11,7 +11,7 @@ from .syntax import (Block, ParseContext, SyntaxIssue, TokenStream, assignment_t
 
 # --- File ---------------------------------------------------------------------------
 
-_FILE_MAIN = {"grid": "grid", "plot": "plot", "parameter": "parameter", "parameters": "parameter",
+_FILE_MAIN = {"grid": "grid", "doping": "doping", "plot": "plot", "parameter": "parameter", "parameters": "parameter",
               "current": "current", "output": "output"}
 _FILE_EXTRA_OUTPUT = {"newtonplot", "acextract", "extraction", "nonlocalplot", "pmipath",
                       "savesubstructure", "currentplot", "plotexplicit", "spiceparam"}
@@ -89,6 +89,9 @@ def parse_file_block(block: Block, ctx: ParseContext, path_name: str) -> dict:
         files["grid"] = {"raw": raw, "resolved": resolved, "kind": kind, "line": key.line}
         if kind == "unknown":
             ctx.error("E114", key.line, section, assignment_text(key, value), name=raw)
+    if "doping" in seen:
+        key, value = seen["doping"]
+        files["doping"] = {"raw": value.value, "resolved": _complete(value.value, ".tdr"), "line": key.line}
     if "parameter" in seen:
         key, value = seen["parameter"]
         files["parameter"] = {"raw": value.value, "resolved": _complete(value.value, ".par"),
@@ -266,6 +269,7 @@ class PhysicsScope:
         self.effective: Dict[str, dict] = {}  # canonical key -> effective entry
         self.fixed_charges: List[dict] = []
         self.temperature_K: Optional[float] = None
+        self.temperature_literal: Optional[str] = None
 
     @property
     def is_interface(self) -> bool:
@@ -534,6 +538,7 @@ def parse_physics_block(block: Block, ctx: ParseContext) -> PhysicsScope:
                 value = stream.take_value()
                 if head.value.lower() == "temperature":
                     scope.temperature_K = parse_number(value, "Temperature")
+                    scope.temperature_literal = value.value
                 elif head.value.lower() == "areafactor":
                     if not (is_number(value.value) and float(value.value) == 1.0):
                         ctx.error("E106", head.line, section, assignment_text(head, value), key="AreaFactor")
@@ -766,13 +771,20 @@ def parse_math_block(block: Block, ctx: ParseContext, math: dict) -> None:
                                             "line": key.line, "finding_id": "W102"})
                     ctx.warn("W102", key.line, section, ctx.source.slice(key.start, (value or key).end),
                              kw=f"ErrRef({group[0].value if group else ''})")
+            elif base == "computegradquasifermiatcontacts":
+                if negated or group is not None or value is None or value.value.lower() != "usequasifermi":
+                    raise SyntaxIssue("Expected ComputeGradQuasiFermiAtContacts = UseQuasiFermi", key.line, text)
+                math["grad_qf_contact_field"] = "quasi_fermi_gradient"
             elif base == "extendedprecision":
                 if brace_group or value is not None or (group is not None and (negated or len(group) != 1)):
                     raise SyntaxIssue("Expected ExtendedPrecision, ExtendedPrecision(80), or -ExtendedPrecision",
                                       key.line, text)
                 if group is not None and parse_int(group[0], "ExtendedPrecision") != 80:
                     raise SyntaxIssue("Only ExtendedPrecision(80) is supported", key.line, text)
-                math["arithmetic_precision"] = "double" if negated else "extended80"
+                precision = "double" if negated else "extended80"
+                if math.get("arithmetic_precision", precision) != precision:
+                    raise SyntaxIssue("Conflicting ExtendedPrecision settings", key.line, text)
+                math["arithmetic_precision"] = precision
             elif base == "extrapolate":
                 math["extrapolate"] = not negated
                 for option in group or []:
@@ -780,6 +792,13 @@ def parse_math_block(block: Block, ctx: ParseContext, math: dict) -> None:
                         ctx.warn("W111", key.line, section, option.value, kw=option.value)
             elif base == "derivatives":
                 math["derivatives"] = not negated
+            elif base == "computedopingconcentration":
+                if group is not None or value is not None:
+                    raise SyntaxIssue("Expected ComputeDopingConcentration or -ComputeDopingConcentration", key.line, text)
+                setting = not negated
+                if math.get("compute_doping_concentration", setting) != setting:
+                    raise SyntaxIssue("Conflicting ComputeDopingConcentration settings", key.line, text)
+                math["compute_doping_concentration"] = setting
             elif base == "avalderivatives":
                 math["aval_derivatives"] = not negated
             elif base == "computeionizationintegrals":

@@ -7,7 +7,10 @@
 #include "vela/io/StateIdentity.h"
 #endif
 #include "vela/io/MeshReader.h"
+#include "vela/io/ExtendedPopulationArchive.h"
 #include "vela/core/ArithmeticPrecision.h"
+#include "vela/core/ArithmeticDecimal.h"
+#include "vela/material/SemiconductorArithmetic.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/PerformanceProfiler.h"
@@ -23,6 +26,14 @@
 #include "vela/numerics/PopulationStepControl.h"
 #include "vela/solver/UpdateDiagnostics.h"
 #include "vela/solver/LinearSolver.h"
+#ifdef VELA_ARITHMETIC_EXTENDED80
+#include "vela/solver/ExtendedFixedBiasNewton.h"
+#include "vela/equation/ExtendedAveragePoissonGeometry.h"
+#include "vela/simulation/DCSweepStepControl.h"
+#include "vela/io/VtuWriter.h"
+#include "vela/simulation/CoupledLoadLine.h"
+#include "vela/core/ArithmeticStageInput.h"
+#endif
 #include <chrono>
 #include "vela/simulation/ConfigParsing.h"
 #include "vela/simulation/DCSweep.h"
@@ -32,15 +43,18 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdlib>
 #include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <locale>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <set>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -53,10 +67,36 @@ void usage(const char* argv0)
 {
     std::cerr << "Usage: " << argv0
               << " --config <simulation.json> [--mesh-report] [--log <auto|off|path>] [--log-profile <minimal|default|debug>]\n"
+              << "       " << argv0 << " --arithmetic-capabilities\n"
+              << "       " << argv0 << " --check-arithmetic-input <arithmetic_input.json>\n"
+#ifdef VELA_ARITHMETIC_EXTENDED80
+              << "       " << argv0 << " --check-extended80-initial-stage <simulation.json>\n"
+#endif
+              << "       " << argv0 << " --verify-extended80-stage-state  (JSON request on stdin)\n"
               << "       " << argv0 << " --dc-worker  (sequential JSON-lines requests on stdin)\n"
               << "       " << argv0 << " --dc-worker-linear-reuse  (alias; reuse is enabled by default)\n"
               << "       " << argv0 << " --dc-worker-no-linear-reuse  (disable cross-request analysis cache)\n";
 }
+
+constexpr std::string_view extendedSlotStageProfile = "slot_population_bvds_v1";
+
+nlohmann::json arithmeticCapabilities()
+{
+    using Format = std::numeric_limits<vela::ArithmeticReal>;
+    const bool extended = vela::compiledArithmeticPrecision == vela::ArithmeticPrecision::Extended80;
+    nlohmann::json result{{"arithmetic_precision", vela::arithmeticPrecisionName(vela::compiledArithmeticPrecision)},
+        {"radix", Format::radix}, {"significand_bits", Format::digits}, {"max_exponent", Format::max_exponent},
+        {"scope", extended ? "mixed" : "binary64"}, {"end_to_end_linear_backends", nlohmann::json::array()}};
+#if defined(VELA_ARITHMETIC_EXTENDED80) && defined(VELA_ENABLE_HDF5_STATE)
+    result["scoped_extended80_profiles"][extendedSlotStageProfile] = {
+        {"linear_backends", {"sparse_lu"}},
+        {"input_consumers", {"mesh", "doping", "materials", "temperature", "contacts", "sweep",
+                             "ialmob", "state_archive"}}};
+#endif
+    return result;
+}
+
+#include "ArithmeticInputAudit.inl"
 
 void validateArithmeticPrecision(const nlohmann::json& cfg)
 {
@@ -67,6 +107,11 @@ void validateArithmeticPrecision(const nlohmann::json& cfg)
         throw std::invalid_argument("solver.arithmetic_precision=" + name +
             (name == "extended80" ? " requires vela_example_runner_extended80"
                                   : " requires vela_example_runner"));
+    if (cfg.contains("solver") && cfg.at("solver").value("require_end_to_end_precision", false))
+        throw std::invalid_argument(name != "extended80"
+            ? "solver.require_end_to_end_precision requires arithmetic_precision=extended80"
+            : "End-to-end extended80 is unavailable: this runner uses mixed precision "
+              "with binary64 state, linear solver interfaces and archives");
 }
 
 struct RuntimeLogOverrideGuard {
@@ -392,13 +437,15 @@ void writeNewtonSolutionVtk(const std::filesystem::path& path,
 
 vela::DopingModel readNodeDopingCsv(const std::filesystem::path& path,
                                     vela::Index nodeCount,
-                                    vela::UnitScalingConfig scaling);
+                                    vela::UnitScalingConfig scaling,
+                                    bool decimalInput);
 
 vela::DDSolution readExternalState(const std::filesystem::path& cfgDir,
                                    const nlohmann::json& cfg,
                                    vela::Index nodeCount);
 
-NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::json& cfg)
+NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::json& cfg,
+                                std::vector<long double>* arithmeticCouples = nullptr)
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     const vela::UnitScalingConfig scaling = vela::parseUnitScalingConfig(cfg);
@@ -408,8 +455,9 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
         resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>()),
         scaling);
     mesh.buildBoxGeometry(vela::parseBoxGeometryOptions(cfg));
-    const vela::CarrierTransportCoupleProfileReport transportProfile =
-        vela::applyCarrierTransportCoupleProfile(mesh, cfg, cfgDir, scaling);
+    const auto transportProfile = arithmeticCouples
+        ? vela::applyCarrierTransportCoupleProfile(mesh, cfg, cfgDir, scaling, *arithmeticCouples)
+        : vela::applyCarrierTransportCoupleProfile(mesh, cfg, cfgDir, scaling);
     const vela::PoissonCoupleProfileReport poissonProfile =
         vela::applyPoissonCoupleProfile(mesh, cfg, cfgDir, scaling);
 
@@ -421,7 +469,8 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
         ? readNodeDopingCsv(
             resolvePath(cfgDir, cfg.at("node_doping_file").get<std::string>()),
             mesh.numNodes(),
-            scaling)
+            scaling,
+            cfg.value("node_doping_decimal_input", false))
         : vela::DopingModel::fromMeshAndRegions(mesh, vela::parseDopingSpecs(cfg, scaling));
     NewtonContactConfig contacts = contactConfigFromJson(cfg, mesh);
     vela::NewtonConfig newton = cfg.contains("solver")
@@ -456,6 +505,10 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
         std::move(sheetCharges),
         std::move(contacts.specs)};
 }
+
+#ifdef VELA_ARITHMETIC_EXTENDED80
+#include "ExtendedInitialStage.inl"
+#endif
 
 class DDStateCliScope {
 public:
@@ -822,7 +875,8 @@ EdgeMobilityDriveOverride readEdgeMobilityDriveCsv(
 
 vela::DopingModel readNodeDopingCsv(const std::filesystem::path& path,
                                     vela::Index nodeCount,
-                                    vela::UnitScalingConfig scaling)
+                                    vela::UnitScalingConfig scaling,
+                                    bool decimalInput)
 {
     std::ifstream input(path);
     if (!input.is_open())
@@ -862,10 +916,13 @@ vela::DopingModel readNodeDopingCsv(const std::filesystem::path& path,
             throw std::runtime_error("node_doping_file node_id out of range: " + path.string());
         if (seen[static_cast<std::size_t>(node)])
             throw std::runtime_error("node_doping_file has duplicate node_id: " + path.string());
-        model.setNodeDoping(
-            node,
-            scaling.concentrationToInternal(std::stod(cells[donorsCol])),
-            scaling.concentrationToInternal(std::stod(cells[acceptorsCol])));
+        if (decimalInput) {
+            model.setNodeDopingFromDecimal(node, cells[donorsCol], cells[acceptorsCol],
+                                           scaling.concentrationToInternal(1.0));
+        } else {
+            model.setNodeDoping(node, scaling.concentrationToInternal(std::stod(cells[donorsCol])),
+                               scaling.concentrationToInternal(std::stod(cells[acceptorsCol])));
+        }
         seen[static_cast<std::size_t>(node)] = true;
     }
     for (vela::Index node = 0; node < nodeCount; ++node) {
@@ -3741,7 +3798,7 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
               mesh, edgeCells, cellMaterials, state.phip, fieldFactor)
         : std::vector<vela::Real>{};
     const std::vector<vela::Real> contactElectricFields =
-        newton.mobility.contactElectricFieldFallback
+        newton.mobility.useElectricFieldAtGradQfContacts()
         ? vela::detail::contactCellElectricFieldEdgeMagnitudesForMobility(
               newton.mobility, mesh, edgeCells, cellMaterials,
               state.psi, fieldFactor)
@@ -4622,6 +4679,40 @@ int runDCWorker(bool reuseLinearAnalysis = true)
 
 int main(int argc, char** argv)
 {
+#ifdef VELA_ARITHMETIC_EXTENDED80
+    if (argc == 3 && std::string_view(argv[1]) == "--check-extended80-initial-stage") {
+        try {
+            const auto result = checkExtendedInitialStage(argv[2]);
+            std::cout << result.dump() << '\n';
+            return result.at("coupled_converged").get<bool>() ? 0 : 1;
+        } catch (const std::exception& error) {
+            std::cerr << "Extended80 initial stage check failed: " << error.what() << '\n';
+            return 2;
+        }
+    }
+#endif
+    if (argc == 2 && std::string_view(argv[1]) == "--verify-extended80-stage-state") {
+        try {
+            std::cout << verifyExtended80StageState(std::cin).dump() << '\n';
+            return 0;
+        } catch (const std::exception& ex) {
+            std::cerr << "Extended80 stage state verification failed: " << ex.what() << '\n';
+            return 2;
+        }
+    }
+    if (argc == 3 && std::string_view(argv[1]) == "--check-arithmetic-input") {
+        try {
+            std::cout << checkArithmeticInput(argv[2]).dump() << '\n';
+            return 0;
+        } catch (const std::exception& ex) {
+            std::cerr << "Arithmetic input check failed: " << ex.what() << '\n';
+            return 2;
+        }
+    }
+    if (argc == 2 && std::string_view(argv[1]) == "--arithmetic-capabilities") {
+        std::cout << arithmeticCapabilities().dump() << '\n';
+        return 0;
+    }
     if (argc == 2 && std::string(argv[1]) == "--physical-constants") {
         std::cout << nlohmann::json{{"profile", vela::constants::profileName},
             {"q_C", vela::constants::q}, {"eps0_F_per_m", vela::constants::eps0},
@@ -4683,6 +4774,23 @@ int main(int argc, char** argv)
         nlohmann::json cfg;
         ifs >> cfg;
         cfg = vela::canonicalizeDeck(cfg);
+#if defined(VELA_ARITHMETIC_EXTENDED80) && defined(VELA_ENABLE_HDF5_STATE)
+        if (const auto solver = cfg.find("solver"); solver != cfg.end() &&
+            solver->value("require_end_to_end_precision", false) &&
+            solver->value("extended80_stage_profile", "") == extendedSlotStageProfile) {
+            auto runtime = vela::RuntimeLogSession::fromConfig(cfg, configFile, "dc_sweep");
+            auto result = runExtendedSlotStage(configFile, cfg, true);
+            result["config"] = configFile;
+            result["simulation_type"] = "dc_sweep";
+            const auto converged = result.at("converged").get<bool>();
+            runtime.finish(converged, result.at("accepted_points").get<std::size_t>(), converged ? 0 : 1);
+            std::cout << result.dump() << '\n';
+            return converged ? 0 : 1;
+        }
+#endif
+        if (cfg.contains("sweep") && cfg.at("sweep").contains("external_circuit") &&
+            cfg.at("sweep").at("external_circuit").contains("coupled_rhs_growth"))
+            throw std::invalid_argument("coupled_rhs_growth requires the extended80 SLOT series-resistor stage");
         validateArithmeticPrecision(cfg);
         const std::string type = cfg.value("simulation_type", cfg.contains("sweep") ? "dc_sweep" : "poisson");
         std::optional<vela::RuntimeLogSession> runnerLogSession;

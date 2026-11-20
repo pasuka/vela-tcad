@@ -299,6 +299,13 @@ std::string bvProcessConfigurationFingerprint(
               << impact.holeBHigh << ':' << impact.switchField << ':'
               << impact.phononEnergy << ':' << impact.referenceTemperature_K
               << ':' << impact.temperature_K;
+    const auto recordContactField = [&](const char* model, std::optional<GradQfContactField> field) {
+        if (field)
+            canonical << ';' << model << ".grad_qf_contact_field="
+                      << (*field == GradQfContactField::ElectricField ? "electric_field" : "quasi_fermi_gradient");
+    };
+    recordContactField("mobility", mobility.gradQfContactField);
+    recordContactField("impact", impact.gradQfContactField);
     for (const std::string& selector : mobility.surface.surfaceInterface)
         canonical << ";mobility.surface_interface=" << selector;
     if (mobility.model=="ialmob" && mobility.ialmob) {

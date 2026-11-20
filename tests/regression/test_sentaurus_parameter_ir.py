@@ -81,6 +81,58 @@ def write_par(root: Path, name: str, body: str) -> Path:
 class ParameterIrCorpusTest(unittest.TestCase):
     """The shipped corpus must round-trip with nothing dropped."""
 
+    def test_section_projection_preserves_nested_scope(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_par(Path(tmp), "native.par", """
+            Material = "Silicon" {
+                HydrogenDiffusion {
+                    HydrogenAtom {
+                        charge = 0
+                    }
+                }
+                Bandgap {
+                    Chi0 = 4.050000000000000001
+                }
+            }
+            """)
+            full = parse_parameter_ir(path)
+            self.assertEqual(["HydrogenDiffusion", "Bandgap"], [b["section"] for b in full["blocks"]])
+            self.assertIn("charge = 0", full["blocks"][0]["parameters"][0]["raw_lexeme"])
+            ir = parse_parameter_ir(path, sections=frozenset({"Bandgap"}))
+            block, = ir["blocks"]
+            self.assertEqual(block["scope"], {"kind": "material", "name": "Silicon"})
+            self.assertEqual(block["parameters"][0]["raw_lexeme"], "4.050000000000000001")
+
+    def test_native_table_and_positional_valleys_are_retained(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_par(Path(tmp), "native.par", """
+            Material = "Silicon" {
+                ComplexRefractiveIndex {
+                    NumericalTable
+                    (
+                        0.1 0.2 0.3;
+                        0.4 0.5 0.6;
+                    )
+                }
+                MultiValley {
+                    eValley(0.914, 0.196, 0.196, 0, 2, 0.5)
+                    eValley(0.196, 0.914, 0.196, 0, 2, 0.5) # [1]
+                    hValley(0.49, 0.49, 0.49, 0, 1, 0, 0.49)
+                }
+            }
+            """)
+            full = parse_parameter_ir(path)
+            validate_against_schema(self, full, PARAMETER_IR_SCHEMA_PATH)
+            table, valleys = full["blocks"]
+            self.assertEqual(table["parameters"][0]["values"], [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]])
+            self.assertEqual([p["indices"] for p in valleys["parameters"]], [[0], [1], [0]])
+            self.assertEqual(valleys["parameters"][1]["raw_unit"], "1")
+            self.assertEqual({b["section"] for b in full["unsupported_sections"]},
+                             {"ComplexRefractiveIndex", "MultiValley"})
+            path.write_text(path.read_text().replace("0.196, 0.914", "bad, 0.914"))
+            with self.assertRaisesRegex(ParParseError, "invalid positional eValley"):
+                parse_parameter_ir(path)
+
     def test_every_shipped_par_file_parses(self) -> None:
         for path in (PN2D_MODELS, SINGLEDEVICE_SILICON, SINGLEDEVICE_SDEVICE,
                      BVMETHODS_MODELS, BVMETHODS_SRH):

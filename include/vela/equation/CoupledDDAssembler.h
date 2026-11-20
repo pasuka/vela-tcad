@@ -761,7 +761,7 @@ private:
         std::array<Real,3> derivative{};
     };
     NodeRecombinationDifferential nodeRecombinationDifferential(
-        Index node,const VectorXd& x,Real n,Real p) const;
+        Index node,const VectorXd& x,Real n,Real p,bool populationColumns=false) const;
     void rebuildFixedJacobianPattern(
         const std::vector<bool>& constrainedRows,
         bool includeCellStencil,
@@ -799,6 +799,11 @@ private:
     bool extendedPoissonResidual_ = false;
     std::vector<Real> ni_;
     mutable VectorXd authoritativeElectronDensity_, authoritativeHoleDensity_;
+    bool usesIalPopulationEdgeSg() const {
+        return authoritativeElectronDensity_.size() != 0 && !usesFermiDirac_ &&
+            mobilityConfig_.model == "ialmob" &&
+            mobilityConfig_.carrierCurrentDiscretization == "scharfetter_gummel_edge";
+    }
     std::vector<Real> intrinsicReference_, niElectron_, niHole_;
     std::vector<Real> Nc_;
     std::vector<Real> Nv_;

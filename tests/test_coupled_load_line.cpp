@@ -3,6 +3,7 @@
 #include "vela/numerics/WeightedSparseRows.h"
 #include "vela/core/PerformanceProfiler.h"
 #include "vela/simulation/CoupledLoadLine.h"
+#include "vela/simulation/PopulationCoordinateNewton.h"
 #include "vela/solver/PopulationState.h"
 
 #include <catch2/catch_approx.hpp>
@@ -10,6 +11,57 @@
 #include <nlohmann/json.hpp>
 
 using namespace vela;
+
+TEST_CASE("Population load-line residual retains the configured resistance before cancellation",
+          "[coupled_load_line][arithmetic_input]")
+{
+    ArclengthSystem system;
+    system.residual = [](const VectorXd& x, Real) { return x; };
+    system.parameterDerivative = [](const VectorXd&, Real) { return VectorXd::Zero(1); };
+    system.solveJacobian = [](const VectorXd&, Real, const VectorXd& rhs, VectorXd& result) {
+        result = rhs;
+        return true;
+    };
+    const auto current = [](const VectorXd&, Real) { return 1.0; };
+    const ArclengthState seed{VectorXd::Zero(1), 0.0};
+    const auto delta = std::ldexp(ArithmeticReal{1}, 4 - std::numeric_limits<ArithmeticReal>::digits);
+    const auto resistance = ArithmeticReal{1} + delta;
+    const Real compatibility = static_cast<Real>(resistance);
+    const auto ordinary = PopulationCoordinateNewton(system, current, {}).solve(seed, 1.0, compatibility);
+    const auto decimal = PopulationCoordinateNewton(system, current, {}, {}, {}, {}, false, false, {},
+                                                      resistance).solve(seed, 1.0, compatibility);
+    REQUIRE(ordinary.converged);
+    REQUIRE(decimal.converged);
+    CHECK(ordinary.loadLineResidual_V == compatibility - 1.0);
+    CHECK(decimal.loadLineResidual_V == static_cast<Real>(delta));
+    CHECK(decimal.trace.front().loadLineResidual_V == decimal.loadLineResidual_V);
+    CHECK(LoadLineResidual::voltageDerivative(1.0, compatibility, -1.0, resistance)
+          == -decimal.loadLineResidual_V);
+
+    system.jacobian = [](const VectorXd&, Real) {
+        SparseMatrixd identity(1, 1);
+        identity.insert(0, 0) = 1.0;
+        return identity;
+    };
+    ArclengthScalarFunctional port;
+    port.value = [](const VectorXd&, Real voltage) { return -voltage; };
+    port.linearize = [](const VectorXd&, Real) {
+        ArclengthScalarLinearization row;
+        row.stateDerivative = VectorXd::Zero(1);
+        row.parameterDerivative = -1.0;
+        return row;
+    };
+    CoupledLoadLineConfig config;
+    config.linearSolver = "direct_bordered";
+    config.loadLineTolerance_V = static_cast<Real>(delta) / 16.0;
+    const auto bordered = PopulationCoordinateNewton(system, port.value, config, port, {},
+        {}, false, false, {}, resistance).solve(seed, -static_cast<Real>(delta) / 4.0, compatibility);
+    INFO(bordered.failureReason);
+    REQUIRE(bordered.converged);
+    CHECK(bordered.iterations == 1);
+    CHECK(bordered.state.lambda == 0.25);
+    CHECK(bordered.loadLineResidual_V == 0.0);
+}
 
 TEST_CASE("Load-line observers see accepted trials before state promotion", "[coupled_load_line][observer]") {
     ArclengthSystem s;
@@ -222,6 +274,19 @@ TEST_CASE("resistor analytic diode audits raw and representable applied directio
     REQUIRE(refined.lineSearchAttempts==report.lineSearchAttempts);
     for(const auto& t:refined.trace)
         if(t.rawStateUpdate.size()) REQUIRE(t.componentwiseBackwardError<=1e-10);
+    if(std::numeric_limits<long double>::digits>std::numeric_limits<double>::digits) {
+        cfg.extendedPrecisionFallback=true;
+        const auto wider=CoupledLoadLineNewton(device,port.value,cfg,port).solve(seed,targetOuter,resistance);
+        REQUIRE(wider.converged);
+        REQUIRE(wider.state.x==refined.state.x);
+        REQUIRE(wider.state.lambda==refined.state.lambda);
+        REQUIRE(wider.iterations==refined.iterations);
+        for(const auto& t:wider.trace) REQUIRE_FALSE(t.extendedLinearRefinementUsed);
+        cfg.linearSolver="schur";
+        REQUIRE_THROWS_AS(CoupledLoadLineNewton(device,port.value,cfg,port),std::invalid_argument);
+        cfg.linearSolver="direct_bordered";
+        cfg.extendedPrecisionFallback=false;
+    }
     cfg.directRefinementSteps=-1;
     REQUIRE_THROWS_AS(CoupledLoadLineNewton(device,port.value,cfg,port),std::invalid_argument);
     cfg.directRefinementSteps=9;

@@ -170,21 +170,286 @@ class OrchestratorTests(unittest.TestCase):
     def test_arithmetic_precision_dispatches_before_first_solve(self):
         source = self.cmd.read_text()
         missing = str(self.root / "missing-runner")
-        for setting in ("", "ExtendedPrecision", "ExtendedPrecision(80)"):
+        for setting in ("", "-ExtendedPrecision"):
             with self.subTest(setting=setting):
                 self.cmd.write_text(source.replace("Solve {", f"Math {{ {setting} }} Solve {{", 1))
-                # A wrong dispatch tries the deliberately absent executable.
-                # Invoke the CLI directly to avoid the fixture's constants probe.
-                env = dict(self.env,
-                           VELA_EXAMPLE_RUNNER=missing if setting else str(FAKE),
-                           VELA_EXAMPLE_RUNNER_EXTENDED80=str(FAKE) if setting else missing)
-                done = subprocess.run([sys.executable, "-m", "vela_sdevice", "device", "-i", str(self.cmd)],
-                                      cwd=self.root, env=env, capture_output=True, text=True, timeout=30)
+                done = self.call(str(self.cmd), "-i", env={"VELA_EXAMPLE_RUNNER_EXTENDED80": missing})
                 self.assert_exit(0, done)
-                stage = json.loads((self.work / "stage_plan.json").read_text())["stages"][0]
-                solver = json.loads((self.work / stage["deck"]).read_text())["solver"]
-                self.assertEqual(solver.get("arithmetic_precision", "double"),
-                                 "extended80" if setting else "double")
+                manifest = json.loads((self.work / "run_manifest.json").read_text())
+                self.assertEqual(manifest["stages"][0]["requested_arithmetic_precision"], "double")
+                self.assertFalse(any(s["require_end_to_end"] for s in manifest["arithmetic"]["planned_stages"]))
+
+        self.count.unlink()
+        extended = self.root / "extended.py"
+        mixed = {"arithmetic_precision": "extended80", "radix": 2, "significand_bits": 64,
+                 "max_exponent": 16384, "scope": "mixed", "end_to_end_linear_backends": []}
+        for setting, capabilities, backend, expected in (
+            ("ExtendedPrecision", None, "", "missing executable"),
+            ("ExtendedPrecision", mixed | {"significand_bits": 53}, "", "80-bit arithmetic format"),
+            ("ExtendedPrecision(80)", mixed, "pardiso_mkl", "VELA_LINEAR_SOLVER=pardiso_mkl"),
+            ("ExtendedPrecision(80)", mixed, "", "reports mixed precision"),
+            ("ExtendedPrecision(80)", mixed | {"scope": "end_to_end"}, "", "Frontend input conversion is binary64"),
+        ):
+            with self.subTest(setting=setting, expected=expected):
+                self.cmd.write_text(source.replace("Solve {", f"Math {{ {setting} }} Solve {{", 1))
+                extended.write_text(
+                    "import sys\nassert sys.argv[1:] == ['--arithmetic-capabilities']\n"
+                    f"print({json.dumps(capabilities)!r})\n", encoding="utf-8")
+                done = self.call(str(self.cmd), env={
+                    "VELA_EXAMPLE_RUNNER_EXTENDED80": str(extended) if capabilities else missing,
+                    "VELA_LINEAR_SOLVER": backend,
+                })
+                self.assertNotEqual(done.returncode, 0)
+                self.assertIn(expected, done.stderr)
+                manifest = json.loads((self.work / "run_manifest.json").read_text())
+                self.assertEqual(manifest["arithmetic"]["capability_check"], "failed")
+                self.assertEqual(manifest["stages"], [])
+                self.assertEqual(self.calls(), [])
+                if capabilities:
+                    self.assertEqual(manifest["arithmetic"]["reported_capabilities"], capabilities)
+                    stages = manifest["arithmetic"]["planned_stages"]
+                    self.assertGreater(len(stages), 1)
+                    self.assertTrue(all(s["requested"] == "extended80" and s["require_end_to_end"]
+                                        for s in stages))
+                    input_check = manifest["arithmetic"]["frontend_input_check"]
+                    self.assertEqual(input_check["status"], "blocked")
+                    self.assertTrue(all(s["binary64_consumers"] for s in input_check["stages"]))
+
+    def test_strict_arithmetic_requires_coverage_of_each_selected_stage(self):
+        from vela_sdevice.orchestrator import DeviceRun, RunError
+
+        required = ["mesh", "doping", "materials", "temperature", "contacts", "sweep", "ialmob", "state_archive"]
+        complete = {"arithmetic_precision": "extended80", "radix": 2, "significand_bits": 64,
+                    "max_exponent": 16384, "scope": "end_to_end",
+                    "end_to_end_linear_backends": ["sparselu_extended80"],
+                    "end_to_end_input_consumers": required}
+
+        def verify(capabilities, missing):
+            stages = [{"index": 0, "required_consumers": required[:-1], "binary64_consumers": [],
+                       "missing_inputs": []},
+                      {"index": 1, "required_consumers": required, "binary64_consumers": [],
+                       "missing_inputs": missing}]
+            coverage = {"status": "blocked", "stages": stages}
+            audit = {"linear_solver_override": None, "frontend_input_check": coverage}
+            device = SimpleNamespace(manifest={"arithmetic": audit}, work=self.work)
+            with patch("vela_sdevice.orchestrator.arithmetic_capabilities", return_value=capabilities):
+                DeviceRun._require_extended80(device, ["runner"])
+            return audit
+
+        audit = verify(complete, [])
+        self.assertEqual(audit["capability_check"], "passed")
+        self.assertEqual(audit["frontend_input_check"]["status"], "passed")
+        with self.assertRaisesRegex(RunError, "Frontend input conversion is binary64"):
+            verify(complete | {"end_to_end_input_consumers": required[:-1]}, [])
+        with self.assertRaisesRegex(RunError, "Frontend input conversion is binary64"):
+            verify(complete, ["decimal_stage_controls"])
+        with self.assertRaisesRegex(RunError, "no end-to-end extended80 linear backend"):
+            verify(complete | {"end_to_end_linear_backends": []}, [])
+
+    def test_scoped_extended80_capability_does_not_enable_unrelated_stages(self):
+        from vela_sdevice.orchestrator import DeviceRun, RunError
+
+        profile = "slot_population_bvds_v1"
+        capabilities = {"arithmetic_precision": "extended80", "radix": 2, "significand_bits": 64,
+                        "max_exponent": 16384, "scope": "mixed", "end_to_end_linear_backends": [],
+                        "scoped_extended80_profiles": {profile: {
+                            "linear_backends": ["sparse_lu"],
+                            "input_consumers": ["mesh", "state_archive"]}}}
+
+        def verify(profiles, backend=None):
+            coverage = {"status": "blocked", "stages": [
+                {"profile": value, "required_consumers": ["mesh", "state_archive"],
+                 "binary64_consumers": [], "missing_inputs": []} for value in profiles]}
+            audit = {"linear_solver_override": backend, "frontend_input_check": coverage}
+            device = SimpleNamespace(manifest={"arithmetic": audit}, work=self.work)
+            with patch("vela_sdevice.orchestrator.arithmetic_capabilities", return_value=capabilities):
+                DeviceRun._require_extended80(device, ["runner"])
+            return audit["capability_check"]
+
+        self.assertEqual(verify([profile, profile], "sparse_lu"), "passed")
+        with self.assertRaisesRegex(RunError, "reports mixed precision"):
+            verify([profile, None])
+        with self.assertRaisesRegex(RunError, "unsupported for end-to-end extended80"):
+            verify([profile], "pardiso_mkl")
+
+    def test_extended80_stage_handoff_requires_archive_identity_before_publication(self):
+        literal = "1.000000000000000000867361737988403547205962240695953369140625"
+        text = self.cmd.read_text().replace("Voltage=0", "Voltage=1", 1)
+        self.cmd.write_text(text.replace("Solve {", "Math { ExtendedPrecision(80) } Solve {", 1))
+        runner = self.root / "future_extended.py"
+        caps = {"arithmetic_precision": "extended80", "radix": 2, "significand_bits": 64,
+                "max_exponent": 16384, "scope": "end_to_end",
+                "end_to_end_linear_backends": ["sparselu_extended80"],
+                "end_to_end_input_consumers":
+                    ["mesh", "doping", "materials", "temperature", "contacts", "sweep", "state_archive"]}
+        runner.write_text(f'''
+import csv, hashlib, json, os, runpy, sys
+from pathlib import Path
+if sys.argv[1:] == ["--arithmetic-capabilities"]:
+    print({json.dumps(caps)!r})
+    raise SystemExit(0)
+if sys.argv[1:] == ["--verify-extended80-stage-state"]:
+    request = json.load(sys.stdin)
+    assert request["device_voltage_V"] == {literal!r}
+    assert request["supply_voltage_V"] == {literal!r}
+    if os.environ.get("EXTENDED_STATE_MODE") == "diagnostic_in_file":
+        print("Archive has a diagnostic role", file=sys.stderr)
+        raise SystemExit(2)
+    print(json.dumps({{"verified": True, "arithmetic_precision": "extended80"}}))
+    raise SystemExit(0)
+code = runpy.run_path({str(FAKE)!r})["main"]()
+deck = Path(sys.argv[sys.argv.index("--config") + 1])
+config = json.loads(deck.read_text())
+archive = Path(config["sweep"]["write_state_file"])
+csv_name = Path(config["output_csv"])
+with csv_name.open() as stream:
+    count = len(list(csv.DictReader(stream)))
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+mode = os.environ.get("EXTENDED_STATE_MODE")
+record = {{"schema": "vela.extended80-stage-state.v1",
+           "role": "diagnostic" if mode == "diagnostic" else "accepted",
+           "archive": archive.name, "accepted_points": count, "deck_sha256": sha(deck),
+           "node_count": 4, "mesh_sha256": "a"*64, "input_sha256": "b"*64,
+           "csv_sha256": sha(csv_name),
+           "archive_sha256": "0" * 64 if mode == "wrong_archive" else sha(archive),
+           "voltages_V": {{"anode": {literal!r}, "cathode": "0"}},
+           "outer_voltage_V": {literal!r},
+           "currents_A_per_um": {{"anode": "1e-7", "cathode": "-1e-7"}}}}
+print(json.dumps({{"config": deck.name, "arithmetic_precision": "extended80",
+                  "accepted_extended80_state": record}}))
+raise SystemExit(code)
+''', encoding="utf-8")
+        environment = {"VELA_EXAMPLE_RUNNER_EXTENDED80": str(runner), "VELA_LINEAR_SOLVER": ""}
+        for invalid in ("diagnostic", "wrong_archive", "diagnostic_in_file"):
+            with self.subTest(invalid=invalid):
+                done = self.call(str(self.cmd), "-i", env=environment | {"EXTENDED_STATE_MODE": invalid})
+                self.assertNotEqual(done.returncode, 0)
+                self.assertIn("Cannot verify accepted extended80 stage state", done.stderr)
+                self.assertFalse((self.root / "current_des.plt").exists())
+        done = self.call(str(self.cmd), "-i", env=environment)
+        self.assert_exit(0, done)
+        audit = json.loads((self.work / "run_manifest.json").read_text())
+        self.assertEqual(audit["arithmetic"]["capability_check"], "passed")
+        stage = audit["stages"][0]
+        self.assertTrue(stage["goal_reached"])
+        self.assertEqual(stage["accepted_extended80_state"]["voltages_V"]["anode"], literal)
+        self.assertTrue((self.root / "current_des.plt").exists())
+
+    def test_strict_load_checks_the_named_parent_before_starting_runner(self):
+        from hashlib import sha256
+        from vela_sdevice.orchestrator import DeviceRun
+        from vela_sdevice.orchestrator.extended_stage import AcceptedExtendedStage
+        from vela_sdevice.orchestrator.support import RunError
+
+        device = DeviceRun.__new__(DeviceRun)
+        device.work = self.root
+        saved, latest = "saved.h5", "latest.h5"
+        checkpoint = self.root / saved
+        checkpoint.write_bytes(b"the accepted state")
+        device.result = SimpleNamespace(
+            stage_plan={"stages": [{"index": 0, "output_state": saved},
+                                   {"index": 1, "output_state": latest},
+                                   {"index": 2, "input_state": saved}]},
+            decks=[{}, {}, {"solver": {"require_end_to_end_precision": True}}],
+        )
+        parent = AcceptedExtendedStage(
+            {"archive": saved, "archive_sha256": sha256(checkpoint.read_bytes()).hexdigest()},
+            {}, None, {},
+        )
+        device.extended_states = {1: parent}
+        with self.assertRaisesRegex(RunError, "missing verified accepted parent"):
+            device._execute(2, ["runner"])
+        device.extended_states[0] = parent
+        checkpoint.write_bytes(b"replaced contents")
+        with self.assertRaisesRegex(RunError, "parent archive changed after acceptance"):
+            device._execute(2, ["runner"])
+
+    def test_arithmetic_input_keeps_original_numeric_tokens(self):
+        from vela_sdevice.cmd_parser import parse_cmd_file
+        from vela_sdevice.orchestrator.arithmetic_input import collect_input
+
+        literal = "1.000000000000000000867361737988403547205962240695953369140625"
+        temperature = "300.0000000000000002220446049250313080847263336181640625"
+        source = self.cmd.read_text().replace("Voltage=0", f"Voltage={literal}", 1)
+        self.cmd.write_text(source.replace("Solve {", f"Physics {{Temperature={temperature}}} Solve {{", 1))
+        par = self.root / "models.par"
+        par.write_text(par.read_text().replace("4.05", literal, 1))
+        grd = self.root / "mesh.grd"
+        head, vertices, tail = grd.read_text().partition("Vertices (")
+        self.assertTrue(vertices)
+        grd.write_text(head + vertices + tail.replace("1.000000000000000e+00", literal, 1))
+        dat = self.root / "mesh.dat"
+        dat.write_text(dat.read_text().replace("1.000000000000000e+15", literal, 1))
+        sidecar = self.cmd.with_suffix(".vela.json")
+        sidecar.write_text('{"~field/":' + literal + ', "description":"' + literal + '"}')
+        captures = {}
+        ir = parse_cmd_file(self.cmd, arithmetic_input=captures)
+        result = collect_input(self.cmd, captures, par, grd, sidecar, "sentaurus_u2022_12")
+        self.assertTrue(ir["verdict"]["accepted"])
+        self.assertEqual(result["temperature_K"], temperature)
+        self.assertEqual(ir["electrodes"][0]["voltage_V"], 1.0)
+        self.assertEqual(result["sources"]["sidecar"]["numbers"], {"/~0field~1": literal})
+        for role in ("cmd", "par", "grd", "dat"):
+            with self.subTest(role=role):
+                self.assertIn(literal, result["sources"][role]["numbers"].values())
+
+    def test_tdr_arithmetic_input_labels_binary64_csv(self):
+        from vela_sdevice.orchestrator.arithmetic_input import collect_tdr_export
+        tdr = self.root / "sample.tdr"
+        tdr.write_bytes(b"bound native input")
+        (self.root / "nodes.csv").write_text("id,x_um,y_um\n0,0.10000000000000001,0\n")
+        (self.root / "doping.csv").write_text("node_id,donors_cm3,acceptors_cm3\n0,1e15,0\n")
+        sources = collect_tdr_export(tdr, self.root)
+        self.assertEqual(sources["tdr_coordinates"]["numbers"]["0/x_um"], "0.10000000000000001")
+        self.assertEqual(sources["tdr_coordinates"]["number_encoding"], "binary64_roundtrip")
+        self.assertEqual(sources["tdr_doping"]["original_tdr_sha256"],
+                         sources["tdr_coordinates"]["original_tdr_sha256"])
+
+    def test_doping_declaration_and_explicit_net_recompute_reach_mesh_import(self):
+        original = self.cmd.read_text()
+        source = original.replace('Grid="mesh.grd"', 'Grid="mesh.grd" Doping="mesh.dat"')
+        self.cmd.write_text(source.replace("Solve {", "Math {ComputeDopingConcentration} Solve {", 1))
+        self.assert_exit(0, self.call(str(self.cmd), "--check"))
+        manifest = json.loads((self.work / "run_manifest.json").read_text())
+        self.assertTrue(manifest["doping"]["compute_net"])
+        self.assertEqual(manifest["doping"]["regions"]["R.Si"]["mode"], "species")
+        self.cmd.write_text(source.replace('Doping="mesh.dat"', 'Doping="different.tdr"'))
+        self.assert_exit(4, self.call(str(self.cmd), "--check"))
+        failure = json.loads((self.work / "fail_report.json").read_text())
+        self.assertIn("separate mesh input", failure["message"])
+
+    def test_slot_arithmetic_input_reads_bound_files_and_stage_lexemes(self):
+        from hashlib import sha256
+        from vela_sdevice.orchestrator.arithmetic_input import collect_slot_input
+        from vela_sdevice.orchestrator.support import RunError
+
+        literal = "1.000000000000000000867361737988403547205962240695953369140625"
+        files = {
+            "mesh": self.root / "mesh.json",
+            "doping": self.root / "doping.csv",
+            "deck": self.root / "reference.json",
+        }
+        files["mesh"].write_text('{"nodes":[{"id":0,"x":' + literal + ',"y":0}]}')
+        files["doping"].write_text(f"node_id,donors_cm3,acceptors_cm3\n0,{literal},0\n")
+        files["deck"].write_text('{"solver":{"mobility":{"electron_field_beta":' + literal + '}}}')
+        material = self.root / "materials.json"
+        material.write_text('{"materials":[{"name":"Si","ni":1,"decimal_semiconductor":{"temperature_K":"300"}},'
+                            '{"name":"PolySilicon","ni":2}]}')
+        stage = self.root / "simulation_stage00.json"
+        stage.write_text(json.dumps({"decimal_stage_controls": {"sweep": {"vtk_bias_points": ["1", literal]}}}))
+        binding = {"inputs": {key: {"sha256": sha256(path.read_bytes()).hexdigest()} for key, path in files.items()},
+                   "decimal_material": {"staged_sha256": sha256(material.read_bytes()).hexdigest()}}
+        sources, materials = collect_slot_input(self.root, binding, files["deck"], [stage])
+        self.assertEqual(sources["slot_bound_coordinates"]["numbers"]["0/x"], literal)
+        self.assertEqual(sources["slot_bound_doping"]["numbers"]["0/donors_cm3"], literal)
+        self.assertEqual(sources["slot_reference_deck"]["numbers"]["/solver/mobility/electron_field_beta"], literal)
+        self.assertEqual(sources[stage.stem]["numbers"]["/sweep/vtk_bias_points/1"], literal)
+        self.assertEqual(materials, {"Si": {"temperature_K": "300"}})
+        self.assertIn("/materials/1/ni", sources["slot_staged_materials"]["numbers"])
+        files["doping"].write_text("node_id,donors_cm3,acceptors_cm3\n0,1,0\n")
+        with self.assertRaisesRegex(RunError, "SLOT doping differs"):
+            collect_slot_input(self.root, binding, files["deck"], [stage])
 
     def test_ok_outputs_log_and_manifest(self):
         done = self.call()

@@ -48,7 +48,7 @@ def _parse_time_spec(tokens: List[Token], ctx: ParseContext) -> Optional[dict]:
             stream.expect_punct("=")
             spec["intervals"] = parse_int(stream.take_value(), "Intervals")
         elif token.kind == "word" and is_number(token.value):
-            values.append(float(token.value))
+            values.append(parse_number(token, "Time"))
         else:
             raise SyntaxIssue(f"unexpected '{token.value}' in Time specification", token.line, token.value)
     if "range" in spec or "intervals" in spec:

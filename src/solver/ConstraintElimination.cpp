@@ -23,20 +23,26 @@ std::vector<int> diagonalConstraintRows(const SparseMatrixd& a) {
     return rows;
 }
 
-VectorXd ConstraintReduction::recover(const VectorXd& direction) const {
+template<class Scalar>
+typename BasicConstraintReduction<Scalar>::Vector
+BasicConstraintReduction<Scalar>::recover(const Vector& direction) const {
     if (direction.size() != matrix.cols() || !direction.allFinite())
         throw std::invalid_argument("invalid reduced direction");
-    VectorXd full = recoveryOffset + recoveryMatrix * direction;
+    Vector full = recoveryOffset + recoveryMatrix * direction;
     if (!full.allFinite()) throw std::runtime_error("nonfinite constraint recovery");
     return full;
 }
 
-ConstraintReduction eliminateLinearConstraints(
-    const SparseMatrixd& a, const VectorXd& b, const std::vector<int>& selected) {
+template<class Scalar>
+BasicConstraintReduction<Scalar> reduceLinearConstraints(
+    const Eigen::SparseMatrix<Scalar>& a,
+    const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& b,
+    const std::vector<int>& selected) {
+    using Vector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
     if (a.rows() != a.cols() || a.rows() != b.size() || !b.allFinite())
         throw std::invalid_argument("square finite constraint system required");
     const int n = static_cast<int>(a.rows());
-    ConstraintReduction out;
+    BasicConstraintReduction<Scalar> out;
     out.eliminated = selected;
     std::sort(out.eliminated.begin(), out.eliminated.end());
     if (std::adjacent_find(out.eliminated.begin(), out.eliminated.end()) != out.eliminated.end())
@@ -49,14 +55,14 @@ ConstraintReduction eliminateLinearConstraints(
     for (int i = 0; i < n; ++i) if (slot[i] < 0) {
         freeSlot[i] = static_cast<int>(out.kept.size()); out.kept.push_back(i);
     }
-    Eigen::SparseMatrix<double,Eigen::RowMajor> rows = a;
+    Eigen::SparseMatrix<Scalar,Eigen::RowMajor> rows = a;
     std::vector<int> dependencies(n,0);
     std::vector<std::vector<int>> dependents(n);
     std::queue<int> ready;
     for (int i : out.eliminated) {
         if (rows.coeff(i,i) == 0. || !std::isfinite(rows.coeff(i,i)))
             throw std::invalid_argument("constraint requires a finite nonzero pivot");
-        for (decltype(rows)::InnerIterator v(rows,i); v; ++v) {
+        for (typename decltype(rows)::InnerIterator v(rows,i); v; ++v) {
             if (!std::isfinite(v.value())) throw std::invalid_argument("nonfinite constraint coefficient");
             if (v.col() != i && slot[v.col()] >= 0 && v.value() != 0.) {
                 ++dependencies[i]; dependents[v.col()].push_back(i);
@@ -66,16 +72,16 @@ ConstraintReduction eliminateLinearConstraints(
     }
     // x_E = offset + T x_K. Dependency order also handles a contact population
     // constraint coupled to a contact potential and to the retained circuit.
-    out.recoveryOffset = VectorXd::Zero(n);
-    std::vector<std::map<int,double>> expressions(n);
+    out.recoveryOffset = Vector::Zero(n);
+    std::vector<std::map<int,Scalar>> expressions(n);
     std::size_t visited = 0;
     while (!ready.empty()) {
         const int i = ready.front(); ready.pop(); ++visited;
-        const double pivot = rows.coeff(i,i);
-        double offset = b[i] / pivot;
-        for (decltype(rows)::InnerIterator v(rows,i); v; ++v) {
+        const Scalar pivot = rows.coeff(i,i);
+        Scalar offset = b[i] / pivot;
+        for (typename decltype(rows)::InnerIterator v(rows,i); v; ++v) {
             if (v.col() == i || v.value() == 0.) continue;
-            const double scale = -v.value() / pivot;
+            const Scalar scale = -v.value() / pivot;
             if (slot[v.col()] < 0) expressions[i][freeSlot[v.col()]] += scale;
             else {
                 offset += scale * out.recoveryOffset[v.col()];
@@ -90,12 +96,12 @@ ConstraintReduction eliminateLinearConstraints(
         throw std::invalid_argument("cyclic prescribed constraints are unsupported");
     const int m = static_cast<int>(out.kept.size());
     out.rhs.resize(m);
-    std::vector<Eigen::Triplet<double>> entries, recovery;
+    std::vector<Eigen::Triplet<Scalar>> entries, recovery;
     entries.reserve(a.nonZeros()); recovery.reserve(n + selected.size());
     for (int i : out.kept) {
         const int r = freeSlot[i]; out.rhs[r] = b[i];
         recovery.emplace_back(i,r,1.);
-        for (decltype(rows)::InnerIterator v(rows,i); v; ++v) {
+        for (typename decltype(rows)::InnerIterator v(rows,i); v; ++v) {
             if (!std::isfinite(v.value())) throw std::invalid_argument("nonfinite free coefficient");
             if (slot[v.col()] < 0) entries.emplace_back(r,freeSlot[v.col()],v.value());
             else if (v.value() != 0.) {
@@ -109,9 +115,65 @@ ConstraintReduction eliminateLinearConstraints(
         if (value != 0.) recovery.emplace_back(i,k,value);
     out.matrix.resize(m,m); out.matrix.setFromTriplets(entries.begin(),entries.end());
     out.recoveryMatrix.resize(n,m); out.recoveryMatrix.setFromTriplets(recovery.begin(),recovery.end());
-    if (!out.rhs.allFinite() || !Eigen::Map<const VectorXd>(out.matrix.valuePtr(),out.matrix.nonZeros()).allFinite() ||
-        !Eigen::Map<const VectorXd>(out.recoveryMatrix.valuePtr(),out.recoveryMatrix.nonZeros()).allFinite())
+    if (!out.rhs.allFinite() || !Eigen::Map<const Vector>(out.matrix.valuePtr(),out.matrix.nonZeros()).allFinite() ||
+        !Eigen::Map<const Vector>(out.recoveryMatrix.valuePtr(),out.recoveryMatrix.nonZeros()).allFinite())
         throw std::runtime_error("nonfinite constraint substitution");
     return out;
 }
+
+ConstraintReduction eliminateLinearConstraints(
+    const SparseMatrixd& matrix, const VectorXd& rhs, const std::vector<int>& constraintRows) {
+    return reduceLinearConstraints(matrix, rhs, constraintRows);
+}
+
+template<class Scalar>
+void restoreIndependentConstraintRows(
+    const Eigen::SparseMatrix<Scalar>& matrix,
+    const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& rhs,
+    std::span<const int> constraintRows,
+    Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& direction)
+{
+    if (matrix.rows() != matrix.cols() || rhs.size() != matrix.rows() ||
+        direction.size() != rhs.size() || !rhs.allFinite() || !direction.allFinite())
+        throw std::invalid_argument("Invalid system for independent constraint restoration");
+    if (constraintRows.empty())
+        return;
+    std::vector<bool> selected(matrix.rows(), false);
+    for (const int row : constraintRows) {
+        if (row < 0 || row >= matrix.rows() || selected[row])
+            throw std::invalid_argument("Invalid independent constraint row");
+        selected[row] = true;
+    }
+    for (int col = 0; col < matrix.outerSize(); ++col)
+        for (typename Eigen::SparseMatrix<Scalar>::InnerIterator entry(matrix, col); entry; ++entry)
+            if (selected[entry.row()] && entry.row() != entry.col() && entry.value() != 0)
+                throw std::invalid_argument("Independent constraint row contains an off-diagonal entry");
+    std::vector<Scalar> restored;
+    restored.reserve(constraintRows.size());
+    for (int row : constraintRows) {
+        const auto diagonal = matrix.coeff(row, row);
+        if (diagonal == 0 || !std::isfinite(diagonal))
+            throw std::invalid_argument("Independent constraint row has an invalid pivot");
+        const auto value = rhs[row] / diagonal;
+        if (!std::isfinite(value))
+            throw std::runtime_error("Nonfinite independent constraint direction");
+        restored.push_back(value);
+    }
+    for (std::size_t i = 0; i < constraintRows.size(); ++i)
+        direction[constraintRows[i]] = restored[i];
+}
+
+template struct BasicConstraintReduction<double>;
+template struct BasicConstraintReduction<long double>;
+template BasicConstraintReduction<double> reduceLinearConstraints(
+    const SparseMatrixd&, const VectorXd&, const std::vector<int>&);
+template BasicConstraintReduction<long double> reduceLinearConstraints(
+    const Eigen::SparseMatrix<long double>&,
+    const Eigen::Matrix<long double, Eigen::Dynamic, 1>&, const std::vector<int>&);
+template void restoreIndependentConstraintRows<double>(
+    const SparseMatrixd&, const VectorXd&, std::span<const int>, VectorXd&);
+template void restoreIndependentConstraintRows<long double>(
+    const Eigen::SparseMatrix<long double>&, const Eigen::Matrix<long double, Eigen::Dynamic, 1>&,
+    std::span<const int>, Eigen::Matrix<long double, Eigen::Dynamic, 1>&);
+
 } // namespace vela

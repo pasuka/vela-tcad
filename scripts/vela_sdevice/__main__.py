@@ -1,6 +1,8 @@
 """Run SDevice command files with Vela via sd-sim or vela device (stdlib only)."""
 from __future__ import annotations
 import argparse
+import json
+from decimal import InvalidOperation
 from pathlib import Path
 import shutil
 import sys
@@ -92,6 +94,16 @@ def main(argv=None):
     device.add_argument("-q", action="store_true", dest="quiet")
     reserved_options(device, argv)
     device.add_argument("--check", action="store_true", dest="check")
+    device.add_argument("--check-arithmetic-input", action="store_true",
+                        help="Check DF-ISE or HDF5 TDR numeric input in the extended80 runner without solving")
+    device.add_argument("--doping-mode", choices=("auto", "net-only", "reported"), default="auto",
+                        help="Resolve Sentaurus doping, explicitly split net doping, or use legacy reported fields")
+    device.add_argument("--datexcodes", type=Path, action="append", default=[], metavar="FILE",
+                        help="Load Sentaurus species definitions (base before overrides, repeatable)")
+    device.add_argument("--check-slot-ialmob", type=Path, metavar="REFERENCE_DECK",
+                        help="Check the SLOT IALMob coefficients and geometry against a prepared Vela deck")
+    device.add_argument("--slot-dfise-grid", type=Path, metavar="GRD",
+                        help="DF-ISE export corresponding to the native SLOT grid")
     device.add_argument("--pn2d-population", action="store_true",
                         help="Use potential and carrier densities with Quasistationary controls for a classical PN2D deck")
     device.add_argument("-i", action="store_true", dest="initial_only",
@@ -135,8 +147,28 @@ def main(argv=None):
         parser.error("No command file given (reading from stdin is not supported)")
     if options.threads is not None and options.threads < 1:
         parser.error("--threads must be positive")
+    if options.check_arithmetic_input:
+        if options.initial_only:
+            parser.error("--check-arithmetic-input cannot be combined with -i")
+        options.check = True
+    if bool(options.check_slot_ialmob) != bool(options.slot_dfise_grid):
+        parser.error("--check-slot-ialmob and --slot-dfise-grid must be used together")
+    if options.check_slot_ialmob and (options.initial_only or options.check_arithmetic_input):
+        parser.error("--check-slot-ialmob is an independent input check")
     try:
-        return DeviceRun(resolve_cmd(options.cmd), options).run()
+        cmd = resolve_cmd(options.cmd)
+        if options.check_slot_ialmob:
+            from .cmd_parser import parse_cmd_file
+            from .mesh_import import MeshImportError
+            from .orchestrator.slot_ialmob import check_slot_ialmob
+            try:
+                report = check_slot_ialmob(parse_cmd_file(cmd), cmd, options.slot_dfise_grid.resolve(strict=True),
+                                           options.check_slot_ialmob.resolve(strict=True))
+            except (KeyError, TypeError, ValueError, InvalidOperation, MeshImportError) as error:
+                raise RunError("E407", f"Invalid SLOT IALMob inputs: {error}") from error
+            print(json.dumps(report, indent=2))
+            return 0
+        return DeviceRun(cmd, options).run()
     except RunError as error:
         print(str(error), file=sys.stderr)
         return error.exit_code

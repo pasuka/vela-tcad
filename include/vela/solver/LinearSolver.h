@@ -41,7 +41,7 @@ bool solveSpqrSystem(const SparseMatrixd& A,
  * "gmres_ilut", "sparselu_long_double", or "simplicial_ldlt".
  * "sparselu_long_double" promotes assembled binary64 inputs to long double
  * for Eigen factorisation and solve, then rounds the direction back to double.
- * It requires a wider long double, does not cache factors, and is not full
+ * It requires a wider long double, caches unchanged factors, and is not full
  * extended-precision assembly or nonlinear state storage.
  * "sparselu_eliminated", "sparselu_eliminated_long_double",
  * "umfpack_eliminated" and "pardiso_mkl_eliminated" are opt-in

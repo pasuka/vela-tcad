@@ -1,4 +1,5 @@
 #include "vela/equation/IalTransport.h"
+#include "vela/mesh/ContactCell.h"
 #include "vela/physics/IalInterfaceGeometry.h"
 #include "vela/physics/IalMobilityJson.h"
 #include "vela/core/PerformanceProfiler.h"
@@ -23,41 +24,13 @@ void keys(const json& input,std::initializer_list<std::string> allowed) {
         if (std::find(allowed.begin(),allowed.end(),key)==allowed.end())
             throw std::invalid_argument("Unsupported IALMob key: "+key);
 }
-std::shared_ptr<const IalTransportGeometry> geometry(const MobilityModelConfig& config,const DeviceMesh& mesh) {
-    ScopedPerformanceTimer timer("ialmob.geometry");
-    const auto& options=*config.ialmob;
-    std::ifstream stream(options.geometryFile);
-    if (!stream) throw std::invalid_argument("Cannot read IALMob transport geometry: "+options.geometryFile);
-    const json input=json::parse(stream);
-    keys(input,{"schema","node_count","cell_count","cells"});
-    if (input.at("schema")!="vela.ialmob.transport_geometry.v1"||
-        input.at("node_count").get<Index>()!=mesh.numNodes()||
-        input.at("cell_count").get<Index>()!=mesh.numCells())
-        throw std::invalid_argument("IALMob geometry does not match the mesh");
-    auto result=std::make_shared<IalTransportGeometry>();result->edges.resize(mesh.numEdges());
-    result->cellSupportIndex.assign(mesh.numCells(),-1);
-    std::vector<std::array<Real,2>> xy;
-    for (const auto& n:mesh.nodes()) xy.push_back({n.x*config.internalLengthToM,n.y*config.internalLengthToM});
-    std::map<Pair,std::vector<Index>> adjacent;std::map<Pair,Index> edgeIds;
-    for (const auto& e:mesh.edges()) edgeIds[pair(e.n0,e.n1)]=e.id;
-    for (const auto& c:mesh.cells()) {
-        if (c.node_ids.size()!=3) throw std::invalid_argument("IALMob transport requires a Tri3 mesh");
-        for (int k=0;k<3;++k) adjacent[pair(c.node_ids[k],c.node_ids[(k+1)%3])].push_back(c.id);
-    }
-    std::set<Index> effectiveNodes;std::set<Pair> contactEdges;std::set<std::string> foundContacts;
-    for (const auto& contact:mesh.contacts()) {
-        const bool effective=std::find(options.effectiveElectrodes.begin(),options.effectiveElectrodes.end(),contact.name)!=options.effectiveElectrodes.end();
-        if (effective) {effectiveNodes.insert(contact.node_ids.begin(),contact.node_ids.end());foundContacts.insert(contact.name);}
-        for (const auto& edge:contact.edge_node_ids) contactEdges.insert(pair(edge[0],edge[1]));
-        if (contact.edge_node_ids.empty()) {
-            const std::set<Index> nodes(contact.node_ids.begin(),contact.node_ids.end());
-            for (const auto& [edge,cells]:adjacent)
-                if (cells.size()==1&&nodes.count(edge.first)&&nodes.count(edge.second)) contactEdges.insert(edge);
-        }
-    }
-    for (const auto& name:options.effectiveElectrodes)
-        if (!foundContacts.count(name)) throw std::invalid_argument("Unknown IALMob effective electrode: "+name);
-    std::vector<IalInterfaceSegment> segments;std::map<Index,std::array<Real,2>> tangents;
+template<class Scalar, class Segment>
+auto buildSurfaceGeometry(const DeviceMesh& mesh, const std::vector<std::array<Scalar,2>>& xy,
+                          const std::map<Pair,std::vector<Index>>& adjacent,
+                          const std::set<Pair>& contactEdges,
+                          const std::array<Scalar,3>& crystalX, const std::array<Scalar,3>& crystalY)
+{
+    std::vector<Segment> segments;std::map<Index,std::array<Scalar,2>> tangents;
     std::map<Index,bool> tangentIsMaterialInterface;
     for (const auto& [edge,cells]:adjacent) {
         bool si=false,oxide=false,other=false;Index siCell=0;
@@ -68,9 +41,9 @@ std::shared_ptr<const IalTransportGeometry> geometry(const MobilityModelConfig& 
         }
         if (!si) continue;
         const auto& a=xy[edge.first];const auto& b=xy[edge.second];
-        const Real dx=b[0]-a[0],dy=b[1]-a[1],length=std::hypot(dx,dy);
+        const Scalar dx=b[0]-a[0],dy=b[1]-a[1],length=std::hypot(dx,dy);
         if (oxide) {
-            std::array<Real,2> center{};
+            std::array<Scalar,2> center{};
             for (Index node:mesh.getCell(siCell).node_ids) for (int d=0;d<2;++d) center[d]+=xy[node][d]/3.;
             segments.push_back({edge.first,edge.second,center});
         }
@@ -92,7 +65,46 @@ std::shared_ptr<const IalTransportGeometry> geometry(const MobilityModelConfig& 
                 tangents[id]={dx/length,dy/length};tangentIsMaterialInterface[id]=other;
             }
     }
-    const auto nodes=buildIalInterfaceGeometry(xy,segments,options.crystalX,options.crystalY);
+    return std::pair{buildIalInterfaceGeometry(xy, segments, crystalX, crystalY), std::move(tangents)};
+}
+std::shared_ptr<const IalTransportGeometry> geometry(const MobilityModelConfig& config,const DeviceMesh& mesh) {
+    ScopedPerformanceTimer timer("ialmob.geometry");
+    const auto& options=*config.ialmob;
+    std::ifstream stream(options.geometryFile);
+    if (!stream) throw std::invalid_argument("Cannot read IALMob transport geometry: "+options.geometryFile);
+    const json input=json::parse(stream);
+    keys(input,{"schema","node_count","cell_count","cells"});
+    if (input.at("schema")!="vela.ialmob.transport_geometry.v1"||
+        input.at("node_count").get<Index>()!=mesh.numNodes()||
+        input.at("cell_count").get<Index>()!=mesh.numCells())
+        throw std::invalid_argument("IALMob geometry does not match the mesh");
+    auto result=std::make_shared<IalTransportGeometry>();result->edges.resize(mesh.numEdges());
+    result->cellSupportIndex.assign(mesh.numCells(),-1);
+    std::vector<std::array<Real,2>> xy;
+    for (const auto& n:mesh.nodes()) xy.push_back({n.x*config.internalLengthToM,n.y*config.internalLengthToM});
+    std::map<Pair,std::vector<Index>> adjacent;std::map<Pair,Index> edgeIds;
+    for (const auto& e:mesh.edges()) edgeIds[pair(e.n0,e.n1)]=e.id;
+    for (const auto& c:mesh.cells()) {
+        if (c.node_ids.size()!=3) throw std::invalid_argument("IALMob transport requires a Tri3 mesh");
+        for (int k=0;k<3;++k) adjacent[pair(c.node_ids[k],c.node_ids[(k+1)%3])].push_back(c.id);
+    }
+    std::vector<bool> effectiveNodes(mesh.numNodes(),false);std::set<Pair> contactEdges;std::set<std::string> foundContacts;
+    for (const auto& contact:mesh.contacts()) {
+        const bool effective=std::find(options.effectiveElectrodes.begin(),options.effectiveElectrodes.end(),contact.name)!=options.effectiveElectrodes.end();
+        if (effective) {
+            for (Index node:contact.node_ids) effectiveNodes.at(node)=true;
+            foundContacts.insert(contact.name);
+        }
+        for (const auto& edge:contact.edge_node_ids) contactEdges.insert(pair(edge[0],edge[1]));
+        if (contact.edge_node_ids.empty()) {
+            const std::set<Index> nodes(contact.node_ids.begin(),contact.node_ids.end());
+            for (const auto& [edge,cells]:adjacent)
+                if (cells.size()==1&&nodes.count(edge.first)&&nodes.count(edge.second)) contactEdges.insert(edge);
+        }
+    }
+    for (const auto& name:options.effectiveElectrodes)
+        if (!foundContacts.count(name)) throw std::invalid_argument("Unknown IALMob effective electrode: "+name);
+    const auto [nodes,tangents]=buildSurfaceGeometry<Real,IalInterfaceSegment>(mesh,xy,adjacent,contactEdges,options.crystalX,options.crystalY);
     std::set<Index> seenCells;
     std::vector<Real> coefficientSum(mesh.numEdges(),0.);
     for (const auto& row:input.at("cells")) {
@@ -111,8 +123,8 @@ std::shared_ptr<const IalTransportGeometry> geometry(const MobilityModelConfig& 
             support.geometry.interfaceDistance_m[k]=nodes[node].distance_m;
             support.family[k]=nodes[node].orientationFamily;
             options.electrons.at(support.family[k]);options.holes.at(support.family[k]);
-            support.geometry.touchesEffectiveElectrode|=effectiveNodes.count(node)!=0;
         }
+        support.geometry.touchesEffectiveElectrode=detail::cellTouchesContact(c,effectiveNodes);
         support.geometry.partialBoundaryLayer=tangents.count(id)!=0;
         if (support.geometry.partialBoundaryLayer) support.geometry.boundaryTangent=tangents.at(id);
         const auto coeff=row.at("edge_coefficients").get<std::array<Real,3>>();
@@ -223,8 +235,10 @@ std::shared_ptr<const IalTransportGeometry> geometry(const MobilityModelConfig& 
 }
 }
 
-std::shared_ptr<const IalTransportOptions> ialTransportOptionsFromJson(const json& input) {
-    keys(input,{"screening_method","geometry_file","avalanche_geometry_file","effective_electrodes","crystal_x","crystal_y","electron_parameters_cm","hole_parameters_cm","high_field","reference_density_m3","constant_material_mobility_cm2_per_Vs"});
+std::shared_ptr<const IalTransportOptions> ialTransportOptionsFromJson(
+    const json& input, const json* mobility, UnitScalingConfig scaling)
+{
+    keys(input,{"screening_method","geometry_file","avalanche_geometry_file","effective_electrodes","crystal_x","crystal_y","electron_parameters_cm","hole_parameters_cm","high_field","reference_density_m3","constant_material_mobility_cm2_per_Vs","decimal_coefficients"});
     const auto method=ial_json::screeningMethod(input);
     auto options=std::make_shared<IalTransportOptions>();
     options->geometryFile=input.at("geometry_file");
@@ -249,10 +263,43 @@ std::shared_ptr<const IalTransportOptions> ialTransportOptionsFromJson(const jso
             options->constantMaterialMobility.emplace(name,values);
         }
     }
-    for (const auto& [name,p]:input.at("electron_parameters_cm").items())
-        options->electrons.emplace(std::stoi(name),IalMobility(ial_json::parameters(p,true),true,method));
-    for (const auto& [name,p]:input.at("hole_parameters_cm").items())
-        options->holes.emplace(std::stoi(name),IalMobility(ial_json::parameters(p,false),false,method));
+    const auto* decimals = input.contains("decimal_coefficients") ? &input.at("decimal_coefficients") : nullptr;
+    if (decimals) {
+        if (!mobility)
+            throw std::invalid_argument("IALMob decimal coefficients require the owning mobility configuration");
+        keys(*decimals, {"high_field", "electron_parameters_cm", "hole_parameters_cm"});
+        const auto& high = decimals->at("high_field");
+        keys(high, {"electron_field_beta", "hole_field_beta", "electron_saturation_velocity_m_s",
+                    "hole_saturation_velocity_m_s"});
+        const auto number = [&](const std::string& key) {
+            const auto value = decimalCompatibilityNumber(high.at(key), "IALMob decimal_coefficients." + key,
+                                                           mobility->at(key).get<Real>());
+            if (!(value > 0))
+                throw std::invalid_argument("IALMob decimal high-field coefficients must be positive");
+            return value;
+        };
+        const ArithmeticReal velocityDivisor = scaling.isUnitScaling() ? 100 : 1;
+        options->element.decimalHighField = std::array<IalHighFieldDecimal, 2>{{
+            {number("electron_saturation_velocity_m_s") / velocityDivisor, number("electron_field_beta")},
+            {number("hole_saturation_velocity_m_s") / velocityDivisor, number("hole_field_beta")}}};
+    }
+    const auto loadFamilies = [&](const char* key, bool electron, auto& models,
+                                  auto& extendedModels) {
+        const auto& families = input.at(key);
+        const auto* decimalFamilies = decimals ? &decimals->at(key) : nullptr;
+        if (decimalFamilies && (!decimalFamilies->is_object() || decimalFamilies->size() != families.size()))
+            throw std::invalid_argument("IALMob decimal coefficients must cover the compatibility families");
+        for (const auto& [name, coefficients] : families.items()) {
+            const auto* family = decimalFamilies ? &decimalFamilies->at(name) : nullptr;
+            const int orientation = std::stoi(name);
+            models.emplace(orientation, IalMobility(ial_json::parameters(coefficients, electron, family),
+                                                    electron, method));
+            if (family)
+                extendedModels.emplace(orientation, ial_json::extendedParameters(coefficients, electron, *family));
+        }
+    };
+    loadFamilies("electron_parameters_cm", true, options->electrons, options->extendedElectrons);
+    loadFamilies("hole_parameters_cm", false, options->holes, options->extendedHoles);
     return options;
 }
 
@@ -262,9 +309,160 @@ void prepareIalTransportGeometry(MobilityModelConfig& config,const DeviceMesh& m
     if (!config.ialmobGeometry) config.ialmobGeometry=geometry(config,mesh);
 }
 
+ExtendedIalTransportMeasures readExtendedIalTransportMeasures(
+    const MobilityModelConfig& config, const DeviceMesh& mesh,
+    std::optional<long double> lengthScale_m,
+    const std::map<std::string, std::array<long double,2>>& constantMobility_cm2_per_Vs)
+{
+    using WideJson = nlohmann::basic_json<std::map, std::vector, std::string, bool,
+                                         std::int64_t, std::uint64_t, long double>;
+    if (!config.ialmob || !config.ialmobGeometry)
+        throw std::invalid_argument("Extended IALMob measures require validated geometry");
+    const auto& geometry = *config.ialmobGeometry;
+    const auto read = [](const std::string& file) {
+        std::ifstream input(file);
+        if (!input)
+            throw std::invalid_argument("Cannot read extended IALMob geometry: " + file);
+        return WideJson::parse(input);
+    };
+    const auto matches = [](const auto& exact, const auto& compatibility) {
+        for (std::size_t i = 0; i < exact.size(); ++i)
+            if (!std::isfinite(exact[i]) || exact[i] < 0 || static_cast<Real>(exact[i]) != compatibility[i])
+                throw std::invalid_argument("Extended IALMob measures disagree with validated geometry");
+    };
+    const auto cellMatches = [&](const auto& row, Index id) {
+        return row.at("cell_id") == id &&
+            row.at("node_ids").template get<std::vector<Index>>() == mesh.getCell(id).node_ids;
+    };
+
+    ExtendedIalTransportMeasures out;
+    out.vertex.resize(geometry.cells.size());
+    out.edgeWeights.resize(mesh.numEdges());
+    std::vector<std::array<long double, 3>> coefficients(geometry.cells.size());
+    const auto transport = read(config.ialmob->geometryFile);
+    const auto& rows = transport.at("cells");
+    if (rows.size() != geometry.cells.size())
+        throw std::invalid_argument("Extended IALMob cell count mismatch");
+    for (std::size_t i = 0; i < geometry.cells.size(); ++i) {
+        const auto& bound = geometry.cells[i];
+        const auto& row = rows.at(i);
+        if (!cellMatches(row, bound.cellId))
+            throw std::invalid_argument("Extended IALMob cell topology mismatch");
+        out.vertex[i] = row.at("vertex_measure_m2").get<std::array<long double, 3>>();
+        matches(out.vertex[i], bound.geometry.vertexMeasure_m2);
+        coefficients[i] = row.at("edge_coefficients").get<std::array<long double, 3>>();
+        for (const auto value : coefficients[i])
+            if (!std::isfinite(value) || value < 0)
+                throw std::invalid_argument("Invalid extended IALMob edge coefficient");
+    }
+    for (const auto& edge : mesh.edges()) {
+        const auto& support = geometry.edges.at(edge.id);
+        auto& weights = out.edgeWeights.at(edge.id);
+        long double sum = 0;
+        for (const auto& contribution : support) {
+            const auto& cell = mesh.getCell(geometry.cells.at(contribution.support).cellId);
+            for (int k = 0; k < 3; ++k)
+                if (pair(cell.node_ids[k], cell.node_ids[(k + 1) % 3]) == pair(edge.n0, edge.n1)) {
+                    const auto value = coefficients[contribution.support][k];
+                    weights.push_back(value);
+                    sum += value;
+                    break;
+                }
+        }
+        if (weights.size() != support.size() || !std::isfinite(sum))
+            throw std::invalid_argument("Invalid extended IALMob edge support");
+        for (std::size_t k = 0; k < weights.size(); ++k) {
+            if (sum > 0)
+                weights[k] /= sum;
+            if (std::abs(weights[k] - support[k].weight) > 8 * std::numeric_limits<Real>::epsilon())
+                throw std::invalid_argument("Extended IALMob edge coefficient mismatch");
+        }
+    }
+    if (!config.ialmob->avalancheGeometryFile.empty()) {
+        const auto source = read(config.ialmob->avalancheGeometryFile);
+        const auto& sourceRows = source.at("cells");
+        if (sourceRows.size() != geometry.cells.size())
+            throw std::invalid_argument("Extended IALMob avalanche count mismatch");
+        out.avalanche.resize(geometry.cells.size());
+        std::set<int> seen;
+        for (const auto& row : sourceRows) {
+            const auto id = row.at("cell_id").get<Index>();
+            const auto i = geometry.cellSupportIndex.at(id);
+            if (i < 0 || !seen.insert(i).second || !cellMatches(row, id))
+                throw std::invalid_argument("Extended IALMob avalanche topology mismatch");
+            const auto& bound = geometry.cells.at(i).avalanche;
+            if (!bound || row.at("mobility_vertex") != bound->mobilityVertex)
+                throw std::invalid_argument("Extended IALMob avalanche mobility vertex mismatch");
+            out.avalanche[i] = row.at("source_measure_m2").get<std::array<long double, 3>>();
+            matches(out.avalanche[i], bound->sourceMeasure_m2);
+        }
+    }
+    if (lengthScale_m) {
+        if (constantMobility_cm2_per_Vs.size() != config.ialmob->constantMaterialMobility.size())
+            throw std::invalid_argument("Incomplete extended constant mobility binding");
+        std::vector<std::array<long double,2>> xy;
+        xy.reserve(mesh.numNodes());
+        for (const auto& n : mesh.nodes()) {
+            const auto point = mesh.arithmeticCoordinates(n.id);
+            xy.push_back({point[0] * *lengthScale_m, point[1] * *lengthScale_m});
+        }
+        std::map<Pair,std::vector<Index>> adjacent;
+        for (const auto& c : mesh.cells())
+            for (int k = 0; k < 3; ++k)
+                adjacent[pair(c.node_ids[k],c.node_ids[(k+1)%3])].push_back(c.id);
+        std::set<Pair> contactEdges;
+        for (const auto& electrode : mesh.contacts()) {
+            for (const auto& edge : electrode.edge_node_ids)
+                contactEdges.insert(pair(edge[0], edge[1]));
+            if (electrode.edge_node_ids.empty()) {
+                const std::set<Index> nodes(electrode.node_ids.begin(), electrode.node_ids.end());
+                for (const auto& [edge, cells] : adjacent)
+                    if (cells.size() == 1 && nodes.contains(edge.first) && nodes.contains(edge.second))
+                        contactEdges.insert(edge);
+            }
+        }
+        std::array<long double,3> crystalX, crystalY;
+        std::ranges::copy(config.ialmob->crystalX, crystalX.begin());
+        std::ranges::copy(config.ialmob->crystalY, crystalY.begin());
+        const auto [nodes, tangents] = buildSurfaceGeometry<long double,ExtendedIalInterfaceSegment>(
+            mesh, xy, adjacent, contactEdges, crystalX, crystalY);
+        out.surface.resize(geometry.cells.size());
+        for (std::size_t i = 0; i < geometry.cells.size(); ++i) {
+            const auto cellId = geometry.cells[i].cellId;
+            const auto& c = mesh.getCell(cellId);
+            auto& support = out.surface[i];
+            if (const auto tangent = tangents.find(cellId); tangent != tangents.end())
+                support.tangent = tangent->second;
+            for (int k = 0; k < 3; ++k) {
+                const auto& node = nodes.at(c.node_ids[k]);
+                support.distances[k] = node.distance_m;
+                support.family[k] = node.orientationFamily;
+            }
+        }
+        out.constantMobility_m2_per_Vs.resize(mesh.numEdges());
+        for (const auto& edge : mesh.edges()) {
+            auto& sum = out.constantMobility_m2_per_Vs[edge.id];
+            int count = 0;
+            for (const auto id : adjacent.at(pair(edge.n0,edge.n1))) {
+                const auto& name = mesh.getRegion(mesh.getCell(id).region_id).material;
+                const auto entry = constantMobility_cm2_per_Vs.find(name);
+                if (entry == constantMobility_cm2_per_Vs.end())
+                    continue;
+                ++count;
+                for (int k = 0; k < 2; ++k)
+                    sum[k] += entry->second[k] * 1e-4L;
+            }
+            if (count)
+                for (auto& carrier : sum) carrier /= count;
+        }
+    }
+    return out;
+}
+
 IalElementMobilityResult evaluateIalTransportCell(
     const MobilityModelConfig& config,Index cellId,
-    const std::array<IalElementVertexState,3>& states,bool spatialDerivatives) {
+    const std::array<IalElementVertexState,3>& states,bool spatialDerivatives,
+    Real populationThermalVoltage_V) {
     if (!config.ialmob || !config.ialmobGeometry)
         throw std::logic_error("IALMob cell evaluation requires prepared geometry");
     const int index=config.ialmobGeometry->cellSupportIndex.at(cellId);
@@ -276,7 +474,9 @@ IalElementMobilityResult evaluateIalTransportCell(
         hm[k]=&config.ialmob->holes.at(support.family[k]);
     }
     auto options=config.ialmob->element;
+    options.contactField=config.gradQfContactField.value_or(GradQfContactField::ElectricField);
     options.spatialDerivatives=spatialDerivatives;
+    options.populationThermalVoltage_V=populationThermalVoltage_V;
     options.temperatureDerivatives=false;
     options.screeningCache=nullptr;options.preparationCache=nullptr;
     options.electronField=config.electronField;options.holeField=config.holeField;
@@ -313,12 +513,92 @@ IalElementAvalancheResult evaluateIalTransportAvalancheCell(
     options.mobilityVertex=support.avalanche->mobilityVertex;
     options.sourceMeasure_m2=support.avalanche->sourceMeasure_m2;
     options.highFieldMobility=config.ialmob->element.highField;
+    options.mobilityContactField=config.gradQfContactField.value_or(GradQfContactField::ElectricField);
     std::array<const IalMobility*,3> em,hm;
     for (int k=0;k<3;++k) {
         em[k]=&config.ialmob->electrons.at(support.family[k]);
         hm[k]=&config.ialmob->holes.at(support.family[k]);
     }
     return evaluateIalElementAvalanche(support.geometry,states,em,hm,options);
+}
+
+ExtendedIalTransportCell evaluateExtendedIalTransportCell(
+    const MobilityModelConfig& config, const DeviceMesh& mesh, const DopingModel& doping,
+    Index cellId, const std::array<IalPopulationVertex,3>& state,
+    ArithmeticReal lengthScale_m, ArithmeticReal dopingScale_m3,
+    ArithmeticReal potentialScale_V, ArithmeticReal thermalVoltage_V,
+    ArithmeticReal temperature_K, std::optional<IalElementAvalancheOptions> avalanche,
+    const ExtendedIalTransportMeasures* measures)
+{
+    if (!config.ialmob || !config.ialmobGeometry || doping.numNodes() != mesh.numNodes())
+        throw std::invalid_argument("Extended IALMob requires bound mesh, doping, and geometry");
+    for (auto scale : {lengthScale_m, dopingScale_m3})
+        if (!(scale > 0) || !std::isfinite(scale))
+            throw std::invalid_argument("Extended IALMob requires finite positive coordinate scales");
+    const auto supportIndex = config.ialmobGeometry->cellSupportIndex.at(cellId);
+    if (supportIndex < 0)
+        throw std::invalid_argument("Extended IALMob cell is outside the silicon transport support");
+    const auto& support = config.ialmobGeometry->cells.at(supportIndex);
+    const auto& options = *config.ialmob;
+    if (options.element.highField && !options.element.decimalHighField)
+        throw std::invalid_argument("Extended IALMob high-field coefficients are unavailable");
+    if (options.element.generatedLowFieldPartials || options.element.temperatureDependentHighField)
+        throw std::invalid_argument("Extended IALMob cell uses the isothermal reference kernel");
+    const auto fields = detail::buildIalPopulationFields(state, potentialScale_V, thermalVoltage_V);
+    BasicIalElementGeometry<ArithmeticReal> geometry;
+    geometry.partialBoundaryLayer = support.geometry.partialBoundaryLayer;
+    geometry.touchesEffectiveElectrode = support.geometry.touchesEffectiveElectrode;
+    const auto* surface = measures && !measures->surface.empty() ? &measures->surface.at(supportIndex) : nullptr;
+    if (surface)
+        std::ranges::copy(surface->tangent, geometry.boundaryTangent.begin());
+    else
+        std::ranges::copy(support.geometry.boundaryTangent, geometry.boundaryTangent.begin());
+    const auto& cell = mesh.getCell(cellId);
+    std::array<std::array<ArithmeticReal,2>,3> doping_m3;
+    using Parameters = BasicIalMobilityParameters<long double>;
+    std::array<const Parameters*,3> electrons, holes;
+    for (std::size_t i = 0; i < cell.node_ids.size(); ++i) {
+        const auto node = cell.node_ids[i];
+        auto point = mesh.arithmeticCoordinates(node);
+        for (auto& coordinate : point) coordinate *= lengthScale_m;
+        geometry.coordinates_m[i] = point;
+        geometry.interfaceDistance_m[i] = surface ? surface->distances[i] : support.geometry.interfaceDistance_m[i];
+        geometry.vertexMeasure_m2[i] = measures ? measures->vertex.at(supportIndex)[i]
+                                               : support.geometry.vertexMeasure_m2[i];
+        auto operands = doping.dopingOperandsForAssembly(node);
+        for (auto& concentration : operands) concentration *= dopingScale_m3;
+        doping_m3[i] = operands;
+        const auto family = surface ? surface->family[i] : support.family[i];
+        electrons[i] = &options.extendedElectrons.at(family);
+        holes[i] = &options.extendedHoles.at(family);
+    }
+    const auto contactField = config.gradQfContactField.value_or(GradQfContactField::ElectricField);
+    const auto screeningMethod = options.electrons.at(support.family.front()).screeningMethod();
+    const auto highField = options.element.highField ? options.element.decimalHighField : std::nullopt;
+    const auto referenceDensity = static_cast<ArithmeticReal>(options.element.referenceDensity_m3);
+    const auto mobility = evaluateIalPopulationMobility(geometry, fields, doping_m3, electrons, holes,
+        temperature_K, referenceDensity, highField, contactField, screeningMethod);
+    const auto measure = std::accumulate(geometry.vertexMeasure_m2.begin(),
+                                         geometry.vertexMeasure_m2.end(), ArithmeticReal{0});
+    if (!(measure > 0) || !std::isfinite(measure))
+        throw std::invalid_argument("Extended IALMob requires positive vertex measure");
+    ExtendedIalTransportCell out;
+    for (std::size_t i = 0; i < mobility.electron.size(); ++i) {
+        const detail::IalPopulationDual weight(geometry.vertexMeasure_m2[i]/measure);
+        out.mobility_m2_per_Vs[0] = out.mobility_m2_per_Vs[0] + weight*mobility.electron[i];
+        out.mobility_m2_per_Vs[1] = out.mobility_m2_per_Vs[1] + weight*mobility.hole[i];
+    }
+    if (avalanche) {
+        if (!support.avalanche || referenceDensity != 0 || temperature_K != 300.L)
+            throw std::invalid_argument("Extended SLOT avalanche requires bound shares, zero HFS reference density and 300 K");
+        const auto chosen = support.avalanche->mobilityVertex;
+        avalanche->sourceMeasure_m2 = support.avalanche->sourceMeasure_m2;
+        out.avalanche = evaluateIalPopulationAvalancheFromMobility(geometry, state,
+            potentialScale_V, thermalVoltage_V, {mobility.electron.at(chosen), mobility.hole.at(chosen)}, *avalanche,
+            measures ? &measures->avalanche.at(supportIndex) : nullptr,
+            measures && measures->ionization ? &*measures->ionization : nullptr);
+    }
+    return out;
 }
 
 void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
@@ -353,6 +633,7 @@ void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
     s->electronEdges=config.ialmobGeometry->constantElectronEdges;
     s->holeEdges=config.ialmobGeometry->constantHoleEdges;
     auto options=config.ialmob->element;
+    options.contactField=config.gradQfContactField.value_or(GradQfContactField::ElectricField);
     IalScreeningCache screening;
     IalMobilityPreparationCache preparation;
     options.screeningCache=reuseScreening?&screening:nullptr;

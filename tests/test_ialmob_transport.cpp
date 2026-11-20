@@ -183,6 +183,51 @@ struct Fixture {
 };
 }
 
+TEST_CASE("IALMob VTU export uses the live element mobility", "[ialmob][transport][vtu]")
+{
+    Fixture fixture;
+    DDSolution state;
+    state.psi = VectorXd::LinSpaced(6, .42, .48);
+    state.phin = VectorXd::LinSpaced(6, .01, .03);
+    state.phip = VectorXd::LinSpaced(6, .02, .04);
+    state.n = VectorXd::Constant(6, 1e20);
+    state.p = VectorXd::Constant(6, 2e20);
+    const auto path = fixture.path.string() + ".vtu";
+    struct Cleanup {
+        std::filesystem::path path;
+        ~Cleanup() { std::error_code ec; std::filesystem::remove(path, ec); }
+    } cleanup{path};
+    DDSolutionVtkOptions options;
+    options.format = "vtu";
+    options.fields = {"eMobility", "hMobility"};
+    options.binary = false;
+    writeDDSolutionVTK(path, fixture.mesh, fixture.materials, fixture.doping,
+        state, fixture.mobility, {}, {}, {}, 300., {}, {}, nullptr, false, &options);
+
+    const auto prepared = ContactCurrent(fixture.mesh, fixture.materials, fixture.doping,
+        fixture.mobility).prepareMobility(state);
+    const auto& cells = prepared.ialmobState->cells;
+    REQUIRE(cells.size() == 2);
+    std::ifstream output(path);
+    REQUIRE(output.good());
+    const std::string text{std::istreambuf_iterator<char>(output), {}};
+    const auto check = [&](const std::string& field, Real expectedAtNodeZero) {
+        const auto fieldPosition = text.find("Name=\"" + field + '"');
+        REQUIRE(fieldPosition != std::string::npos);
+        const auto start = text.find('>', fieldPosition);
+        REQUIRE(start != std::string::npos);
+        std::istringstream data(text.substr(start + 1));
+        std::array<Real, 6> mobility;
+        for (auto& value : mobility)
+            REQUIRE(static_cast<bool>(data >> value));
+        CHECK(mobility[0] == Catch::Approx(expectedAtNodeZero).epsilon(1e-8));
+        CHECK(mobility[4] == 0.);
+        CHECK(mobility[5] == 0.);
+    };
+    check("eMobility", 5e3 * (cells[0].electron.value + cells[1].electron.value));
+    check("hMobility", 5e3 * (cells[0].hole.value + cells[1].hole.value));
+}
+
 TEST_CASE("IALMob population coordinates preserve oxide masks and local physical derivatives", "[ialmob][legacy_population]") {
     for(bool tcad:{false,true}) {
         Fixture f(tcad);const Real vt=constants::Vt_300;
@@ -213,6 +258,82 @@ TEST_CASE("IALMob population coordinates preserve oxide masks and local physical
                 CHECK((fd-action).segment(6*block,6).cwiseAbs().maxCoeff()/denom<3e-4);
             }
         }
+    }
+}
+
+TEST_CASE("IALMob transport feedback approximation retains the physical residual",
+          "[ialmob][legacy_population][frozen_feedback]") {
+    Fixture f(false);
+    auto frozen=f.mobility;frozen.ialmobTransportFeedbackDerivatives=false;
+    auto rc=recombinationModelConfig({"srh","auger"});rc.activeMaterials={"Si"};
+    auto bgn=bandgapNarrowingConfig("old_slotboom");
+    DDScalingSpec scaling;scaling.stateVariables="potential_density";
+    CoupledDDAssembler full(f.mesh,f.materials,f.doping,constants::Vt_300,f.mobility,rc,bgn,{},{},{},scaling);
+    CoupledDDAssembler approximate(f.mesh,f.materials,f.doping,constants::Vt_300,frozen,rc,bgn,{},{},{},scaling);
+    CoupledDDState s;s.psi=VectorXd::LinSpaced(6,.02,.04);
+    s.phin=VectorXd::Zero(6);s.phip=VectorXd::Zero(6);
+    for(int i=0;i<4;++i){s.phin[i]=.001*i;s.phip[i]=-.002*i;}
+    CoupledDDAssembler qf(f.mesh,f.materials,f.doping,constants::Vt_300,f.mobility,rc,bgn);
+    const auto x=qf.pack(s);
+    const auto y=full.packPopulation(s.psi,qf.electronDensity(x),qf.holeDensity(x));
+    const VectorXd r=full.residual(y,{}),a=approximate.residual(y,{});
+    REQUIRE((r.array()==a.array()).all());
+    const SparseMatrixd j=full.assembleJacobian(y,{}),k=approximate.assembleJacobian(y,{});
+    REQUIRE((j-k).norm()>0.);
+    REQUIRE((j-k).topRows(6).norm()==0.);
+    REQUIRE((full.residual(y,{}).array()==r.array()).all());
+    REQUIRE((approximate.residual(y,{}).array()==r.array()).all());
+}
+
+TEST_CASE("IALMob population flux retains a packed edge drop below the physical voltage spacing",
+          "[ialmob][legacy_population][sg_edge_precision]") {
+    Fixture f;
+    const Real vt = constants::Vt_300;
+    DDScalingSpec scaling;
+    scaling.enabled = true;
+    scaling.V0 = vt;
+    scaling.stateVariables = "potential_density";
+    CoupledDDAssembler assembler(f.mesh, f.materials, f.doping, vt, f.mobility,
+        recombinationModelConfig({"none"}), {}, {}, {}, {}, scaling);
+
+    Real left = 26.;
+    Real right = std::nextafter(left, 27.);
+    for (int k = 0; k < 32 && left * vt != right * vt; ++k) {
+        left = right;
+        right = std::nextafter(left, 27.);
+    }
+    REQUIRE(left < right);
+    REQUIRE(left * vt == right * vt);
+
+    VectorXd x = VectorXd::Zero(18);
+    x.head(6).setConstant(left);
+    x[1] = x[2] = right;
+    x.segment(6, 4).setConstant(1.e20);
+    x.segment(12, 4).setConstant(1.e10);
+    const auto fields = assembler.populationPhysicalFields(x);
+    DDSolution solution;
+    solution.stateVariables = scaling.stateVariables;
+    solution.populationPsi = x.head(6);
+    solution.populationPotentialScale_V = vt;
+    solution.psi = fields.psi_V;
+    solution.phin = fields.phin_V;
+    solution.phip = fields.phip_V;
+    solution.n = fields.n;
+    solution.p = fields.p;
+    REQUIRE(solution.hasConsistentPopulationPotential());
+
+    ContactCurrent current(f.mesh, f.materials, f.doping, f.mobility, 300., scaling);
+    const auto edges = current.computeDetailed(solution, "left");
+    const auto reaction = current.computeFromResidual(assembler, x, "left");
+    REQUIRE(edges.totals.electronCurrent < 0.);
+    CHECK(edges.totals.electronCurrent == Catch::Approx(reaction.electronCurrent).epsilon(2.e-12));
+    CHECK(edges.totals.holeCurrent == Catch::Approx(reaction.holeCurrent).epsilon(2.e-12));
+    for (const auto& edge : edges.edges) {
+        const Real drop = x[edge.node1] - x[edge.node0];
+        if (drop == 0. || edge.mun <= 0.) continue;
+        // Equal endpoint populations give B(-eta) - B(eta) = eta.
+        const Real expected = edge.mun * vt / edge.edgeLength_m * solution.n[edge.node0] * drop;
+        CHECK(edge.electronContinuityFlux == Catch::Approx(expected).epsilon(2.e-12));
     }
 }
 
@@ -646,7 +767,12 @@ TEST_CASE("IALMob avalanche boundary projection removes normal field without cha
     for(int i=0;i<6;++i) fn[i]+=f.mesh.getNode(i).x*2e5;
     CHECK(record().electronImpactField==Catch::Approx(2e5));
     impact.contactElectricFieldFallback=true;
-    CHECK(record().electronImpactField==0.);
+    const auto contact=record();
+    CHECK(contact.electronImpactField==0.);
+    impact.gradQfContactField=GradQfContactField::QuasiFermiGradient;
+    const auto explicitQf=record();
+    CHECK(explicitQf.electronImpactField==Catch::Approx(2e5));
+    CHECK((explicitQf.electronCurrentVector-contact.electronCurrentVector).norm()==0.);
 }
 
 TEST_CASE("Avalanche boundary projection is opt in and parsed by both solvers", "[ialmob][impact][config]")
@@ -664,6 +790,35 @@ TEST_CASE("Avalanche boundary projection is opt in and parsed by both solvers", 
     auto impact=impactIonizationModelConfig("van_overstraeten");
     impact.ialmobBoundaryFieldProjection=true;
     CHECK_THROWS_AS(detail::validateImpactIonizationDrivingForce(impact,"test"),std::invalid_argument);
+}
+
+TEST_CASE("GradQF contact field has the same JSON policy for Newton and Gummel", "[ialmob][contact_field]") {
+    const nlohmann::json input={
+        {"mobility",{{"high_field_driving_force","quasi_fermi_gradient"},
+                     {"contact_electric_field_fallback",false}}},
+        {"impact_ionization",{{"driving_force","quasi_fermi_gradient"},
+                              {"contact_electric_field_fallback",false}}}};
+    const auto check=[](const auto& config,bool expected) {
+        CHECK(config.mobility.useElectricFieldAtGradQfContacts()==expected);
+        CHECK(config.impactIonization.useElectricFieldAtGradQfContacts()==expected);
+    };
+    check(newtonConfigFromJson(input),true);
+    check(gummelConfigFromJson(input),true);
+    auto explicitQf=input;
+    explicitQf["grad_qf_contact_field"]="quasi_fermi_gradient";
+    explicitQf["mobility"]["contact_electric_field_fallback"]=true;
+    explicitQf["impact_ionization"]["contact_electric_field_fallback"]=true;
+    check(newtonConfigFromJson(explicitQf),false);
+    check(gummelConfigFromJson(explicitQf),false);
+    const auto defaultPolicy=newtonConfigFromJson(input);
+    auto otherPolicy=defaultPolicy;
+    otherPolicy.mobility.gradQfContactField=GradQfContactField::QuasiFermiGradient;
+    otherPolicy.impactIonization.gradQfContactField=GradQfContactField::QuasiFermiGradient;
+    CHECK(bvProcessConfigurationFingerprint(defaultPolicy.mobility,defaultPolicy.impactIonization)!=
+          bvProcessConfigurationFingerprint(otherPolicy.mobility,otherPolicy.impactIonization));
+    explicitQf["grad_qf_contact_field"]="unknown";
+    CHECK_THROWS_AS(newtonConfigFromJson(explicitQf),std::invalid_argument);
+    CHECK_THROWS_AS(gummelConfigFromJson(explicitQf),std::invalid_argument);
 }
 
 TEST_CASE("IALMob transport rejects geometry coupling mismatch", "[ialmob][transport]")
@@ -1282,6 +1437,34 @@ TEST_CASE("Observed IALMob avalanche assembles every live potential column in bo
         const auto sourceFd=assembler.impactIonizationSourceFiniteDifferenceJacobian(x,bc,2e-7);
         CHECK((source-sourceFd).norm()/source.norm()<3e-6);
         const auto full=assembler.assembleJacobian(x,bc);
+        {
+            auto populationScaling=scaling;
+            populationScaling.stateVariables="potential_density";
+            CoupledDDAssembler population(f.mesh,f.materials,f.doping,vt,f.mobility,
+                off,{},impact,{}, {},populationScaling);
+            const auto n=assembler.electronDensity(x),p=assembler.holeDensity(x);
+            const auto y=population.packPopulation(state.psi*scale,n,p);
+            VectorXd direction=VectorXd::Zero(y.size());
+            direction.head(6)=VectorXd::LinSpaced(6,-.002,.003)/scale;
+            direction.segment(6,6)=.01*n;
+            direction.tail(6)=-.02*p;
+            const auto direct=population.impactIonizationSourceJacobian(y,bc);
+            const auto jacobian=population.assembleJacobian(y,bc);
+            const VectorXd sourceAction=direct*direction;
+            const VectorXd action=jacobian*direction;
+            REQUIRE(sourceAction.norm()>0.);
+            for (const Real h:{1.e-3,1.e-4}) {
+                const VectorXd plus=y+h*direction,minus=y-h*direction;
+                const VectorXd sourceFdAction=(population.impactIonizationSourceResidual(plus,bc)-
+                    population.impactIonizationSourceResidual(minus,bc))/(2.*h);
+                const VectorXd fdAction=(population.residual(plus,bc)-population.residual(minus,bc))/(2.*h);
+                CHECK((sourceAction-sourceFdAction).norm()/sourceAction.norm()<1e-5);
+                for (int block=0;block<3;++block) {
+                    const Real norm=action.segment(6*block,6).norm();
+                    CHECK((action-fdAction).segment(6*block,6).norm()<2e-5*norm);
+                }
+            }
+        }
         DDSolution physical;
         {
             // Actual IAL/source bundle, including TCAD units and corner cells.

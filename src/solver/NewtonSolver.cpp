@@ -267,13 +267,6 @@ Real clampMinorityRelaxationStrength(Real value)
     return value;
 }
 
-inline double thermalVoltage(double T)
-{
-    if (T <= 0.0)
-        throw std::invalid_argument("thermalVoltage: temperature_K must be positive.");
-    return constants::kb * T / constants::q;
-}
-
 Real ohmicContactNetDoping(const DeviceMesh& mesh,
                            const DopingModel& doping,
                            const Contact& contact,
@@ -1934,7 +1927,7 @@ NewtonCarrierRowRecoveryResult recoverCarrierRowsWithGummelDensity(
     result.attempted = true;
     result.cyclesAttempted = 1;
 
-    const double Vt = thermalVoltage(cfg.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg.temperature_K, cfg.unitScalingRefs);
     MobilityModelConfig mobilityConfig = cfg.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -2532,8 +2525,10 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         throw std::invalid_argument("unknown state_variables");
     if(cfg.stateVariables=="potential_density") {
         const auto method=json.value("method",std::string{"newton"});
-        if(method!="newton"&&method!="poisson_only")
-            throw std::invalid_argument("potential_density requires Newton or Poisson initialization");
+        const bool frozenLegacy = cfg.coupledOperator == "legacy" &&
+            (method == "frozen_state" || method == "diagnostic_state_replay");
+        if (method != "newton" && method != "poisson_only" && !frozenLegacy)
+            throw std::invalid_argument("potential_density requires Newton, Poisson initialization, or legacy frozen replay");
     }
     if(json.contains("population_update") && cfg.stateVariables!="potential_density")
         throw std::invalid_argument("population_update requires potential_density state_variables");
@@ -3255,6 +3250,10 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "newtonConfigFromJson: impact_ionization must be a string or object.");
         }
     }
+    const auto contactField = gradQfContactFieldFromString(
+        json.value("grad_qf_contact_field", std::string{"electric_field"}));
+    cfg.mobility.gradQfContactField = contactField;
+    cfg.impactIonization.gradQfContactField = contactField;
     detail::validateImpactIonizationDrivingForce(cfg.impactIonization, "newtonConfigFromJson");
     (void)BandToBandTunnelingModel(cfg.bandToBand);
 
@@ -4127,7 +4126,7 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
     const auto& ni = assembler.intrinsicDensity();
     const auto& Nc = assembler.electronDensityOfStates();
     const auto& Nv = assembler.holeDensityOfStates();
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const Real potentialScale =
         assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
     const bool dominantSignedContactMean =
@@ -4313,7 +4312,7 @@ DDSolution NewtonSolver::buildInitialGuess(
     const CoupledDDAssembler& assembler, const CoupledDDBoundaryConditions& bcs) const
 {
     const int N = static_cast<int>(mesh_.numNodes());
-    const Real Vt = thermalVoltage(cfg_.temperature_K);
+    const Real Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const Real potentialScale =
         assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
     const auto& ni = assembler.intrinsicDensity();
@@ -4398,7 +4397,7 @@ DDSolution NewtonSolver::makeSolution(const CoupledDDAssembler& assembler,
 std::shared_ptr<CoupledDDAssembler> NewtonSolver::makeArclengthAssembler(
     const DDSolution* referenceState) const
 {
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -4583,7 +4582,7 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
         system.bootstrapJacobian=[self,assembler,biasesAt](const VectorXd& x,Real v) {
             return assembler->populationBootstrapJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)));
         };
-        const double vt=thermalVoltage(cfg_.temperature_K);
+        const double vt=thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
         system.columnScales=[assembler,nodeCount,potentialScale,vt](const ArclengthState& state) {
             (void)assembler->unpack(state.x);VectorXd scale=VectorXd::Ones(3*nodeCount+1);
             scale.head(nodeCount)=state.x.head(nodeCount).cwiseAbs().array()+vt/potentialScale;
@@ -4641,7 +4640,7 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
         };
     }
     if (!assembler->usesPopulationState() && positiveDensityTrials) {
-        const Real scaledThermalVoltage = thermalVoltage(cfg_.temperature_K) / potentialScale;
+        const Real scaledThermalVoltage = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs) / potentialScale;
         system.trialState = [self, nodeCount, potentialScale, scaledThermalVoltage](
             const VectorXd& x, const VectorXd& deltaX, Real alpha) {
             if (x.size() != 3 * nodeCount || deltaX.size() != x.size() ||
@@ -4833,41 +4832,23 @@ DensityUpdateErrorEvaluator NewtonSolver::makeArclengthUpdateErrorEvaluator(
         for (const auto& [node, value] : bcs.phip) holeFree[node] = false;
         const auto [dn, dp] = assembler->carrierDensityTangent(before, direction);
         const auto n = assembler->electronDensity(after), p = assembler->holeDensity(after);
-        std::array<vela::ArithmeticReal, 4> squares{};
+        DensityUpdateAccumulator<ArithmeticReal, Real> metric(config.digits);
         bool valid = true;
-        const vela::ArithmeticReal amplification = std::pow(VELA_ARITHMETIC_LITERAL(10.), config.digits);
-        auto add = [&](int block, Real state, Real delta, Real reference) {
-            const vela::ArithmeticReal normalized = amplification * static_cast<vela::ArithmeticReal>(delta) /
-                (std::abs(static_cast<vela::ArithmeticReal>(state)) + reference);
-            valid = valid && std::isfinite(state) && std::isfinite(delta) &&
-                std::isfinite(normalized);
-            squares[block] += normalized*normalized;
-            ++result.counts[block];
-        };
         for (int i=0; i<N; ++i) {
-            add(0, after(i)*potentialScale, direction(i)*potentialScale,
-                config.potentialReference_V);
+            metric.add(0, after(i)*potentialScale, direction(i)*potentialScale,
+                       config.potentialReference_V);
             if (assembler->intrinsicDensity()[i] > 0. && electronFree[i]) {
                 valid = valid && n(i)>0.;
-                add(1, n(i)*densityToCm3, dn(i)*densityToCm3, config.electronReference_cm3);
+                metric.add(1, n(i)*densityToCm3, dn(i)*densityToCm3, config.electronReference_cm3);
             }
             if (assembler->intrinsicDensity()[i] > 0. && holeFree[i]) {
                 valid = valid && p(i)>0.;
-                add(2, p(i)*densityToCm3, dp(i)*densityToCm3, config.holeReference_cm3);
+                metric.add(2, p(i)*densityToCm3, dp(i)*densityToCm3, config.holeReference_cm3);
             }
         }
         for (std::size_t i=0; i<aliases; ++i)
-            add(3, voltageAfter, rawVoltageDirection, config.contactReference_V);
-        vela::ArithmeticReal total = 0.;
-        std::size_t count = 0;
-        for (int k=0; k<4; ++k) {
-            count += result.counts[k]; total += squares[k];
-            result.blockRms[k] = result.counts[k] ?
-                static_cast<Real>(std::sqrt(squares[k]/result.counts[k])) : 0.;
-        }
-        result.rms = static_cast<Real>(std::sqrt(total/count));
-        result.valid = valid && std::isfinite(result.rms);
-        return result;
+            metric.add(3, voltageAfter, rawVoltageDirection, config.contactReference_V);
+        return metric.finish(valid);
     };
 }
 
@@ -5146,7 +5127,7 @@ Real NewtonSolver::maxContactMajorityQuasiFermiDrop(
 }
 NewtonResidualEvaluation NewtonSolver::evaluateResidual(const DDSolution& state) const
 {
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -5196,7 +5177,7 @@ NewtonResidualEvaluation NewtonSolver::evaluateResidual(const DDSolution& state)
 NewtonPoissonTermEvaluation NewtonSolver::evaluatePoissonTerms(
     const DDSolution& state) const
 {
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -5241,7 +5222,7 @@ nlohmann::json NewtonSolver::exportPoissonArithmeticModel(const DDSolution& stat
     recombinationConfig.augerWithGeneration=cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct=cfg_.augerExcessProduct;
     recombinationConfig.bandToBand=cfg_.bandToBand;
-    CoupledDDAssembler assembler(mesh_,matdb_,doping_,thermalVoltage(cfg_.temperature_K),
+    CoupledDDAssembler assembler(mesh_,matdb_,doping_,thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs),
         cfg_.mobility,recombinationConfig,cfg_.bandgapNarrowing,cfg_.impactIonization,
         fixedCharges_,sheetCharges_,buildScalingSpec(),cfg_.carrierDiagonalFloor,
         cfg_.carrierStatistics,cfg_.electronQuantumPotential);
@@ -5286,7 +5267,7 @@ NewtonLinearSystemEvaluation NewtonSolver::evaluateSourceDiagnosticPair(const DD
     if(factorRefinementSteps<0 || factorRefinementSteps>3)throw std::invalid_argument("invalid factor refinement bound");
     const auto t0=std::chrono::steady_clock::now();
     auto elapsed=[&](){return std::chrono::duration<double>(std::chrono::steady_clock::now()-t0).count();};
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -5399,7 +5380,7 @@ NewtonStepEvaluation NewtonSolver::evaluateStep(const DDSolution& state, Real di
         throw std::invalid_argument("evaluateStep QF direction fields are not population-coordinate diagnostics; use the population update report");
     if (!std::isfinite(directionalAuditScale) || directionalAuditScale < 0.)
         throw std::invalid_argument("directional audit scale must be finite and nonnegative");
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -5527,7 +5508,7 @@ NewtonSolver::evaluateFeedbackSubstitutions(
     requireSize(replacementState.n, "replacement electron density");
     requireSize(replacementState.p, "replacement hole density");
 
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -5706,7 +5687,7 @@ NewtonSolver::evaluatePoissonQfpCrossBlockDecomposition(
     requireSize(replacementState.phin, "replacement phin");
     requireSize(replacementState.phip, "replacement phip");
 
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -6044,7 +6025,7 @@ NewtonDirectionalDerivativeEvaluation NewtonSolver::evaluateDirectionalDerivativ
             "must match the mesh node count.");
     }
 
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -6159,7 +6140,7 @@ NewtonBlockStepEvaluation NewtonSolver::evaluateBlockStep(
         throw std::invalid_argument("Local rows require carrier_local mode");
     if (mode == "carrier_density" && damping != 1.)
         throw std::invalid_argument("Density diagnostic has its own backtracking");
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -6367,7 +6348,7 @@ NewtonRegularizedCarrierStepEvaluation NewtonSolver::evaluateRegularizedCarrierS
             "regularization scale must be finite and non-negative.");
     }
 
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -6466,7 +6447,7 @@ NewtonRegularizedCarrierStepEvaluation NewtonSolver::evaluateRegularizedCarrierS
 NewtonCarrierRowDiagnosticsEvaluation NewtonSolver::evaluateCarrierRowDiagnostics(
     const DDSolution& state) const
 {
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -6638,7 +6619,7 @@ NewtonSolver::evaluatePoissonLinearDiagnostics(
         throw std::invalid_argument(
             "NewtonSolver::evaluatePoissonLinearDiagnostics: focus node is out of range.");
 
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -6772,7 +6753,7 @@ NewtonSolver::evaluateCarrierBlockDecomposition(const DDSolution& state) const
             "match the mesh node count.");
     }
 
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     const DDScalingSpec scaling = buildScalingSpec();
     const auto makeRecombinationConfig =
@@ -7165,7 +7146,7 @@ NewtonSolver::evaluateCarrierBlockDecomposition(const DDSolution& state) const
 NewtonGlobalContinuityClosureEvaluation NewtonSolver::evaluateFrozenGlobalContinuityClosure(
     const DDSolution& state) const
 {
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -7224,7 +7205,7 @@ NewtonCarrierTermDiagnosticsEvaluation NewtonSolver::evaluateCarrierTermDiagnost
     const DDSolution& state,
     bool solvedEquationTerms) const
 {
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -7313,7 +7294,7 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
             "mode '" + finiteDifferenceMode + "'.");
     }
 
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     const DDScalingSpec scaling = buildScalingSpec();
 
@@ -7604,7 +7585,7 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
 std::vector<CoupledDDEdgeFluxDiagnostic> NewtonSolver::evaluateSgEdgeFluxDiagnostics(
     const DDSolution& state) const
 {
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -7647,7 +7628,7 @@ NewtonSolver::evaluateElectronTransportFactorDiagnostics(
     const DDSolution& state,
     const DDSolution& replacementState) const
 {
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
@@ -7689,7 +7670,7 @@ NewtonSolver::evaluateElectronTransportSecantFactorDiagnostics(
     const DDSolution& state,
     const DDSolution& replacementState) const
 {
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
@@ -7729,7 +7710,7 @@ NewtonSolver::evaluateTransportEdgeJacobianDiagnostics(
     const DDSolution& state,
     Real physicalFiniteDifferenceStep_V) const
 {
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
@@ -7773,7 +7754,7 @@ NewtonSolver::evaluateTransportEdgeJacobianDiagnostics(
 
 NewtonResult NewtonSolver::solve() const
 {
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -7812,7 +7793,7 @@ NewtonPoissonBlockInitialization NewtonSolver::buildPoissonBlockInitialization()
         auto c=cfg_;c.compensatedPopulationState=false;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.primaryVariableCoordinates="physical";c.populationStoppingRule="legacy";c.populationSgCurrent="quasi_fermi";c.populationSgBootstrapLinearization="unchanged";
         return NewtonSolver(mesh_,matdb_,doping_,contactBiases_,c,fixedCharges_,sheetCharges_,contactSpecs_).buildPoissonBlockInitialization();
     }
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -7868,7 +7849,7 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
         state.electronQfReference.resize(0);state.holeQfReference.resize(0);
         return result;
     }
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
@@ -8150,7 +8131,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         Real previousRelaxation = cfg_.electronQuantumPotential.outerRelaxation;
         const bool potentialBased =
             cfg_.electronQuantumPotential.formulation == "potential_based";
-        const Real Vt = thermalVoltage(cfg_.temperature_K);
+        const Real Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
         std::vector<bool> activeNodes(static_cast<std::size_t>(nodeCount), false);
         std::vector<bool> transportNodes(static_cast<std::size_t>(nodeCount), false);
         std::vector<bool> nodeOwned(static_cast<std::size_t>(nodeCount), false);
@@ -8553,7 +8534,7 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
     const VectorXd& electronQuantumPotential_V) const
 {
     const auto progressStarted = std::chrono::steady_clock::now();
-    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const double Vt = thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(

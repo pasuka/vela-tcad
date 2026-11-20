@@ -25,6 +25,8 @@ std::function<void(split_dd::Evaluation&)> ialSplitPhysics(
         const auto decode=[](const nlohmann::json& a){return ElementIonizationCurve{a[0],a[1],a[2],a[3],a[4]};};
         sourceOptions.electron=decode(model["ial_ionization"][0]);sourceOptions.hole=decode(model["ial_ionization"][1]);
         sourceOptions.minimumField_V_per_m=model["ial_ionization_cutoff"];
+        if (model.value("ial_ionization_uses_qf_at_contact",false))
+            sourceOptions.contactField=GradQfContactField::QuasiFermiGradient;
     }
     return [model,config,sourceOptions](split_dd::Evaluation& o) {
         const auto& geometry=*config->ialmobGeometry;
@@ -526,6 +528,8 @@ std::shared_ptr<SplitDDRuntime> CoupledDDAssembler::buildSplitRuntime() const {
             const auto opt=detail::ialElementAvalancheOptionsFromConfig(impactIonizationConfig_);
             for(const auto& c:{opt.electron,opt.hole})j["ial_ionization"].push_back({c.lowA_per_m,c.lowB_V_per_m,c.highA_per_m,c.highB_V_per_m,c.switchField_V_per_m});
             j["ial_ionization_cutoff"]=opt.minimumField_V_per_m;
+            if (opt.contactField==GradQfContactField::QuasiFermiGradient)
+                j["ial_ionization_uses_qf_at_contact"]=true;
         }
         const auto& r=recombination_.config();const auto& d=r.augerDensityDependence;
         j["recombination"]={{"srh",recombination_.srhEnabled()},{"auger",recombination_.augerEnabled()},
