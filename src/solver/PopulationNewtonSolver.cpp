@@ -65,6 +65,8 @@ NewtonResult NewtonSolver::solvePopulation(const DDSolution& initial) const {
     c.lineSearchMode=cfg_.lineSearch?"merit":"full_step";
     c.linearSolver="direct_bordered";
     c.directRefinementSteps=cfg_.linearRefinementIterations;
+    c.bvMethodsEftDefect = cfg_.coupledOperator == "bvmethods_tri3_qf" &&
+        linear_refinement::useBvMethodsEftDefect();
     c.eftLinearDefectWithoutMp100=cfg_.populationLinearDefect=="eft";
     c.updateConvergence = cfg_.populationUpdateConvergence;
     c.updateConvergence.mode="report";

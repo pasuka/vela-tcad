@@ -761,9 +761,9 @@ An explicit `VELA_LINEAR_SOLVER=pardiso_mkl` also selects PARDISO for the full
 `direct_bordered` load-line matrix and its refinement corrections, including
 the direct path of `auto`; a PARDISO error is returned without backend fallback.
 
-For the `bvmethods_tri3_qf` coupled sweep with a directly bordered PARDISO
-solve, the original-system defect calculation uses compensated EFT
-accumulation. Finalization uses the selected arithmetic precision.
+For `bvmethods_tri3_qf` with PARDISO, the ordinary population solve and the
+directly bordered load-line solve use compensated EFT accumulation for the
+original-system defect. Finalization uses the selected arithmetic precision.
 Out-of-range rows use exact rational arithmetic in `double` and widened
 arithmetic in `extended80`. A detected discarded-tail cancellation is
 recomputed from the exact binary64 inputs using rational arithmetic.

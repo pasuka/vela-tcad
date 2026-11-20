@@ -2026,7 +2026,7 @@ if(VELA_ENABLE_PN2D_CI)
     endforeach()
     foreach(_case IN LISTS _pn2d_ci_cases)
         set(_pn2d_solver_args)
-        if(TARGET PkgConfig::UMFPACK AND (_case STREQUAL "bv" OR _case MATCHES "-forward$"))
+        if(TARGET PkgConfig::UMFPACK AND (_case STREQUAL "bv" OR _case MATCHES "-(forward|reverse)$"))
             list(APPEND _pn2d_solver_args --linear-solver umfpack)
         endif()
         add_test(NAME pn2d_ci_${_case}

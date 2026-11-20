@@ -364,7 +364,13 @@ private:
                        CarrierType carrier,
                        const LombardiParameters& params) const;
 
+    enum class BulkLaw { Constant, CaugheyThomas, Masetti, PhuMob };
+    enum class SurfaceLaw { None, Generic, Lombardi };
+
     MobilityModelConfig config_;
+    BulkLaw bulkLaw_;
+    SurfaceLaw surfaceLaw_;
+    bool fieldMobility_;
 };
 
 MobilityModelConfig mobilityModelConfig(std::string modelName);

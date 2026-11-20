@@ -6,8 +6,9 @@ from __future__ import annotations
 import copy
 import math
 from collections import defaultdict, deque
+from functools import cache
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 from gmsh_runtime import EXPECTED_GMSH_VERSION
 from sentaurus_doping import DopingEvaluationError, evaluate_m2_fields
@@ -1195,12 +1196,15 @@ def _point_in_window(window: dict[str, Any], x: float, y: float,
 
 def _placement_active_at(device_ir: dict[str, Any], placement: dict[str, Any],
                          size: dict[str, Any], windows: dict[str, dict[str, Any]],
-                         x: float, y: float) -> bool:
-    owner = _point_owner(device_ir, x, y)
-    if placement["target_kind"] == "region":
-        return owner is not None and owner["region"] == placement["target"]
-    if placement["target_kind"] == "material":
-        return owner is not None and owner["material"]["sde"] == placement["target"]
+                         x: float, y: float, *,
+                         owner_at: Callable[[float, float], dict[str, Any] | None] | None = None) -> bool:
+    target_kind = placement["target_kind"]
+    if target_kind in ("region", "material"):
+        owner = _point_owner(device_ir, x, y) if owner_at is None else owner_at(x, y)
+        if owner is None:
+            return False
+        name = owner["region"] if target_kind == "region" else owner["material"]["sde"]
+        return name == placement["target"]
     return _point_in_window(
         windows[placement["target"]], x, y,
         max(float(size["max_x"]), float(size["max_y"])),
@@ -1226,6 +1230,11 @@ def _qualify_m3_refinement(
     control = device_ir["mesh_control"]
     sizes = {item["name"]: item for item in control["refinement_sizes"]}
     windows = {item["name"]: item for item in control["windows"]}
+
+    @cache
+    def owner_at(x: float, y: float) -> dict[str, Any] | None:
+        return _point_owner(device_ir, x, y)
+
     reports = []
     failures = []
     for placement in control["refinement_placements"]:
@@ -1235,7 +1244,8 @@ def _qualify_m3_refinement(
             a, b = coordinates[first], coordinates[second]
             midpoint = (0.5 * (a[0] + b[0]), 0.5 * (a[1] + b[1]))
             if _placement_active_at(
-                    device_ir, placement, size, windows, midpoint[0], midpoint[1]):
+                    device_ir, placement, size, windows, midpoint[0], midpoint[1],
+                    owner_at=owner_at):
                 selected.append((abs(a[0] - b[0]), abs(a[1] - b[1])))
         if not selected:
             if placement['target_kind']=='region' and any(b['region']==placement['target'] and b.get('removed') for b in device_ir['geometry']['bodies']):

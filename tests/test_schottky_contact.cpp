@@ -6,7 +6,6 @@
 #include "vela/boundary/BoundaryCondition.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/Types.h"
-#include "vela/io/MeshReader.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/physics/DopingModel.h"
@@ -15,8 +14,6 @@
 #include "vela/solver/NewtonSolver.h"
 
 #include <cmath>
-#include <filesystem>
-#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -28,36 +25,19 @@ namespace {
 
 DeviceMesh buildSchottkyDiodeMesh()
 {
-    nlohmann::json mesh;
-    mesh["nodes"] = {
-        {{"id", 0}, {"x", 0.0}, {"y", 0.0}},
-        {{"id", 1}, {"x", 1e-06}, {"y", 0.0}},
-        {{"id", 2}, {"x", 1e-06}, {"y", 1e-06}},
-        {{"id", 3}, {"x", 0.0}, {"y", 1e-06}},
-    };
-    mesh["triangles"] = {
-        {{"id", 0}, {"region_id", 0}, {"node_ids", {0, 1, 2}}},
-        {{"id", 1}, {"region_id", 0}, {"node_ids", {0, 2, 3}}},
-    };
-    mesh["regions"] = {
-        {{"id", 0}, {"name", "n_silicon"}, {"material", "Si"}, {"cell_ids", {0, 1}}},
-    };
-    mesh["contacts"] = {
-        {{"id", 0}, {"name", "anode"},   {"region_id", 0}, {"node_ids", {0, 3}}},
-        {{"id", 1}, {"name", "cathode"}, {"region_id", 0}, {"node_ids", {1, 2}}},
-    };
-
-    // Write to a tempfile because JsonMeshReader takes a path.
-    const auto tmpPath = std::filesystem::temp_directory_path() /
-                         "vela_test_schottky_mesh.json";
-    {
-        std::ofstream ofs(tmpPath);
-        ofs << mesh.dump();
-    }
-    JsonMeshReader reader;
-    DeviceMesh out = reader.read(tmpPath.string());
-    std::filesystem::remove(tmpPath);
-    return out;
+    constexpr Real length = 1.0e-6;
+    DeviceMesh mesh;
+    mesh.addNode({0, 0.0, 0.0});
+    mesh.addNode({1, length, 0.0});
+    mesh.addNode({2, length, length});
+    mesh.addNode({3, 0.0, length});
+    mesh.addCell({0, CellType::Tri3, 0, {0, 1, 2}});
+    mesh.addCell({1, CellType::Tri3, 0, {0, 2, 3}});
+    mesh.addRegion({0, "n_silicon", "Si", {0, 1}});
+    mesh.addContact({0, "anode", 0, {0, 3}, {}});
+    mesh.addContact({1, "cathode", 0, {1, 2}, {}});
+    mesh.buildEdges();
+    return mesh;
 }
 
 } // namespace

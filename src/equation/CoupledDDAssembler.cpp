@@ -6230,53 +6230,54 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const Real electronReferenceJ =
             electronQuasiFermiReferenceAt(idxJ);
         const Real phinJLocal = phin_j;
-        const Real holeReferenceI = holeQuasiFermiReferenceAt(idxI);
-        const Real holeReferenceJ = holeQuasiFermiReferenceAt(idxJ);
         phin_j = referencedValueRelativeTo(
             electronReferenceJ, phin_j, electronReferenceI);
-        const Real dpsi = psi_j - psi_i;
         const Real electronPsi_i = electronTransportPotential(idxI, psi_i);
         const Real electronPsi_j = electronTransportPotential(idxJ, psi_j);
-        const Real electricField = std::abs(dpsi / h) * fieldFactor;
-        const bool freezePhuMobFieldDerivative =
-            isPhuMobModel(mobilityConfig_) &&
-            !mobilityConfig_.jacobianFieldDerivatives;
-        const Real frozenElectronMobilityField = qfMobility
-            ? std::abs((phinState(j) - phinState(i)) / h) * fieldFactor
-            : std::abs((psi(j) - psi(i)) / h) * fieldFactor;
-        const Real rawMobilityField = vectorQfMobility
-            ? electronVectorMobilityFields[e]
-            : freezePhuMobFieldDerivative
-                ? frozenElectronMobilityField
-            : (qfMobility
-                ? std::abs((phin_j - phin_i) / h) * fieldFactor
-                : electricField);
-        const Real electronMobilityField =
-            detail::contactCellElectricFieldMagnitudeForMobility(
-                mobilityConfig_, mesh_, edgeCells_, cellMaterials_, e,
-                [&](Index node) {
-                    if (freezePhuMobFieldDerivative) return psi(static_cast<int>(node));
-                    return node == idxI ? psi_i : (node == idxJ ? psi_j :
-                        (node == surfacePsiNode ? surfacePsiValue : psi(static_cast<int>(node))));
-                }, fieldFactor, rawMobilityField, nullptr, &contactNodes);
-        const Real electronDensityI = electronDensityAt(
-            idxI, psi_i - electronReferenceI, phin_i);
-        const Real electronDensityJ = electronDensityAt(
-            idxJ, psi_j - electronReferenceJ, phinJLocal);
-        const Real holeDensityI = vela::holeDensity(
-            ni_[idxI], Nv_[idxI], psi_i - holeReferenceI, phip_i,
-            Vt_, carrierStatisticsModel_);
-        const Real holeDensityJ = vela::holeDensity(
-            ni_[idxJ], Nv_[idxJ], psi_j - holeReferenceJ, phip_j,
-            Vt_, carrierStatisticsModel_);
-        const Real mun = fixedMobility >= 0.0 &&
-                !isPhuMobModel(mobilityConfig_)
-            ? fixedMobility
-            : withSurfaceTrial(i, j, psi_i, psi_j, surfacePsiNode, surfacePsiValue,
+        const bool phuMob = isPhuMobModel(mobilityConfig_);
+        Real mun = fixedMobility;
+        // Trial fields and populations are needed only if mobility is reevaluated.
+        if (!(fixedMobility >= 0.0) || phuMob) {
+            const Real dpsi = psi_j - psi_i;
+            const Real electricField = std::abs(dpsi / h) * fieldFactor;
+            const bool freezePhuMobFieldDerivative =
+                phuMob && !mobilityConfig_.jacobianFieldDerivatives;
+            const Real frozenElectronMobilityField = qfMobility
+                ? std::abs((phinState(j) - phinState(i)) / h) * fieldFactor
+                : std::abs((psi(j) - psi(i)) / h) * fieldFactor;
+            const Real rawMobilityField = vectorQfMobility
+                ? electronVectorMobilityFields[e]
+                : freezePhuMobFieldDerivative
+                    ? frozenElectronMobilityField
+                : (qfMobility
+                    ? std::abs((phin_j - phin_i) / h) * fieldFactor
+                    : electricField);
+            const Real electronMobilityField =
+                detail::contactCellElectricFieldMagnitudeForMobility(
+                    mobilityConfig_, mesh_, edgeCells_, cellMaterials_, e,
+                    [&](Index node) {
+                        if (freezePhuMobFieldDerivative) return psi(static_cast<int>(node));
+                        return node == idxI ? psi_i : (node == idxJ ? psi_j :
+                            (node == surfacePsiNode ? surfacePsiValue : psi(static_cast<int>(node))));
+                    }, fieldFactor, rawMobilityField, nullptr, &contactNodes);
+            const Real electronDensityI = electronDensityAt(
+                idxI, psi_i - electronReferenceI, phin_i);
+            const Real electronDensityJ = electronDensityAt(
+                idxJ, psi_j - electronReferenceJ, phinJLocal);
+            const Real holeReferenceI = holeQuasiFermiReferenceAt(idxI);
+            const Real holeReferenceJ = holeQuasiFermiReferenceAt(idxJ);
+            const Real holeDensityI = vela::holeDensity(
+                ni_[idxI], Nv_[idxI], psi_i - holeReferenceI, phip_i,
+                Vt_, carrierStatisticsModel_);
+            const Real holeDensityJ = vela::holeDensity(
+                ni_[idxJ], Nv_[idxJ], psi_j - holeReferenceJ, phip_j,
+                Vt_, carrierStatisticsModel_);
+            mun = withSurfaceTrial(i, j, psi_i, psi_j, surfacePsiNode, surfacePsiValue,
                 [&](const VectorXd& trial) {
                     return cachedEdgeMobility(e, CarrierType::Electron, electronMobilityField,
                         &trial, electronDensityI, electronDensityJ, holeDensityI, holeDensityJ);
                 });
+        }
         if (mun <= 0.0)
             return 0.0;
         const Real coef = mun * Vt_ * fieldFactor * couple_e / h;
@@ -6335,48 +6336,48 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         phip_j = referencedValueRelativeTo(
             holeReferenceJ, phip_j, holeReferenceI);
         const Real dpsi = psi_j - psi_i;
-        const Real electricField = std::abs(dpsi / h) * fieldFactor;
-        const bool freezePhuMobFieldDerivative =
-            isPhuMobModel(mobilityConfig_) &&
-            !mobilityConfig_.jacobianFieldDerivatives;
-        const Real frozenHoleMobilityField = qfMobility
-            ? std::abs((phipState(j) - phipState(i)) / h) * fieldFactor
-            : std::abs((psi(j) - psi(i)) / h) * fieldFactor;
-        const Real rawMobilityField = vectorQfMobility
-            ? holeVectorMobilityFields[e]
-            : freezePhuMobFieldDerivative
-                ? frozenHoleMobilityField
-            : (qfMobility
-                ? std::abs((phip_j - phip_i) / h) * fieldFactor
-                : electricField);
-        const Real holeMobilityField =
-            detail::contactCellElectricFieldMagnitudeForMobility(
-                mobilityConfig_, mesh_, edgeCells_, cellMaterials_, e,
-                [&](Index node) {
-                    if (freezePhuMobFieldDerivative) return psi(static_cast<int>(node));
-                    return node == idxI ? psi_i : (node == idxJ ? psi_j :
-                        (node == surfacePsiNode ? surfacePsiValue : psi(static_cast<int>(node))));
-                }, fieldFactor, rawMobilityField, nullptr, &contactNodes);
-        const Real electronReferenceI = electronQuasiFermiReferenceAt(idxI);
-        const Real electronReferenceJ = electronQuasiFermiReferenceAt(idxJ);
-        const Real electronDensityI = electronDensityAt(
-            idxI, psi_i - electronReferenceI, phin_i);
-        const Real electronDensityJ = electronDensityAt(
-            idxJ, psi_j - electronReferenceJ, phin_j);
-        const Real holeDensityI = vela::holeDensity(
-            ni_[idxI], Nv_[idxI], psi_i - holeReferenceI, phip_i,
-            Vt_, carrierStatisticsModel_);
-        const Real holeDensityJ = vela::holeDensity(
-            ni_[idxJ], Nv_[idxJ], psi_j - holeReferenceJ, phipJLocal,
-            Vt_, carrierStatisticsModel_);
-        const Real mup = fixedMobility >= 0.0 &&
-                !isPhuMobModel(mobilityConfig_)
-            ? fixedMobility
-            : withSurfaceTrial(i, j, psi_i, psi_j, surfacePsiNode, surfacePsiValue,
+        const bool phuMob = isPhuMobModel(mobilityConfig_);
+        Real mup = fixedMobility;
+        if (!(fixedMobility >= 0.0) || phuMob) {
+            const Real electricField = std::abs(dpsi / h) * fieldFactor;
+            const bool freezePhuMobFieldDerivative =
+                phuMob && !mobilityConfig_.jacobianFieldDerivatives;
+            const Real frozenHoleMobilityField = qfMobility
+                ? std::abs((phipState(j) - phipState(i)) / h) * fieldFactor
+                : std::abs((psi(j) - psi(i)) / h) * fieldFactor;
+            const Real rawMobilityField = vectorQfMobility
+                ? holeVectorMobilityFields[e]
+                : freezePhuMobFieldDerivative
+                    ? frozenHoleMobilityField
+                : (qfMobility
+                    ? std::abs((phip_j - phip_i) / h) * fieldFactor
+                    : electricField);
+            const Real holeMobilityField =
+                detail::contactCellElectricFieldMagnitudeForMobility(
+                    mobilityConfig_, mesh_, edgeCells_, cellMaterials_, e,
+                    [&](Index node) {
+                        if (freezePhuMobFieldDerivative) return psi(static_cast<int>(node));
+                        return node == idxI ? psi_i : (node == idxJ ? psi_j :
+                            (node == surfacePsiNode ? surfacePsiValue : psi(static_cast<int>(node))));
+                    }, fieldFactor, rawMobilityField, nullptr, &contactNodes);
+            const Real electronReferenceI = electronQuasiFermiReferenceAt(idxI);
+            const Real electronReferenceJ = electronQuasiFermiReferenceAt(idxJ);
+            const Real electronDensityI = electronDensityAt(
+                idxI, psi_i - electronReferenceI, phin_i);
+            const Real electronDensityJ = electronDensityAt(
+                idxJ, psi_j - electronReferenceJ, phin_j);
+            const Real holeDensityI = vela::holeDensity(
+                ni_[idxI], Nv_[idxI], psi_i - holeReferenceI, phip_i,
+                Vt_, carrierStatisticsModel_);
+            const Real holeDensityJ = vela::holeDensity(
+                ni_[idxJ], Nv_[idxJ], psi_j - holeReferenceJ, phipJLocal,
+                Vt_, carrierStatisticsModel_);
+            mup = withSurfaceTrial(i, j, psi_i, psi_j, surfacePsiNode, surfacePsiValue,
                 [&](const VectorXd& trial) {
                     return cachedEdgeMobility(e, CarrierType::Hole, holeMobilityField,
                         &trial, electronDensityI, electronDensityJ, holeDensityI, holeDensityJ);
                 });
+        }
         if (mup <= 0.0)
             return 0.0;
         const Real coef = mup * Vt_ * fieldFactor * couple_e / h;

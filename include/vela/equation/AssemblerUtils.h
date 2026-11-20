@@ -41,6 +41,7 @@
 #include <stdexcept>
 #include <limits>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <type_traits>
 
@@ -1620,8 +1621,8 @@ inline Real edgeMobilityDopingConcentration(
     Index cellId,
     const MobilityModelConfig* config)
 {
-    const std::string basis = config != nullptr
-        ? config->dopingConcentrationBasis
+    const std::string_view basis = config != nullptr
+        ? std::string_view(config->dopingConcentrationBasis)
         : "net_doping";
     if (basis == "total_impurity") {
         return 0.5 * (doping.totalImpurity(edge.n0) +
@@ -1639,8 +1640,8 @@ inline Real nodeMobilityDopingConcentration(
     Index cellId,
     const MobilityModelConfig* config)
 {
-    const std::string basis = config != nullptr
-        ? config->dopingConcentrationBasis
+    const std::string_view basis = config != nullptr
+        ? std::string_view(config->dopingConcentrationBasis)
         : "net_doping";
     if (basis == "total_impurity")
         return doping.totalImpurity(nodeId);
@@ -1836,8 +1837,14 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
 
     const bool surfaceEnabled =
         mobilityConfig != nullptr && isSurfaceMobilityModel(*mobilityConfig);
+    const std::string_view model = mobilityConfig != nullptr
+        ? std::string_view(mobilityConfig->model) : std::string_view{};
+    const bool lombardi = model == "constant_lombardi" ||
+        model == "constant_field_lombardi" ||
+        model == "masetti_lombardi" || model == "masetti_field_lombardi" ||
+        model == "phumob_lombardi" || model == "phumob_field_lombardi";
     std::vector<std::string> adjacentRegionNames;
-    if (surfaceEnabled) {
+    if (surfaceEnabled && !lombardi) {
         adjacentRegionNames.reserve(cells.size());
         for (Index c : cells)
             adjacentRegionNames.push_back(mesh.getRegion(mesh.getCell(c).region_id).name);
@@ -1861,13 +1868,6 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
         // normal-field estimate is available the NaN field disables the surface
         // factor while preserving any high-field velocity saturation.
         const Region& region = mesh.getRegion(mesh.getCell(c).region_id);
-        const bool lombardi = mobilityConfig != nullptr &&
-            (mobilityConfig->model == "constant_lombardi" ||
-             mobilityConfig->model == "constant_field_lombardi" ||
-             mobilityConfig->model == "masetti_lombardi" ||
-             mobilityConfig->model == "masetti_field_lombardi" ||
-             mobilityConfig->model == "phumob_lombardi" ||
-             mobilityConfig->model == "phumob_field_lombardi");
         const bool surfaceApplies = surfaceEnabled &&
             (lombardi
                 ? (mobilityConfig->surface.surfaceRegion.empty() ||

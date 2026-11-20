@@ -85,8 +85,8 @@ class BvMethodsTri3Operator {
   std::array<Index,3> nodes;
   experimental::AvTri3Geometry geometry;
   std::array<double,3> transportAreas_cm2;
-  std::array<Point2,3> shape;
-  Point2 distanceGradient;
+  std::array<double,3> coefficientAreas_cm2{};
+  std::array<double,2> normalFieldCoefficients;
   std::array<double,3> bulkN,bulkP;
  };
  std::vector<CellCache> cells_;
@@ -163,8 +163,12 @@ public:
    for(int k=0;k<3;++k){a.nodes[k]=c.node_ids[k];a.geometry.nodeOrder[k]=a.nodes[k];const auto& p=mesh.getNode(a.nodes[k]);a.geometry.points_cm[k]={units.internalLengthToMeters(p.x)*100.,units.internalLengthToMeters(p.y)*100.};}
    const auto& p0=mesh.getNode(a.nodes[0]);const auto& p1=mesh.getNode(a.nodes[1]);const auto& p2=mesh.getNode(a.nodes[2]);
    const double x1=p1.x-p0.x,y1=p1.y-p0.y,x2=p2.x-p0.x,y2=p2.y-p0.y,det=x1*y2-x2*y1;
-   a.shape[1]={y2/det,-x2/det};a.shape[2]={-y1/det,x1/det};a.shape[0]=-a.shape[1]-a.shape[2];
+   const Point2 shape1{y2/det,-x2/det},shape2{-y1/det,x1/det};
    const auto weights=detail::tri3ElementVertexBoxMeasures(mesh,c);
+   if(mesh.poissonPermittivityPolicy()==BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial) {
+    const auto coefficientWeights=detail::cellBoxNodeMeasures(mesh,cid);
+    for(int k=0;k<3;++k)a.coefficientAreas_cm2[k]=coefficientWeights[k]*units.areaM2PerInternal()*1e4;
+   }
    const auto avalancheWeights = problem.newton.numerics.avalancheWeights == BvMethodsAvalancheWeights::CoefficientBox
        ? conservativeCoefficientBoxMeasures(mesh,cid) : weights;
    double total=0;for(double w:weights)total+=w;
@@ -180,8 +184,10 @@ public:
     a.geometry.boxAreas_cm2[k]=avalancheWeights[k]*units.areaM2PerInternal()*1e4;
     auto imp=problem.doping.totalImpurity(i);a.bulkN[k]=bulk_->electronMobility(materials_[cid],imp,0,0);a.bulkP[k]=bulk_->holeMobility(materials_[cid],imp,0,0);
    }
-   a.distanceGradient=a.shape[1]*(geo_.surface.nodeDistances[a.nodes[1]]-geo_.surface.nodeDistances[a.nodes[0]])+a.shape[2]*(geo_.surface.nodeDistances[a.nodes[2]]-geo_.surface.nodeDistances[a.nodes[0]]);
-   Eigen::Matrix2d G,S;G.col(0)=a.shape[1];G.col(1)=a.shape[2];const auto& z=geo_.highFieldCells[cid].stencil;
+   const Point2 distanceGradient=shape1*(geo_.surface.nodeDistances[a.nodes[1]]-geo_.surface.nodeDistances[a.nodes[0]])+shape2*(geo_.surface.nodeDistances[a.nodes[2]]-geo_.surface.nodeDistances[a.nodes[0]]);
+   a.normalFieldCoefficients={shape1.dot(distanceGradient)*cfg_.surface.coordinateFieldFactor,
+                              shape2.dot(distanceGradient)*cfg_.surface.coordinateFieldFactor};
+   Eigen::Matrix2d G,S;G.col(0)=shape1;G.col(1)=shape2;const auto& z=geo_.highFieldCells[cid].stencil;
    S<<z[0],z[2],z[1],z[3];auto P=(S/cfg_.surface.coordinateFieldFactor*G.inverse()).eval();
    a.geometry.currentProjection={P(0,0),P(0,1),P(1,0),P(1,1)};cells_.push_back(a);
   }
@@ -239,8 +245,8 @@ public:
      return std::hypot(gx, gy);
     };
     const double en=field(cell.contact?psi:fn),hp=field(cell.contact?psi:fp);
-    const double rawNormal=(psi[1]-psi[0])*(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)
-                          +(psi[2]-psi[0])*(a.shape[2].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor);
+    const double rawNormal=(psi[1]-psi[0])*a.normalFieldCoefficients[0]
+                          +(psi[2]-psi[0])*a.normalFieldCoefficients[1];
     const double normal=rawNormal>0.?rawNormal:(rawNormal<0.?-rawNormal:0.);
     if(safe&&experimental::avFieldSafe(en)&&experimental::avFieldSafe(hp)) {
      const auto rep=a.geometry.representative;
@@ -305,7 +311,8 @@ public:
    const auto& fieldCell = geo_.highFieldCells[a.id];
    const auto en = experimental::avNorm(tri3Gradient(fieldCell.contact ? psi : fn, fieldCell.stencil));
    const auto hp = experimental::avNorm(tri3Gradient(fieldCell.contact ? psi : fp, fieldCell.stencil));
-   const auto rawNormal=(psi[1]-psi[0])*AvJet(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)+(psi[2]-psi[0])*AvJet(a.shape[2].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor);
+   const auto rawNormal=(psi[1]-psi[0])*AvJet(a.normalFieldCoefficients[0])+
+                        (psi[2]-psi[0])*AvJet(a.normalFieldCoefficients[1]);
    const auto normal=detail::dualAbs(rawNormal);int rep=a.geometry.representative;auto node=a.nodes[rep];
    auto mobility=[&](bool e,const AvJet& drive){
     const double low=e?a.bulkN[rep]:a.bulkP[rep];const auto& lp=e?cfg_.electronLombardi:cfg_.holeLombardi;const auto& hf=e?cfg_.electronField:cfg_.holeField;
@@ -363,6 +370,7 @@ public:
  // but omit its tangent. Production calls retain the full derivative default.
  BvMethodsTri3Evaluation transport(const BvMethodsQfState& state,bool derivatives,bool generalized,bool coefficientAveraging=false,bool freezeMobilityDerivatives=false,const VectorXd* columns=nullptr,double statisticalFloor_cm3=0.,
     bool reuseLombardiPowers=false,CanaliEvaluationOptions canali={}) const {
+  requireCoefficientAveragingGeometry(coefficientAveraging);
   const auto units=problem_.newton.inputScaling.unitSystem();const int n=problem_.mesh.numNodes();BvMethodsTri3Evaluation out;
   out.electronGeneration=VectorXd::Zero(n);out.holeGeneration=VectorXd::Zero(n);out.absoluteSource=VectorXd::Zero(3*n);out.source=VectorXd::Zero(3*n);out.allGeneration=VectorXd::Zero(n);
   std::vector<Eigen::Triplet<double>> entries;if(derivatives)entries.reserve(cells_.size()*54);
@@ -386,7 +394,8 @@ public:
    const auto& fieldCell = geo_.highFieldCells[a.id];
    const auto en = experimental::avNorm(tri3Gradient(fieldCell.contact ? psi : fn, fieldCell.stencil));
    const auto hp = experimental::avNorm(tri3Gradient(fieldCell.contact ? psi : fp, fieldCell.stencil));
-   const auto rawNormal=(psi[1]-psi[0])*AvJet(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)+(psi[2]-psi[0])*AvJet(a.shape[2].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor);
+   const auto rawNormal=(psi[1]-psi[0])*AvJet(a.normalFieldCoefficients[0])+
+                        (psi[2]-psi[0])*AvJet(a.normalFieldCoefficients[1]);
    const auto normal=detail::dualAbs(rawNormal);int rep=a.geometry.representative;auto node=a.nodes[rep];
    std::optional<LombardiCellPowers> powers;
    if (reuseLombardiPowers)
@@ -430,8 +439,7 @@ public:
    if(generalized)for(int k=0;k<3;++k){gn[k]=einstein(ns,etaN,k);gp[k]=einstein(ps,etaP,k);}
    const auto& coefficients=problem_.mesh.poissonCellEdgeCoefficients(a.id);
    std::array<double,3> edge{coefficients[0],coefficients[1],coefficients[2]};
-   auto averagingAreas=a.transportAreas_cm2;
-   if(coefficientAveraging){auto weights=detail::cellBoxNodeMeasures(problem_.mesh,a.id);for(int k=0;k<3;++k)averagingAreas[k]=weights[k]*units.areaM2PerInternal()*1e4;}
+   const auto& averagingAreas=coefficientAveraging?a.coefficientAreas_cm2:a.transportAreas_cm2;
    std::array<AvJet,3> an,ap;
    if(directPopulationSg_){
     if(!state.populationCoordinates)throw std::invalid_argument("Direct SG requires population coordinates");
@@ -464,6 +472,7 @@ public:
     bool coefficientAveraging,bool reuseLombardiPowers,bool valueOnlyCanali,bool auditCanali,
     BvMethodsRepresentativeMobilities* mobilityValues=nullptr) const {
   if(!supportsTransportValues(state))throw std::invalid_argument("Scalar Tri3 transport requires population QF SG");
+  requireCoefficientAveragingGeometry(coefficientAveraging);
   const auto units=problem_.newton.inputScaling.unitSystem();
   const int n=problem_.mesh.numNodes();
   BvMethodsTri3Evaluation out;
@@ -487,18 +496,14 @@ public:
     return std::hypot(gx, gy);
    };
    const double en=field(cell.contact?psi:fn),hp=field(cell.contact?psi:fp);
-   const double rawNormal=(psi[1]-psi[0])*(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)
-                         +(psi[2]-psi[0])*(a.shape[2].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor);
+   const double rawNormal=(psi[1]-psi[0])*a.normalFieldCoefficients[0]
+                         +(psi[2]-psi[0])*a.normalFieldCoefficients[1];
    const double normal=rawNormal>0.?rawNormal:(rawNormal<0.?-rawNormal:0.);
    std::optional<LombardiCellPowers> powers;
    if(reuseLombardiPowers)powers.emplace();
    const auto& coefficients=problem_.mesh.poissonCellEdgeCoefficients(a.id);
    const std::array<double,3> edge{coefficients[0],coefficients[1],coefficients[2]};
-   auto areas=a.transportAreas_cm2;
-   if(coefficientAveraging) {
-    const auto weights=detail::cellBoxNodeMeasures(problem_.mesh,a.id);
-    for(int k=0;k<3;++k)areas[k]=weights[k]*units.areaM2PerInternal()*1e4;
-   }
+   const auto& areas=coefficientAveraging?a.coefficientAreas_cm2:a.transportAreas_cm2;
    for(int block=1;block<=2;++block) {
     const bool electron=block==1;
     const auto& lp=electron?cfg_.electronLombardi:cfg_.holeLombardi;
@@ -554,6 +559,13 @@ public:
    }
   }
   return out;
+ }
+
+private:
+ void requireCoefficientAveragingGeometry(bool coefficientAveraging) const {
+  if(coefficientAveraging && !cells_.empty() &&
+     problem_.mesh.poissonPermittivityPolicy()!=BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial)
+   throw std::invalid_argument("Element box measures require cell_material geometry.");
  }
 };
 } // namespace vela::detail

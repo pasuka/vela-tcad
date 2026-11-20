@@ -17,9 +17,10 @@ D:\msys64\ucrt64\bin\python.exe scripts\probe_gmsh_python.py `
 
 On the supported MSYS2 UCRT64 installation, discovery resolves
 `lib\gmsh.py`, `bin\libgmsh.dll`, and `bin\gmsh.exe`. The probe copies the
-wrapper and shared library into the ignored runtime directory and names the
-DLL `gmsh-4.15.dll`, as required by the packaged wrapper. It does not modify
-the MSYS2 installation and the staged DLL must not be committed.
+wrapper and shared library into a subdirectory keyed by their content hashes.
+Concurrent invocations can reuse that copy without overwriting a loaded
+library. The staged DLL keeps the wrapper's required name `gmsh-4.15.dll` and
+belongs under the ignored runtime directory.
 
 Discovery can be made explicit with `--gmsh-python`, `--gmsh-library`, and
 `--gmsh-executable`, or the matching `VELA_GMSH_PYTHON`,

@@ -14,6 +14,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
@@ -223,20 +224,39 @@ def executable_version(path: Path) -> str:
     return match.group(0)
 
 
+def _stage_runtime_file(source: Path, target: Path, digest: str) -> None:
+    if target.is_file() and sha256(target) == digest:
+        return
+    with tempfile.TemporaryDirectory(prefix=".stage-", dir=target.parent) as folder:
+        temporary = Path(folder) / target.name
+        shutil.copy2(source, temporary)
+        if sha256(temporary) != digest:
+            raise GmshRuntimeError(f"Gmsh runtime source changed while staging: {source}")
+        try:
+            temporary.replace(target)
+        except PermissionError:
+            # Windows can lock a DLL that another stager has just published and loaded.
+            if not target.is_file() or sha256(target) != digest:
+                raise
+
+
 def stage_runtime(sources: RuntimeSources, runtime_dir: Path) -> dict[str, Any]:
-    """Stage an importable wrapper/DLL layout under an ignored build path."""
-    runtime = runtime_dir.resolve()
+    """Stage matching runtime bytes without truncating a loaded shared library."""
+    wrapper_digest = sha256(sources.wrapper)
+    library_digest = sha256(sources.library)
+    key = hashlib.sha256(f"{sources.version}:{wrapper_digest}:{library_digest}".encode()).hexdigest()
+    runtime = runtime_dir.resolve() / key
     runtime.mkdir(parents=True, exist_ok=True)
     wrapper_target = runtime / "gmsh.py"
     library_target = runtime / expected_library_name(sources.version)
-    shutil.copy2(sources.wrapper, wrapper_target)
-    shutil.copy2(sources.library, library_target)
+    _stage_runtime_file(sources.wrapper, wrapper_target, wrapper_digest)
+    _stage_runtime_file(sources.library, library_target, library_digest)
     return {
         "directory": str(runtime),
         "wrapper": str(wrapper_target),
-        "wrapper_sha256": sha256(wrapper_target),
+        "wrapper_sha256": wrapper_digest,
         "library": str(library_target),
-        "library_sha256": sha256(library_target),
+        "library_sha256": library_digest,
     }
 
 
@@ -395,9 +415,9 @@ def run_probe(
         },
         "sources": {
             "wrapper": str(sources.wrapper),
-            "wrapper_sha256": sha256(sources.wrapper),
+            "wrapper_sha256": staged["wrapper_sha256"],
             "library": str(sources.library),
-            "library_sha256": sha256(sources.library),
+            "library_sha256": staged["library_sha256"],
             "executable": str(sources.executable),
             "executable_sha256": sha256(sources.executable),
         },

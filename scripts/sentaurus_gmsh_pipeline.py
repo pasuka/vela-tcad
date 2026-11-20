@@ -173,8 +173,8 @@ def _load_runtime(args: argparse.Namespace) -> tuple[Any, dict[str, Any]]:
         "python": {"executable": str(Path(sys.executable).resolve()),
                    "version": platform.python_version()},
         "sources": {
-            "wrapper": str(sources.wrapper), "wrapper_sha256": sha256(sources.wrapper),
-            "library": str(sources.library), "library_sha256": sha256(sources.library),
+            "wrapper": str(sources.wrapper), "wrapper_sha256": staged["wrapper_sha256"],
+            "library": str(sources.library), "library_sha256": staged["library_sha256"],
             "executable": str(sources.executable), "executable_sha256": sha256(sources.executable),
         },
         "staging": {**staged, "loaded_library": str(loaded)},

@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -57,6 +58,26 @@ class GmshRuntimeUnitTest(unittest.TestCase):
             self.assertTrue(Path(staged["library"]).is_file())
             self.assertEqual(64, len(staged["wrapper_sha256"]))
             self.assertEqual(64, len(staged["library_sha256"]))
+
+    def test_concurrent_stagers_keep_distinct_runtime_contents(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_gmsh_shared_stage_") as tmp:
+            root = Path(tmp)
+            wrapper = root / "source_gmsh.py"
+            wrapper.write_text('GMSH_API_VERSION = "4.15.2"\n', encoding="utf-8")
+            libraries = [root / f"library-{i}" for i in range(2)]
+            contents = [b"first-runtime" * 4096, b"second-runtime" * 4096]
+            for library, value in zip(libraries, contents, strict=True):
+                library.write_bytes(value)
+            sources = [RuntimeSources(wrapper, library, root / "gmsh", EXPECTED_GMSH_VERSION)
+                       for library in libraries]
+            runtime = root / "runtime"
+            with ThreadPoolExecutor(max_workers=6) as workers:
+                manifests = list(workers.map(lambda item: stage_runtime(item, runtime), sources * 3))
+            self.assertEqual(manifests[::2], [manifests[0]] * 3)
+            self.assertEqual(manifests[1::2], [manifests[1]] * 3)
+            self.assertNotEqual(manifests[0]["directory"], manifests[1]["directory"])
+            for manifest, expected in zip(manifests[:2], contents, strict=True):
+                self.assertEqual(Path(manifest["library"]).read_bytes(), expected)
 
     def test_missing_explicit_dependency_fails_closed_with_strict_json(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_gmsh_missing_") as tmp:

@@ -363,6 +363,12 @@ Real ConstantMobility::holeMobility(const Material& material,
 
 DopingDependentMobility::DopingDependentMobility(MobilityModelConfig config)
     : config_(std::move(config))
+    , bulkLaw_(isPhuMobModel(config_) ? BulkLaw::PhuMob :
+               config_.model.rfind("constant_", 0) == 0 ? BulkLaw::Constant :
+               isMasettiModel(config_.model) ? BulkLaw::Masetti : BulkLaw::CaugheyThomas)
+    , surfaceLaw_(isLombardiModel(config_.model) ? SurfaceLaw::Lombardi :
+                  isSurfaceMobilityModel(config_) ? SurfaceLaw::Generic : SurfaceLaw::None)
+    , fieldMobility_(isFieldMobilityModel(config_.model))
 {}
 
 Real DopingDependentMobility::electronMobility(const Material& material,
@@ -373,22 +379,22 @@ Real DopingDependentMobility::electronMobility(const Material& material,
                                                Real surfaceNormalField,
                                                Real surfaceDistance) const
 {
-    if (isPhuMobModel(config_)) {
+    if (bulkLaw_ == BulkLaw::PhuMob) {
         return electronMobilityWithIonizedImpurities(
             material, std::max<Real>(netDoping, 0.0),
             std::max<Real>(-netDoping, 0.0), n, p, electricField,
             surfaceNormalField, surfaceDistance);
     }
-    Real mobility = config_.model.rfind("constant_", 0) == 0
+    Real mobility = bulkLaw_ == BulkLaw::Constant
         ? material.mun
-        : isMasettiModel(config_.model)
+        : bulkLaw_ == BulkLaw::Masetti
             ? masetti(netDoping, config_.electronMasetti)
             : caugheyThomas(material.mun, netDoping, config_.electronCT);
     // Enormal contributes to the low-field mobility consumed by Canali HFS.
     // Applying the surface resistance after HFS changes both the constitutive
     // value and its field derivatives (unlike the PhuMob path below).
-    if (isSurfaceMobilityModel(config_))
-        mobility = isLombardiModel(config_.model)
+    if (surfaceLaw_ != SurfaceLaw::None)
+        mobility = surfaceLaw_ == SurfaceLaw::Lombardi
             ? lombardiLimit(mobility, netDoping, n, p, surfaceNormalField,
                             surfaceDistance,
                             material.temperature_K.value_or(300.0),
@@ -396,7 +402,7 @@ Real DopingDependentMobility::electronMobility(const Material& material,
                             config_.electronLombardi)
             : surfaceLimit(mobility, surfaceNormalField,
                            config_.surface.thetaElectron, config_.surface);
-    if (isFieldMobilityModel(config_.model))
+    if (fieldMobility_)
         mobility = fieldLimit(mobility, electricField, config_.electronField);
     return mobility;
 }
@@ -409,20 +415,20 @@ Real DopingDependentMobility::holeMobility(const Material& material,
                                            Real surfaceNormalField,
                                            Real surfaceDistance) const
 {
-    if (isPhuMobModel(config_)) {
+    if (bulkLaw_ == BulkLaw::PhuMob) {
         return holeMobilityWithIonizedImpurities(
             material, std::max<Real>(netDoping, 0.0),
             std::max<Real>(-netDoping, 0.0), n, p, electricField,
             surfaceNormalField, surfaceDistance);
     }
-    Real mobility = config_.model.rfind("constant_", 0) == 0
+    Real mobility = bulkLaw_ == BulkLaw::Constant
         ? material.mup
-        : isMasettiModel(config_.model)
+        : bulkLaw_ == BulkLaw::Masetti
             ? masetti(netDoping, config_.holeMasetti)
             : caugheyThomas(material.mup, netDoping, config_.holeCT);
     // Use the same low-field surface -> high-field ordering for holes.
-    if (isSurfaceMobilityModel(config_))
-        mobility = isLombardiModel(config_.model)
+    if (surfaceLaw_ != SurfaceLaw::None)
+        mobility = surfaceLaw_ == SurfaceLaw::Lombardi
             ? lombardiLimit(mobility, netDoping, n, p, surfaceNormalField,
                             surfaceDistance,
                             material.temperature_K.value_or(300.0),
@@ -430,7 +436,7 @@ Real DopingDependentMobility::holeMobility(const Material& material,
                             config_.holeLombardi)
             : surfaceLimit(mobility, surfaceNormalField,
                            config_.surface.thetaHole, config_.surface);
-    if (isFieldMobilityModel(config_.model))
+    if (fieldMobility_)
         mobility = fieldLimit(mobility, electricField, config_.holeField);
     return mobility;
 }
@@ -445,7 +451,7 @@ Real DopingDependentMobility::electronMobilityWithIonizedImpurities(
     Real surfaceNormalField,
     Real surfaceDistance) const
 {
-    if (!isPhuMobModel(config_)) {
+    if (bulkLaw_ != BulkLaw::PhuMob) {
         return MobilityModel::electronMobilityWithIonizedImpurities(
             material, donors, acceptors, n, p, electricField,
             surfaceNormalField, surfaceDistance);
@@ -463,13 +469,13 @@ Real DopingDependentMobility::electronMobilityWithIonizedImpurities(
         CarrierType::Electron, state, config_.phuMob).mobility;
     // EnormalDependence is part of the low-field mobility.  The high-field
     // saturation law therefore consumes the PhuMob + Enormal result.
-    if (isLombardiModel(config_.model)) {
+    if (surfaceLaw_ == SurfaceLaw::Lombardi) {
         mobility = lombardiLimit(
             mobility, donors + acceptors, n, p, surfaceNormalField,
             surfaceDistance, state.temperature_K, CarrierType::Electron,
             config_.electronLombardi);
     }
-    if (isFieldMobilityModel(config_.model))
+    if (fieldMobility_)
         mobility = fieldLimit(mobility, electricField, config_.electronField);
     return mobility;
 }
@@ -484,7 +490,7 @@ Real DopingDependentMobility::holeMobilityWithIonizedImpurities(
     Real surfaceNormalField,
     Real surfaceDistance) const
 {
-    if (!isPhuMobModel(config_)) {
+    if (bulkLaw_ != BulkLaw::PhuMob) {
         return MobilityModel::holeMobilityWithIonizedImpurities(
             material, donors, acceptors, n, p, electricField,
             surfaceNormalField, surfaceDistance);
@@ -500,13 +506,13 @@ Real DopingDependentMobility::holeMobilityWithIonizedImpurities(
     };
     Real mobility = evaluatePhuMobScalar(
         CarrierType::Hole, state, config_.phuMob).mobility;
-    if (isLombardiModel(config_.model)) {
+    if (surfaceLaw_ == SurfaceLaw::Lombardi) {
         mobility = lombardiLimit(
             mobility, donors + acceptors, n, p, surfaceNormalField,
             surfaceDistance, state.temperature_K, CarrierType::Hole,
             config_.holeLombardi);
     }
-    if (isFieldMobilityModel(config_.model))
+    if (fieldMobility_)
         mobility = fieldLimit(mobility, electricField, config_.holeField);
     return mobility;
 }
