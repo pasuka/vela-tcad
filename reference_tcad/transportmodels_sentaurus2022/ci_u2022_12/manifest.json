@@ -8,7 +8,13 @@
     "../vela/mesh.json": "53eeb68c75082d254f2c12a668ac8c50e803baa4c831aa189b75ebc8c6079f61",
     "../vela/doping.csv": "e5641169e6145eb34eb2d9329d14f6fd6a94fdf263c54bedbff46d48d649a3fe",
     "../vela/contracts/transportmodels_dd_dg_sentaurus2022_v1.json": "0513b486661fb7ae788f108782d79a5ded75e3f3c7f55216c51eaf0eec14cbec",
-    "../source/pp12_des.cmd": "0967787ab0780e04a3eeb6b1b1a719bc8cfa09ad2490b500d8b5aa63c2be7586"
+    "../source/pp12_des.cmd": "0967787ab0780e04a3eeb6b1b1a719bc8cfa09ad2490b500d8b5aa63c2be7586",
+    "pp6_des.cmd": "813d6d54fdc7f04fc6b8ae26c55370eb5c7bdaf4166ee92a25fa148bf15bb78f",
+    "pp6_des.vela.json": "9f34f4efa6be22c98f47fbd21c269124a199903ea404768e259e6f197e8e4051",
+    "sentaurus_idvg_reference.csv": "17dcacc5a4ddb565f9062066441420e68c851bd03f13776f81e963486f9eb9c0",
+    "../source/pp6_des.par": "24853dd561a526c0802be60ddaae30bfd481e9fad6b168857d79803d25979a81",
+    "../source/pp6_des.cmd": "179b4c47b70f36a648969d1e90b3c490c81f49ba452f736afccf7932ed4ee7de",
+    "pp6_deep_off.vela.json": "0ceb376ea9b8ca722288aebe0b990c38820c5cef1a0844ea7e761710cc431bd1"
   },
   "polysilicon_parameter_source": {
     "sentaurus_release": "T-2022.03-SP2 (0.7745337)",
@@ -16,5 +22,11 @@
     "source_file": "models.par",
     "material": "PolySi",
     "source_sha256": "7fedee3835cf715cc8c5a9db1ecf15368bbc4251f44983ddbca8de1ac33d3d55"
+  },
+  "idvg_curve_source": {
+    "sentaurus_release": "T-2022.03-SP2 (0.7745337)",
+    "source_file": "IdVgs_n6_des.plt",
+    "source_sha256": "8572711930493c59082d0ed902555492cc4e14aa85740025dc9b8d6aa31edab9",
+    "extracted_from": "docs/validation/transportmodels_dd_dg_srh_corrected_cold_regression_2026-08-23.json"
   }
 }

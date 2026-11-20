@@ -1,4 +1,4 @@
-"""Stage the exact archived TransportModels mesh for the isothermal DD deck."""
+"""Stage the exact archived TransportModels mesh for isothermal DD sweeps."""
 
 from __future__ import annotations
 
@@ -11,13 +11,13 @@ import shutil
 from sentaurus_mesh_exporters import write_dfise
 
 
-def stage_idvd_inputs(fixture, work):
+def stage_transportmodels_inputs(fixture, work, stem):
     work.mkdir()
-    for name in ("pp12_des.cmd", "pp12_des.vela.json"):
+    for name in (f"{stem}.cmd", f"{stem}.vela.json"):
         shutil.copyfile(fixture / name, work / name)
-    source_par = (fixture.parent / "source/pp12_des.par").read_text(encoding="utf-8")
+    source_par = (fixture.parent / "source" / f"{stem}.par").read_text(encoding="utf-8")
     poly_par = (fixture / "polysilicon.par").read_text(encoding="utf-8")
-    (work / "pp12_des.par").write_text(source_par + "\n" + poly_par, encoding="utf-8")
+    (work / f"{stem}.par").write_text(source_par + "\n" + poly_par, encoding="utf-8")
 
     archived = fixture.parent / "vela"
     mesh = json.loads((archived / "mesh.json").read_text(encoding="utf-8"))

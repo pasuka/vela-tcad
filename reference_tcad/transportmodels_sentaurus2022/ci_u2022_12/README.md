@@ -1,4 +1,6 @@
-# TransportModels DD Id–Vd
+# TransportModels DD regressions
+
+## Id–Vd
 
 `reference_u2022_transportmodels_idvd` runs `pp12_des.cmd` through the built
 `sd-sim` with the Vela `sentaurus_u2022_12` constants profile and single-threaded
@@ -69,3 +71,39 @@ It freezes high-field mobility feedback in the Jacobian. The vertex-sampled
 Masetti path and effective-potential Fermi–Dirac SG gave 0.034% maximum drain
 current error, including the 2 V endpoint, with a maximum terminal current
 sum magnitude of 9.10e-13 A/µm.
+
+## Id–Vg
+
+Enable `VELA_ENABLE_TRANSPORTMODELS_IDVG_CI=ON` with the same Release,
+physical-constants and oneMKL settings as Id–Vd. The CTest name is
+`reference_u2022_transportmodels_idvg`. It executes the staged
+`pp6_des.cmd` through `sd-sim` on the same 3,315-node grid and appends the
+same PolySi excerpt to the original `pp6_des.par`.
+
+The standalone CMD preserves the original isothermal physics and Solve
+sequence. It replaces the TDR grid path with GRD, explicitly sets 300 K,
+omits the unused thermal boundaries and output deletion command, and limits
+Plot fields to potential. The run starts at `Vg=-1 V, Vd=0 V`, raises the
+drain to 1.1 V, then sweeps the gate to 2.2 V with the CMD step bounds and
+21 exact CurrentPlot biases. Each sweep consumes the preceding stage state.
+The complete sweep uses potential and carrier concentrations. A short
+independent sweep from the same equilibrium and drain ramp covers the
+first three gate biases through -0.68 V. It uses local contact-basin
+quasi-Fermi references to resolve the leakage currents and preserves the
+original gate sweep's absolute initial and minimum steps and requested
+output locations. The maximum step is capped at the short sweep's span.
+The deep-off gate uses the directly measured four terminal currents from
+the short sweep. The report also retains the full sweep's drain current at
+these biases.
+
+The 21-point oracle is the native DD curve recorded in the
+[historical comparison](../../../docs/validation/transportmodels_dd_dg_srh_corrected_cold_regression_2026-08-23.json).
+The manifest pins the original Sentaurus T-2022.03-SP2
+`IdVgs_n6_des.plt` SHA-256, source CMD and PAR, and the extracted CSV.
+
+The [existing contract](../vela/contracts/transportmodels_dd_dg_sentaurus2022_v1.json)
+sets a maximum error of 0.15 dex from deep off through transition and 10%
+relative error in the on region. The three deep-off points also require
+`Id / abs(sum(Iterminal)) >= 10`. The test reads the four terminal currents
+and requested biases directly from the published PLT and writes the
+per-bias comparison and failed bias list under `reference-u2022-reports`.

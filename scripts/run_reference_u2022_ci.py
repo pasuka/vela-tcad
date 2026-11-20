@@ -19,7 +19,7 @@ import time
 from check_sdevice_gate_contact_mapping import flatband_from_samples, read_vtu_potential
 from compare_genius_bjt_sentaurus_vela import compare_model
 from run_schottky_reference_workflow import audit_kcl, audit_stage_b, compare_curves, read_csv
-from transportmodels_idvd_fixture import stage_idvd_inputs
+from transportmodels_idvd_fixture import stage_transportmodels_inputs
 from vela_sdevice.plt import read_plt_document
 
 
@@ -29,6 +29,7 @@ CASES = {
     "bjt_m1": "genius_bjt_sentaurus2022",
     "gate_contacts": "gate_reference",
     "transportmodels_idvd": "transportmodels_sentaurus2022",
+    "transportmodels_idvg": "transportmodels_sentaurus2022",
 }
 
 
@@ -186,7 +187,7 @@ def bjt_gates(fixture, run, stage, report):
 
 def transportmodels_idvd_gates(launcher, fixture, output, env, report):
     work = output / "inputs"
-    stage_idvd_inputs(fixture, work)
+    stage_transportmodels_inputs(fixture, work, "pp12_des")
     run, plan = run_sdevice(launcher, work, "pp12_des", env, report, final_only=True)
     equilibrium, sweep_stage = plan
     biases = {"gate": 1.0, "drain": 0.0, "source": 0.0, "substrate": 0.0}
@@ -253,9 +254,133 @@ def transportmodels_idvd_gates(launcher, fixture, output, env, report):
         "zero_bias_drain_A_per_um": comparison[0]["vela_A_per_um"],
         "max_abs_kcl_residual_A_per_um": max(abs(row["kcl_residual_A_per_um"]) for row in comparison),
     }
-    print(f"DD Id–Vd max error: {max_error:.3%}, at 2 V: {end_error:.3%}", flush=True)
+    print(f"DD Id閳ユ彜d max error: {max_error:.3%}, at 2 V: {end_error:.3%}", flush=True)
     return (max_error <= limits["idvd_max_absolute_relative_error"]
             and end_error <= limits["idvd_2V_max_absolute_relative_error"])
+
+
+def transportmodels_idvg_samples(launcher, fixture, work, env, report, bias_contract, *, deep_off=False):
+    stem = "pp6_des"
+    stage_transportmodels_inputs(fixture, work, stem)
+    targets = bias_contract["gate_bias_V"]
+    gate_span = targets[-1] - targets[0]
+    if deep_off:
+        targets = targets[:3]
+        # Preserve the absolute initial/minimum step on the shortened ramp.
+        factor = gate_span / (targets[-1] - targets[0])
+        deck = (work / f"{stem}.cmd").read_text(encoding="utf-8")
+        replacements = {
+            "InitialStep=1e-3 MinStep=1e-5 MaxStep=1":
+                f"InitialStep={1e-3 * factor:g} MinStep={1e-5 * factor:g} MaxStep=1",
+            'Goal{ Name="gate" Voltage= 2.2 }': f'Goal{{ Name="gate" Voltage= {targets[-1]:g} }}',
+            "Intervals=20": f"Intervals={len(targets)-1}",
+        }
+        for old, new in replacements.items():
+            if deck.count(old) != 1:
+                raise ValueError("The staged Id-Vg CMD no longer matches the deep-off sweep controls")
+            deck = deck.replace(old, new)
+        stem = "pp6_deep_off"
+        (work / f"{stem}.cmd").write_text(deck, encoding="utf-8")
+        shutil.copyfile(fixture / f"{stem}.vela.json", work / f"{stem}.vela.json")
+
+    run, plan = run_sdevice(launcher, work, stem, env, report, final_only=True)
+    equilibrium, drain_stage, gate_stage = plan
+    initial = {"gate": targets[0], "drain": 0.0, "source": 0.0, "substrate": 0.0}
+    drain_goal = {**initial, "drain": bias_contract["drain_bias_V"]}
+    if equilibrium["kind"] != "equilibrium" or equilibrium["electrode_voltages_start_V"] != initial:
+        raise ValueError("Expected cold equilibrium at Vg=-1 V and Vd=0 V")
+
+    coordinates = ({"state_variables": "potential_quasi_fermi", "quasi_fermi_reference": "contact_basin"}
+                   if deep_off else {"state_variables": "potential_density", "primary_variable_coordinates": "unit"})
+    for index, stage in enumerate(plan):
+        solver = read_json(run / stage["deck"])["solver"]
+        expected = {**coordinates, "max_iter": 20, "temperature_K": 300.0}
+        if any(solver.get(key) != value for key, value in expected.items()):
+            raise ValueError(f"Unexpected TransportModels solver settings in {stage['deck']}")
+        if index and stage["input_state"] != plan[index-1]["output_state"]:
+            raise ValueError("TransportModels stages must consume their preceding state")
+    poisson = read_json(run / "stage00_poisson_initialization.json")
+    if poisson["max_iter"] != 100 or not poisson["converged"]:
+        raise ValueError("TransportModels Poisson initialization did not match the CMD budget")
+
+    controls = report.setdefault("sweep_controls", {})[stem] = {}
+    for stage, contact, start, goal, initial_step in (
+            (drain_stage, "drain", initial, drain_goal, 0.01),
+            (gate_stage, "gate", drain_goal, {**drain_goal, "gate": targets[-1]}, 0.001)):
+        if (stage["kind"] != "sweep" or stage["sweep"]["contact"] != contact
+                or stage["electrode_voltages_start_V"] != start or stage["electrode_voltages_goal_V"] != goal):
+            raise ValueError(f"Unexpected TransportModels {contact} sweep")
+        span = gate_span if contact == "gate" else goal[contact] - start[contact]
+        numeric = {"initial_step": initial_step * span, "min_step": 1e-5 * span,
+                   "max_step": goal[contact] - start[contact],
+                   "growth_factor": 2.0, "shrink_factor": 0.5}
+        sweep = read_json(run / stage["deck"])["sweep"]
+        discrete = {"step_growth_mode": "newton_iterations", "stop_below_minimum_step": True,
+                    "preserve_step_after_output_clip": True}
+        predictor = sweep["continuation"]["predictor"]["mode"]
+        if (any(not math.isclose(sweep[key], value, rel_tol=1e-12) for key, value in numeric.items())
+                or any(sweep.get(key) != value for key, value in discrete.items()) or predictor != "linear"):
+            raise ValueError(f"Unexpected Quasistationary controls in {stage['deck']}")
+        controls[contact] = {**numeric, **discrete, "predictor": predictor}
+
+    contacts, samples = read_plt_document((work / gate_stage["current_file"]).read_text(encoding="utf-8"))
+    if set(contacts) != initial.keys() or len(samples) != len(targets):
+        raise ValueError(f"Expected {len(targets)} measured CurrentPlot points and all four contacts in {stem}")
+    for bias, sample in zip(targets, samples):
+        if any(not math.isclose(sample[name]["outer_voltage_V"], voltage, rel_tol=0, abs_tol=1e-12)
+               for name, voltage in {**drain_goal, "gate": bias}.items()):
+            raise ValueError(f"Incorrect electrode voltage at target Vg={bias:g} V in {stem}")
+    return contacts, samples
+
+
+def transportmodels_idvg_gates(launcher, fixture, output, env, report):
+    contract = read_json(fixture.parent / "vela/contracts/transportmodels_dd_dg_sentaurus2022_v1.json")
+    bias_contract = contract["bias_contract"]["idvg"]
+    targets = bias_contract["gate_bias_V"]
+    reference = read_csv(fixture / "sentaurus_idvg_reference.csv")
+    if [float(row["bias_V"]) for row in reference] != targets:
+        raise ValueError("Expected the 21 native TransportModels Id-Vg biases")
+    contacts, population = transportmodels_idvg_samples(
+        launcher, fixture, output / "inputs", env, report, bias_contract)
+    _, deep = transportmodels_idvg_samples(
+        launcher, fixture, output / "deep_off_inputs", env, report, bias_contract, deep_off=True)
+    samples = deep + population[len(deep):]
+    limits = contract["acceptance"]
+    comparison = []
+    for index, (bias, sample, oracle) in enumerate(zip(targets, samples, reference)):
+        currents = {name: sample[name]["total_current_A_per_um"] for name in contacts}
+        if not all(math.isfinite(value) for value in (*currents.values(), population[index]["drain"]["total_current_A_per_um"])):
+            raise ValueError(f"Nonfinite current at target Vg={bias:g} V")
+        native = float(oracle["drain_A_per_um"])
+        measured = currents["drain"]
+        kcl = math.fsum(currents.values())
+        ratio = measured / abs(kcl) if kcl else None
+        log_error = abs(math.log10(measured / native)) if measured > 0 else None
+        relative_error = abs(measured / native - 1)
+        regime = "deep_off" if index < 3 else "transition" if index < 8 else "on"
+        if regime == "on":
+            passed = relative_error <= limits["idvg_on_max_absolute_relative_error"]
+        else:
+            passed = log_error is not None and log_error <= limits["idvg_transition_max_absolute_log_error_dex"]
+            if regime == "deep_off":
+                passed = passed and (ratio is None or ratio >= limits["deep_off_min_id_to_kcl_ratio"])
+        comparison.append({
+            "bias_V": bias, "regime": regime, "coordinate_mode": "contact_basin" if index < len(deep) else "population",
+            "vela_A_per_um": measured, "sentaurus_A_per_um": native,
+            "population_drain_A_per_um": population[index]["drain"]["total_current_A_per_um"],
+            "relative_error": relative_error, "log_error_dex": log_error, "kcl_residual_A_per_um": kcl,
+            "drain_to_abs_kcl_ratio": ratio, "pass": passed,
+        })
+    with (output / "comparison.csv").open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(comparison[0]))
+        writer.writeheader()
+        writer.writerows(comparison)
+    report["comparison"] = {
+        "points": len(comparison), "failed_biases_V": [row["bias_V"] for row in comparison if not row["pass"]],
+        "max_on_relative_error": max(row["relative_error"] for row in comparison if row["regime"] == "on"),
+        "max_abs_kcl_residual_A_per_um": max(abs(row["kcl_residual_A_per_um"]) for row in comparison),
+    }
+    return not report["comparison"]["failed_biases_V"]
 
 
 def main():
@@ -284,6 +409,8 @@ def main():
             passed = gate_cases(launcher, fixture, output, env, report)
         elif args.case == "transportmodels_idvd":
             passed = transportmodels_idvd_gates(launcher, fixture, output, env, report)
+        elif args.case == "transportmodels_idvg":
+            passed = transportmodels_idvg_gates(launcher, fixture, output, env, report)
         else:
             schottky = args.case == "schottky_iv"
             stem = "schottky_n_des" if schottky else "bjt_m1_des"
