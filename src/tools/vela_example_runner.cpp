@@ -28,6 +28,7 @@
 #include "vela/solver/LinearSolver.h"
 #ifdef VELA_ARITHMETIC_EXTENDED80
 #include "vela/solver/ExtendedFixedBiasNewton.h"
+#include "vela/solver/PopulationState.h"
 #include "vela/equation/ExtendedAveragePoissonGeometry.h"
 #include "vela/simulation/DCSweepStepControl.h"
 #include "vela/io/VtuWriter.h"
@@ -79,6 +80,7 @@ void usage(const char* argv0)
 }
 
 constexpr std::string_view extendedSlotStageProfile = "slot_population_bvds_v1";
+constexpr std::string_view extendedSlotFixedBiasProfile = "slot_population_fixed_bias_v1";
 
 nlohmann::json arithmeticCapabilities()
 {
@@ -92,6 +94,8 @@ nlohmann::json arithmeticCapabilities()
         {"linear_backends", {"sparse_lu"}},
         {"input_consumers", {"mesh", "doping", "materials", "temperature", "contacts", "sweep",
                              "ialmob", "state_archive"}}};
+    result["scoped_extended80_profiles"][extendedSlotFixedBiasProfile] =
+        result["scoped_extended80_profiles"][extendedSlotStageProfile];
 #endif
     return result;
 }
@@ -4777,7 +4781,8 @@ int main(int argc, char** argv)
 #if defined(VELA_ARITHMETIC_EXTENDED80) && defined(VELA_ENABLE_HDF5_STATE)
         if (const auto solver = cfg.find("solver"); solver != cfg.end() &&
             solver->value("require_end_to_end_precision", false) &&
-            solver->value("extended80_stage_profile", "") == extendedSlotStageProfile) {
+            (solver->value("extended80_stage_profile", "") == extendedSlotStageProfile ||
+             solver->value("extended80_stage_profile", "") == extendedSlotFixedBiasProfile)) {
             auto runtime = vela::RuntimeLogSession::fromConfig(cfg, configFile, "dc_sweep");
             auto result = runExtendedSlotStage(configFile, cfg, true);
             result["config"] = configFile;

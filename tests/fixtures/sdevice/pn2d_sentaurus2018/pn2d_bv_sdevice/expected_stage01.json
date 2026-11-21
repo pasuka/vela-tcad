@@ -125,7 +125,7 @@
     "current_contact": "Anode",
     "start": 0.0,
     "stop": -20.0,
-    "step": -1.0,
+    "step": -20.0,
     "initial_step": 0.002,
     "min_step": 2e-09,
     "max_step": 1.0,

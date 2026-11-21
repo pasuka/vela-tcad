@@ -230,6 +230,15 @@ class FailClosedTest(unittest.TestCase):
 
 
 class NamingAndMappingTest(unittest.TestCase):
+    def test_new_current_file_uses_native_filename_prefix(self):
+        alias = 'NewCurrentFile="IDVG(LIN)_"'
+        sweep = 'Quasistationary(Goal { Name="a" Voltage=1 }) { Coupled { Poisson Electron Hole } }'
+        parsed = parse_cmd_text(deck(solve=f"{alias}\n{sweep}"), path_name="test.cmd")
+        canonical = parse_cmd_text(deck(solve=f"{alias.replace('NewCurrentFile', 'NewCurrentPrefix')}\n{sweep}"),
+                                   path_name="test.cmd")
+        self.assertTrue(parsed["verdict"]["accepted"])
+        self.assertEqual(parsed["solve"], canonical["solve"])
+
     def test_file_name_completion_rules(self) -> None:
         ir = parse_cmd_text(deck().replace('Grid = "x_msh.tdr"', 'Grid = "x_msh"\n  Current = "iv"\n  Plot = "dev"\n  Output = "run.log"'),
                             path_name="case_des.cmd")

@@ -41,7 +41,7 @@ def _topology(mesh):
     return cells, contacts
 
 
-def check_slot_ialmob(ir, cmd, grid, reference):
+def check_slot_ialmob(ir, cmd, grid, reference, fixed_bias=False):
     # The generic emitter continues to reject unsupported physics. This
     # entry proves a frozen, explicitly prepared SLOT contract without solving.
     fatal = [entry for entry in ir["errors"] if entry["severity"] == "fatal"]
@@ -121,8 +121,10 @@ def check_slot_ialmob(ir, cmd, grid, reference):
     reference_cells, contacts = _topology(mesh)
     _require((reference_cells, contacts) == _topology(authoritative) == _topology(native),
              "SLOT reference, native grid and DF-ISE topology differ")
-    _require(set(contacts) == {entry["name"] for entry in ir["electrodes"]} and
-             ial["effective_electrodes"] and set(ial["effective_electrodes"]) <= contacts.keys(),
+    active = {entry["name"] for entry in ir["electrodes"]}
+    mesh_contacts = set(contacts)
+    _require(active <= mesh_contacts and (mesh_contacts - active <= ({"SLOT"} if fixed_bias else set())) and
+             ial["effective_electrodes"] and set(ial["effective_electrodes"]) <= active,
              "SLOT mesh and CMD electrode identity differ")
     for field in ("crystal_x", "crystal_y"):
         _require(len(ial[field]) == 3 and any(ial[field]), f"Missing SLOT crystal axis {field}")
@@ -155,14 +157,14 @@ def check_slot_ialmob(ir, cmd, grid, reference):
 
 def bind_slot_stage_inputs(ir, cmd, profile):
     reference = _path(cmd, profile["reference_deck"])
-    report = check_slot_ialmob(ir, cmd, _path(cmd, profile["dfise_grid"]), reference)
+    native = {model["key"] for model in ir["physics"]["effective"]}
+    common = {"Mobility.Enormal", "Mobility.HighFieldSaturation", "Recombination.SRH", "Recombination.Auger"}
+    fixed_bias = native == common and ir["math"].get("arithmetic_precision") == "extended80"
+    _require(fixed_bias or native == common | {"EffectiveIntrinsicDensity.OldSlotboom", "Recombination.Avalanche"},
+             "SLOT stage binding requires the validated physical model set")
+    report = check_slot_ialmob(ir, cmd, _path(cmd, profile["dfise_grid"]), reference, fixed_bias)
     _require(report["inputs"]["par"]["sha256"] == profile["parameter_sha256"],
              "SLOT parameter file differs from the explicitly bound PAR")
-    native = {model["key"] for model in ir["physics"]["effective"]}
-    _require(native == {"Mobility.Enormal", "Mobility.HighFieldSaturation",
-                        "EffectiveIntrinsicDensity.OldSlotboom", "Recombination.SRH",
-                        "Recombination.Auger", "Recombination.Avalanche"},
-             "SLOT stage binding requires the validated physical model set")
     reference_text = reference.read_text(encoding="utf-8")
     deck = json.loads(reference_text)
     solver = deck["solver"]
@@ -172,10 +174,13 @@ def bind_slot_stage_inputs(ir, cmd, profile):
              solver.get("impact_ionization", {}).get("model") == "van_overstraeten",
              "SLOT reference physics differs from the validated BVDS configuration")
     srh = next(m["parameters"] for m in ir["physics"]["effective"] if m["key"] == "Recombination.SRH")
-    avalanche = next(m["parameters"] for m in ir["physics"]["effective"] if m["key"] == "Recombination.Avalanche")
-    _require(srh.get("doping_dependence") and avalanche.get("driving_force") == "GradQuasiFermi" and
-             avalanche.get("model", "VanOverstraeten") == "VanOverstraeten",
+    avalanche = next((m["parameters"] for m in ir["physics"]["effective"] if m["key"] == "Recombination.Avalanche"), {})
+    _require(srh.get("doping_dependence") and (fixed_bias or
+             (avalanche.get("driving_force") == "GradQuasiFermi" and
+              avalanche.get("model", "VanOverstraeten") == "VanOverstraeten")),
              "SLOT binds SRH(DopingDep) and VanOverstraeten GradQuasiFermi only")
+    _require(not fixed_bias or all(not e["attributes"] for e in ir["electrodes"]),
+             "Fixed-bias SLOT requires voltage-driven Ohmic contacts")
     _require(not ir["physics"]["fixed_charges"] and
              all(not (set(e["attributes"]) - {"resist_ohm_um"}) for e in ir["electrodes"]),
              "SLOT requires the validated Ohmic contacts and no additional fixed charges")
@@ -249,6 +254,11 @@ def bind_slot_stage_inputs(ir, cmd, profile):
         report["inputs"][f"load:{prefix}"] = {"path": str(path), "sha256": sha256(path.read_bytes()).hexdigest(),
                                              "copy_as": filename}
         seeds[prefix] = filename
+    if fixed_bias:
+        solver["bandgap_narrowing"] = {"model": "none"}
+        solver["impact_ionization"] = {"model": "none"}
+        source_coefficients = {key: value for key, value in source_coefficients.items()
+                               if not key.startswith(("bandgap_narrowing.", "impact_ionization."))}
     qualified = deepcopy(ir)
     qualified["errors"] = [e for e in ir["errors"] if e["id"] != "E106"]
     qualified["verdict"] = {"accepted": True, "exit_code": 0, "fatal_ids": []}
@@ -256,6 +266,7 @@ def bind_slot_stage_inputs(ir, cmd, profile):
     model.update(status="supported", vela="solver.mobility.model=ialmob")
     model.pop("finding_id", None)
     return qualified, report, {"reference": deck, "load_states": seeds,
+                               "stage_profile": "slot_population_fixed_bias_v1" if fixed_bias else "slot_population_bvds_v1",
                                "source_coefficients": source_coefficients}
 
 

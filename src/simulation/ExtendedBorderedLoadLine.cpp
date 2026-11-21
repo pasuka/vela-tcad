@@ -40,13 +40,21 @@ ExtendedBorderedDirection solveExtendedBorderedSystem(
 
     auto direction = recoverDirection(reduced);
     const ExtendedVector residual = -system.rawRhs;
-    auto defect = linear_refinement::computeHighPrecisionDefect(system.rawAugmented, residual, direction);
+    std::optional<linear_refinement::PreparedMpDefect<long double>> preparedDefect;
+    if (!retainedIndependentRows.empty() || (!goal && refinementCorrections > 0))
+        preparedDefect.emplace(system.rawAugmented);
+    const auto evaluateDefect = [&] {
+        if (preparedDefect)
+            return preparedDefect->evaluate(residual, direction);
+        return linear_refinement::computeHighPrecisionDefect(system.rawAugmented, residual, direction);
+    };
+    auto defect = evaluateDefect();
     auto before = defect.backwardMax;
     const auto restore = [&] {
         before = defect.backwardMax;
         if (!retainedIndependentRows.empty()) {
             restoreIndependentConstraintRows(system.rawAugmented, system.rawRhs, retainedIndependentRows, direction);
-            defect = linear_refinement::computeHighPrecisionDefect(system.rawAugmented, residual, direction);
+            defect = evaluateDefect();
         }
     };
     for (int iteration = 0; ; ++iteration) {
@@ -59,7 +67,7 @@ ExtendedBorderedDirection solveExtendedBorderedSystem(
         const ExtendedVector correctionRhs = -defect.values.cwiseProduct(system.rowScale);
         const auto correction = reduceLinearConstraints(system.augmented, correctionRhs, eliminatedRows);
         direction += recoverDirection(correction);
-        defect = linear_refinement::computeHighPrecisionDefect(system.rawAugmented, residual, direction);
+        defect = evaluateDefect();
     }
     const auto maximum = defect.values.cwiseProduct(system.rowScale).cwiseAbs().maxCoeff();
     if (!std::isfinite(maximum))

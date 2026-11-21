@@ -134,19 +134,22 @@ def _decimal(value: float) -> Decimal:
 
 
 def _voltage_steps(v0, v1, controls, intervals, wide):
+    # The runner's nominal step adds regular mandatory landings. In a CMD
+    # ramp, MaxStep limits adaptive trials and only a full-range interval
+    # request defines a regular landing grid.
     if not wide:
-        delta = abs(v1 - v0)
-        spacing = delta / intervals if intervals else delta * controls["max_step"]
-        return (spacing if v1 > v0 else -spacing,
+        span = v1 - v0
+        delta = abs(span)
+        return (span / intervals if intervals else span,
                 *(delta * controls[key] for key in ("initial_step", "min_step", "max_step")),
                 1.0 / controls["decrement"])
     with localcontext() as context:
         context.prec = 80
         span = _decimal(v1) - _decimal(v0)
-        nominal = abs(span) / intervals if intervals else abs(span) * _decimal(controls["max_step"])
+        nominal = span / intervals if intervals else span
         absolute = [abs(span) * _decimal(controls[key]) for key in ("initial_step", "min_step", "max_step")]
         return tuple(SourceNumber(str(value)) for value in (
-            nominal.copy_sign(span), *absolute, Decimal(1) / _decimal(controls["decrement"])))
+            nominal, *absolute, Decimal(1) / _decimal(controls["decrement"])))
 
 
 def _basename(value: str, label: str) -> str:
@@ -458,6 +461,8 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
           slot_context: dict | None = None) -> StagePlanResult:
     current_starts = current_starts or {}
     saved_voltages = saved_voltages or {}
+    slot_profile = slot_context.get("stage_profile", "slot_population_bvds_v1") if slot_context else None
+    fixed_slot_bias = slot_profile == "slot_population_fixed_bias_v1"
     if not ir["verdict"]["accepted"]:
         raise DeckEmitError(ir["verdict"]["fatal_ids"][0], detail="rejected execution IR")
     try:
@@ -684,7 +689,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             # The preceding nonlinear Poisson solve supplies a converged
             # state. Preserve it for Coupled instead of re-running Gummel.
             deck["solver"].update(method="newton", warm_start=True)
-        if (slot_context and wide_stage_controls and kind == "initial" and method == "newton"
+        if (slot_context and wide_stage_controls and (kind == "initial" or fixed_slot_bias) and method == "newton"
                 and deck["solver"].get("population_stopping_rule") == "native_approx"):
             if not math_cfg["rel_err_control"]:
                 raise DeckEmitError("E407", detail="SLOT extended80 update stopping requires RelErrControl")
@@ -696,7 +701,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 if math_cfg.get(source_key) is not None:
                     update[metric_key] = math_cfg[source_key]
             _decision(decisions, "RelErrControl", True, "solver.population_update_convergence",
-                      update, "Use the CMD update metric for the bound SLOT equilibrium stage", stage=index)
+                      update, "Use the CMD update metric for the bound SLOT stage", stage=index)
         if entry["kind"] in ("equilibrium", "load") or current:
             sweep["bias_points"] = [v0]
         if kind == "sweep":
@@ -724,7 +729,8 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 _decision(decisions, "Current", goal["current_A_per_um"], "sweep.voltage_to_current",
                           sweep["voltage_to_current"], "Runner closes the final current goal; subsequent stages must rebase measured voltages", stage=index)
             elif has_voltage_span:
-                intervals = current_times.get("intervals") if current_times else None
+                intervals = (current_times.get("intervals")
+                             if current_times and current_times.get("range") == [0, 1] else None)
                 step, initial, minimum, maximum, shrink = _voltage_steps(
                     v0, v1, controls, intervals, wide_stage_controls)
                 converted = {"contact": contact, "mode": "voltage", "start_V": v0, "stop_V": v1,
@@ -737,6 +743,8 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                     min_step=converted["min_step_V"], max_step=converted["max_step_V"],
                     growth_factor=converted["growth_factor"], shrink_factor=shrink,
                     vtk_bias_points=[_bias(v0, v1, t, wide=wide_checkpoints) for t in entry["required_t"]])
+                if fixed_slot_bias:
+                    sweep["continuation"] = {"predictor": {"mode": "linear" if math_cfg["extrapolate"] else "none"}}
                 _decision(decisions, "Decrement", controls["decrement"], "sweep.shrink_factor",
                           sweep["shrink_factor"], "C4 retains the divisor; runner uses its reciprocal", stage=index)
             else:
@@ -925,7 +933,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             if isinstance(command_temperature, SourceNumber) and temperature == command_temperature:
                 temperature = command_temperature
             decimal_solver = {"temperature_K": str(_decimal(temperature))}
-            if slot_context and kind == "initial" and method == "newton":
+            if slot_context and (kind == "initial" or fixed_slot_bias) and method == "newton":
                 update = deck["solver"].get("population_update_convergence", {})
                 references = {key: str(_decimal(update[key]))
                               for key in ("potential_reference_V", "electron_reference_cm3", "hole_reference_cm3")
@@ -934,7 +942,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                     decimal_solver["population_update_convergence"] = references
             if slot_context and slot_context.get("source_coefficients"):
                 decimal_solver["slot_source_coefficients"] = slot_context["source_coefficients"]
-                deck["solver"]["extended80_stage_profile"] = "slot_population_bvds_v1"
+                deck["solver"]["extended80_stage_profile"] = slot_profile
             deck["decimal_stage_controls"] = {
                 "contacts": {item["name"]: str(_decimal(item["bias"])) for item in deck["contacts"]},
                 "sweep": decimal_sweep,

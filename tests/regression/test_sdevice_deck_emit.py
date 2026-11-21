@@ -320,9 +320,37 @@ class DeckEmitterTests(unittest.TestCase):
         self.assertEqual(sweep["vtk_bias_points"][-1], 10)
         ir["stages"][-1]["goal"]["voltage_V"] = -10
         reverse = emit(ir).decks[-1]["sweep"]
-        self.assertEqual(reverse["step"], -0.25)
+        self.assertEqual(reverse["step"], -10)
         self.assertEqual(reverse["vtk_bias_points"][-1], -10)
         self.assertEqual(reverse["max_step"], 0.25)
+
+    def test_quasistationary_max_step_does_not_create_landings(self):
+        for precision in ("double", "extended80"):
+            for extrapolate in (False, True):
+                with self.subTest(precision=precision, extrapolate=extrapolate):
+                    ir = deepcopy(self.ir)
+                    ir["math"].update(arithmetic_precision=precision, extrapolate=extrapolate)
+                    ir["stages"][-1]["outputs"].update(plot_files=[], current_plot_times=None)
+                    for target in (10, -10):
+                        ir["stages"][-1]["goal"]["voltage_V"] = target
+                        sweep = emit(ir).decks[-1]["sweep"]
+                        self.assertEqual(sweep["step"], target)
+                        self.assertEqual(sweep["max_step"], 0.25)
+                        self.assertEqual(sweep["initial_step"], 0.01)
+                        self.assertEqual(sweep["predictor"], "linear" if extrapolate else "none")
+                        self.assertEqual(sweep["vtk_bias_points"], [])
+
+    def test_partial_currentplot_interval_adds_only_requested_landings(self):
+        ir = deepcopy(self.ir)
+        ir["stages"][-1]["outputs"].update(
+            plot_files=[], current_plot_times={"range": [0.2, 0.8], "intervals": 3})
+        result = emit(ir)
+        sweep = result.decks[-1]["sweep"]
+        self.assertEqual(sweep["step"], 10)
+        self.assertEqual(sweep["max_step"], 0.25)
+        self.assertEqual(len(sweep["vtk_bias_points"]), 4)
+        for actual, expected in zip(sweep["vtk_bias_points"], (2, 4, 6, 8)):
+            self.assertAlmostEqual(actual, expected)
 
     def test_initial_stage_merge_and_state_chain(self):
         result = emit(self.ir)

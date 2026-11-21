@@ -39,6 +39,7 @@ struct ExtendedFixedBiasNewtonConfig {
     bool lineSearch;
     std::optional<BasicPopulationTrialLimits<long double>> exactProtection;
     std::optional<ExtendedRhsGrowthControl> rhsGrowth = std::nullopt;
+    bool refineToLinearGoal = false;
 };
 
 struct ExtendedFixedBiasNewtonResult {

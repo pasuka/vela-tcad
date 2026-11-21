@@ -16,7 +16,9 @@ bool isExtendedSlotStage(const nlohmann::json& deck)
         && solver.value("carrier_statistics", nlohmann::json::object()).value("model", "") == "boltzmann"
         && solver.value("mobility", nlohmann::json::object()).value("model", "") == "ialmob"
         && deck.contains("decimal_stage_controls") && sweep.value("mode", "") == "iv"
-        && !sweep.contains("voltage_to_current") && !sweep.contains("continuation")
+        && !sweep.contains("voltage_to_current")
+        && (!sweep.contains("continuation") ||
+            solver.value("extended80_stage_profile", "") == extendedSlotFixedBiasProfile)
         && !sweep.contains("boundary_control");
 }
 
@@ -56,6 +58,8 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
     const bool coldStage = mode == "newton" && sweep.contains("initialization");
     const bool loadOnly = mode == "frozen_state";
     const bool circuitStage = mode == "newton" && sweep.contains("external_circuit");
+    const bool fixedProfile = input.value("extended80_stage_profile", "") == extendedSlotFixedBiasProfile;
+    const bool fixedSweep = fixedProfile && mode == "newton" && !coldStage && !circuitStage;
     if (publish) {
         const char* backend = std::getenv("VELA_LINEAR_SOLVER");
         if (backend && *backend && std::string_view(backend) != "sparse_lu")
@@ -70,9 +74,11 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
     if (coldStage ? (start != 0 || stop != 0 || sweep.contains("initial_state_file") ||
                      sweep.contains("external_circuit") ||
                      sweep.at("initialization").at("mode") != "poisson_block")
-                  : (!publish || !sweep.contains("initial_state_file") || !(loadOnly || circuitStage) ||
+                  : (!publish || !sweep.contains("initial_state_file") || !(loadOnly || circuitStage || fixedSweep) ||
                      (loadOnly && (start != stop || sweep.contains("external_circuit")))))
         throw std::invalid_argument("Invalid extended80 SLOT stage ordering or starting state");
+    if (fixedProfile && circuitStage)
+        throw std::invalid_argument("Extended SLOT fixed-bias profile requires prescribed contacts");
 
     const auto directory = configDirectory(configFile);
     const auto inputHashes = stateInputProvenance(deck, directory);
@@ -86,7 +92,7 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         !deck.contains("decimal_stage_controls") || !problem.fixedCharges.empty() ||
         !problem.sheetCharges.empty() || !parseBoundarySegmentSpecs(deck).empty() ||
         config.mobility.model != "ialmob" ||
-        config.impactIonization.model != "van_overstraeten" ||
+        config.impactIonization.model != (fixedProfile ? "none" : "van_overstraeten") ||
         config.electronQuantumPotential.enabled || config.splitDDState ||
         config.recombinationVolumePolicy != "material_local_box" ||
         config.carrierRowConvergence.mode == "enforce" ||
@@ -103,7 +109,7 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
     if (sweep.value("current_contact", currentContact) != currentContact)
         throw std::invalid_argument("Extended SLOT requires current and driven contact identity");
     for (auto& contact : contacts) {
-        if (contact.name != currentContact || coldStage)
+        if (fixedProfile || contact.name != currentContact || coldStage)
             continue;
         contact.bias = 0;
         contact.decimalInitialBias_V = 0;
@@ -121,21 +127,42 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
             throw std::invalid_argument("Missing decimal OldSlotboom coefficient: " + key);
         return fallback;
     };
-    if (config.bandgapNarrowing.model != "old_slotboom")
-        throw std::invalid_argument("Extended SLOT stage requires OldSlotboom");
+    if (config.bandgapNarrowing.model != (fixedProfile ? "none" : "old_slotboom"))
+        throw std::invalid_argument("Unsupported bandgap narrowing in extended SLOT profile");
     const auto& narrowing = config.bandgapNarrowing;
-    const ExtendedSlotboomCoefficients narrowingCoefficients{
+    const ExtendedSlotboomCoefficients narrowingCoefficients = fixedProfile ? ExtendedSlotboomCoefficients{} :
+        ExtendedSlotboomCoefficients{
         narrowingCoefficient("reference_doping_m3", narrowing.referenceDoping, 1e17L),
         narrowingCoefficient("coefficient_eV", narrowing.coefficient, 9.0e-3L),
         narrowingCoefficient("smoothing", narrowing.smoothing, 0.5L),
         narrowingCoefficient("offset_eV", narrowing.offset, 0.L)};
     const auto material = buildExtendedBoltzmannMaterials(
         problem.mesh, problem.matdb, problem.doping, narrowing, temperature, vt, narrowingCoefficients);
-    const auto targets = buildExtendedZeroBiasOhmicTargets(problem.mesh, problem.doping, material,
-        contacts, vt, config.contactBoundaryReconstruction == "dominant_signed_contact_mean");
+    auto zeroContacts = contacts;
+    if (fixedProfile && !coldStage)
+        for (auto& contact : zeroContacts) {
+            contact.bias = 0;
+            contact.decimalInitialBias_V = 0;
+        }
+    auto targets = buildExtendedZeroBiasOhmicTargets(problem.mesh, problem.doping, material,
+        zeroContacts, vt, config.contactBoundaryReconstruction == "dominant_signed_contact_mean");
     const auto port = std::ranges::find(problem.mesh.contacts(), currentContact, &Contact::name);
     if (port == problem.mesh.contacts().end() || port->node_ids.empty())
         throw std::invalid_argument("Unknown extended80 initial stage contact");
+    const auto contactBias = [](const ContactBoundarySpec& contact) {
+        return contact.decimalInitialBias_V.value_or(contact.bias);
+    };
+    std::vector<long double> drivenEquilibrium;
+    if (fixedProfile) {
+        for (const auto node : port->node_ids)
+            drivenEquilibrium.push_back(targets.potential.at(node).value());
+        for (const auto& terminal : problem.mesh.contacts()) {
+            const auto spec = std::ranges::find(contacts, terminal.name, &ContactBoundarySpec::name);
+            if (spec != contacts.end())
+                for (const auto node : terminal.node_ids)
+                    *targets.potential.at(node) += contactBias(*spec) / vt;
+        }
+    }
 
     PoissonScalingSpec po;
     po.enabled = true;
@@ -190,7 +217,8 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
     const auto* equationScales = normalization ? &*normalization : nullptr;
     ArithmeticPoissonAssembler poisson(problem.mesh, problem.matdb, problem.doping, {}, {}, {}, po, vt);
     nlohmann::json out{
-        {"arithmetic_precision", "extended80"}, {"scope", publish ? extendedSlotStageProfile : "initial_stage_check"},
+        {"arithmetic_precision", "extended80"},
+        {"scope", publish ? (fixedProfile ? extendedSlotFixedBiasProfile : extendedSlotStageProfile) : "initial_stage_check"},
         {"accepted_points", 0}, {"converged", false}, {"coupled_converged", false},
         {"potential_scale_V", vt}, {"nodes", problem.mesh.numNodes()}, {"poisson_geometry", "arithmetic_averagebox"},
         {"decimal_permittivities", permittivities.size()},
@@ -205,6 +233,10 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
     // The model and mesh identity must survive every accepted-state handoff.
     nlohmann::json identityInput{{"files", inputHashes}, {"port", currentContact},
                                  {"contacts", deck.at("contacts")}};
+    if (fixedProfile) {
+        identityInput.erase("port");
+        identityInput["profile"] = extendedSlotFixedBiasProfile;
+    }
     for (auto& contact : identityInput.at("contacts"))
         contact.erase("bias");
     for (const auto key : {"scaling", "physical_constants_profile", "discretization", "mesh_geometry", "doping"})
@@ -236,9 +268,20 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         poisson.assemble(geometry);
         state = readExtendedPopulationArchive(resolvePath(directory, sweep.at("initial_state_file").get<std::string>()),
                                               problem.mesh.numNodes(), identity);
-        if (state.supplyBias_V != start || state.potentialScale_V != vt ||
+        if ((!fixedProfile && state.supplyBias_V != start) || state.potentialScale_V != vt ||
             state.concentrationScale_m3 != concentrationScale_m3)
             throw std::invalid_argument("Extended SLOT parent control or coordinate scale mismatch");
+        if (fixedProfile) {
+            for (Index node = 0; node < problem.mesh.numNodes(); ++node) {
+                const auto& target = targets.potential[node];
+                if (target && std::abs(state.coordinates[node] - *target) >
+                    8 * std::numeric_limits<long double>::epsilon() * std::max(1.L, std::abs(*target)))
+                    throw std::invalid_argument("Extended SLOT fixed-bias parent does not match the contact targets");
+            }
+            if (loadOnly && (state.supplyBias_V != start || state.deviceBias_V != start))
+                throw std::invalid_argument("Extended SLOT fixed-bias Load differs from the saved control");
+            state.supplyBias_V = state.deviceBias_V = start;
+        }
     }
 
     prepareIalTransportGeometry(config.mobility, problem.mesh);
@@ -287,6 +330,7 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
          coefficient("auger_density_dependence.hole.reference_density_m3", auger.holeReferenceDensity)}};
     out["arithmetic_recombination_coefficients"] = 16;
     const auto& impact = config.impactIonization;
+    if (!fixedProfile) {
     if (impact.parameterSet != "default" || impact.aScale != 1 || impact.bScale != 1)
         throw std::invalid_argument("Extended SLOT requires unmodified explicit Van Overstraeten coefficients");
     const auto impactCoefficient = [&](const std::string& key, Real value) {
@@ -307,6 +351,7 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         curve("hole", impact.holeALow, impact.holeBLow, impact.holeAHigh, impact.holeBHigh),
         field * impactCoefficient("minimum_field_V_m", impact.minimumField)};
     out["arithmetic_ionization_coefficients"] = 10;
+    }
     const auto cellMaterials = detail::buildCellMaterials(problem.mesh, problem.matdb, config.temperature_K);
     const auto included = detail::recombinationNodeMask(problem.mesh, cellMaterials, sourceConfig.activeMaterials);
     std::vector<long double> areas(problem.mesh.numNodes());
@@ -352,6 +397,10 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         config.maxIter, CoupledLoadLineConfig{}.maxLineSearchSteps, config.linearRefinementIterations,
         rawInput.value("damping_factor", 1.L), 1e-10L, 1e-8L, metric,
         config.populationUpdate, config.lineSearch, {}};
+    if (fixedProfile) {
+        corrector.refineToLinearGoal = true;
+        corrector.refinementCorrections = std::max(corrector.refinementCorrections, 3);
+    }
     const auto rawProtection = rawInput.value("population_update", WideJson::object());
     corrector.exactProtection = BasicPopulationTrialLimits<long double>{
         rawProtection.value("local_retained_fraction", 0.01L), rawProtection.value("fraction_tau", 0.99L),
@@ -436,6 +485,10 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         });
         if (value != currents.at(currentContact))
             throw std::runtime_error("Inconsistent extended SLOT terminal current");
+        if (fixedProfile)
+            std::erase_if(currents, [&](const auto& item) {
+                return std::ranges::find(contacts, item.first, &ContactBoundarySpec::name) == contacts.end();
+            });
         state.drainCurrent_A_per_um = value[0] - value[1];
         Row row{print(state.supplyBias_V), print(state.supplyBias_V), print(state.deviceBias_V),
             currentContact, print(value[0]), print(-value[1]), print(state.drainCurrent_A_per_um),
@@ -462,6 +515,77 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
             throw std::runtime_error("Extended SLOT Save/Load did not reproduce the saved terminal current");
         result.converged = true;
         recordAccepted();
+    } else if (fixedSweep) {
+        detail::BasicDCSweepStepControlConfig<long double> control;
+        control.start = start;
+        control.stop = stop;
+        const auto exactStep = [&](const char* key) {
+            return stageControl(deck, "sweep", key, sweep.at(key).get<double>());
+        };
+        control.step = exactStep("step");
+        control.initialStep = exactStep("initial_step");
+        control.minStep = exactStep("min_step");
+        control.maxStep = exactStep("max_step");
+        control.growthFactor = exactStep("growth_factor");
+        control.shrinkFactor = exactStep("shrink_factor");
+        control.growthMode = "newton_iterations";
+        control.newtonIterationLimit = corrector.maxUpdates;
+        control.stopBelowMinimum = true;
+        control.preserveStepAfterOutputClip = true;
+        control.mandatoryPoints = checkpoints;
+        const auto predictor = sweep.value("continuation", nlohmann::json::object())
+            .value("predictor", nlohmann::json::object()).value("mode", std::string("none"));
+        if (predictor != "none" && predictor != "linear")
+            throw std::invalid_argument("Unsupported extended SLOT fixed-bias predictor");
+        std::optional<ExtendedPopulationState> previous;
+        detail::runTypedDCSweepStepControl<long double>(control, [&](long double bias, long double, int retry) {
+            auto seed = state;
+            seed.supplyBias_V = seed.deviceBias_V = bias;
+            for (std::size_t i = 0; i < port->node_ids.size(); ++i)
+                targets.potential[port->node_ids[i]] = drivenEquilibrium[i] + bias / vt;
+            bool extrapolated = false;
+            if (previous && !retry && predictor == "linear" && previous->deviceBias_V != state.deviceBias_V) {
+                const auto ratio = (bias - state.deviceBias_V) / (state.deviceBias_V - previous->deviceBias_V);
+                if (ratio > 0 && ratio <= 4) {
+                    try {
+                        seed.coordinates = predictPopulation<long double>(
+                            previous->coordinates, state.coordinates, ratio);
+                        extrapolated = true;
+                    } catch (const std::domain_error&) {
+                        // A nonrepresentable population prediction leaves the accepted seed in place.
+                    }
+                }
+            }
+            const auto solve = [&](const auto& initial) {
+                try {
+                    return solveExtendedFixedBiasNewton(initial, corrector, assemble);
+                } catch (const std::runtime_error& error) {
+                    ExtendedFixedBiasNewtonResult failed;
+                    failed.failure = error.what();
+                    return failed;
+                }
+            };
+            result = solve(seed);
+            int updates = result.updates;
+            if (!result.converged && extrapolated) {
+                seed.coordinates = state.coordinates;
+                result = solve(seed);
+                updates += result.updates;
+            }
+            return detail::DCSweepStepAttemptResult{result.converged, updates};
+        }, [&](const auto& event) {
+            if (event.converged) {
+                previous = std::move(state);
+                state = std::move(result.state);
+                recordAccepted();
+            }
+            std::cout << "extended80 fixed-bias " << (event.converged ? "accepted " : "rejected ")
+                      << print(event.voltage) << " V updates=" << event.newtonIterations;
+            if (!event.converged)
+                std::cout << " reason=" << result.failure;
+            std::cout << '\n';
+        });
+        result.converged = !rows.empty() && state.supplyBias_V == stop;
     } else {
         const auto& circuit = sweep.at("external_circuit");
         if (circuit.value("mode", "") != "series_resistor" || circuit.value("solver", "") != "coupled_newton" ||
@@ -640,7 +764,8 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
     nlohmann::json voltages = nlohmann::json::object(), totals = nlohmann::json::object();
     for (const auto& contact : contacts) {
         const auto& pair = currents.at(contact.name);
-        voltages[contact.name] = print(contact.name == currentContact ? state.deviceBias_V : 0.L);
+        voltages[contact.name] = print(contact.name == currentContact ? state.deviceBias_V :
+            (fixedProfile ? contactBias(contact) : 0.L));
         totals[contact.name] = print(pair[0] - pair[1]);
     }
     out["accepted_points"] = rows.size();

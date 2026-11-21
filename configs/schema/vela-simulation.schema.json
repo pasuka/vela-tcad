@@ -217,7 +217,7 @@
       "properties": {
         "grad_qf_contact_field": {"enum": ["electric_field", "quasi_fermi_gradient"], "default": "electric_field"},
         "arithmetic_precision": {"enum": ["double", "extended80"], "default": "double"},
-        "extended80_stage_profile": {"enum": ["slot_population_bvds_v1"]},
+        "extended80_stage_profile": {"enum": ["slot_population_bvds_v1", "slot_population_fixed_bias_v1"]},
         "require_end_to_end_precision": {"type": "boolean", "default": false},
         "primary_variable_coordinates": {"enum": ["unit", "physical"], "description": "Population Newton coordinates; default unit for BVMethods population state, physical is the explicit rollback."},
         "compensated_population_state": {"type": "boolean", "default": false},

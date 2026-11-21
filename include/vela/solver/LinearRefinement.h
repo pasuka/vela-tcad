@@ -59,11 +59,13 @@ inline void exportFailedSystem(const vela::SparseMatrixd& matrix,
           << defect.componentwiseBackwardErrors[i] << '\n';
 }
 
-template<class Scalar>
-BasicDefect<Scalar> computeHighPrecisionDefect(
+namespace detail {
+template<class Scalar, class Coefficient>
+BasicDefect<Scalar> accumulateDefect(
     const Eigen::SparseMatrix<Scalar>& J,
     const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& F,
-    const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& step) {
+    const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& step,
+    Coefficient coefficient) {
     if (J.rows() != F.size() || J.cols() != step.size() || !F.allFinite() || !step.allFinite())
         throw std::invalid_argument("Invalid refinement defect dimensions or input");
     ScopedPerformanceTimer timer("linear.mp_defect.total");
@@ -77,7 +79,7 @@ BasicDefect<Scalar> computeHighPrecisionDefect(
     for (int col=0;col<step.size();++col) preciseStep.emplace_back(step(col));
     for (int col=0;col<J.outerSize();++col)
         for (typename Eigen::SparseMatrix<Scalar>::InnerIterator it(J,col);it;++it) {
-            const MP term=MP(it.value())*preciseStep[it.col()];
+            const MP term=coefficient(it)*preciseStep[it.col()];
             r[it.row()]+=term; denominator[it.row()]+=abs(term);
         }
     using Vector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
@@ -93,6 +95,47 @@ BasicDefect<Scalar> computeHighPrecisionDefect(
         throw std::runtime_error("Nonfinite linear refinement defect");
     return answer;
 }
+} // namespace detail
+
+template<class Scalar>
+BasicDefect<Scalar> computeHighPrecisionDefect(
+    const Eigen::SparseMatrix<Scalar>& J,
+    const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& F,
+    const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& step) {
+    return detail::accumulateDefect(J, F, step,
+        [](const typename Eigen::SparseMatrix<Scalar>::InnerIterator& entry) {
+            return MP(entry.value());
+        });
+}
+
+// The matrix and its sparse traversal order must stay fixed while refining one system.
+template<class Scalar>
+class PreparedMpDefect {
+public:
+    using Matrix = Eigen::SparseMatrix<Scalar>;
+    using Vector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+
+    explicit PreparedMpDefect(const Matrix& matrix) : matrix_(matrix) {
+        ScopedPerformanceTimer timer("linear.mp_defect.prepare");
+        coefficients_.reserve(static_cast<std::size_t>(matrix.nonZeros()));
+        for (Eigen::Index col = 0; col < matrix.outerSize(); ++col)
+            for (typename Matrix::InnerIterator entry(matrix, col); entry; ++entry)
+                coefficients_.emplace_back(entry.value());
+    }
+    PreparedMpDefect(Matrix&&) = delete;
+
+    BasicDefect<Scalar> evaluate(const Vector& residual, const Vector& step) const {
+        std::size_t index = 0;
+        return detail::accumulateDefect(matrix_, residual, step,
+            [&](const typename Matrix::InnerIterator&) -> const MP& {
+                return coefficients_[index++];
+            });
+    }
+
+private:
+    const Matrix& matrix_;
+    std::vector<MP> coefficients_;
+};
 
 inline Defect highPrecisionDefect(const SparseMatrixd& J, const VectorXd& F,
                                   const VectorXd& step) {

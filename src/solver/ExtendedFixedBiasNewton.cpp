@@ -98,7 +98,7 @@ ExtendedFixedBiasNewtonResult solveExtendedPopulationNewton(
             const auto initial = system->rhs.cwiseAbs().maxCoeff();
             result.rhsGrowth = ExtendedRhsGrowthReport{initial, initial, std::nullopt};
         }
-        const auto goal = circuit ? std::optional{ExtendedLinearAccuracyGoal{
+        const auto goal = (circuit || config.refineToLinearGoal) ? std::optional{ExtendedLinearAccuracyGoal{
             config.maxLinearBackwardError, config.maxScaledLinearDefect}} : std::nullopt;
         const auto linear = solveExtendedBorderedSystem(*system, eliminate,
             frame.device.retainedIndependentPotentialRows, config.refinementCorrections, goal);

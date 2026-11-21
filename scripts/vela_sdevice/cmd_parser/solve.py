@@ -242,7 +242,7 @@ def parse_statements(tokens: List[Token], ctx: ParseContext, nested: bool = Fals
                 if stream.at_punct("("):
                     _, args, _ = stream.take_group()
                 statements.append(_parse_current_plot_statement(head, args, ctx))
-            elif lower == "newcurrentprefix":
+            elif lower in ("newcurrentprefix", "newcurrentfile"):
                 stream.expect_punct("=")
                 value = stream.take_value()
                 statements.append({"kind": "new_current_prefix", "line": head.line, "prefix": value.value})

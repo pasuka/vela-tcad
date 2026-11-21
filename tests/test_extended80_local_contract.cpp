@@ -15,6 +15,8 @@
 #include "vela/solver/ExtendedBoltzmannColdStart.h"
 #include "vela/solver/ExtendedFixedBiasNewton.h"
 #include "vela/solver/DensityUpdateConvergence.h"
+#include "vela/solver/LinearRefinement.h"
+#include "vela/solver/PopulationState.h"
 #include "vela/io/MeshReader.h"
 #include "vela/io/StateIdentity.h"
 #include "vela/physics/IalMobilityJson.h"
@@ -39,6 +41,42 @@ namespace {
 constexpr auto low = 0x1p-60L;
 constexpr auto nextToOneDecimal = "1.000000000000000000867361737988403547205962240695953369140625";
 static_assert(compiledArithmeticPrecision == ArithmeticPrecision::Extended80);
+}
+
+TEST_CASE("Extended population extrapolation preserves positive densities", "[extended80]") {
+    const auto old = (ExtendedVector(6) << 0.25L, 1.0L, 3.0L, 0.0L, 2.0L, 0.0L).finished();
+    const auto current = (ExtendedVector(6) << 0.5L, 1.0L + low, 1.0L, 0.0L, 4.0L, 0.0L).finished();
+    const auto predicted = predictPopulation<long double>(old, current, 2.0L);
+    CHECK(predicted[0] == 1.0L);
+    CHECK(predicted[1] == 1.0L + 3.0L * low);
+    CHECK(std::abs(9.0L * predicted[2] - 1.0L) < 16 * std::numeric_limits<long double>::epsilon());
+    CHECK(predicted[3] == 0.0L);
+    CHECK(std::abs(predicted[4] / 16.0L - 1.0L) < 16 * std::numeric_limits<long double>::epsilon());
+    CHECK(predicted[5] == 0.0L);
+
+    auto invalid = old;
+    invalid[2] = 0.0L;
+    CHECK_THROWS_AS(predictPopulation<long double>(invalid, current, 2.0L), std::domain_error);
+}
+
+TEST_CASE("Prepared extended refinement defects preserve uncached arithmetic", "[extended80]") {
+    ExtendedSparseMatrix matrix(3, 3);
+    matrix.insert(0, 0) = 1.0L + low;
+    matrix.insert(2, 0) = 0.0L;
+    matrix.insert(0, 1) = -1.0L;
+    matrix.insert(2, 1) = 0x1p+600L;
+    matrix.insert(2, 2) = -0x1p+600L;
+    const ExtendedVector residual = (ExtendedVector(3) << -low, 0.0L, 0x1p+540L).finished();
+    ExtendedVector direction = ExtendedVector::Ones(3);
+    const linear_refinement::PreparedMpDefect<long double> prepared(matrix);
+    for (const long double shift : {0.0L, low, -low}) {
+        direction(2) = 1.0L + shift;
+        const auto expected = linear_refinement::computeHighPrecisionDefect(matrix, residual, direction);
+        const auto actual = prepared.evaluate(residual, direction);
+        CHECK((actual.values.array() == expected.values.array()).all());
+        CHECK((actual.componentwiseBackwardErrors.array() == expected.componentwiseBackwardErrors.array()).all());
+        CHECK(actual.backwardMax == expected.backwardMax);
+    }
 }
 
 TEST_CASE("Load-line trial comparisons retain residual and decrease low bits", "[extended80]") {

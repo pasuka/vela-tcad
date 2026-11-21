@@ -4613,6 +4613,13 @@ requests inner guards must explicitly select `legacy_inner_guard`. This is a
 compatibility contract for documented stepping, not a promise of identical
 Sentaurus nonlinear trajectories or proprietary solver internals.
 
+For CMD voltage ramps, `MaxStep` caps adaptive trials. The end bias and explicit
+output times define the required landings. A full-range `CurrentPlot` interval
+request also supplies the regular output grid. The `Extrapolate` option controls
+the trial's initial state independently. On the ordinary and SLOT extended80
+prescribed-bias potential/density paths, it selects linear potential and
+logarithmic population extrapolation.
+
 For example, to migrate a coupled deck:
 
 ```json
