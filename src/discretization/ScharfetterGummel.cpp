@@ -5,7 +5,9 @@
 #include "vela/physics/CarrierStatistics.h"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 
 
@@ -109,6 +111,20 @@ Real finiteRealFromLongDouble(vela::ArithmeticReal value)
     return static_cast<Real>(value);
 }
 
+double positiveFrexp(double value, int& exponent)
+{
+    static_assert(sizeof(double) == sizeof(std::uint64_t));
+    static_assert(std::numeric_limits<double>::is_iec559 &&
+                  std::numeric_limits<double>::digits == 53);
+    constexpr std::uint64_t fractionMask = (std::uint64_t{1} << 52) - 1;
+    constexpr std::uint64_t halfExponent = std::uint64_t{1022} << 52;
+    const auto bits = std::bit_cast<std::uint64_t>(value);
+    const auto storedExponent = static_cast<int>(bits >> 52);
+    if (storedExponent == 0)
+        return std::frexp(value, &exponent);
+    exponent = storedExponent - 1022;
+    return std::bit_cast<double>((bits & fractionMask) | halfExponent);
+}
 
 
 
@@ -151,8 +167,8 @@ numerics::SplitCoordinate sgPopulationLogRatioCompensated(Real numerator, Real d
     // The positive ratio reduces to m * 2^e with m close to one. Evaluate
     // log(m) = 2*atanh((m-1)/(m+1)) without rounding the ratio first.
     int aExponent, bExponent;
-    double a = std::frexp(numerator, &aExponent);
-    const double b = std::frexp(denominator, &bExponent);
+    double a = positiveFrexp(numerator, aExponent);
+    const double b = positiveFrexp(denominator, bExponent);
     int exponent = aExponent - bExponent;
     constexpr double sqrtTwo = 0x1.6a09e667f3bcdp+0;
     if (a > b * sqrtTwo) {

@@ -2019,7 +2019,9 @@ if(VELA_ENABLE_PN2D_CI)
                       --output ${CMAKE_CURRENT_BINARY_DIR}/pn2d-reports)
     add_test(NAME pn2d_ci_stage
         COMMAND ${Python3_EXECUTABLE} ${_pn2d_ci_runner} stage ${_pn2d_ci_args})
-    set_tests_properties(pn2d_ci_stage PROPERTIES FIXTURES_SETUP pn2d_ci_reference LABELS pn2d-ci)
+    # Seed the scheduler for a fresh Release build with no CTest timing history.
+    set_tests_properties(pn2d_ci_stage PROPERTIES FIXTURES_SETUP pn2d_ci_reference
+        LABELS pn2d-ci COST 380)
     set(_pn2d_ci_cases 0v iv bv)
     foreach(_variant P0 P1 P2 P3 D1 D2 G1 G2)
         list(APPEND _pn2d_ci_cases ${_variant}-forward ${_variant}-reverse)
@@ -2034,6 +2036,13 @@ if(VELA_ENABLE_PN2D_CI)
                 --launcher $<TARGET_FILE:sd-sim> ${_pn2d_solver_args})
         set_tests_properties(pn2d_ci_${_case} PROPERTIES
             FIXTURES_REQUIRED pn2d_ci_reference LABELS "pn2d-ci;sdevice" TIMEOUT 5400)
+        if(_case STREQUAL "bv")
+            set_property(TEST pn2d_ci_${_case} PROPERTY COST 375)
+        elseif(_case MATCHES "-forward$")
+            set_property(TEST pn2d_ci_${_case} PROPERTY COST 270)
+        elseif(_case MATCHES "-reverse$")
+            set_property(TEST pn2d_ci_${_case} PROPERTY COST 100)
+        endif()
         vela_set_windows_msys2_test_path(pn2d_ci_${_case})
     endforeach()
     add_test(NAME pn2d_ci_sde
@@ -2060,11 +2069,12 @@ if(VELA_ENABLE_BVMETHODS_CI)
     endif()
     add_test(NAME bvmethods_ci_stage COMMAND ${Python3_EXECUTABLE} ${_bvmethods_ci_runner}
         stage --output ${_bvmethods_ci_output} ${_bvmethods_stage_args})
-    set_tests_properties(bvmethods_ci_stage PROPERTIES FIXTURES_SETUP bvmethods_ci_inputs LABELS bvmethods-ci)
+    set_tests_properties(bvmethods_ci_stage PROPERTIES FIXTURES_SETUP bvmethods_ci_inputs
+        LABELS bvmethods-ci COST 265)
     add_test(NAME bvmethods_ci_full_bv COMMAND ${Python3_EXECUTABLE} ${_bvmethods_ci_runner}
         run --output ${_bvmethods_ci_output} --launcher $<TARGET_FILE:sd-sim>)
     set_tests_properties(bvmethods_ci_full_bv PROPERTIES
-        FIXTURES_REQUIRED bvmethods_ci_inputs LABELS "bvmethods-ci;sdevice" TIMEOUT 5400)
+        FIXTURES_REQUIRED bvmethods_ci_inputs LABELS "bvmethods-ci;sdevice" TIMEOUT 5400 COST 260)
     vela_set_windows_msys2_test_path(bvmethods_ci_stage)
     vela_set_windows_msys2_test_path(bvmethods_ci_full_bv)
     foreach(_method IN ITEMS ABA_poisson ABA_coupled voltage2current)
@@ -2074,6 +2084,9 @@ if(VELA_ENABLE_BVMETHODS_CI)
             --output ${_bvmethods_ci_output}/${_method} --launcher $<TARGET_FILE:sd-sim>)
         set_tests_properties(${_test} PROPERTIES
             FIXTURES_REQUIRED bvmethods_ci_inputs LABELS "bvmethods-ci;sdevice" TIMEOUT 5400)
+        if(_method STREQUAL "voltage2current")
+            set_property(TEST ${_test} PROPERTY COST 180)
+        endif()
         vela_set_windows_msys2_test_path(${_test})
     endforeach()
 endif()
@@ -2124,6 +2137,14 @@ if(_reference_u2022_cases)
         set_tests_properties(reference_u2022_${_case} PROPERTIES
             LABELS "reference;reference-u2022" TIMEOUT ${_reference_u2022_timeout})
         vela_set_windows_msys2_test_path(reference_u2022_${_case})
+    endforeach()
+    foreach(_time_and_case IN ITEMS "750;singledevice_idvg_linear" "560;transportmodels_dg_idvd"
+            "280;transportmodels_idvg" "230;transportmodels_idvd" "135;bjt_m1")
+        list(GET _time_and_case 0 _estimated_seconds)
+        list(GET _time_and_case 1 _case)
+        if(TEST reference_u2022_${_case})
+            set_property(TEST reference_u2022_${_case} PROPERTY COST ${_estimated_seconds})
+        endif()
     endforeach()
 endif()
 
@@ -2230,15 +2251,18 @@ vela_set_windows_msys2_test_path(sde_p6_validation)
 add_test(NAME reference_sde_cases
     COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_reference_sde_cases)
 set_tests_properties(reference_sde_cases PROPERTIES
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} COST 260 FIXTURES_SETUP reference_sde_corpus)
 vela_set_windows_msys2_test_path(reference_sde_cases)
+set_property(TEST reference_sde_cases APPEND PROPERTY ENVIRONMENT
+    "VELA_REFERENCE_SDE_TEST_OUTPUT=${CMAKE_CURRENT_BINARY_DIR}/baseline-corpus")
 
 add_test(NAME sde_sdevice_checks
     COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sde_sdevice_checks)
 set_tests_properties(sde_sdevice_checks PROPERTIES
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} FIXTURES_REQUIRED reference_sde_corpus)
 vela_set_windows_msys2_test_path(sde_sdevice_checks)
 set_property(TEST sde_sdevice_checks APPEND PROPERTY ENVIRONMENT
+    "VELA_REFERENCE_SDE_CASES_DIR=${CMAKE_CURRENT_BINARY_DIR}/baseline-corpus"
     "VELA_SD_SIM=$<TARGET_FILE:sd-sim>")
 
 add_test(NAME sentaurus_reference_workflows

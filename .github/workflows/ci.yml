@@ -29,6 +29,8 @@ jobs:
       VELA_MKL_VERSION: '2026.1.0'
       MKL_THREADING_LAYER: SEQUENTIAL
       MKL_NUM_THREADS: '1'
+      CCACHE_COMPILERCHECK: content
+      CCACHE_MAXSIZE: 600M
       P6_ARCHIVE: vela-sde-ubuntu26.04.tar.gz
       REQUESTED_SUITE: ${{ github.event_name == 'workflow_dispatch' && inputs.suite || 'all' }}
 
@@ -43,35 +45,35 @@ jobs:
           platform: x64
 
       - name: Report compiler version
+        id: compiler
         run: |
           gcc --version
           g++ --version
+          echo "CCACHE_DIR=$RUNNER_TEMP/vela-ccache" >> "$GITHUB_ENV"
+          key="$( { g++ -dumpmachine; g++ -dumpfullversion; } | sha256sum | cut -d' ' -f1 )"
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve build and regression dependencies
+        id: apt-plan
+        run: bash .github/scripts/apt-dependencies.sh plan
+
+      - name: Cache APT package archives
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/vela-apt-debs/*.deb
+          key: apt-debs-v1-ubuntu26.04-${{ runner.arch }}-${{ steps.apt-plan.outputs.key }}
+          restore-keys: apt-debs-v1-ubuntu26.04-${{ runner.arch }}-
 
       - name: Install build and regression dependencies
-        run: |
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            build-essential \
-            cmake \
-            ninja-build \
-            pkg-config \
-            patchelf \
-            libsuitesparse-dev \
-            libopenblas-pthread-dev \
-            libmetis-dev \
-            libhdf5-dev \
-            libboost-dev \
-            libspdlog-dev \
-            libeigen3-dev \
-            nlohmann-json3-dev \
-            catch2 \
-            libglu1-mesa \
-            python3-venv \
-            python3 \
-            python3-pil \
-            python3-numpy \
-            python3-h5py \
-            python3-jsonschema
+        run: bash .github/scripts/apt-dependencies.sh install
+
+      - name: Cache GCC compilation results
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ccache-v1-ubuntu26.04-${{ runner.arch }}-${{ steps.compiler.outputs.key }}-${{ github.sha }}-${{ env.REQUESTED_SUITE }}
+          restore-keys: |
+            ccache-v1-ubuntu26.04-${{ runner.arch }}-${{ steps.compiler.outputs.key }}-
 
       - name: Check regression Python dependencies
         run: |
@@ -153,6 +155,7 @@ jobs:
             fi
           fi
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DPython3_EXECUTABLE=/usr/bin/python3 \
             -DVELA_PHYSICAL_CONSTANTS_PROFILE=sentaurus_u2022_12 -DVELA_ENABLE_PN2D_CI=ON \
             -DVELA_ENABLE_UMFPACK=ON -DVELA_ENABLE_METIS=ON \
@@ -173,13 +176,21 @@ jobs:
       - name: Build
         id: build
         run: |
-          args=(--build build --parallel 2)
+          jobs="$(nproc)"
+          if (( jobs > 4 )); then jobs=4; fi
+          echo "Building with $jobs parallel jobs"
+          ccache --zero-stats
+          args=(--build build --parallel "$jobs")
           if [[ "$REQUESTED_SUITE" == pn2d ]]; then
             args+=(--target sd-sim vela_example_runner)
           elif [[ "$REQUESTED_SUITE" == bvmethods || "$REQUESTED_SUITE" == reference-u2022 ]]; then
             args+=(--target sd-sim vela_example_runner test_mkl_pardiso)
           fi
           cmake "${args[@]}"
+
+      - name: Report compiler cache statistics
+        if: always() && (steps.build.outcome == 'success' || steps.build.outcome == 'failure')
+        run: ccache --show-stats
 
       - name: Cache locked SDE offline inputs
         if: env.REQUESTED_SUITE == 'all'
@@ -197,10 +208,7 @@ jobs:
           relocated="$PWD/build/relocated tools"
           mkdir -p "$relocated"
           /usr/bin/python3 -m tarfile -e "build/packages/$P6_ARCHIVE" "$relocated" --filter data
-          {
-            printf 'VELA_P6_PACKAGE=%s\n' "$relocated/vela-sde"
-            printf 'VELA_REFERENCE_SDE_TEST_OUTPUT=%s\n' "$PWD/build/baseline-corpus"
-          } >> "$GITHUB_ENV"
+          printf 'VELA_P6_PACKAGE=%s\n' "$relocated/vela-sde" >> "$GITHUB_ENV"
 
       - name: Qualify the relocated SDE package on eight sources twice
         if: env.REQUESTED_SUITE == 'all'

@@ -31,6 +31,8 @@ TEST_CASE("Population log ratio retains its small cancellation term in binary64"
         std::pair{std::nextafter(std::sqrt(2.), 1.), 1.},
         std::pair{std::nextafter(std::sqrt(2.), 2.), 1.},
         std::pair{1.037e19, 6.421e18},
+        std::pair{std::numeric_limits<double>::min(),
+                  std::nextafter(std::numeric_limits<double>::min(), 0.)},
         std::pair{std::numeric_limits<double>::max(), std::numeric_limits<double>::denorm_min()},
     };
     for (const auto& [a, b] : ratios) {

@@ -4,6 +4,7 @@
 #include "vela/core/PhysicsCallCounters.h"
 #include <cmath>
 #include <algorithm>
+#include <iterator>
 #include <limits>
 #include <stdexcept>
 #include <span>
@@ -14,6 +15,33 @@ namespace {
 
 constexpr Real SqrtPi = 1.7724538509055160273;
 #include "FermiHalfCoefficients.inc"
+
+// The value and derivative use the same Clenshaw recurrence on this interval.
+template<int Order>
+Real evaluateFermiHalfPolynomial(Real eta, Real* value = nullptr)
+{
+    constexpr bool Derivative = Order > 0;
+    std::size_t segment = 0;
+    while (eta > FermiBounds[segment + 1]) ++segment;
+    const Real scale = 2.0 / (FermiBounds[segment + 1] - FermiBounds[segment]);
+    const Real t = (eta - FermiBounds[segment]) * scale - 1.0;
+    const auto coefficients = FermiCoefficients[segment];
+    Real b1 = 0.0, b2 = 0.0, d1 = 0.0, d2 = 0.0, c1=0., c2=0.;
+    for (std::size_t k = coefficients.size() - 1; k > 0; --k) {
+        if constexpr (Order==2) {const Real second=4.*d1+2.*t*c1-c2;c2=c1;c1=second;}
+        if constexpr (Derivative) {
+            const Real derivative = 2.0*b1 + 2.0*t*d1 - d2;
+            d2 = d1; d1 = derivative;
+        }
+        const Real b = coefficients[k] + 2.0*t*b1 - b2;
+        b2 = b1; b1 = b;
+    }
+    if (value != nullptr)
+        *value = coefficients[0] + t*b1 - b2;
+    if constexpr (Order==2) return (2.*d1+t*c1-c2)*scale*scale;
+    if constexpr (Derivative) return (b1 + t*d1 - d2) * scale;
+    return coefficients[0] + t*b1 - b2;
+}
 
 template<int Order>
 Real evaluateFermiHalf(Real eta)
@@ -46,24 +74,7 @@ Real evaluateFermiHalf(Real eta)
         if constexpr (Derivative) return prefactor * sum;
         return std::min(std::numeric_limits<Real>::max(), (prefactor * sum) * eta);
     }
-    std::size_t segment = 0;
-    while (eta > FermiBounds[segment + 1]) ++segment;
-    const Real scale = 2.0 / (FermiBounds[segment + 1] - FermiBounds[segment]);
-    const Real t = (eta - FermiBounds[segment]) * scale - 1.0;
-    const auto coefficients = FermiCoefficients[segment];
-    Real b1 = 0.0, b2 = 0.0, d1 = 0.0, d2 = 0.0, c1=0., c2=0.;
-    for (std::size_t k = coefficients.size() - 1; k > 0; --k) {
-        if constexpr (Order==2) {const Real second=4.*d1+2.*t*c1-c2;c2=c1;c1=second;}
-        if constexpr (Derivative) {
-            const Real derivative = 2.0*b1 + 2.0*t*d1 - d2;
-            d2 = d1; d1 = derivative;
-        }
-        const Real b = coefficients[k] + 2.0*t*b1 - b2;
-        b2 = b1; b1 = b;
-    }
-    if constexpr (Order==2) return (2.*d1+t*c1-c2)*scale*scale;
-    if constexpr (Derivative) return (b1 + t*d1 - d2) * scale;
-    return coefficients[0] + t*b1 - b2;
+    return evaluateFermiHalfPolynomial<Order>(eta);
 }
 
 Real limitedExp(Real value)
@@ -148,12 +159,20 @@ Real inverseFermiDiracHalf(Real value)
     Real eta = value < 0.5 ? lower : degenerateEstimate;
     eta = std::clamp(eta, lower, upper);
     for (int iteration = 0; iteration < 80; ++iteration) {
-        const Real evaluated = fermiDiracHalf(eta);
+        const bool paired = eta >= FermiBounds[0] && eta < FermiBounds[std::size(FermiBounds) - 1];
+        Real evaluated, derivative = 0.0;
+        if (paired) {
+            ++physicsCallCounters.fermiDiracHalf;
+            ++physicsCallCounters.fermiDiracHalfDerivative;
+            derivative = evaluateFermiHalfPolynomial<1>(eta, &evaluated);
+        } else {
+            evaluated = fermiDiracHalf(eta);
+        }
         const Real function = evaluated - value;
         if (std::abs(function / value) <= 4.0e-14) break;
         if (function > 0.0) upper = eta;
         else lower = eta;
-        const Real derivative = fermiDiracHalfDerivative(eta);
+        if (!paired) derivative = fermiDiracHalfDerivative(eta);
         const Real trial = derivative > 0.0 ? eta - function / derivative
                                             : lower + 0.5 * (upper - lower);
         const Real next = trial > lower && trial < upper && std::isfinite(trial)

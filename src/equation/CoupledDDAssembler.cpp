@@ -652,6 +652,28 @@ void CoupledDDAssembler::buildEdgeAssemblyKernels()
     };
     std::vector<CellVertexMobilities> cellVertexMobilities(
         cacheMobility && vertexMasetti ? mesh_.numCells() : 0);
+    struct CellGradientBasis {
+        std::array<Point2, 3> vectors{};
+        Real area = 0.0;
+    };
+    std::vector<CellGradientBasis> cellGradientBases(
+        vectorQfMobilityEnabled_ ? mesh_.numCells() : 0);
+    for (Index cellId = 0; cellId < cellGradientBases.size(); ++cellId) {
+        if (!detail::isTransportMaterial(cellMaterials_[cellId]))
+            continue;
+        const Cell& cell = mesh_.getCell(cellId);
+        auto& gradient = cellGradientBases[cellId];
+        bool valid = false;
+        detail::cellScalarGradient(mesh_, cell, [](Index) { return 0.0; }, valid, gradient.area);
+        if (!valid || gradient.area <= 0.0)
+            continue;
+        for (std::size_t k = 0; k < gradient.vectors.size(); ++k) {
+            const Index column = cell.node_ids[k];
+            Real area = 0.0;
+            gradient.vectors[k] = detail::cellScalarGradient(mesh_, cell,
+                [&](Index node) { return node == column ? 1.0 : 0.0; }, valid, area);
+        }
+    }
     for (Index edgeId = 0; edgeId < mesh_.numEdges(); ++edgeId) {
         EdgeAssemblyKernel& kernel = edgeAssemblyKernels_[edgeId];
         for (auto& sensitivity : kernel.vectorGradientSensitivities)
@@ -761,20 +783,17 @@ void CoupledDDAssembler::buildEdgeAssemblyKernels()
         }
         if (vectorQfMobilityEnabled_) {
             for (Index cellId : edgeCells_[edgeId]) {
-                if (!detail::isTransportMaterial(cellMaterials_[cellId]))
+                const auto& gradient = cellGradientBases[cellId];
+                if (gradient.area <= 0.0)
                     continue;
                 const Cell& cell = mesh_.getCell(cellId);
-                bool valid = false;
-                Real area = 0.0;
-                detail::cellScalarGradient(mesh_, cell, [](Index) { return 0.0; }, valid, area);
-                if (!valid || area <= 0.0)
-                    continue;
-                kernel.vectorGradientArea += area;
-                for (std::size_t k = 0; k < kernel.avalancheStencilNodeCount; ++k) {
-                    const Index column = kernel.avalancheStencilNodes[k];
-                    const Point2 basis = detail::cellScalarGradient(mesh_, cell,
-                        [&](Index node) { return node == column ? 1.0 : 0.0; }, valid, area);
-                    kernel.vectorGradientSensitivities[k] += area * basis;
+                kernel.vectorGradientArea += gradient.area;
+                const auto begin = kernel.avalancheStencilNodes.begin();
+                const auto end = begin + kernel.avalancheStencilNodeCount;
+                for (std::size_t k = 0; k < gradient.vectors.size(); ++k) {
+                    // The stencil already contains the vertices of every adjacent cell.
+                    const auto column = std::find(begin, end, cell.node_ids[k]);
+                    kernel.vectorGradientSensitivities[column - begin] += gradient.area * gradient.vectors[k];
                 }
             }
         }
@@ -1831,28 +1850,36 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
         throw std::domain_error("Compensated populations must be positive and finite");
 
     constexpr bool binary64 = compiledArithmeticPrecision == ArithmeticPrecision::Double;
+    std::vector<ArithmeticReal> electronLogCorrection, holeLogCorrection;
+    if (vectorQfMobilityEnabled_ || qfMobilityEnabled_ ||
+        (includeImpactIonization && impactIonizationEnabled_)) {
+        electronLogCorrection.resize(count);
+        holeLogCorrection.resize(count);
+        for (int node = 0; node < count; ++node) {
+            electronLogCorrection[node] = std::log1p(static_cast<ArithmeticReal>(en[node]));
+            holeLogCorrection[node] = std::log1p(static_cast<ArithmeticReal>(hp[node]));
+        }
+    }
     const auto highDrop = [&](Index i, Index j) { return static_cast<vela::ArithmeticReal>(psi[j]) - psi[i]; };
     const auto lowDrop = [&](Index i, Index j) { return static_cast<vela::ArithmeticReal>(low[j]) - low[i]; };
     const auto drop = [&](Index i, Index j) { return highDrop(i,j) + lowDrop(i,j); };
     const auto qfDrop = [&](bool electron, Index i, Index j) {
         const auto& density = electron ? n : p;
-        const auto& correction = electron ? en : hp;
+        const auto& logCorrection = electron ? electronLogCorrection : holeLogCorrection;
         if constexpr (binary64) {
             const double sign = electron ? -1. : 1.;
             auto logDensity = sgPopulationLogRatioCompensated(density[j], density[i]);
             const auto logNi = sgPopulationLogRatioCompensated(ni_[i], ni_[j]);
             logDensity = logDensity.added(logNi).added(
-                numerics::SplitCoordinate::sum(std::log1p(correction[j]), -std::log1p(correction[i])));
+                numerics::SplitCoordinate::sum(logCorrection[j], -logCorrection[i]));
             return static_cast<ArithmeticReal>(numerics::SplitCoordinate::sum(psi[j], -psi[i])
                 .added(numerics::SplitCoordinate::sum(low[j], -low[i]))
                 .added(logDensity.scaled(sign * Vt_)).hi);
         }
         const vela::ArithmeticReal logDensity = sgPopulationLogRatio(density[j],density[i]);
-        const vela::ArithmeticReal logCorrection = std::log1p(static_cast<vela::ArithmeticReal>(correction[j])) -
-            std::log1p(static_cast<vela::ArithmeticReal>(correction[i]));
         const vela::ArithmeticReal sign = electron ? -VELA_ARITHMETIC_LITERAL(1.) : VELA_ARITHMETIC_LITERAL(1.);
         return (highDrop(i,j)/Vt_ + sign * (logDensity - sgPopulationLogRatio(ni_[j],ni_[i]))) * Vt_
-            + (lowDrop(i,j) + sign * Vt_ * logCorrection);
+            + (lowDrop(i,j) + sign * Vt_ * (logCorrection[j] - logCorrection[i]));
     };
 
     const Real fieldFactor = scaling_.fieldFromCoordinateDeltaFactor;
