@@ -18,6 +18,7 @@ import xml.etree.ElementTree as ET
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "scripts"))
 from build_vela_sdevice_pyz import build_archive
+from vela_sdevice.log_levels import WORKBENCH_COMMAND_ENV
 from vela_sdevice.materials import default_models_par_path
 from vela_sdevice.plt import read_plt_document
 from vela_sdevice.orchestrator.outputs import vtu_metadata
@@ -54,6 +55,48 @@ def inputs(root, *, multistage=False, fixture=False):
 
 
 class OrchestratorTests(unittest.TestCase):
+    def test_workbench_main_log_keeps_progress_at_info_and_streams_it_at_error(self):
+        inputs(self.root, multistage=True)
+        invocation = 'sd-sim.exe device_des.cmd'
+        log_path = self.root / "run_des.log"
+        for level in ("info", "error"):
+            with self.subTest(level=level):
+                log_path.unlink(missing_ok=True)
+                done = self.call(str(self.cmd), "--log-level", level, env={WORKBENCH_COMMAND_ENV: invocation})
+                self.assert_exit(0, done)
+                points = [line for line in done.stdout.splitlines() if line.endswith(" V accepted")]
+                self.assertGreater(len(points), 1)
+                self.assertEqual(len(points), len(set(points)))
+                self.assertGreater(len({line.split()[0] for line in points}), 1)
+                lines = log_path.read_text(encoding="utf-8").splitlines()
+                self.assertEqual(lines.count(f"[INVOCATION] {invocation}"), 1)
+                logged_points = [line.removeprefix("[PROGRESS] ") for line in lines if line.startswith("[PROGRESS] ")]
+                self.assertEqual(logged_points, points if level == "info" else [])
+                self.assertTrue(any(line.startswith("[SUMMARY] ") for line in lines))
+
+    def test_workbench_launcher_error_writes_main_log(self):
+        from vela_workbench_cases import Case, run_case
+
+        log_name = "logs/test_des.log"
+        case = Case(name="test", source=self.root, arguments=[self.cmd.name],
+                    hashes={}, work=self.work.name, log=log_name)
+        with self.assertRaises(FileNotFoundError):
+            run_case(self.root / "missing-sd-sim", case, self.root, log_level="error")
+        lines = (self.root / log_name).read_text(encoding="utf-8").splitlines()
+        self.assertTrue(lines[0].startswith("[INVOCATION] "))
+        self.assertTrue(lines[1].startswith("[FATAL] "))
+        self.assertEqual(list(self.root.rglob("*.log")), [self.root / log_name])
+
+    def test_workbench_frontend_error_preserves_console_diagnostic(self):
+        from vela_workbench_cases import Case, run_case
+
+        case = Case(name="test", source=self.root, hashes={}, work=self.work.name, log="run_des.log",
+                    arguments=["-c", "import sys; sys.stderr.write('invalid input\\n'); sys.exit(4)"])
+        self.assertEqual(run_case(sys.executable, case, self.root), ("Solver exited (code {})", 4))
+        lines = (self.root / case.log).read_text(encoding="utf-8").splitlines()
+        self.assertTrue(lines[0].startswith("[INVOCATION] "))
+        self.assertEqual(lines[1:], ["[FATAL] sd-sim exited with code 4", "[CONSOLE] invalid input"])
+
     def test_current_stop_completes_stage_before_voltage_goal(self):
         text = self.cmd.read_text().replace('Solve {',
             'Math {BreakCriteria {Current(Contact="anode" AbsVal=4e-8)}} Solve {')

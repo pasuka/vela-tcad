@@ -6,7 +6,6 @@ import json
 import os
 from pathlib import Path
 from queue import Empty, Queue
-import re
 import subprocess
 import tempfile
 from threading import Event, Thread
@@ -16,23 +15,6 @@ from vela_workbench_cases import prepare_cases, read_cases, read_run_status, run
 from vela_workbench_controls import action_icon, add_tooltip
 from vela_workbench_settings import Settings, load_settings, save_language
 from vela_workbench_text import CASE_NAMES, ZH
-
-
-ACCEPTED_POINT = re.compile(rb"(?m)^stage=(\d+) bias=([+\-0-9.eE]+) V accepted\r?\n")
-
-
-def last_accepted_point(log):
-    try:
-        with log.open("rb") as stream:
-            size = stream.seek(0, os.SEEK_END)
-            stream.seek(max(0, size - 8192))
-            accepted = ACCEPTED_POINT.findall(stream.read())
-    except OSError:
-        return None
-    if accepted:
-        stage, bias = accepted[-1]
-        return int(stage) + 1, float(bias)
-    return None
 
 
 def set_window_icon(root):
@@ -264,8 +246,8 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
 
     log_tab = ttk.Frame(tabs, padding=(9, 10), style="Surface.TFrame")
     tabs.add(log_tab)
-    log_picker = ttk.Combobox(log_tab, state="readonly")
-    log_picker.pack(fill="x", pady=(0, 6))
+    log_heading = ttk.Label(log_tab, style="Surface.TLabel")
+    log_heading.pack(anchor="w", pady=(0, 6))
     script_tab = ttk.Frame(tabs, padding=(9, 10), style="Surface.TFrame")
     tabs.add(script_tab)
     script_heading = ttk.Label(script_tab, style="Surface.TLabel")
@@ -309,6 +291,7 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
     statuses = dict.fromkeys(cases, ("Ready",))
     total = processed = canceled = 0
     running_key = None
+    latest_progress = None
     close_notice = False
     remembered_log = None
     field = None
@@ -348,25 +331,29 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
 
     def log_update():
         nonlocal remembered_log
-        directory = directories.get(focused())
-        filename = log_picker.get()
-        path = directory / filename if directory and filename else None
-        if path and path.is_file():
-            size = path.stat().st_size
-            signature = (path, size, chinese)
-            if signature == remembered_log:
-                return
-            with path.open("rb") as stream:
-                offset = max(0, size - 64 * 1024)
-                stream.seek(offset)
-                content = stream.read().decode("utf-8", errors="replace")
-            if offset:
-                notice = tr("Showing the end of the log. Open the run folder for the full log.")
-                content = notice + "\n\n" + content
-        else:
-            signature, content = None, ""
-            if remembered_log is None:
-                return
+        if tabs.select() != str(log_tab):
+            return
+        key = focused()
+        directory = directories.get(key)
+        path = directory / cases[key].log if directory else None
+        signature, content = None, ""
+        if path is not None:
+            try:
+                size = path.stat().st_size
+                signature = (path, size, chinese)
+                if signature == remembered_log:
+                    return
+                with path.open("rb") as stream:
+                    offset = max(0, size - 64 * 1024)
+                    stream.seek(offset)
+                    content = stream.read().decode("utf-8", errors="replace")
+                if offset:
+                    notice = tr("Showing the end of the log. Open the run folder for the full log.")
+                    content = notice + "\n\n" + content
+            except OSError:
+                signature, content = None, ""
+        if signature == remembered_log:
+            return
         remembered_log = signature
         replace_text(log_view, content, follow=True)
 
@@ -428,6 +415,7 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         voltage_picker.current(curve_axes.get(key, 0))
         case = cases[key]
         result_heading.configure(text=case_name(key))
+        log_heading.configure(text=case.log if directory else "")
         work = directory / case.work if directory else None
         plan = {}
         if work:
@@ -446,13 +434,6 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         identity = (
             key, directory, chinese, field_stamp, *(file_stamp(path) for path in curve_files),
         )
-        log_names = []
-        if directory:
-            log_names = ["sd-sim.log"]
-            log_names.extend(str(path.relative_to(directory)) for path in sorted(directory.glob("*_des.log")))
-        selected_log = log_picker.get()
-        log_picker.configure(values=log_names)
-        log_picker.set(selected_log if selected_log in log_names else (log_names or [""])[0])
         log_update()
         if view_key is not None and view_key[0] != key:
             drawn.clear()
@@ -623,7 +604,11 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
             try:
                 directory = Path(tempfile.mkdtemp(prefix=f"{key}-", dir=runs))
                 events.put((key, directory, ("Running",)))
-                status = run_case(launcher, cases[key], directory, log_level=settings.log_level)
+                def on_progress(stage, bias):
+                    events.put((key, directory, ("progress", stage, bias)))
+
+                status = run_case(launcher, cases[key], directory, log_level=settings.log_level,
+                                  on_progress=on_progress)
             except (OSError, ValueError, KeyError) as error:
                 status = ("Run failed: {}", error)
             events.put((key, directory, status))
@@ -645,9 +630,8 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
             message = tr("Finishing the current case before stopping the queue")
         elif running_key:
             message = tr("Running {}", case_name(running_key))
-            latest = last_accepted_point(directories[running_key] / "sd-sim.log")
-            if latest:
-                message += " · " + tr("Stage {} · last accepted bias {:.6g} V", *latest)
+            if latest_progress is not None:
+                message += " · " + tr("Stage {} · last accepted bias {:.6g} V", *latest_progress)
         else:
             message = tr("Starting solver")
         return " · ".join((count, message))
@@ -738,11 +722,15 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         headline.configure(text=progress_text())
 
     def poll():
-        nonlocal active, processed, canceled, running_key
+        nonlocal active, processed, canceled, running_key, latest_progress
         changed = False
         try:
             while True:
                 key, directory, status = events.get_nowait()
+                if key is not None and status[0] == "progress":
+                    if key == running_key and directory == directories[key]:
+                        latest_progress = status[1:]
+                    continue
                 if key is None:
                     active = False
                     sync_actions()
@@ -754,8 +742,10 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
                         directories[key] = directory
                     if status[0] == "Running":
                         running_key = key
+                        latest_progress = None
                     else:
                         running_key = None
+                        latest_progress = None
                         processed += 1
                         canceled += status[0] == "Canceled in queue"
                         if total > 1:
@@ -795,7 +785,6 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
     tabs.bind("<<NotebookTabChanged>>", refresh)
     voltage_picker.bind("<<ComboboxSelected>>", select_voltage)
     field_picker.bind("<<ComboboxSelected>>", draw_field)
-    log_picker.bind("<<ComboboxSelected>>", lambda _: log_update())
     first = saved_run[0] if saved_run else next(iter(cases))
     tree.focus(first)
     tree.selection_set(first)

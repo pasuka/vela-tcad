@@ -1,10 +1,11 @@
 """Severity thresholds for the SDevice output log."""
 
 FILE_LOG_LEVELS = ("debug", "info", "warning", "error")
+WORKBENCH_COMMAND_ENV = "VELA_WORKBENCH_COMMAND"
 
 
 def log_enabled(threshold, category, message=""):
-    if category in ("HEADER", "SUMMARY"):
+    if category in ("HEADER", "INVOCATION", "SUMMARY"):
         return True
     if category == "FATAL":
         severity = "error"

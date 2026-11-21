@@ -17,7 +17,7 @@ import time
 from ..cmd_parser import parse_cmd_file
 from ..deck_emit import DeckEmitError, EmitOptions, bind_current_start, emit_stage_plan, rebase_stage, write_stage_plan
 from ..materials import MaterialsError, active_models_from_ir, emit_materials, write_materials
-from ..log_levels import log_enabled
+from ..log_levels import WORKBENCH_COMMAND_ENV, log_enabled
 from ..mesh_import import MeshImportError, import_grid, check_electrodes
 from ..resources import resource_root
 from .. import schema_validator as sv
@@ -66,6 +66,7 @@ class DeviceRun:
             stem = "device_" + self.ir["source"]["sha256"][:8]
         self.work = self.cmd.parent / (stem + "_vela")
         self.log_path = self.cmd.parent / self.ir["files"]["output"]["resolved"]
+        self.invocation = os.environ.get(WORKBENCH_COMMAND_ENV)
         self.lock = RunLock(self.work / ".lock")
         self.stream = None
         self.stage = None
@@ -115,6 +116,8 @@ class DeviceRun:
             self._signals()
             self.log("HEADER", json.dumps({**self.manifest["version"], "cmd": str(self.cmd),
                 "sha256": self.manifest["sha256"], "time": time.time(), "host": socket.gethostname(), "pid": os.getpid()}))
+            if self.invocation is not None:
+                self.log("INVOCATION", self.invocation)
             self.log("CMD", "Command file echo begins")
             if log_enabled(self.options.log_level, "CMD"):
                 self.stream.write(self.cmd.read_text(encoding="utf-8-sig", errors="replace") + "\n")
@@ -325,17 +328,20 @@ class DeviceRun:
         lines, errors = queue.Queue(), queue.Queue()
         stop = threading.Event()
         progress_count = [0]
+        report_progress = not self.options.quiet or self.invocation is not None
+
         def read_output():
             for line in self.proc.stdout:
-                lines.put(line.rstrip())
+                lines.put(("RUNNER", line.rstrip()))
+
         def publish():
             seen = 0
             while not stop.wait(.05):
                 try:
                     records = self.publisher.update(index)
-                    if not self.options.quiet:
+                    if report_progress:
                         for row in records[seen:]:
-                            print(f"stage={index} bias={row['bias_V']} V accepted", flush=True)
+                            lines.put(("PROGRESS", f"stage={index} bias={row['bias_V']} V accepted"))
                     seen = len(records)
                     progress_count[0] = seen
                 except (FileNotFoundError, ValueError, PermissionError):
@@ -347,15 +353,24 @@ class DeviceRun:
         writer = threading.Thread(target=publish, daemon=True)
         reader.start(); writer.start()
         captured = []
+
+        def record(category, line):
+            if category == "PROGRESS":
+                if not self.options.quiet:
+                    print(line, flush=True)
+                if self.invocation is not None:
+                    self.log(category, line)
+            else:
+                captured.append(line)
+                self.log(category, line)
+
         try:
             while self.proc.poll() is None:
                 if self.interrupted or not errors.empty():
                     self._stop_child()
                     break
                 try:
-                    line = lines.get(timeout=.05)
-                    captured.append(line)
-                    self.log("RUNNER", line)
+                    record(*lines.get(timeout=.05))
                 except queue.Empty:
                     pass
         finally:
@@ -367,7 +382,7 @@ class DeviceRun:
             reader.join()
             self.proc.stdout.close()
         while not lines.empty():
-            line = lines.get_nowait(); captured.append(line); self.log("RUNNER", line)
+            record(*lines.get_nowait())
         for line in captured:
             if "vtk_fields_skipped" in line:
                 self.log("WARNING", "W202: " + line)
@@ -382,9 +397,9 @@ class DeviceRun:
             records = self.publisher.update(index, final=True)
         except (OSError, ValueError) as error:
             raise RunError("E602", f"Output writer failed: {error}") from error
-        if not self.options.quiet:
+        if report_progress:
             for row in records[progress_count[0]:]:
-                print(f"stage={index} bias={row['bias_V']} V accepted", flush=True)
+                record("PROGRESS", f"stage={index} bias={row['bias_V']} V accepted")
         return self.proc.returncode, records, "\n".join(captured)
 
     def _reached(self, index, records):
