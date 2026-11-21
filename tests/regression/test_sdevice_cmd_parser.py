@@ -290,6 +290,21 @@ class PropertyTest(unittest.TestCase):
         self.assertEqual(models["EffectiveIntrinsicDensity.NoFermi"]["vela"],
                          "solver.bandgap_narrowing.fermi_statistics_correction=false")
 
+    def test_bennett_wilson_nested_default_and_off(self) -> None:
+        for setting, name in (
+                ("BandGapNarrowing", "BennettWilson"),
+                ("BandGapNarrowing(BennettWilson)", "BennettWilson"),
+                ("BennettWilson", "BennettWilson"),
+                ("NoBandGapNarrowing", "NoBandGapNarrowing")):
+            with self.subTest(setting=setting):
+                ir = parse_cmd_text(deck(physics=f"EffectiveIntrinsicDensity({setting})"), path_name="bgn.cmd")
+                self.assertTrue(ir["verdict"]["accepted"], ir["errors"])
+                self.assertIn("EffectiveIntrinsicDensity." + name,
+                              {item["key"] for item in ir["physics"]["effective"]})
+        bad = parse_cmd_text(deck(physics="EffectiveIntrinsicDensity(BennettWilson NoBandGapNarrowing)"),
+                             path_name="bgn.cmd")
+        self.assertIn("E113", bad["verdict"]["fatal_ids"])
+
     def test_region_dependent_nofermi_is_rejected_by_global_solver_contract(self) -> None:
         text = deck(physics="Fermi EffectiveIntrinsicDensity(OldSlotboom)")
         text += '\nPhysics(Material="Silicon") {EffectiveIntrinsicDensity(NoFermi)}\n'

@@ -2768,12 +2768,23 @@ positive narrowing term. `fermi_statistics_correction` remains false by default.
 The SLOT IDL mapping uses Boltzmann statistics and symmetric band-edge splitting
 (`Bgn2Chi=0.5`); arbitrary material-dependent splitting is not added here.
 
-The text importer recognizes explicit `BennettWilson`. It does not silently
-infer a BGN choice from an omitted Physics option; resolve native defaults from
-the run log and material parameters before a comparison. Conflicting scoped BGN
-choices and Bennett-Wilson/Fermi imports fail closed. General `.par` reference
-temperature/material emission is a separate contract; this addition does not
-claim arbitrary parameter-library import coverage.
+For a SLOT CMD run with the bound extended80 Boltzmann profile, the
+`sd-sim` default is Bennett–Wilson. The CMD may explicitly select it with
+`EffectiveIntrinsicDensity(BandGapNarrowing(BennettWilson))` or
+`EffectiveIntrinsicDensity(BennettWilson)`. Use
+`EffectiveIntrinsicDensity(NoBandGapNarrowing)` to turn it off and
+`EffectiveIntrinsicDensity(OldSlotboom)` to select OldSlotboom. The selected
+model determines the base material projection and the doping-dependent term.
+The SLOT binding reads `Bennett.Ebgn` and `Bennett.Nref` from the active PAR
+or uses the silicon defaults. It retains the decimal inputs for the 80-bit
+assembly. This profile requires shared Si/PolySilicon coefficients and
+symmetric band-edge splitting.
+
+Other `sd-sim` profiles accept explicit Bennett–Wilson and explicit disabling.
+Handwritten JSON continues to select the model through
+`solver.bandgap_narrowing`. Per-region models and unequal material-dependent
+coefficients require a per-material solver configuration. The extended SLOT
+path supports Boltzmann statistics.
 
 The low-level Slotboom and OldSlotboom prototypes compute the positive
 bandgap-narrowing term from the maximum of the supplied impurity concentration

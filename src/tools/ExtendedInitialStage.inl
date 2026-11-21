@@ -124,18 +124,20 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         if (sourceText.contains(path))
             return coefficient(path, compatibility);
         if (static_cast<Real>(fallback) != compatibility)
-            throw std::invalid_argument("Missing decimal OldSlotboom coefficient: " + key);
+            throw std::invalid_argument("Missing decimal bandgap narrowing coefficient: " + key);
         return fallback;
     };
-    if (config.bandgapNarrowing.model != (fixedProfile ? "none" : "old_slotboom"))
-        throw std::invalid_argument("Unsupported bandgap narrowing in extended SLOT profile");
     const auto& narrowing = config.bandgapNarrowing;
-    const ExtendedSlotboomCoefficients narrowingCoefficients = fixedProfile ? ExtendedSlotboomCoefficients{} :
-        ExtendedSlotboomCoefficients{
-        narrowingCoefficient("reference_doping_m3", narrowing.referenceDoping, 1e17L),
-        narrowingCoefficient("coefficient_eV", narrowing.coefficient, 9.0e-3L),
-        narrowingCoefficient("smoothing", narrowing.smoothing, 0.5L),
-        narrowingCoefficient("offset_eV", narrowing.offset, 0.L)};
+    const bool bennett = narrowing.model == "bennett_wilson";
+    if (!bennett && narrowing.model != "none" && narrowing.model != "old_slotboom")
+        throw std::invalid_argument("Unsupported bandgap narrowing in extended SLOT profile");
+    const ExtendedBandgapCoefficients narrowingCoefficients = narrowing.model == "none"
+        ? ExtendedBandgapCoefficients{}
+        : ExtendedBandgapCoefficients{
+            narrowingCoefficient("reference_doping_m3", narrowing.referenceDoping, bennett ? 3.162e18L : 1e17L),
+            narrowingCoefficient("coefficient_eV", narrowing.coefficient, bennett ? 6.84e-3L : 9.0e-3L),
+            narrowingCoefficient("smoothing", narrowing.smoothing, bennett ? 0.L : 0.5L),
+            narrowingCoefficient("offset_eV", narrowing.offset, 0.L)};
     const auto material = buildExtendedBoltzmannMaterials(
         problem.mesh, problem.matdb, problem.doping, narrowing, temperature, vt, narrowingCoefficients);
     auto zeroContacts = contacts;

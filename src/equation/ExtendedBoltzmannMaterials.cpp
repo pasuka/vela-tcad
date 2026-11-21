@@ -18,21 +18,23 @@ ExtendedBoltzmannMaterials buildExtendedBoltzmannMaterials(
 ExtendedBoltzmannMaterials buildExtendedBoltzmannMaterials(
     const DeviceMesh& mesh, const MaterialDatabase& database, const DopingModel& doping,
     const BandgapNarrowingConfig& narrowing, long double temperature_K, long double thermalVoltage_V,
-    const ExtendedSlotboomCoefficients& coefficients)
+    const ExtendedBandgapCoefficients& coefficients)
 {
     if constexpr (compiledArithmeticPrecision != ArithmeticPrecision::Extended80)
         throw std::logic_error("Extended Boltzmann materials require an extended80 build");
     const bool slotboom = narrowing.model == "slotboom" || narrowing.model == "old_slotboom";
+    const bool bennett = narrowing.model == "bennett_wilson";
     if (doping.numNodes() != mesh.numNodes() ||
         !(temperature_K > 0 && thermalVoltage_V > 0) ||
         !std::isfinite(temperature_K) || !std::isfinite(thermalVoltage_V) ||
-        narrowing.fermiStatisticsCorrection || (!slotboom && narrowing.model != "none"))
+        narrowing.fermiStatisticsCorrection || (!slotboom && !bennett && narrowing.model != "none"))
         throw std::invalid_argument("Invalid extended Boltzmann material inputs");
-    if (slotboom && (!(coefficients.referenceDoping > 0 && coefficients.coefficient >= 0 &&
-                      coefficients.smoothing >= 0) ||
-                     !std::isfinite(coefficients.referenceDoping) || !std::isfinite(coefficients.coefficient) ||
-                     !std::isfinite(coefficients.smoothing) || !std::isfinite(coefficients.offset)))
-        throw std::invalid_argument("Invalid extended Slotboom narrowing parameters");
+    if ((slotboom || bennett) &&
+        (!(coefficients.referenceDoping > 0 && coefficients.coefficient >= 0 && coefficients.smoothing >= 0) ||
+         !std::isfinite(coefficients.referenceDoping) || !std::isfinite(coefficients.coefficient) ||
+         !std::isfinite(coefficients.smoothing) || !std::isfinite(coefficients.offset) ||
+         (bennett && (coefficients.smoothing != 0 || coefficients.offset != 0))))
+        throw std::invalid_argument("Invalid extended bandgap narrowing parameters");
 
     const auto count = static_cast<Eigen::Index>(mesh.numNodes());
     ExtendedBoltzmannMaterials result;
@@ -64,10 +66,14 @@ ExtendedBoltzmannMaterials buildExtendedBoltzmannMaterials(
         if (!bound)
             continue;
         const auto impurities = doping.dopingOperandsForAssembly(node);
-        const auto delta = slotboom ? detail::slotboomNarrowing(
-            static_cast<long double>(impurities[0]) + impurities[1],
-            coefficients.referenceDoping, coefficients.coefficient,
-            coefficients.smoothing, coefficients.offset) : 0.L;
+        const long double totalDoping = static_cast<long double>(impurities[0]) + impurities[1];
+        long double delta = 0;
+        if (slotboom)
+            delta = detail::slotboomNarrowing(totalDoping, coefficients.referenceDoping,
+                coefficients.coefficient, coefficients.smoothing, coefficients.offset);
+        if (bennett)
+            delta = detail::bennettWilsonNarrowing(
+                totalDoping, coefficients.referenceDoping, coefficients.coefficient);
         const auto intrinsic = bound->intrinsicDensity_internal * std::exp(delta / (2 * thermalVoltage_V));
         const auto reference = bound->boundReferencePotential_V / thermalVoltage_V;
         result.intrinsic[node] = intrinsic;

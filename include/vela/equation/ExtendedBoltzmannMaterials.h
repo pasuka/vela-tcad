@@ -19,13 +19,13 @@ ExtendedBoltzmannMaterials buildExtendedBoltzmannMaterials(
     const DeviceMesh& mesh, const MaterialDatabase& database, const DopingModel& doping,
     const BandgapNarrowingConfig& narrowing, long double temperature_K, long double thermalVoltage_V);
 
-struct ExtendedSlotboomCoefficients {
+struct ExtendedBandgapCoefficients {
     long double referenceDoping, coefficient, smoothing, offset;
 };
 ExtendedBoltzmannMaterials buildExtendedBoltzmannMaterials(
     const DeviceMesh& mesh, const MaterialDatabase& database, const DopingModel& doping,
     const BandgapNarrowingConfig& narrowing, long double temperature_K, long double thermalVoltage_V,
-    const ExtendedSlotboomCoefficients& coefficients);
+    const ExtendedBandgapCoefficients& coefficients);
 
 struct ExtendedOhmicPopulation {
     long double potential, electrons, holes;

@@ -68,6 +68,7 @@ STATUS_INACTIVE = "inactive"
 
 MODEL_ALIASES = {
     "DopingDep": "DopingDependence",
+    "Bennett": "BennettWilson",
     "HighFieldsaturation": "HighFieldSaturation",
     "eHighFieldSaturation": "HighFieldSaturation",
     "eHighFieldsaturation": "HighFieldSaturation",
@@ -82,6 +83,7 @@ SECTION_MODELS = {
     "Scharfetter": "SRH",
     "Auger": "Auger",
     "OldSlotboom": "OldSlotboom",
+    "Bennett": "BennettWilson",
     "vanOverstraetendeMan": "VanOverstraeten",
     "QuantumPotentialParameters": "eQuantumPotential",
 }
@@ -197,13 +199,17 @@ def _rows() -> list[MappingEntry]:
             "the base Varshni gap and the BGN reference separate"
         ),
     ))
-    # The other dEg0 references are inert until SDevice selects them; each is
-    # gated on its own model so an unused library entry never blocks.
-    for variant in ("Slotboom", "Bennett", "delAlamo"):
+    rows.append(MappingEntry(
+        section="Bandgap", parameter="dEg0", variant="Bennett",
+        status=STATUS_EXACT, target="materials[].ni", requires_model="BennettWilson",
+        note="Bennett zero-doping reference folded into the electron DOS mass and ni",
+    ))
+    # Unused reference variants are inert.
+    for variant in ("Slotboom", "delAlamo"):
         rows.append(MappingEntry(
             section="Bandgap", parameter="dEg0", variant=variant,
             status=STATUS_UNSUPPORTED_FORMULA, requires_model=variant,
-            note="Vela implements the OldSlotboom reference only",
+            note="The selected reference variant is unsupported",
         ))
 
     # DOS masses feed Nc/Nv, and Nc/Nv together with the gap feed ni. Both
@@ -495,6 +501,9 @@ def _rows() -> list[MappingEntry]:
         ))
 
     # -- Bandgap narrowing ----------------------------------------------
+    for parameter, target in (("Ebgn", "coefficient_eV"), ("Nref", "reference_doping_m3")):
+        rows.append(MappingEntry(section="Bennett", parameter=parameter, status=STATUS_EXACT,
+                                 target=f"solver.bandgap_narrowing.{target}", requires_model="BennettWilson"))
     rows.append(MappingEntry(
         section="OldSlotboom", parameter="Ebgn",
         status=STATUS_EXACT,

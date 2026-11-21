@@ -39,7 +39,11 @@ SemiconductorArithmetic evaluateSemiconductorArithmetic(
         throw std::invalid_argument("Arithmetic Bandgap input has nonpositive Varshni denominator");
     const Real gapZero = param(band, "Eg0") + alpha * tpar * tpar / (beta + tpar);
     const Real gap = gapZero - alpha * temperature * temperature / (beta + temperature);
-    const Real offset = material.at("fold_old_slotboom").get<bool>() ? paramOrZero(band, "dEg0(OldSlotboom)") : Real{0};
+    Real offset = 0;
+    if (material.at("fold_old_slotboom").get<bool>())
+        offset = paramOrZero(band, "dEg0(OldSlotboom)");
+    else if (material.value("fold_bennett", false))
+        offset = paramOrZero(band, "dEg0(Bennett)");
     if (gap + offset <= 0 || gapZero + offset <= 0)
         throw std::invalid_argument("Arithmetic DOS input has nonpositive effective gap");
     const Real mt = param(electron, "a") * (gapZero + offset) / (gap + offset);

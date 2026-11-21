@@ -12,7 +12,7 @@ from tempfile import TemporaryDirectory
 from sentaurus_parameter_ir import active_blocks, parameter_number_lexemes, parse_parameter_ir
 
 from ..mesh_import import _load_dfise, _load_tdr
-from ..materials import evaluate_semiconductor, project_material_arithmetic
+from ..materials import bennett_coefficient_literals, evaluate_semiconductor, project_material_arithmetic
 from .support import RunError
 
 
@@ -159,9 +159,20 @@ def bind_slot_stage_inputs(ir, cmd, profile):
     reference = _path(cmd, profile["reference_deck"])
     native = {model["key"] for model in ir["physics"]["effective"]}
     common = {"Mobility.Enormal", "Mobility.HighFieldSaturation", "Recombination.SRH", "Recombination.Auger"}
-    fixed_bias = native == common and ir["math"].get("arithmetic_precision") == "extended80"
-    _require(fixed_bias or native == common | {"EffectiveIntrinsicDensity.OldSlotboom", "Recombination.Avalanche"},
-             "SLOT stage binding requires the validated physical model set")
+    avalanche_key = "Recombination.Avalanche"
+    narrowing_keys = {
+        "EffectiveIntrinsicDensity.BennettWilson": "bennett_wilson",
+        "EffectiveIntrinsicDensity.NoBandGapNarrowing": "none",
+        "EffectiveIntrinsicDensity.OldSlotboom": "old_slotboom",
+    }
+    selections = native & narrowing_keys.keys()
+    _require(len(selections) <= 1, "SLOT requires one bandgap narrowing selection")
+    narrowing = narrowing_keys[next(iter(selections))] if selections else "bennett_wilson"
+    wide = ir["math"].get("arithmetic_precision") == "extended80"
+    fixed_bias = avalanche_key not in native
+    _require(native - selections - {"EffectiveIntrinsicDensity.NoFermi", avalanche_key} == common
+             and (wide or (not fixed_bias and narrowing == "old_slotboom")),
+             "SLOT stage binding requires a supported Boltzmann physics and precision profile")
     report = check_slot_ialmob(ir, cmd, _path(cmd, profile["dfise_grid"]), reference, fixed_bias)
     _require(report["inputs"]["par"]["sha256"] == profile["parameter_sha256"],
              "SLOT parameter file differs from the explicitly bound PAR")
@@ -254,11 +265,31 @@ def bind_slot_stage_inputs(ir, cmd, profile):
         report["inputs"][f"load:{prefix}"] = {"path": str(path), "sha256": sha256(path.read_bytes()).hexdigest(),
                                              "copy_as": filename}
         seeds[prefix] = filename
+    if narrowing != "old_slotboom":
+        solver["bandgap_narrowing"] = {"model": narrowing}
+        source_coefficients = {key: value for key, value in source_coefficients.items()
+                               if not key.startswith("bandgap_narrowing.")}
+    if narrowing == "bennett_wilson":
+        parameter = Path(report["inputs"]["par"]["path"])
+        silicon = bennett_coefficient_literals(parameter, "Si")
+        poly = bennett_coefficient_literals(
+            Path(report["inputs"].get("poly_material_par", report["inputs"]["par"])["path"]), "PolySilicon")
+        for key, field, default in (("Ebgn", "coefficient_eV", "6.84e-3"),
+                                    ("Nref", "reference_doping_m3", "3.162e18")):
+            literal = silicon.get(key, default)
+            value = Decimal(literal)
+            _require(value.is_finite() and (value > 0 if key == "Nref" else value >= 0),
+                     f"Invalid SLOT Bennett.{key}")
+            _require(key not in poly or Decimal(poly[key]) == value,
+                     f"Different Si and PolySilicon Bennett.{key} require per-material assembly")
+            solver["bandgap_narrowing"][field] = float(value)
+            source_coefficients["bandgap_narrowing." + field] = literal
     if fixed_bias:
-        solver["bandgap_narrowing"] = {"model": "none"}
         solver["impact_ionization"] = {"model": "none"}
         source_coefficients = {key: value for key, value in source_coefficients.items()
-                               if not key.startswith(("bandgap_narrowing.", "impact_ionization."))}
+                               if not key.startswith("impact_ionization.")}
+    report["bandgap_narrowing"] = {**solver["bandgap_narrowing"],
+                                   "selection": next(iter(selections), "Sentaurus default")}
     qualified = deepcopy(ir)
     qualified["errors"] = [e for e in ir["errors"] if e["id"] != "E106"]
     qualified["verdict"] = {"accepted": True, "exit_code": 0, "fatal_ids": []}
@@ -289,19 +320,24 @@ def check_slot_effective_doping(resolved, bound):
     return {"matched_bound_nodes": len(reference), "max_relative_difference": max_relative}
 
 
-def _decimal_material_binding(materials, name, parameter, temperature_literal, profile):
+def _decimal_material_binding(materials, name, parameter, temperature_literal, profile, narrowing):
     entry = next((item for item in materials["materials"] if item["name"] == name), None)
     binding = {"status": "reference_only", "material": name}
     poly = name == "PolySilicon"
     try:
-        parameters = project_material_arithmetic(parameter, name, fold_old_slotboom=True)
+        use_bound_material = narrowing == "old_slotboom"
+        parameters = project_material_arithmetic(
+            parameter, name, fold_old_slotboom=use_bound_material, fold_bennett=narrowing == "bennett_wilson")
         sections = {
             name: {key: [float(value) for value in operand["literals"]]
                    for key, operand in values.items() if operand["literals"]}
             for name, values in parameters["sections"].items()
         }
+        if narrowing == "bennett_wilson" and sections["Bandgap"].get("Bgn2Chi", [0.5]) != [0.5]:
+            raise ValueError("Bennett-Wilson requires symmetric band-edge splitting")
         temperature = float(temperature_literal)
-        values = evaluate_semiconductor(sections, temperature, True, constants_profile=profile)
+        values = evaluate_semiconductor(sections, temperature, use_bound_material,
+                                        fold_bennett=narrowing == "bennett_wilson", constants_profile=profile)
         if poly:
             band = values["derivation"]
             values["electron_affinity_eV"] += sections["Bandgap"]["Bgn2Chi"][0] * (band["Eg_0_eV"] - band["Eg_T_eV"])
@@ -314,6 +350,11 @@ def _decimal_material_binding(materials, name, parameter, temperature_literal, p
         if entry is None or entry.get("temperature_K") != temperature:
             binding["reason"] = "Material or temperature differs from the bound deck"
             return binding
+        if not use_bound_material:
+            entry.update({target: values[source] for target, source in fields.items()})
+            entry["decimal_semiconductor"] = {**parameters, "temperature_K": temperature_literal}
+            return {**binding, "status": "projected_selected_model", "fields": list(fields),
+                    "reference_potential_source": "bound_material"}
         errors = {target: abs(entry[target] - values[source]) / math.ulp(entry[target])
                   for target, source in fields.items()}
         if any(error > limit for error in errors.values()):
@@ -349,16 +390,25 @@ def stage_slot_decimal_material(path, report, reference, temperature_literal):
             retained[name] = fields
     profile = reference.get("physical_constants_profile", "codata2018")
     inputs = report["inputs"]
+    narrowing = reference["solver"]["bandgap_narrowing"]["model"]
+    parameter = Path(inputs["par"]["path"])
     bindings = {"decimal_material": _decimal_material_binding(
-        materials, "Si", Path(inputs["par"]["path"]), temperature_literal, profile)}
-    if "poly_material_par" in inputs:
+        materials, "Si", parameter, temperature_literal, profile, narrowing)}
+    has_poly = any(entry["name"] == "PolySilicon" for entry in materials["materials"])
+    if has_poly and ("poly_material_par" in inputs or narrowing != "old_slotboom"):
+        poly_par = (path.with_name(inputs["poly_material_par"]["copy_as"])
+                    if "poly_material_par" in inputs else parameter)
         bindings["decimal_poly_material"] = _decimal_material_binding(
-            materials, "PolySilicon", path.with_name(inputs["poly_material_par"]["copy_as"]),
-            temperature_literal, profile)
-    if retained or any(entry["status"] == "verified_binary64_projection" for entry in bindings.values()):
+            materials, "PolySilicon", poly_par, temperature_literal, profile, narrowing)
+    if narrowing != "old_slotboom":
+        for binding in bindings.values():
+            _require(binding["status"] == "projected_selected_model",
+                     f"SLOT {binding['material']} material projection for {narrowing} failed: {binding.get('reason')}")
+    staged_statuses = ("verified_binary64_projection", "projected_selected_model")
+    if retained or any(entry["status"] in staged_statuses for entry in bindings.values()):
         path.write_text(json.dumps(materials, indent=2, allow_nan=False) + "\n", encoding="utf-8")
         digest = sha256(path.read_bytes()).hexdigest()
         for entry in bindings.values():
-            if entry["status"] == "verified_binary64_projection":
+            if entry["status"] in staged_statuses:
                 entry["staged_sha256"] = digest
     report.update(bindings, decimal_bound_material_fields=retained)

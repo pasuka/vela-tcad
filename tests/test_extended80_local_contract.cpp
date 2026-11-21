@@ -799,6 +799,20 @@ TEST_CASE("Material lookup preserves bound operating-temperature PAR values", "[
         CHECK(shifted.electrons == target.electrons);
         CHECK(shifted.holes == target.holes);
     }
+    const auto bennett = bandgapNarrowingConfig("bennett_wilson");
+    const ExtendedBandgapCoefficients coefficients{3.162e24L, 6.84e-3L, 0, 0};
+    // Strong compensation puts the total above the threshold while leaving zero net charge.
+    doping.setNodeDopingFromDecimal(2, "5e24", "5e24");
+    doping.setNodeDopingFromDecimal(3, "1.581e24", "1.581e24");
+    const auto narrowed = buildExtendedBoltzmannMaterials(mesh, db, doping, bennett, 300.L, .025L, coefficients);
+    const long double logRatio = std::log(1e25L / 3.162e24L);
+    const long double expected = std::exp(6.84e-3L * logRatio * logRatio / .05L);
+    CHECK(std::abs(narrowed.intrinsic[2] / exact->intrinsicDensity_internal - expected) < 1e-18L);
+    CHECK(narrowed.intrinsic[3] == exact->intrinsicDensity_internal);
+    const auto disabled = buildExtendedBoltzmannMaterials(
+        mesh, db, doping, bandgapNarrowingConfig("none"), 300.L, .025L);
+    CHECK(disabled.intrinsic[2] == exact->intrinsicDensity_internal);
+
     const auto replacement = db.getMaterial("PolySi");
     db.addMaterial(replacement);
     CHECK(db.decimalSemiconductor("PolySi", 300) == nullptr);

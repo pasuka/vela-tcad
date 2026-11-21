@@ -57,10 +57,8 @@ Real BennettWilsonBandgapNarrowing::deltaEg(Real impurityConcentration, Real, Re
 {
     if (!(impurityConcentration >= 0.0) || !std::isfinite(impurityConcentration))
         throw std::invalid_argument("BennettWilson: total impurity must be nonnegative and finite.");
-    if (impurityConcentration <= config_.referenceDoping || config_.coefficient == 0.0)
-        return 0.0;
-    const Real x = std::log(impurityConcentration / config_.referenceDoping);
-    return config_.coefficient * x * x;
+    return detail::bennettWilsonNarrowing(
+        impurityConcentration, config_.referenceDoping, config_.coefficient);
 }
 
 Real effectiveIntrinsicDensity(Real ni, Real thermalVoltage, Real deltaEg)
