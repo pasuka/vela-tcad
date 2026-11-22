@@ -612,6 +612,11 @@ def main():
             actual = [(stage["sweep"]["contact"], stage["sweep"]["stop_V"]) for stage in plan[1:]]
             if plan[0]["kind"] != "equilibrium" or actual != expected:
                 raise ValueError(f"Unexpected {args.case} stage sequence: {actual}")
+            for stage in plan:
+                solver = read_json(run / stage["deck"])["solver"]
+                if (solver.get("state_variables") != "potential_density"
+                        or solver.get("primary_variable_coordinates") != "unit"):
+                    raise ValueError(f"{stage['deck']}: expected Unit population coordinates")
             gates = schottky_gates if schottky else bjt_gates
             passed = gates(fixture, run, plan[-1], report)
         report["status"] = "passed" if passed else "gate_failed"

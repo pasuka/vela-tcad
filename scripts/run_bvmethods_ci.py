@@ -90,6 +90,11 @@ def qualify(run, published):
             or not all(stage['goal_reached'] for stage in stages[:-1])
             or stages[-1].get('stop_criterion_reached') != 'current'):
         raise ValueError('Expected a complete sd-sim stage chain ending at the drain current stop')
+    for stage in plan:
+        solver = read_json(run / stage['deck'])['solver']
+        if (solver.get('state_variables') != 'potential_density'
+                or solver.get('primary_variable_coordinates') != 'unit'):
+            raise ValueError(f"{stage['deck']}: expected Unit population coordinates")
     mesh = read_json(run / 'mesh.json')
     geometry = reference_grid()['equivalence']
     if (len(mesh['nodes']) != geometry['nodes'] or len(mesh['triangles']) != geometry['triangles']
