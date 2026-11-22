@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
+#include <catch2/generators/catch_generators.hpp>
 
 #include <nlohmann/json.hpp>
 
@@ -345,16 +346,40 @@ TEST_CASE("Newton thermionic Robin Schottky equilibrium converges",
     cfg.maxUpdate = 5.0;
     cfg.quasiFermiUpdateLimit_V = 0.05;
 
+    const bool compensated = GENERATE(false, true);
+    CAPTURE(compensated);
+    if (compensated) {
+        cfg.stateVariables = "potential_density";
+        cfg.primaryVariableCoordinates = "unit";
+        cfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+        cfg.compensatedPopulationState = true;
+        cfg.contactBoundaryMinorityElectronRelaxation = false;
+        cfg.maxUpdate = 0.;
+        cfg.quasiFermiUpdateLimit_V = 0.;
+    }
     NewtonSolver solver(
         mesh, matdb, doping,
         {{"anode", 0.0}, {"cathode", 0.0}}, cfg, {}, {}, specs);
     const NewtonResult result = solver.solve();
 
+    CAPTURE(result.failureDiagnostics.failureReason);
     REQUIRE(result.converged);
     REQUIRE(result.solution.n.array().isFinite().all());
     REQUIRE(result.solution.p.array().isFinite().all());
     REQUIRE((result.solution.n.array() > 0.0).all());
     REQUIRE((result.solution.p.array() > 0.0).all());
+    if (compensated) {
+        REQUIRE(result.solution.populationLow.size() == 3 * mesh.numNodes());
+        const NewtonSolver forward(mesh, matdb, doping,
+            {{"anode", 0.1}, {"cathode", 0.0}}, cfg, {}, {}, specs);
+        const auto biased = forward.solve(result.solution);
+        CAPTURE(biased.failureDiagnostics.failureReason);
+        REQUIRE(biased.converged);
+        const Real a = forward.evaluateStateTerminalCurrent(biased.solution, "anode", 1.);
+        const Real c = forward.evaluateStateTerminalCurrent(biased.solution, "cathode", 1.);
+        REQUIRE(a > 0.);
+        REQUIRE(std::abs(a + c) <= 1.e-7 * std::abs(a));
+    }
 }
 
 TEST_CASE("Gummel rejects thermionic Robin Schottky contact", "[schottky]")

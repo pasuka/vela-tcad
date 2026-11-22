@@ -160,6 +160,11 @@ NewtonResult NewtonSolver::solveCompensatedPopulation(const DDSolution& initial)
         for (int block = 0; block < 3; ++block)
             prescribed.push_back(block*count+node);
     }
+    for (const auto& [node, condition] : boundary.thermionic) {
+        state[node] = boundary.psi.at(node) * scaling.V0;
+        low[node] = 0.;
+        prescribed.push_back(node);
+    }
     if (contacts.empty())
         throw std::invalid_argument("Compensated population Newton requires Ohmic contacts");
 
@@ -181,9 +186,9 @@ NewtonResult NewtonSolver::solveCompensatedPopulation(const DDSolution& initial)
         Real error = poissonWeight*residual.head(count).lpNorm<Eigen::Infinity>();
         for (int node = 0; node < count; ++node) {
             const auto& row = physical.constrainedTerms[node];
-            const Real electronScale = row.electronFluxAbsSum +
+            const Real electronScale = row.electronFluxAbsSum + std::abs(row.electronBoundary) +
                 std::abs(row.electronRecombination) + std::abs(row.electronImpact);
-            const Real holeScale = row.holeFluxAbsSum +
+            const Real holeScale = row.holeFluxAbsSum + std::abs(row.holeBoundary) +
                 std::abs(row.holeRecombination) + std::abs(row.holeImpact);
             error = std::max({error,
                 continuityScale*std::abs(residual[count+node]) /

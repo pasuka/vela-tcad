@@ -1827,9 +1827,13 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
         (mobilityConfig_.model == "constant" && !impactIonizationEnabled_);
     if (!usesLegacyPopulationState() || usesFermiDirac_ || !scaling_.enabled ||
         psi.size() != count || n.size() != count || p.size() != count ||
-        low.size() != 3 * count || !low.allFinite() || !bcs.thermionic.empty() ||
-        (!bcs.psi.empty() && (bcs.ohmicPopulation.size() != bcs.psi.size() ||
-                             bcs.ohmicBias.size() != bcs.psi.size())) ||
+        low.size() != 3 * count || !low.allFinite() ||
+        bcs.ohmicBias.size() != bcs.ohmicPopulation.size() ||
+        bcs.ohmicPopulation.size() + bcs.thermionic.size() != bcs.psi.size() ||
+        std::any_of(bcs.psi.begin(), bcs.psi.end(), [&](const auto& entry) {
+            return bcs.ohmicPopulation.contains(entry.first) == bcs.thermionic.contains(entry.first);
+        }) ||
+        (!bcs.thermionic.empty() && (impactIonizationEnabled_ || mobilityConfig_.model != "constant")) ||
         (mobilityConfig_.edgeAveraging != "legacy" && mobilityConfig_.edgeAveraging != "auto") ||
         mobilityConfig_.carrierCurrentDiscretization != "scharfetter_gummel_edge" ||
         !supportedMobility ||
@@ -1915,7 +1919,7 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
     if (transportJacobian)
         jacobian.reserve(20 * mesh_.numEdges() + 5 * count);
     const auto add = [&](int row, int column, Real value) {
-        if (!bcs.ohmicPopulation.contains(row % count))
+        if (row < count ? !bcs.psi.contains(row) : !bcs.ohmicPopulation.contains(row % count))
             jacobian.emplace_back(row,column,value);
     };
     const auto scatter = [&](int i, int j, int column, Real value) {
@@ -2065,10 +2069,33 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
                     recombination_.srhDopingConcentration(doping_.donors(i),doping_.acceptors(i))) *
                 srhVol_[i]*sourceFactor/continuityScale;
         }
+        const auto thermionic = bcs.thermionic.find(i);
+        if (thermionic != bcs.thermionic.end()) {
+            const auto& boundary = thermionic->second;
+            const Real measure = boundary.boundaryMeasure / continuityScale *
+                scaling_.unitSystem.velocityMPerSPerInternal() *
+                scaling_.unitSystem.concentrationM3PerInternal() /
+                scaling_.unitSystem.currentDensityAM2PerInternal();
+            const Real electronScale = boundary.electronVelocity * measure;
+            const Real holeScale = -boundary.holeVelocity * measure;
+            const auto excess = [](Real high, Real target, Real tail) {
+                return numerics::SplitCoordinate::sum(high, -target).shifted(tail);
+            };
+            const auto electronExcess = excess(n[i], boundary.electronEquilibriumDensity, low[count+i]);
+            const auto holeExcess = excess(p[i], boundary.holeEquilibriumDensity, low[2*count+i]);
+            const auto electronBoundary = electronExcess.scaled(electronScale);
+            const auto holeBoundary = holeExcess.scaled(holeScale);
+            term.electronBoundary = electronBoundary.hi + electronBoundary.lo;
+            term.holeBoundary = holeBoundary.hi + holeBoundary.lo;
+            if (transportJacobian) {
+                add(count+i, count+i, electronScale * n[i]);
+                add(2*count+i, 2*count+i, holeScale * p[i]);
+            }
+        }
         term.electronResidual = static_cast<Real>(electronFlux[i] +
-            term.electronRecombination + term.electronImpact);
+            term.electronRecombination + term.electronImpact + term.electronBoundary);
         term.holeResidual = static_cast<Real>(holeFlux[i] +
-            term.holeRecombination + term.holeImpact);
+            term.holeRecombination + term.holeImpact + term.holeBoundary);
         if constexpr (binary64) {
             experimental::ExpansionProductSum charge;
             charge.addProduct(poissonElectronVol_[i], n[i]);
@@ -2102,6 +2129,12 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
     }
     result.constrainedTerms = terms;
     const Real vtScaled = Vt_/scaling_.V0;
+    for (const auto& [i, boundary] : bcs.thermionic) {
+        const auto target = numerics::SplitCoordinate::sum(bcs.psi.at(i) * scaling_.V0, 0.);
+        result.residual[i] = ((psi[i] - target.hi) + (low[i] - target.lo)) / scaling_.V0;
+        if (transportJacobian)
+            jacobian.emplace_back(i, i, 1.);
+    }
     for (const auto& [i,target] : bcs.ohmicPopulation) {
         const Real bias = bcs.ohmicBias.at(i);
         const Real high = bias + target[0];

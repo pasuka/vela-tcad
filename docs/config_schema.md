@@ -290,7 +290,9 @@ Newton numerical and geometry controls added for explicit validation profiles:
 - `solver.compensated_population_state` enables compensated potential and
   carrier concentrations for the legacy, unit-scaled Boltzmann SG solver
   with Ohmic contacts, Masetti mobility, optional SRH, and optional
-  element-edge SG/GSS-Laux avalanche. It defaults to `false`. This path
+  element-edge SG/GSS-Laux avalanche. Voltage-driven thermionic Schottky
+  contacts also support compensation with constant mobility and avalanche
+  disabled. It defaults to `false`. This path
   uses physical residual ceilings of `8e-28 C/m` (Poisson) and
   `5e-22 A/µm` (each continuity equation), with backtracking on the live
   residual. A continuity row can also meet its binary64 roundoff bound
