@@ -14,7 +14,28 @@ from time import perf_counter
 from vela_workbench_cases import prepare_cases, read_cases, read_run_status, run_case, verify_inputs
 from vela_workbench_controls import action_icon, add_tooltip
 from vela_workbench_settings import Settings, load_settings, save_language
-from vela_workbench_text import CASE_NAMES, ZH
+from vela_workbench_text import CASE_NAMES, GUIDE_EN, GUIDE_ZH, ZH
+
+
+def solver_version(launcher):
+    from zipfile import BadZipFile, ZipFile
+
+    for directory in (launcher.parent / "bin", launcher.parent):
+        metadata = directory / "frontend/vela_sdevice/_assets/version.json"
+        archive = directory / "vela_sdevice.pyz"
+        try:
+            if metadata.is_file():
+                version = json.loads(metadata.read_text(encoding="utf-8"))
+            elif archive.is_file():
+                with ZipFile(archive) as source:
+                    version = json.loads(source.read("vela_sdevice/_assets/version.json"))
+            else:
+                continue
+        except (OSError, KeyError, ValueError, BadZipFile):
+            continue
+        if isinstance(version, dict):
+            return version
+    return {}
 
 
 def set_window_icon(root):
@@ -128,7 +149,7 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
     menubar = tk.Menu(root, tearoff=False)
     root.configure(menu=menubar)
     menus = {}
-    for label in ("File", "Simulation", "Settings"):
+    for label in ("File", "Simulation", "Settings", "Help"):
         menu = tk.Menu(menubar, tearoff=False)
         menubar.add_cascade(menu=menu)
         menus[label] = menu
@@ -142,6 +163,12 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         return tr(label)
 
     def add_action(group, label, icon, command):
+        menu = menus[group]
+        menu.add_command(command=command)
+        index = menu.index("end")
+        if icon is None:
+            actions[label] = (menu, index, None)
+            return
         primary = icon == "run"
         size = max(18, settings.font_size + 6)
         normal = action_icon(root, icon, size, surface if primary else selection_ink)
@@ -150,9 +177,7 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
                             style="Accent.TButton" if primary else "TButton")
         button.pack(side="left", padx=(0, 5))
         add_tooltip(button, lambda: action_label(label))
-        menu = menus[group]
-        menu.add_command(command=command)
-        actions[label] = (menu, menu.index("end"), button, normal, disabled)
+        actions[label] = (menu, index, button, normal, disabled)
 
     pane = ttk.PanedWindow(root, orient="horizontal")
     pane.pack(fill="both", expand=True, padx=16, pady=(0, 8))
@@ -204,37 +229,86 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
                 *rcParams["font.sans-serif"],
             ]
             rcParams["font.size"] = settings.font_size
-        figure = Figure(figsize=(5.7, 4.5), layout="constrained")
+        figure = Figure(figsize=(5.7, 4.5), layout="compressed" if tab == cloud_tab else "constrained")
         canvas = FigureCanvasTkAgg(figure, master=tab)
         navigation = NavigationToolbar2Tk(canvas, tab, pack_toolbar=False)
+        if tab == curve_tab:
+            add_curve_tools(navigation)
+        else:
+            add_geometry_tools(navigation, tab)
         plots[tab] = figure, canvas, navigation
         return plots[tab]
 
-    curve_controls = ttk.Frame(curve_tab, style="Surface.TFrame")
-    curve_controls.pack(fill="x", pady=(0, 5))
-    voltage_row = ttk.Frame(curve_controls, style="Surface.TFrame")
-    voltage_row.pack(fill="x")
-    voltage_heading = ttk.Label(voltage_row, style="Surface.TLabel")
-    voltage_heading.pack(side="left", padx=(0, 8))
-    voltage_picker = ttk.Combobox(voltage_row, state="readonly", width=16)
-    voltage_picker.pack(side="left")
-    voltage_notice = ttk.Label(curve_controls, style="Surface.TLabel", foreground=muted)
-    voltage_notice.bind("<Configure>", lambda event: voltage_notice.configure(wraplength=event.width))
+    curve_notice = ttk.Label(curve_tab, style="Surface.TLabel", foreground=muted)
+    curve_notice.bind("<Configure>", lambda event: curve_notice.configure(wraplength=event.width))
+    curve_options = (
+        ("Voltage", ("Inner voltage", "Outer voltage"), 12),
+        ("X", ("Linear", "Log10"), 6),
+        ("Y", ("Linear", "Log10"), 6),
+    )
+    curve_pickers = {}
+    curve_zoom_buttons = []
 
-    mesh_controls = ttk.Frame(mesh_tab, style="Surface.TFrame")
-    mesh_controls.pack(fill="x", pady=(0, 5))
-    rotate_left = ttk.Button(mesh_controls, state="disabled")
-    rotate_right = ttk.Button(mesh_controls, state="disabled")
-    reset_rotation = ttk.Button(mesh_controls, state="disabled")
-    for button in (rotate_left, rotate_right, reset_rotation):
-        button.pack(side="left", padx=(0, 6))
+    show_field_mesh = tk.BooleanVar(root, value=False)
+    field_heading = field_picker = mesh_toggle = None
 
-    cloud_controls = ttk.Frame(cloud_tab, style="Surface.TFrame")
-    cloud_controls.pack(fill="x")
-    field_heading = ttk.Label(cloud_controls, style="Surface.TLabel")
-    field_heading.pack(side="left", padx=(0, 8))
-    field_picker = ttk.Combobox(cloud_controls, state="readonly", width=26)
-    field_picker.pack(side="left")
+    def add_plot_buttons(navigation, actions):
+        readout = next(widget for widget in navigation.pack_slaves() if widget.pack_info()["side"] == "right")
+        buttons = []
+        for icon, label, command in actions:
+            button = tk.Button(navigation, text=icon, width=3, relief="flat",
+                               background=navigation.cget("background"), foreground=ink,
+                               activebackground=selection_fill, command=command)
+            button.pack(side="left", before=readout, padx=(3, 0))
+            add_tooltip(button, lambda label=label: tr(label))
+            buttons.append(button)
+        return buttons
+
+    def plot_toolbar_row(navigation):
+        controls = tk.Frame(navigation, background=navigation.cget("background"))
+        # Reserve a row inside the toolbar before packing the native buttons and readout.
+        controls.pack(side="bottom", before=navigation.pack_slaves()[0], fill="x", padx=6, pady=(0, 4))
+        return controls
+
+    def size_toolbar_row(navigation, controls):
+        row_height = max(widget.winfo_reqheight() for widget in controls.pack_slaves())
+        navigation.configure(height=int(navigation.cget("height")) + row_height + 4)
+
+    def plot_picker(controls, label, width, command):
+        heading = tk.Label(controls, text=tr(label), background=controls.cget("background"), foreground=ink)
+        heading.pack(side="left", padx=(0, 4))
+        picker = ttk.Combobox(controls, state="readonly", width=width)
+        picker.pack(side="left", padx=(0, 8))
+        picker.bind("<<ComboboxSelected>>", command)
+        return heading, picker
+
+    def add_curve_tools(navigation):
+        curve_zoom_buttons.extend(add_plot_buttons(navigation, (
+            ("+", "Zoom In", lambda: zoom_curve(0.8)),
+            ("−", "Zoom Out", lambda: zoom_curve(1.25)),
+        )))
+        controls = plot_toolbar_row(navigation)
+        for label, _, width in curve_options:
+            curve_pickers[label] = plot_picker(controls, label, width, select_curve_axes)
+        size_toolbar_row(navigation, controls)
+
+    def add_geometry_tools(navigation, tab):
+        nonlocal field_heading, field_picker, mesh_toggle
+        add_plot_buttons(navigation, (
+            ("↶", "Rotate Left 90°", lambda: rotate_mesh(1)),
+            ("↷", "Rotate Right 90°", lambda: rotate_mesh(-1)),
+            ("0°", "Reset Rotation", rotate_mesh),
+        ))
+        if tab == mesh_tab:
+            return
+        controls = plot_toolbar_row(navigation)
+        field_heading, field_picker = plot_picker(controls, "Field", 26, draw_field)
+        style.configure("PlotToolbar.TCheckbutton", background=controls.cget("background"))
+        mesh_toggle = ttk.Checkbutton(controls, text=tr("Show Mesh"), variable=show_field_mesh,
+                                      style="PlotToolbar.TCheckbutton", command=toggle_field_mesh)
+        mesh_toggle.pack(side="left")
+        size_toolbar_row(navigation, controls)
+
     placeholders = {}
     for tab, message in (
         (curve_tab, "No curve available"), (mesh_tab, "No mesh available"),
@@ -253,19 +327,21 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
     script_heading = ttk.Label(script_tab, style="Surface.TLabel")
     script_heading.pack(anchor="w", pady=(0, 6))
 
-    def text_view(tab):
+    def text_view(tab, *, wrap="none", text_font=mono):
         frame = ttk.Frame(tab)
         frame.pack(fill="both", expand=True)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
-        view = tk.Text(frame, width=1, height=1, wrap="none", state="disabled", font=mono, background="#F6F8FB",
+        view = tk.Text(frame, width=1, height=1, wrap=wrap, state="disabled", font=text_font, background="#F6F8FB",
                        foreground=ink, selectbackground=selection_fill, relief="flat", padx=9, pady=8)
         vertical = ttk.Scrollbar(frame, command=view.yview)
-        horizontal = ttk.Scrollbar(frame, orient="horizontal", command=view.xview)
-        view.configure(yscrollcommand=vertical.set, xscrollcommand=horizontal.set)
+        view.configure(yscrollcommand=vertical.set)
         view.grid(row=0, column=0, sticky="nsew")
         vertical.grid(row=0, column=1, sticky="ns")
-        horizontal.grid(row=1, column=0, sticky="ew")
+        if wrap == "none":
+            horizontal = ttk.Scrollbar(frame, orient="horizontal", command=view.xview)
+            view.configure(xscrollcommand=horizontal.set)
+            horizontal.grid(row=1, column=0, sticky="ew")
         return view
 
     log_view = text_view(log_tab)
@@ -297,6 +373,7 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
     field = None
     field_terminal = None
     field_keys = []
+    field_mesh_lines = []
     field_revision = None
     field_error = None
     view_key = None
@@ -387,32 +464,43 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         return display_coordinates(field.points, turns)
 
     def draw_field(_event=None):
+        nonlocal field_mesh_lines
+        field_mesh_lines = []
         selection = field_picker.current()
         if field is None or selection < 0:
             plot_message(cloud_tab)
             return
+        from matplotlib.tri import Triangulation
+
         cloud_figure, cloud_canvas, axes = show_plot(cloud_tab)
         name = field_keys[selection]
         x, y = display_geometry(axes)
-        image = axes.tripcolor(
-            x, y, field.triangles, field.quantities[name], shading="gouraud",
+        mesh = Triangulation(x, y, triangles=field.triangles)
+        image = axes.tripcolor(mesh, field.quantities[name], shading="gouraud")
+        field_mesh_lines = axes.triplot(
+            mesh, color="#E2E8F0", linewidth=.40, alpha=.55, visible=show_field_mesh.get(),
         )
         unit = field.metadata.get(f"Unit:{name}", "")
-        cloud_figure.colorbar(image, ax=axes, label=unit)
+        cloud_figure.colorbar(image, ax=axes, label=unit, fraction=.055, pad=.03, panchor=False)
         stopped = field.metadata.get("GoalReached", field.metadata.get("goal_reached")) == 0
         bias = field.metadata.get(f"{field_terminal}_OuterVoltage_V")
         title = tr("Last accepted point" if stopped else "Final state")
         if bias is not None:
-            title += " · " + tr("{} outer voltage {:.6g} V", field_terminal, bias)
-        axes.set_title(title)
+            title += "\n" + tr("{} outer voltage {:.6g} V", tr(field_terminal.capitalize()), bias)
+        axes.set_title(title, fontsize="medium")
         draw_plot(cloud_canvas)
+
+    def toggle_field_mesh():
+        for line in field_mesh_lines:
+            line.set_visible(show_field_mesh.get())
+        if field_mesh_lines:
+            plots[cloud_tab][1].draw_idle()
 
     def refresh(_event=None):
         nonlocal view_key
         key = focused()
         directory = directories.get(key)
         sync_actions()
-        voltage_picker.current(curve_axes.get(key, 0))
         case = cases[key]
         result_heading.configure(text=case_name(key))
         log_heading.configure(text=case.log if directory else "")
@@ -463,51 +551,104 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
             return None
 
     def draw_curve(curve_path, work, stages, curve_files):
-        voltage_notice.pack_forget()
+        curve_notice.pack_forget()
         if not any(path.is_file() for path in curve_files):
             plot_message(curve_tab)
             return
+        import numpy as np
         from vela_workbench_results import read_curve, read_stage_curves
 
+        _, canvas, curve = show_plot(curve_tab)
+        selections = curve_axes.get(focused(), (0, 0, 0))
+        for (label, options, _), index in zip(curve_options, selections):
+            picker = curve_pickers[label][1]
+            picker.configure(values=tuple(tr(option) for option in options))
+            picker.current(index)
+        for button in curve_zoom_buttons:
+            button.configure(state="disabled")
+
+        def empty_curve(message):
+            curve.set_axis_off()
+            curve.text(.5, .5, message, transform=curve.transAxes, ha="center", va="center", wrap=True)
+            draw_plot(canvas)
+
         try:
-            voltage = ("inner", "outer")[curve_axes.get(focused(), 0)]
+            voltage = ("inner", "outer")[selections[0]]
             if curve_path:
                 points = read_curve(curve_path, voltage) if curve_path.is_file() else []
                 curves = [(None, "Anode", points)] if points else []
             else:
                 curves = read_stage_curves(work, stages, voltage) if work else []
-            missing_inner = voltage == "inner" and any(x is None for _, _, points in curves for x, _ in points)
-            visible = [
-                (index, terminal, points) for index, terminal, points in curves
-                if any(x is not None for x, _ in points)
-            ]
-            if not visible:
-                message = tr("Inner voltage unavailable. Select outer voltage.") if missing_inner else None
-                plot_message(curve_tab, message)
-                return
-            if missing_inner:
-                voltage_notice.configure(text=tr("Inner voltage unavailable for some points."))
-                voltage_notice.pack(fill="x", pady=(4, 0))
-            _, curve_canvas, curve = show_plot(curve_tab)
-            for index, terminal, points in visible:
-                x, y = zip(*points)
-                label = tr("Stage {} · {}", index, terminal) if index is not None else terminal
-                curve.plot([value if value is not None else float("nan") for value in x], y,
-                           marker="." if sum(value is not None for value in x) == 1 else None, label=label)
-            terminals = {terminal.casefold() for _, terminal, _ in visible}
-            terminal = {"anode": "Anode", "drain": "Drain"}.get(next(iter(terminals)), "Swept terminal")
-            if len(terminals) > 1:
-                terminal = "Swept terminal"
-            curve.set(
-                xlabel=tr("{} inner voltage (V)" if voltage == "inner" else "{} outer voltage (V)", tr(terminal)),
-                ylabel=tr("Anode total current (A/µm)" if curve_path else "Swept terminal current (A/µm)"),
-            )
-            if not curve_path:
-                curve.legend()
-            curve.grid(alpha=.25)
-            draw_plot(curve_canvas)
         except (OSError, ValueError, KeyError) as error:
-            plot_message(curve_tab, tr("Could not read curve: {}", error))
+            empty_curve(tr("Could not read curve: {}", error))
+            return
+
+        log_axes = tuple(bool(selection) for selection in selections[1:])
+        missing_inner = voltage == "inner" and any(x is None for _, _, points in curves for x, _ in points)
+        omitted_by_log = False
+        terminals = set()
+        for index, terminal, points in curves:
+            xy = np.asarray(points, dtype=float)
+            finite = np.isfinite(xy).all(axis=1)
+            visible = finite & (xy[:, log_axes] > 0).all(axis=1)
+            omitted_by_log |= bool(np.any(finite & ~visible))
+            if visible.any():
+                xy[~visible] = np.nan
+                label = tr("Stage {} · {}", index, terminal) if index is not None else terminal
+                curve.plot(*xy.T, marker="." if visible.sum() == 1 else None, label=label)
+                terminals.add(terminal.casefold())
+        if not terminals:
+            if omitted_by_log:
+                empty_curve(tr("No points can be displayed with the selected log scales."))
+            elif missing_inner:
+                empty_curve(tr("Inner voltage unavailable. Select outer voltage."))
+            else:
+                empty_curve(tr("No curve available"))
+            return
+
+        notices = []
+        if missing_inner:
+            notices.append(tr("Inner voltage unavailable for some points."))
+        if omitted_by_log:
+            notices.append(tr("Log scales omit non-positive values."))
+        if notices:
+            curve_notice.configure(text=" ".join(notices))
+            curve_notice.pack(fill="x", before=canvas.get_tk_widget(), pady=(0, 4))
+
+        terminal = {"anode": "Anode", "drain": "Drain"}.get(next(iter(terminals)), "Swept terminal")
+        if len(terminals) > 1:
+            terminal = "Swept terminal"
+        curve.set(
+            xlabel=tr("{} inner voltage (V)" if voltage == "inner" else "{} outer voltage (V)", tr(terminal)),
+            ylabel=tr("Anode total current (A/µm)" if curve_path else "Swept terminal current (A/µm)"),
+            xscale="log" if log_axes[0] else "linear", yscale="log" if log_axes[1] else "linear",
+        )
+        if not curve_path:
+            curve.legend()
+        curve.grid(alpha=.25)
+        for button in curve_zoom_buttons:
+            button.configure(state="normal")
+        plots[curve_tab][2].push_current()
+        draw_plot(canvas)
+
+    def zoom_curve(factor):
+        import numpy as np
+
+        figure, canvas, navigation = plots[curve_tab]
+        curve = figure.axes[0]
+        scale = curve.transScale
+        limits = scale.transform(list(zip(curve.get_xlim(), curve.get_ylim())))
+        center = limits[0] / 2 + limits[1] / 2
+        with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+            updated = scale.inverted().transform(center + factor * (limits - center)).T
+        if not np.isfinite(updated).all() or np.any(updated[:, 0] == updated[:, 1]):
+            return
+        for log, lower in zip((curve.get_xscale(), curve.get_yscale()), updated.min(axis=1)):
+            if log == "log" and lower <= 0:
+                return
+        curve.set(xlim=updated[0], ylim=updated[1])
+        navigation.push_current()
+        draw_plot(canvas)
 
     def draw_mesh_or_field(tab, field_path, field_stamp, stages):
         nonlocal field, field_keys, field_terminal, field_revision, field_error
@@ -533,8 +674,6 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
                         None,
                     )
         if tab == mesh_tab:
-            for button in (rotate_left, rotate_right, reset_rotation):
-                button.configure(state="normal" if field else "disabled")
             if field:
                 _, mesh_canvas, mesh = show_plot(mesh_tab)
                 x, y = display_geometry(mesh)
@@ -544,25 +683,27 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
                 message = tr("Could not read mesh or field: {}", field_error) if field_error else None
                 plot_message(mesh_tab, message)
             return
+        if not field or not field.quantities:
+            field_keys = []
+            if field_picker is not None:
+                field_picker.set("")
+            message = tr("Could not read mesh or field: {}", field_error) if field_error else None
+            plot_message(cloud_tab, message)
+            return
+
+        from vela_workbench_results import FIELDS
+
+        plot_widgets(cloud_tab)
         index = field_picker.current()
         selected_field = field_keys[index] if index >= 0 else None
-        field_keys = list(field.quantities) if field else []
-        if field_keys:
-            from vela_workbench_results import FIELDS
+        field_keys = list(field.quantities)
+        field_picker.configure(values=[tr(FIELDS[name]) for name in field_keys])
+        index = field_keys.index(selected_field) if selected_field in field_keys else 0
+        field_picker.current(index)
+        draw_field()
 
-            field_picker.configure(values=[tr(FIELDS[name]) for name in field_keys])
-            index = field_keys.index(selected_field) if selected_field in field_keys else 0
-            field_picker.current(index)
-        else:
-            field_picker.configure(values=())
-            field_picker.set("")
-        if field_error:
-            plot_message(cloud_tab, tr("Could not read mesh or field: {}", field_error))
-        else:
-            draw_field()
-
-    def select_voltage(_event):
-        curve_axes[focused()] = voltage_picker.current()
+    def select_curve_axes(_event):
+        curve_axes[focused()] = tuple(picker.current() for _, picker in curve_pickers.values())
         drawn.pop(curve_tab, None)
         refresh()
 
@@ -645,7 +786,8 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         for label, (menu, index, button, *_) in actions.items():
             text = action_label(label)
             menu.entryconfigure(index, label=text)
-            button.configure(text=text)
+            if button is not None:
+                button.configure(text=text)
         case_heading.configure(text=tr("Built-in cases"))
         tree.heading("#0", text=tr("Case"))
         tree.heading("status", text=tr("Status"))
@@ -656,12 +798,11 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
             (log_tab, "Log"), (script_tab, "Sentaurus Script"),
         ):
             tabs.tab(tab, text=tr(label))
-        voltage_heading.configure(text=tr("Voltage axis"))
-        voltage_picker.configure(values=(tr("Inner voltage"), tr("Outer voltage")))
-        rotate_left.configure(text=tr("Rotate Left 90°"))
-        rotate_right.configure(text=tr("Rotate Right 90°"))
-        reset_rotation.configure(text=tr("Reset Rotation"))
-        field_heading.configure(text=tr("Field"))
+        for label, (heading, _) in curve_pickers.items():
+            heading.configure(text=tr(label))
+        if field_picker is not None:
+            mesh_toggle.configure(text=tr("Show Mesh"))
+            field_heading.configure(text=tr("Field"))
         script_heading.configure(text=tr("Original Sentaurus input · read only"))
         headline.configure(text=progress_text())
         refresh()
@@ -768,23 +909,46 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         else:
             root.destroy()
 
+    def open_guide():
+        dialog = tk.Toplevel(root)
+        dialog.title(tr("Documentation"))
+        dialog.transient(root)
+        dialog.geometry("620x450")
+        dialog.minsize(400, 260)
+        panel = ttk.Frame(dialog, padding=14)
+        panel.pack(fill="both", expand=True)
+        ttk.Button(panel, text=tr("Close"), command=dialog.destroy).pack(side="bottom", anchor="e", pady=(8, 0))
+        view = text_view(panel, wrap="word", text_font="TkTextFont")
+        replace_text(view, GUIDE_ZH if chinese else GUIDE_EN)
+        dialog.bind("<Escape>", lambda _event: dialog.destroy())
+        dialog.wait_visibility()
+        dialog.grab_set()
+        view.focus_set()
+
+    def show_about():
+        version = solver_version(launcher)
+        text = "SDS · " + tr("Semiconductor Device Simulator")
+        text += "\n\n" + tr("Desktop workbench for semiconductor device simulations with sd-sim.")
+        if version.get("version") and version.get("commit"):
+            text += "\n\n" + tr("Solver version {} ({})", version["version"], version["commit"][:12])
+        messagebox.showinfo(tr("About SDS"), text, parent=root)
+
     add_action("Simulation", "Run Current", "run", lambda: start((focused(),)))
     add_action("Simulation", "Run Selected", "batch", lambda: start(tree.selection()))
     add_action("Simulation", "Stop Queue", "stop", stop_queue)
     ttk.Separator(toolbar, orient="vertical").pack(side="left", fill="y", padx=(1, 7), pady=3)
     add_action("File", "Open Saved Run", "saved", open_saved)
     add_action("File", "Open Run Folder", "folder", open_run_folder)
+    menus["File"].add_separator()
+    add_action("File", "Exit", None, close)
     ttk.Separator(toolbar, orient="vertical").pack(side="left", fill="y", padx=(1, 7), pady=3)
     add_action("Settings", "Open Settings File", "settings", open_settings)
     add_action("Settings", "Language", "language", switch_language)
-    rotate_left.configure(command=lambda: rotate_mesh(1))
-    rotate_right.configure(command=lambda: rotate_mesh(-1))
-    reset_rotation.configure(command=rotate_mesh)
+    add_action("Help", "Documentation", None, open_guide)
+    add_action("Help", "About SDS", None, show_about)
     root.protocol("WM_DELETE_WINDOW", close)
     tree.bind("<<TreeviewSelect>>", refresh)
     tabs.bind("<<NotebookTabChanged>>", refresh)
-    voltage_picker.bind("<<ComboboxSelected>>", select_voltage)
-    field_picker.bind("<<ComboboxSelected>>", draw_field)
     first = saved_run[0] if saved_run else next(iter(cases))
     tree.focus(first)
     tree.selection_set(first)
