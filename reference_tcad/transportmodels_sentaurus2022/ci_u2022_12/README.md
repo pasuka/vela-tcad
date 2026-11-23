@@ -120,10 +120,10 @@ The standalone CMD keeps `eQuantumPotential` in Physics and in the Solve
 statements. The sidecar selects the `sentaurus_box` discretization from the
 DD/DG contract. Vela initializes at
 `Vg=1 V, Vd=0 V` using the CMD's nonlinear Poisson budget, then prepares
-the Poisson/DG equilibrium. The CTest uses electrostatic potential and
-referenced quasi-Fermi potentials with outer DG iteration. The verification
-driver accepts `--dg-coupling monolithic_box` for simultaneous transport and
-quantum Newton updates in the same quasi-Fermi coordinates.
+the Poisson/DG equilibrium. CTest passes `--dg-coupling monolithic_box` for
+simultaneous transport and quantum Newton updates in electrostatic potential
+and referenced quasi-Fermi coordinates. Use `--dg-coupling outer` when
+running the verification driver directly to compare with the outer iteration.
 The drain step bounds, extrapolation setting, and 21 requested
 CurrentPlot voltages come from the CMD.
 

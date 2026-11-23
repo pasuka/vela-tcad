@@ -2129,11 +2129,15 @@ if(_reference_u2022_cases)
         if(_case STREQUAL "gate_contacts" OR _case STREQUAL "schottky_iv")
             set(_reference_u2022_solver ${_reference_u2022_schottky_solver})
         endif()
+        set(_reference_u2022_dg_args)
+        if(_case STREQUAL "transportmodels_dg_idvd" OR _case STREQUAL "singledevice_idvg_linear")
+            set(_reference_u2022_dg_args --dg-coupling monolithic_box)
+        endif()
         add_test(NAME reference_u2022_${_case}
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_reference_u2022_ci.py
                 ${_case} --launcher $<TARGET_FILE:sd-sim>
                 --output ${CMAKE_CURRENT_BINARY_DIR}/reference-u2022-reports
-                --linear-solver ${_reference_u2022_solver})
+                --linear-solver ${_reference_u2022_solver} ${_reference_u2022_dg_args})
         set(_reference_u2022_timeout 2400)
         if(_case MATCHES "^transportmodels_dg_" OR _case STREQUAL "singledevice_idvg_linear")
             set(_reference_u2022_timeout 3600)
