@@ -139,9 +139,10 @@ response. The Sentaurus comparison uses terminal current.
 
 ## DG Id-Vg
 
-Enable `VELA_ENABLE_TRANSPORTMODELS_DG_IDVG_CI=ON` to register
-`reference_u2022_transportmodels_dg_idvg`. It uses the same grid, material
-staging, oneMKL PARDISO backend and HDF5 state support as DG Id-Vd.
+DG Id-Vg is disabled in the default CTest and GitHub CI suites pending
+further solver fixes and validation. Enable `VELA_ENABLE_TRANSPORTMODELS_DG_IDVG_CI=ON`
+to register `reference_u2022_transportmodels_dg_idvg`. It uses the same grid,
+material staging, oneMKL PARDISO backend and HDF5 state support as DG Id-Vd.
 The standalone `pp7_des.cmd` retains the 300 K isothermal physics and the
 original `Quasistationary` controls. It starts at `Vg=-1 V, Vd=0 V`, ramps
 the drain to 1.1 V, then sweeps the gate to 2.2 V at 21 requested output points.
