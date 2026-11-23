@@ -332,11 +332,19 @@ class DeckEmitterTests(unittest.TestCase):
     def test_sidecar_whitelist_deep_merge_and_stage_selection(self):
         sidecar = {"schema": "vela.sdevice_sidecar.v1", "apply_to": [1],
                    "solver": {"max_iter": 120, "normalization": {"reference_concentration_cm3": 1e16}},
+                   "stage_newton_reltol": {"1": 1.15e-10},
                    "sweep": {"diagnostics": {"newton_history": {"enabled": True}}}}
         result = emit(self.ir, sidecar=sidecar)
+        baseline = emit(self.ir)
         self.assertEqual(result.decks[0]["solver"]["max_iter"], 100)
+        self.assertEqual(result.decks[0]["solver"], baseline.decks[0]["solver"])
         self.assertEqual(result.decks[1]["solver"]["max_iter"], 120)
-        self.assertIn("solver.max_iter", result.stage_plan["stages"][1]["sidecar_overrides"])
+        self.assertEqual(result.decks[1]["solver"]["reltol"], 1.15e-10)
+        overrides = result.stage_plan["stages"][1]["sidecar_overrides"]
+        self.assertIn("solver.max_iter", overrides)
+        self.assertIn("solver.reltol", overrides)
+        for invalid in ({"0": 1e-10}, {"99": 1e-10}, {"1": 0}, {"01": 1e-10}):
+            self.assert_error("E409", emit, self.ir, sidecar={**sidecar, "stage_newton_reltol": invalid})
         for bad in ({"contacts": []}, {"solver": {"mobility": {"model": "constant"}}},
                     {"sweep": {"diagnostics": {}, "stop": 7}}, {"solver": {"tau_n_s": 1e-7}},
                     {"solver": {"max_iter": 0}}, {"apply_to": [9]}):
@@ -347,7 +355,7 @@ class DeckEmitterTests(unittest.TestCase):
         ir = parse_cmd_text(path.read_text(encoding="utf-8"), path_name=path.name)
         sidecar = json.loads(path.with_suffix(".vela.json").read_text(encoding="utf-8"))
         quantum = sidecar["solver"]["electron_quantum_potential"]
-        quantum.update(sentaurus_interface_insulator_half_jump_offset=0.02,
+        quantum.update(damping=1.0, sentaurus_interface_insulator_half_jump_offset=0.02,
                        sentaurus_interface_insulator_at_silicon_reaction_weight=2.6,
                        sentaurus_interface_insulator_at_polysilicon_reaction_weight=2.6)
         result = emit(ir, sidecar=sidecar)
@@ -362,10 +370,35 @@ class DeckEmitterTests(unittest.TestCase):
                          result.stage_plan["stages"][0]["output_state"])
         self.assert_error("E409", emit, self.ir, sidecar=sidecar)
         for forbidden in ({"enabled": False}, {"gamma": 8.0}, {"include_insulators": False},
+                          {"damping": 0.0}, {"damping": 1.01},
                           {"sentaurus_interface_insulator_at_silicon_reaction_weight": 0.0}):
             invalid = deepcopy(sidecar)
             invalid["solver"]["electron_quantum_potential"].update(forbidden)
             self.assert_error("E409", emit, ir, sidecar=invalid)
+
+    def test_monolithic_dg_sidecar_preserves_coordinates_and_cmd_controls(self):
+        path = REPO / "reference_tcad/transportmodels_sentaurus2022/ci_u2022_12/pp13_des.cmd"
+        ir = parse_cmd_text(path.read_text(encoding="utf-8"), path_name=path.name)
+        sidecar = json.loads(path.with_suffix(".vela.json").read_text(encoding="utf-8"))
+        baseline = emit(ir, sidecar=sidecar)
+        sidecar["solver"]["electron_quantum_potential"]["coupling_mode"] = "monolithic_box"
+        for coordinates in ("potential_quasi_fermi", "potential_density"):
+            with self.subTest(coordinates=coordinates):
+                variant = deepcopy(sidecar)
+                solver = variant["solver"]
+                solver["state_variables"] = coordinates
+                if coordinates == "potential_density":
+                    self.assert_error("E409", emit, ir, sidecar=variant)
+                    solver.update(primary_variable_coordinates="unit", quasi_fermi_reference="none",
+                                  quasi_fermi_update_limit_V=0.0, compensated_population_state=True)
+                coupled = emit(ir, sidecar=variant)
+                for old_stage, new_stage, deck in zip(baseline.stage_plan["stages"],
+                                                     coupled.stage_plan["stages"], coupled.decks, strict=True):
+                    self.assertEqual(new_stage.get("sweep"), old_stage.get("sweep"))
+                    out = deck["solver"]
+                    self.assertEqual(out["state_variables"], coordinates)
+                    self.assertEqual(out["quasi_fermi_reference"], solver["quasi_fermi_reference"])
+                    self.assertEqual(out["electron_quantum_potential"]["coupling_mode"], "monolithic_box")
 
     def test_mixed_voronoi_accepts_right_angles_and_rejects_obtuse_mesh(self):
         sidecar = {"schema": "vela.sdevice_sidecar.v1", "mesh_geometry": {"node_volume_policy": "mixed_voronoi"}}
@@ -544,6 +577,8 @@ class DeckEmitterTests(unittest.TestCase):
         self.assertEqual(result.stage_plan["stages"][0]["output_state"], "eq_des.h5")
         self.assertEqual(result.stage_plan["stages"][2]["input_state"], "eq_des.h5")
         self.assertEqual(result.decks[2]["solver"]["method"], "frozen_state")
+        self.assert_error("E409", emit, ir, sidecar={"schema": "vela.sdevice_sidecar.v1",
+                                                    "stage_newton_reltol": {"2": 1e-10}})
         rebased = rebase_stage(result, 1, {"left": .02})
         self.assertEqual(rebased.stage_plan["stages"][3]["sweep"]["start_V"], 0)
         ir["solve"]["statements"][3]["file_prefix"] = "absent"

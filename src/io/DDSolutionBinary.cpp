@@ -188,6 +188,8 @@ void writeDDSolutionState(const std::filesystem::path& path,const DDSolution& s,
         return;
     }
 #endif
+    if (s.dgElectrostaticPotentialLow_V.size())
+        invalid("compensated DG restart requires a mesh-bound HDF5 state archive");
     if(path.extension()==".h5" || path.extension()==".vfb" || path.extension()==".npy") {
 #ifdef VELA_ENABLE_STATE_FORMATS
         std::ostringstream out(std::ios::out|std::ios::binary);writeBinary(out,s,scaling);

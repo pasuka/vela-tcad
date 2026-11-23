@@ -7,6 +7,11 @@ ramping the drain to `1.1 V` for the saturation branch. Both branches
 sweep the gate to `2.2 V` using the original CMD step controls and its
 21 `CurrentPlot` targets. The sidecar applies Newton and density-gradient
 controls to the solved stages and leaves the Load stage as a frozen replay.
+Transport uses electrostatic potential and referenced electron and hole
+quasi-Fermi potentials. The CTest uses the outer DG iteration. The verification
+driver also accepts `--dg-coupling monolithic_box` to solve the quantum
+potential and transport equations in the same Newton step with the same
+benchmarks and acceptance limits.
 
 The sidecar includes the oxide-side DG interface coefficients recovered from
 the T-2022.03-SP2 SingleDevice quantum Jacobian on the same mesh. The

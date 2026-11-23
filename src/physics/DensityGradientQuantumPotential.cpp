@@ -716,8 +716,8 @@ DensityGradientQuantumPotentialResult solveElectronDensityGradientPotential(
     return result;
 }
 
-DensityGradientQuantumPotentialResult
-solveElectronDensityGradientPotentialLikeGlobal(
+static DensityGradientQuantumPotentialResult
+solveElectronDensityGradientPotentialLikeGlobalImpl(
     const DeviceMesh& mesh,
     const std::vector<DensityGradientCellMaterial>& cellMaterials,
     const VectorXd& nodeOutputBandDrive_V,
@@ -727,7 +727,9 @@ solveElectronDensityGradientPotentialLikeGlobal(
     PhysicalUnitSystem units,
     DensityGradientQuantumPotentialConfig config,
     const VectorXd& initialLambda_V,
-    const VectorXd& initialPotentialLike_V)
+    const VectorXd& initialPotentialLike_V,
+    DensityGradientBoxLinearization* linearization,
+    bool linearizeBox)
 {
     const int nodeCount = static_cast<int>(mesh.numNodes());
     if (nodeOutputBandDrive_V.size() != nodeCount ||
@@ -770,6 +772,12 @@ solveElectronDensityGradientPotentialLikeGlobal(
         config.globalDiscretization == "sentaurus_box";
     const bool useSentaurusBox =
         config.globalDiscretization == "sentaurus_box";
+    if (linearization != nullptr &&
+        (!useSentaurusBox || std::abs(config.theta - 0.5) >= 1.0e-14 ||
+         initialPotentialLike_V.size() != nodeCount || !initialPotentialLike_V.allFinite())) {
+        throw std::invalid_argument(
+            "DG box linearization requires a finite potential-like state and fitted sentaurus_box discretization.");
+    }
     const bool useConservativeSqrtFlux =
         config.globalDiscretization == "conservative_sqrt_fitted";
     if ((useGssFittedFlux || useConservativeSqrtFlux) &&
@@ -925,20 +933,26 @@ solveElectronDensityGradientPotentialLikeGlobal(
     } else if (initialLambda_V.size() == nodeCount) {
         continuousPotential = initialLambda_V - stateBandDrive_V;
     }
+    std::vector<bool> constrainedRows(activeNodes.size(), false);
     for (int i = 0; i < nodeCount; ++i) {
         if (!std::isfinite(continuousPotential(i)))
             continuousPotential(i) = stateIsLambda
                 ? 0.0 : -stateBandDrive_V(i);
-        if (!activeNodes[static_cast<std::size_t>(i)])
-            continuousPotential(i) = 0.0;
+        if (!activeNodes[static_cast<std::size_t>(i)]) {
+            constrainedRows[static_cast<std::size_t>(i)] = true;
+            if (linearization == nullptr)
+                continuousPotential(i) = 0.0;
+        }
     }
     for (const auto& [node, lambda] : dirichletLambda_V) {
         if (node >= mesh.numNodes() || !std::isfinite(lambda))
             throw std::invalid_argument(
                 "invalid global density-gradient Dirichlet boundary.");
-        continuousPotential(static_cast<int>(node)) = stateIsLambda
-            ? lambda
-            : lambda - stateBandDrive_V(static_cast<int>(node));
+        constrainedRows[node] = true;
+        if (linearization == nullptr)
+            continuousPotential(static_cast<int>(node)) = stateIsLambda
+                ? lambda
+                : lambda - stateBandDrive_V(static_cast<int>(node));
     }
     VectorXd conservativeRowLogReference = VectorXd::Zero(nodeCount);
     if (useConservativeSqrtFlux) {
@@ -963,6 +977,10 @@ solveElectronDensityGradientPotentialLikeGlobal(
     LinearSolver solver;
     DensityGradientQuantumPotentialResult result;
     Real initialResidualNorm = -1.0;
+    std::vector<Eigen::Triplet<Real>> transportDrive;
+    std::vector<Eigen::Triplet<Real>> insulatorDrive;
+    if (linearizeBox)
+        linearization->materialDriveDiagonal = VectorXd::Zero(nodeCount);
     auto assemble = [&](const VectorXd& state,
                         VectorXd& residual,
                         std::vector<Eigen::Triplet<Real>>* triplets,
@@ -983,7 +1001,7 @@ solveElectronDensityGradientPotentialLikeGlobal(
             diagnostic->interfaceBoundary = VectorXd::Zero(nodeCount);
         }
         auto addJacobian = [&](int row, int col, Real value) {
-            if (triplets != nullptr)
+            if (triplets != nullptr && !constrainedRows[static_cast<std::size_t>(row)])
                 triplets->emplace_back(row, col, value);
         };
         for (const auto& data : cellMaterials) {
@@ -1154,6 +1172,13 @@ solveElectronDensityGradientPotentialLikeGlobal(
                         addJacobian(
                             row, static_cast<int>(nodes[d]), derivative);
                         addJacobian(row, row, -derivative);
+                        if (linearizeBox && !constrainedRows[row]) {
+                            // w = (drive - Phi/q)/VT, so only the flux
+                            // derivative reverses sign for a drive column.
+                            auto& drive = data.isTransport ? transportDrive : insulatorDrive;
+                            drive.emplace_back(row, static_cast<int>(nodes[d]), -derivative);
+                            drive.emplace_back(row, row, derivative);
+                        }
                         if (diagnostic != nullptr) {
                             diagnostic->fittedEdges.push_back({
                                 data.cellId,
@@ -1313,6 +1338,9 @@ solveElectronDensityGradientPotentialLikeGlobal(
                     (reactionLambda * interfaceReactionMultiplier +
                      interfaceReactionOffset_V) * lumpedVolume * reactionWeight;
                 residual(row) += gradientContribution + reactionContribution;
+                if (linearizeBox && !constrainedRows[row])
+                    linearization->materialDriveDiagonal(row) +=
+                        equationScale * lumpedVolume * interfaceReactionMultiplier;
                 if (diagnostic != nullptr) {
                     record.gradientSquared[a] = gradientContribution;
                     record.reaction[a] = reactionContribution;
@@ -1371,15 +1399,38 @@ solveElectronDensityGradientPotentialLikeGlobal(
             if (activeNodes[static_cast<std::size_t>(row)])
                 continue;
             residual(row) = state(row);
-            addJacobian(row, row, 1.0);
         }
         for (const auto& [node, lambda] : dirichletLambda_V) {
             const int row = static_cast<int>(node);
             residual(row) = state(row) - (stateIsLambda
                 ? lambda : lambda - stateBandDrive_V(row));
-            addJacobian(row, row, 1.0);
+            if (linearizeBox)
+                linearization->materialDriveDiagonal(row) = 1.0;
+        }
+        // Constrained equations have a single unit diagonal. Keep their
+        // column contributions in every free row.
+        if (triplets != nullptr) {
+            for (int row = 0; row < nodeCount; ++row) {
+                if (constrainedRows[static_cast<std::size_t>(row)])
+                    triplets->emplace_back(row, row, 1.0);
+            }
         }
     };
+    if (linearization != nullptr) {
+        std::vector<Eigen::Triplet<Real>> triplets;
+        if (!linearizeBox) {
+            assemble(continuousPotential, linearization->residual, nullptr, nullptr);
+            return result;
+        }
+        assemble(continuousPotential, linearization->residual, &triplets, nullptr);
+        linearization->potentialLike.resize(nodeCount, nodeCount);
+        linearization->potentialLike.setFromTriplets(triplets.begin(), triplets.end());
+        linearization->transportDrive.resize(nodeCount, nodeCount);
+        linearization->transportDrive.setFromTriplets(transportDrive.begin(), transportDrive.end());
+        linearization->insulatorDrive.resize(nodeCount, nodeCount);
+        linearization->insulatorDrive.setFromTriplets(insulatorDrive.begin(), insulatorDrive.end());
+        return result;
+    }
     if (!config.residualDiagnosticPrefix.empty()) {
         VectorXd diagnosticResidual;
         Eq231ResidualDiagnostic diagnostic;
@@ -1389,25 +1440,10 @@ solveElectronDensityGradientPotentialLikeGlobal(
             continuousPotential, stateBandDrive_V, activeNodes,
             dirichletLambda_V, stateIsLambda);
     }
+    VectorXd residual(nodeCount);
+    std::vector<Eigen::Triplet<Real>> triplets;
     for (int iteration = 1; iteration <= config.maxIterations; ++iteration) {
-        VectorXd residual;
-        std::vector<Eigen::Triplet<Real>> triplets;
         assemble(continuousPotential, residual, &triplets, nullptr);
-        SparseMatrixd jacobian(nodeCount, nodeCount);
-        jacobian.setFromTriplets(triplets.begin(), triplets.end());
-        for (int row = 0; row < nodeCount; ++row) {
-            const auto fixed = dirichletLambda_V.find(static_cast<Index>(row));
-            if (activeNodes[static_cast<std::size_t>(row)] &&
-                fixed == dirichletLambda_V.end())
-                continue;
-            for (int outer = 0; outer < jacobian.outerSize(); ++outer) {
-                for (SparseMatrixd::InnerIterator entry(jacobian, outer); entry; ++entry) {
-                    if (entry.row() == row)
-                        entry.valueRef() = entry.col() == row ? 1.0 : 0.0;
-                }
-            }
-        }
-        jacobian.prune(0.0);
         result.residualInfinityNorm = residual.lpNorm<Eigen::Infinity>();
         if (initialResidualNorm < 0.0)
             initialResidualNorm = result.residualInfinityNorm;
@@ -1418,6 +1454,9 @@ solveElectronDensityGradientPotentialLikeGlobal(
             result.converged = true;
             break;
         }
+        SparseMatrixd jacobian(nodeCount, nodeCount);
+        jacobian.setFromTriplets(triplets.begin(), triplets.end());
+        jacobian.prune(0.0);
         VectorXd update = solver.solve(jacobian, -residual);
         Real updateNorm = update.lpNorm<Eigen::Infinity>();
         Eigen::Index maxUpdateIndex = 0;
@@ -1477,6 +1516,44 @@ solveElectronDensityGradientPotentialLikeGlobal(
     result.potentialInfinityNorm_V =
         result.potential_V.lpNorm<Eigen::Infinity>();
     return result;
+}
+
+DensityGradientQuantumPotentialResult solveElectronDensityGradientPotentialLikeGlobal(
+    const DeviceMesh& mesh,
+    const std::vector<DensityGradientCellMaterial>& cellMaterials,
+    const VectorXd& nodeOutputBandDrive_V,
+    const std::vector<bool>& activeNodes,
+    const std::unordered_map<Index, Real>& dirichletLambda_V,
+    Real thermalVoltage_V,
+    PhysicalUnitSystem units,
+    DensityGradientQuantumPotentialConfig config,
+    const VectorXd& initialLambda_V,
+    const VectorXd& initialPotentialLike_V)
+{
+    return solveElectronDensityGradientPotentialLikeGlobalImpl(
+        mesh, cellMaterials, nodeOutputBandDrive_V, activeNodes, dirichletLambda_V,
+        thermalVoltage_V, units, std::move(config), initialLambda_V,
+        initialPotentialLike_V, nullptr, false);
+}
+
+DensityGradientBoxLinearization linearizeElectronDensityGradientBox(
+    const DeviceMesh& mesh,
+    const std::vector<DensityGradientCellMaterial>& cellMaterials,
+    const VectorXd& nodeOutputBandDrive_V,
+    const std::vector<bool>& activeNodes,
+    const std::unordered_map<Index, Real>& dirichletLambda_V,
+    Real thermalVoltage_V,
+    PhysicalUnitSystem units,
+    const DensityGradientQuantumPotentialConfig& config,
+    const VectorXd& potentialLike_V,
+    bool assembleJacobian)
+{
+    DensityGradientBoxLinearization linearization;
+    solveElectronDensityGradientPotentialLikeGlobalImpl(
+        mesh, cellMaterials, nodeOutputBandDrive_V, activeNodes, dirichletLambda_V,
+        thermalVoltage_V, units, config, {}, potentialLike_V, &linearization,
+        assembleJacobian);
+    return linearization;
 }
 
 } // namespace vela

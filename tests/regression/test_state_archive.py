@@ -71,6 +71,26 @@ class StateArchiveTest(unittest.TestCase):
         for key in archive.POPULATION:
             self.assertEqual(np.asarray(fields[key]).tobytes(), np.asarray(self.fields[key]).tobytes())
 
+    def test_compensated_dg_electrostatic_tail_survives_reload_and_rebase(self):
+        self.population_state()
+        self.fields.update(electron_quantum_potential_V=[.25, .5, .25],
+                           electron_quantum_potential_like_V=[-1., -2., -3.],
+                           dg_electrostatic_potential_low_V=[0., 1e-18, 0.])
+        archive.write(self.path, self.fields, self.meta)
+        self.assertFields(archive.read(self.path, 3, 'a'*64)[0])
+        moved = self.path.parent/'dg_rebase.h5'
+        archive.translate(self.path, moved, .125, {0, 1, 2}, 3, 'a'*64)
+        fields, _ = archive.read(moved, 3, 'a'*64)
+        self.assertEqual(fields['psi'][1], 1e-18)
+        self.assertEqual(fields['dg_electrostatic_potential_low_V'][1], 0.)
+        np.testing.assert_array_equal(fields['electron_quantum_potential_V'], [.25, .5, .25])
+        np.testing.assert_array_equal(fields['electron_quantum_potential_like_V'],
+                                      [-.875, -1.875, -2.875])
+        invalid = dict(self.fields)
+        del invalid['electron_quantum_potential_like_V']
+        with self.assertRaisesRegex(ValueError, 'Incomplete compensated DG'):
+            archive.validate(invalid, self.meta)
+
     def test_population_potential_bits_reference_and_cpp_interop(self):
         self.population_state()
         self.fields['population_psi_normalized']=[21.200072448909626, -17.200072448909626, 0.]

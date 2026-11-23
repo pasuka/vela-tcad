@@ -266,6 +266,27 @@ inline DDSolution predictDCSweepInitialState(const SweepPredictorConfig& config,
             if (predictorUsesField(fields, "psi")) {
                 predicted.psi = values.head(count);
                 predicted.populationPsi.resize(0);
+                if (current.electronQuantumPotentialLike.size() == count &&
+                    previous->electronQuantumPotentialLike.size() == count) {
+                    predicted.electronQuantumPotentialLike =
+                        current.electronQuantumPotentialLike + ratio *
+                        (current.electronQuantumPotentialLike - previous->electronQuantumPotentialLike);
+                }
+                if (current.dgElectrostaticPotentialLow_V.size() == count &&
+                    previous->dgElectrostaticPotentialLow_V.size() == count) {
+                    for (int i = 0; i < count; ++i) {
+                        experimental::ExpansionProductSum sum;
+                        sum.add(current.psi[i]);
+                        sum.add(current.dgElectrostaticPotentialLow_V[i]);
+                        sum.addProduct(ratio, current.psi[i]);
+                        sum.addProduct(-ratio, previous->psi[i]);
+                        sum.addProduct(ratio, current.dgElectrostaticPotentialLow_V[i]);
+                        sum.addProduct(-ratio, previous->dgElectrostaticPotentialLow_V[i]);
+                        const auto value = sum.parts();
+                        predicted.psi[i] = value.high;
+                        predicted.dgElectrostaticPotentialLow_V[i] = value.low;
+                    }
+                }
             }
             if (predictorUsesField(fields, "phin")) {
                 for (int i = 0; i < count; ++i)

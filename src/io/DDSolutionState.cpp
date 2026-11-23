@@ -64,6 +64,12 @@ StateArchive archiveDDSolution(const DDSolution& solution, nlohmann::json metada
         for (auto& v : s.fields.at(name)) v = units.internalConcentrationToM3(v);
     if (solution.electronQuantumPotential.size()) field("electron_quantum_potential_V", solution.electronQuantumPotential);
     if (solution.electronQuantumPotentialLike.size()) field("electron_quantum_potential_like_V", solution.electronQuantumPotentialLike);
+    if (solution.dgElectrostaticPotentialLow_V.size()) {
+        if (solution.stateVariables != "potential_density" ||
+            solution.electronQuantumPotentialLike.size() != solution.psi.size())
+            throw std::invalid_argument("Incomplete compensated DG population state");
+        field("dg_electrostatic_potential_low_V", solution.dgElectrostaticPotentialLow_V);
+    }
     if (solution.phinIncrement.size() || solution.phipIncrement.size()) {
         field("electron_qf_increment_V", solution.phinIncrement);
         field("hole_qf_increment_V", solution.phipIncrement);
@@ -173,6 +179,12 @@ DDSolution restoreDDSolution(const StateArchive& archive, UnitScalingConfig scal
     s.electronQuantumPotential = VectorXd::Zero(s.psi.size());
     if (archive.fields.contains("electron_quantum_potential_V")) field("electron_quantum_potential_V", s.electronQuantumPotential);
     if (archive.fields.contains("electron_quantum_potential_like_V")) field("electron_quantum_potential_like_V", s.electronQuantumPotentialLike);
+    if (archive.fields.contains("dg_electrostatic_potential_low_V")) {
+        if (s.stateVariables != "potential_density" ||
+            s.electronQuantumPotentialLike.size() != s.psi.size())
+            throw std::invalid_argument("Incomplete compensated DG population checkpoint");
+        field("dg_electrostatic_potential_low_V", s.dgElectrostaticPotentialLow_V);
+    }
     if (archive.fields.contains("electron_qf_increment_V")) {
         field("electron_qf_increment_V", s.phinIncrement);
         field("hole_qf_increment_V", s.phipIncrement);

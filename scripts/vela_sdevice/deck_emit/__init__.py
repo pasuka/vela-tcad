@@ -439,6 +439,12 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
     decisions = []
     solver = _physics(ir, report, decisions)
     solver_overrides = (sidecar or {}).get("solver", {})
+    stage_reltols = (sidecar or {}).get("stage_newton_reltol", {})
+    reserved_sidecar_keys = {
+        "schema", "description", "apply_to", "stage_newton_reltol",
+        "avalanche_current_support_profile", "high_field_gradient_discretization",
+        "bvmethods_operator_profile", "sentaurus_step_control",
+    }
     dg_controls = solver_overrides.get("electron_quantum_potential")
     srh_quantum_band_edge = solver_overrides.get("srh_density_coupling") == "quantum_band_edge"
     if srh_quantum_band_edge and not solver.get("electron_quantum_potential", {}).get("enabled", False):
@@ -449,6 +455,14 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             and (dg_controls.get("global_discretization") != "sentaurus_box"
                  or not dg_controls.get("include_insulators"))):
         raise DeckEmitError("E409", file="sidecar", detail="DG interface traces require sentaurus_box with include_insulators=true")
+    if dg_controls and dg_controls.get("coupling_mode") == "monolithic_box":
+        if dg_controls.get("global_discretization") != "sentaurus_box" or dg_controls.get("include_insulators") is not True:
+            raise DeckEmitError("E409", file="sidecar", detail="monolithic DG requires the global fitted box")
+        if (solver_overrides.get("state_variables") == "potential_density" and
+                (solver_overrides.get("primary_variable_coordinates") != "unit"
+                 or solver_overrides.get("quasi_fermi_reference", "none") != "none"
+                 or solver_overrides.get("quasi_fermi_update_limit_V", 0.0) != 0.0)):
+            raise DeckEmitError("E409", file="sidecar", detail="monolithic DG population coordinates require Unit scaling without QF controls")
     if "arithmetic_precision" in ir["math"]:
         solver["arithmetic_precision"] = ir["math"]["arithmetic_precision"]
     contacts, electrodes = _contacts(ir, mesh, report, decisions)
@@ -524,6 +538,9 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             continue
         index = len(decks)
         use_sidecar = sidecar is not None and (not sidecar.get("apply_to") or index in sidecar["apply_to"])
+        stage_reltol = stage_reltols.get(str(index))
+        if stage_reltol is not None and (kind == "load" or not use_sidecar):
+            raise DeckEmitError("E409", file="sidecar", detail=f"Stage {index} cannot override Newton tolerance")
         if index in rebases and kind != "load":
             if set(rebases[index]) - set(voltages):
                 raise DeckEmitError("E407", detail="rebase contains an unknown electrode")
@@ -724,7 +741,10 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                       stage=index)
         deck["sweep"] = sweep
         if use_sidecar:
-            overrides = {k: deepcopy(v) for k, v in sidecar.items() if k not in ("schema", "description", "apply_to", "avalanche_current_support_profile", "high_field_gradient_discretization", "bvmethods_operator_profile", "sentaurus_step_control")}
+            overrides = {key: deepcopy(value) for key, value in sidecar.items()
+                         if key not in reserved_sidecar_keys}
+            if stage_reltol is not None:
+                overrides.setdefault("solver", {})["reltol"] = stage_reltol
             if "external_circuit" not in sweep and "sweep" in overrides:
                 overrides["sweep"].pop("external_circuit", None)
             _merge(deck, overrides,
@@ -846,6 +866,8 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         raise DeckEmitError("E407", detail="no executable stages")
     if sidecar and any(i >= len(decks) for i in sidecar.get("apply_to", [])):
         raise DeckEmitError("E409", file="sidecar", detail="apply_to names an absent stage")
+    if stage_reltols.keys() - {str(index) for index in range(len(decks))}:
+        raise DeckEmitError("E409", file="sidecar", detail="stage_newton_reltol names an absent stage")
     result = StagePlanResult(plan, decks, decisions, deepcopy({"ir": ir, "mesh": mesh, "report": report,
         "work_dir": work_dir, "cmd_name": cmd_name, "sha": sha, "options": options,
         "sidecar": sidecar, "rebases": rebases, "current_starts": current_starts,

@@ -212,6 +212,30 @@ solveElectronDensityGradientPotentialLikeGlobal(
     const VectorXd& initialLambda_V = {},
     const VectorXd& initialPotentialLike_V = {});
 
+/// Residual and partial derivatives for the fitted sentaurus_box equation.
+/// A material-drive column adds the same voltage to every material trace of
+/// that node and its output trace. Dynamic drives are independent on the
+/// transport and insulator sides. The primary unknown is Phi/q in volts.
+struct DensityGradientBoxLinearization {
+    VectorXd residual;
+    SparseMatrixd potentialLike;
+    VectorXd materialDriveDiagonal;
+    SparseMatrixd transportDrive;
+    SparseMatrixd insulatorDrive;
+};
+
+DensityGradientBoxLinearization linearizeElectronDensityGradientBox(
+    const DeviceMesh& mesh,
+    const std::vector<DensityGradientCellMaterial>& cellMaterials,
+    const VectorXd& nodeOutputBandDrive_V,
+    const std::vector<bool>& activeNodes,
+    const std::unordered_map<Index, Real>& dirichletLambda_V,
+    Real thermalVoltage_V,
+    PhysicalUnitSystem units,
+    const DensityGradientQuantumPotentialConfig& config,
+    const VectorXd& potentialLike_V,
+    bool assembleJacobian = true);
+
 /// Material-resolved Eq. 231 variant.  coefficientVm2 stores
 /// gamma*hbar^2/(6*m*q) per node.  Eq. 231 keeps gamma/m outside the
 /// divergence, so it scales each material control-volume row rather than the

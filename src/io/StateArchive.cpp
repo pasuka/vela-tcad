@@ -23,6 +23,7 @@ const std::map<std::string, std::string> units{
     {"psi", "V"}, {"phin", "V"}, {"phip", "V"},
     {"electrons_m3", "m^-3"}, {"holes_m3", "m^-3"},
     {"electron_quantum_potential_V", "V"}, {"electron_quantum_potential_like_V", "V"},
+    {"dg_electrostatic_potential_low_V", "V"},
     {"electron_qf_increment_V", "V"}, {"hole_qf_increment_V", "V"},
     {"electron_qf_reference_V", "V"}, {"hole_qf_reference_V", "V"},
     {"packed_psi", "1"}, {"packed_electron_qf_increment", "1"}, {"packed_hole_qf_increment", "1"},
@@ -71,6 +72,10 @@ void validateStateArchive(const StateArchive& s) {
     if ((mode == "electrothermal") != s.fields.contains("temperature_K")) bad("temperature/mode mismatch");
     if (s.fields.contains("electron_quantum_potential_like_V") &&
         !s.fields.contains("electron_quantum_potential_V")) bad("partial quantum state");
+    if (s.fields.contains("dg_electrostatic_potential_low_V") &&
+        (mode != "dd" || !s.fields.contains("electron_quantum_potential_like_V") ||
+         s.metadata.value("state_variables", std::string{}) != "potential_density"))
+        bad("incomplete compensated DG state");
     std::size_t split = 0;
     for (const auto* name : {"electron_qf_increment_V", "hole_qf_increment_V",
                             "electron_qf_reference_V", "hole_qf_reference_V"})

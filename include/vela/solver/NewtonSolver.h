@@ -930,6 +930,12 @@ private:
         const std::unordered_map<std::string, Real>& contactBiases) const;
     std::shared_ptr<CoupledDDAssembler> makeArclengthAssembler() const;
     NewtonResult solveCompensatedPopulation(const DDSolution& initial) const;
+    NewtonResult solveMonolithicDensityGradientBox(
+        const DDSolution& initial,
+        std::vector<DensityGradientCellMaterial> cells,
+        const VectorXd& nodeMaterialDrive_V,
+        const std::vector<bool>& activeNodes,
+        const std::unordered_map<Index, Real>& dirichletLambda_V) const;
     DDScalingSpec buildScalingSpec() const;
     DDSolution buildInitialGuess(const CoupledDDAssembler& assembler,
                                  const CoupledDDBoundaryConditions& bcs) const;

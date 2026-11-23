@@ -1643,11 +1643,26 @@ void validatePopulationNumerics(const NewtonConfig& c)
         throw std::invalid_argument("population_linear_defect=eft requires legacy Unit population coordinates");
     if (c.compensatedPopulationState &&
         (c.stateVariables != "potential_density" || c.coupledOperator != "legacy" ||
-         c.carrierStatistics.model != "boltzmann" ||
+         (c.carrierStatistics.model != "boltzmann" &&
+          c.electronQuantumPotential.couplingMode != "monolithic_box") ||
          !c.inputScaling.isUnitScaling() || c.primaryVariableCoordinates != "unit" ||
          c.contactBoundaryMinorityElectronRelaxation))
-        throw std::invalid_argument("Compensated population state requires legacy unit-scaled density coordinates and neutral ohmic contacts");
-    if(c.stateVariables!="potential_density")return;
+        throw std::invalid_argument(
+            "Compensated population requires legacy Unit density coordinates and no minority-contact relaxation; classical transport requires Boltzmann statistics");
+    if (c.electronQuantumPotential.couplingMode == "monolithic_box") {
+        const auto& dg = c.electronQuantumPotential;
+        if (c.coupledOperator != "legacy" || c.splitDDState ||
+            (c.stateVariables == "potential_density" &&
+             (c.primaryVariableCoordinates != "unit" || !c.inputScaling.isUnitScaling())) ||
+            !dg.enabled || !dg.includeInsulators || dg.globalDiscretization != "sentaurus_box" ||
+            dg.formulation != "potential_based" || dg.transportCoupling != "direct_band_edge" ||
+            c.blockAbsoluteConvergence.mode == "enforce" ||
+            c.carrierRowConvergence.mode == "enforce" || c.globalContinuityClosure.mode == "enforce" ||
+            c.impactIonization.model != "none" || c.bandToBand.model != "none")
+            throw std::invalid_argument("monolithic_box requires legacy DD with the global fitted DG box, no avalanche/BTBT or enforced DD block diagnostics, and Unit scaling for population coordinates");
+    }
+    if (c.stateVariables != "potential_density")
+        return;
     for(double v:{c.populationMinimumDensity_cm3,c.populationPredictorLowDensity_cm3})
         if(!std::isfinite(v)||v<0.)throw std::invalid_argument("population density limits must be finite and nonnegative");
     if((c.populationMinimumDensity_cm3!=0.||c.populationPredictorLowDensity_cm3!=0.||c.populationUpdate.minimumDensity!=0.)&&c.stateVariables!="potential_density")
@@ -1656,7 +1671,8 @@ void validatePopulationNumerics(const NewtonConfig& c)
     const auto reject=[](bool active,const char* option) {
         if(active)throw std::invalid_argument(std::string("potential_density does not support ")+option);
     };
-    reject(c.splitDDState || c.electronQuantumPotential.enabled,
+    reject(c.splitDDState ||
+        (c.electronQuantumPotential.enabled && c.electronQuantumPotential.couplingMode != "monolithic_box"),
         "split or quantum state formulations");
     if(c.coupledOperator=="legacy") {
         reject(c.mobility.model=="ialmob" || c.poissonResidualPrecision!="double",
@@ -2851,10 +2867,11 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if (cfg.temperature_K <= 0.0)
         throw std::invalid_argument("newtonConfigFromJson: temperature_K must be positive.");
     if (cfg.electronQuantumPotential.couplingMode != "outer" &&
-        cfg.electronQuantumPotential.couplingMode != "frozen") {
+        cfg.electronQuantumPotential.couplingMode != "frozen" &&
+        cfg.electronQuantumPotential.couplingMode != "monolithic_box") {
         throw std::invalid_argument(
             "newtonConfigFromJson: electron_quantum_potential.coupling_mode "
-            "must be 'outer' or 'frozen'.");
+            "must be 'outer', 'frozen', or 'monolithic_box'.");
     }
     if (cfg.electronQuantumPotential.transportCoupling != "direct_band_edge" &&
         cfg.electronQuantumPotential.transportCoupling !=
@@ -3590,7 +3607,8 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
             const double psiBuiltIn = equilibrium.potential;
 
             bcs.psi[nid] = (Vbias + psiBuiltIn) / potentialScale;
-            if (cfg_.compensatedPopulationState) {
+            if (cfg_.compensatedPopulationState ||
+                cfg_.electronQuantumPotential.couplingMode == "monolithic_box") {
                 bcs.ohmicPopulation.emplace(nid, std::array<Real,3>{psiBuiltIn, equilibrium.n, equilibrium.p});
                 bcs.ohmicBias.emplace(nid, Vbias);
             }
@@ -3725,7 +3743,9 @@ std::shared_ptr<CoupledDDAssembler> NewtonSolver::makeArclengthAssembler() const
         sheetCharges_,
         scaling,
         cfg_.carrierDiagonalFloor,
-        cfg_.carrierStatistics);
+        cfg_.carrierStatistics,
+        cfg_.electronQuantumPotential.couplingMode == "monolithic_box"
+            ? cfg_.electronQuantumPotential : DensityGradientQuantumPotentialConfig{});
     configureAssemblerNumerics(*assembler);
     return assembler;
 }
@@ -4206,6 +4226,7 @@ Real NewtonSolver::evaluateStateTerminalCurrent(const DDSolution& state,
         }
         return static_cast<Real>(sum*constants::q*assembler->continuityResidualScale()*currentScale);
     }
+    restoreElectronQuantumPotential(*assembler, state);
     const auto x=packReferencedSolution(*assembler,state,{});
     const auto residual=assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x,BvMethodsTransportPurpose::terminalValidation):assembler->residual(x,{});const int N=mesh_.numNodes();
     vela::ArithmeticReal sum=0;
@@ -6641,6 +6662,7 @@ NewtonPoissonBlockInitialization NewtonSolver::buildPoissonBlockInitialization()
 {
     if(cfg_.stateVariables=="potential_density") {
         auto c=cfg_;c.compensatedPopulationState=false;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.primaryVariableCoordinates="physical";c.populationStoppingRule="legacy";c.populationSgCurrent="quasi_fermi";c.populationSgBootstrapLinearization="unchanged";
+        c.electronQuantumPotential.couplingMode = "outer";
         c.populationLinearDefect = "mp100"; // This temporary solver only initializes Poisson.
         return NewtonSolver(mesh_,matdb_,doping_,contactBiases_,c,fixedCharges_,sheetCharges_,contactSpecs_).buildPoissonBlockInitialization();
     }
@@ -6689,6 +6711,7 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
 {
     if(cfg_.stateVariables=="potential_density") {
         auto c=cfg_;c.compensatedPopulationState=false;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.primaryVariableCoordinates="physical";c.populationStoppingRule="legacy";c.populationSgCurrent="quasi_fermi";c.populationSgBootstrapLinearization="unchanged";
+        c.electronQuantumPotential.couplingMode = "outer";
         c.populationLinearDefect = "mp100";
         auto result=NewtonSolver(mesh_,matdb_,doping_,contactBiases_,c,fixedCharges_,sheetCharges_,contactSpecs_).solvePoissonOnly(initial);
         // Poisson may solve in QF coordinates, but its checkpoint belongs to
@@ -6958,7 +6981,9 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
 
 NewtonResult NewtonSolver::solve(const DDSolution& initial) const
 {
-    if(cfg_.stateVariables=="potential_density")return solvePopulation(initial);
+    if (cfg_.stateVariables == "potential_density" &&
+        cfg_.electronQuantumPotential.couplingMode != "monolithic_box")
+        return solvePopulation(initial);
     if(initial.packedLow.size()!=0 && !cfg_.splitDDState)throw std::invalid_argument("Split checkpoint requires split_dd_state");
     if(cfg_.splitDDState && (!cfg_.warmStart || cfg_.electronQuantumPotential.enabled || cfg_.carrierRowRecovery.mode!="off" || cfg_.temperature_K!=300.))throw std::invalid_argument("Split DD requires a 300 K classical warm start without Gummel recovery");
     if (cfg_.electronQuantumPotential.enabled) {
@@ -7127,6 +7152,50 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
                 : Real{0.0};
         };
 
+        const auto buildBoxInputs = [&](const VectorXd& psi, const VectorXd& phin,
+                                        const VectorXd& oldLambda) {
+            VectorXd nodeOutputShift(nodeCount);
+            for (int i = 0; i < nodeCount; ++i) {
+                const Real narrowing = quantumBandgapNarrowing(
+                    static_cast<Index>(i), transportNodes[static_cast<std::size_t>(i)]);
+                nodeOutputShift(i) = materialBandDrive(i) + psi(i) +
+                    cfg_.electronQuantumPotential.conductionBandNarrowingFraction * narrowing;
+            }
+            std::vector<DensityGradientCellMaterial> cells;
+            cells.reserve(mesh_.numCells());
+            for (Index cellId = 0; cellId < mesh_.numCells(); ++cellId) {
+                const Cell& cell = mesh_.getCell(cellId);
+                if (cell.node_ids.size() != 3)
+                    continue;
+                const bool transport = cellTransport[cellId];
+                DensityGradientCellMaterial data;
+                data.cellId = cellId;
+                data.isTransport = transport;
+                data.coefficientVm2 = densityGradientCoefficientVm2(
+                    cellQuantumGamma[cellId], cellQuantumCoefficientMassRatio[cellId]);
+                for (int local = 0; local < 3; ++local) {
+                    const int node = static_cast<int>(cell.node_ids[local]);
+                    const Real narrowing = quantumBandgapNarrowing(cell.node_ids[local], transport);
+                    // Lambda is reconstructed with the band and DOS data
+                    // of this material, including at shared interface nodes.
+                    data.materialBandDrive_V[local] = psi(node) +
+                        cellElectronAffinity_eV[cellId] + cellDosMassDrive_V[cellId] +
+                        cfg_.electronQuantumPotential.conductionBandNarrowingFraction * narrowing;
+                    data.dynamicDrivingPotential_V[local] = transport ? -phin(node) : -psi(node);
+                    data.initialLambda_V[local] = oldLambda(node);
+                }
+                cells.push_back(data);
+            }
+            return std::pair{std::move(cells), std::move(nodeOutputShift)};
+        };
+
+        if (cfg_.electronQuantumPotential.couplingMode == "monolithic_box") {
+            const VectorXd zero = VectorXd::Zero(nodeCount);
+            auto [cells, outputDrive] = buildBoxInputs(zero, zero, zero);
+            return solveMonolithicDensityGradientBox(
+                initial, std::move(cells), outputDrive, activeNodes, quantumDirichlet);
+        }
+
         for (int outer = 1;
              outer <= cfg_.electronQuantumPotential.outerMaxIterations; ++outer) {
             last = solveClassicalWithFrozenElectronQuantumPotential(
@@ -7225,56 +7294,11 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
                 const DDSolution& densityGradientState =
                     cfg_.electronQuantumPotential.residualDiagnosticUseInitialState
                     ? initial : last.solution;
-                std::vector<DensityGradientCellMaterial> cellMaterials;
-                cellMaterials.reserve(mesh_.numCells());
-                VectorXd nodeOutputShift = VectorXd::Zero(nodeCount);
-                for (int i = 0; i < nodeCount; ++i) {
-                    const Real narrowing = quantumBandgapNarrowing(
-                        static_cast<Index>(i),
-                        transportNodes[static_cast<std::size_t>(i)]);
-                    nodeOutputShift(i) =
-                        materialBandDrive(i) + densityGradientState.psi(i) +
-                        cfg_.electronQuantumPotential.
-                            conductionBandNarrowingFraction * narrowing;
-                }
+                auto [cellMaterials, nodeOutputShift] = buildBoxInputs(
+                    densityGradientState.psi, densityGradientState.phin, quantumPotential);
                 if (!continuousLambdaState &&
                     quantumPotentialLike.size() != nodeCount)
                     quantumPotentialLike = quantumPotential - nodeOutputShift;
-                for (Index cellId = 0; cellId < mesh_.numCells(); ++cellId) {
-                    const Cell& cell = mesh_.getCell(cellId);
-                    if (cell.node_ids.size() != 3)
-                        continue;
-                    const bool transport = cellTransport[cellId];
-                    DensityGradientCellMaterial data;
-                    data.cellId = cellId;
-                    data.isTransport = transport;
-                    data.coefficientVm2 = densityGradientCoefficientVm2(
-                        cellQuantumGamma[cellId],
-                        cellQuantumCoefficientMassRatio[cellId]);
-                    for (int local = 0; local < 3; ++local) {
-                        const int node = static_cast<int>(cell.node_ids[local]);
-                        const Real narrowing = quantumBandgapNarrowing(
-                            cell.node_ids[local], transport);
-                        // Phi/q is the continuous Eq. 231 primary unknown,
-                        // whereas Lambda = Phi/q - Ec/q - Phi_m/q is a
-                        // region-side quantity at a material interface.  The
-                        // merged nodeOutputShift is only the trace convention
-                        // used for restart/output Lambda; the reaction term
-                        // must reconstruct Lambda with this cell's affinity
-                        // and DOS mass.
-                        data.materialBandDrive_V[local] =
-                            densityGradientState.psi(node) +
-                            cellElectronAffinity_eV[cellId] +
-                            cellDosMassDrive_V[cellId] +
-                            cfg_.electronQuantumPotential.
-                                conductionBandNarrowingFraction * narrowing;
-                        data.dynamicDrivingPotential_V[local] = transport
-                            ? -densityGradientState.phin(node)
-                            : -densityGradientState.psi(node);
-                        data.initialLambda_V[local] = quantumPotential(node);
-                    }
-                    cellMaterials.push_back(data);
-                }
                 quantum = solveElectronDensityGradientPotentialLikeGlobal(
                     mesh_, cellMaterials, nodeOutputShift, activeNodes,
                     quantumDirichlet, Vt, cfg_.inputScaling.unitSystem(),

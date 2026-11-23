@@ -117,13 +117,13 @@ support and Python h5py. The test stages the original `pp13_des.par`
 and the shared PolySi excerpt on the same frozen grid.
 
 The standalone CMD keeps `eQuantumPotential` in Physics and in the Solve
-statements. The sidecar controls the existing outer DG solver and selects
-the `sentaurus_box` discretization from the DD/DG contract. Vela initializes
-at `Vg=1 V, Vd=0 V` with nonlinear classical Poisson (the CMD's 100-iteration
-budget), then closes the coupled equilibrium with self-consistent DG before
-sweeping the drain from 0 V to 2 V. The transport block solves potential
-and contact-basin quasi-Fermi potentials. Vela allows 80 Newton updates
-per frozen-quantum transport solve with relative residual tolerance 1e-7.
+statements. The sidecar selects the `sentaurus_box` discretization from the
+DD/DG contract. Vela initializes at
+`Vg=1 V, Vd=0 V` using the CMD's nonlinear Poisson budget, then prepares
+the Poisson/DG equilibrium. The CTest uses electrostatic potential and
+referenced quasi-Fermi potentials with outer DG iteration. The verification
+driver accepts `--dg-coupling monolithic_box` for simultaneous transport and
+quantum Newton updates in the same quasi-Fermi coordinates.
 The drain step bounds, extrapolation setting, and 21 requested
 CurrentPlot voltages come from the CMD.
 
@@ -136,3 +136,28 @@ at every accepted point and checks finite, nonzero nodal electron quantum
 potentials in the 0 V and 2 V HDF5 states, including a response to the drain
 bias. The field gate checks Vela's self-consistent DG state and its bias
 response. The Sentaurus comparison uses terminal current.
+
+## DG Id-Vg
+
+Enable `VELA_ENABLE_TRANSPORTMODELS_DG_IDVG_CI=ON` to register
+`reference_u2022_transportmodels_dg_idvg`. It uses the same grid, material
+staging, oneMKL PARDISO backend and HDF5 state support as DG Id-Vd.
+The standalone `pp7_des.cmd` retains the 300 K isothermal physics and the
+original `Quasistationary` controls. It starts at `Vg=-1 V, Vd=0 V`, ramps
+the drain to 1.1 V, then sweeps the gate to 2.2 V at 21 requested output points.
+The two sweeps both consume the preceding stage's state.
+The transport block uses potential and contact-basin quasi-Fermi
+potentials with up to 80 Newton updates per frozen-quantum transport solve.
+The DG inner Newton solve starts its line search at a full step. It still
+backtracks on insufficient residual decrease and uses the existing inner
+and outer convergence criteria.
+
+The fixture pins `pp7_des.par`, the shared PolySi excerpt, and the native
+T-2022.03-SP2 drain-current values from `IdVgs_n7_des.plt`. The manifest
+records the original PLT hash and the archived comparison containing the
+extracted values. The regression checks self-consistent electron quantum
+potential convergence and the saved quantum fields across the three stages.
+It compares published PLT currents in A/um with the existing Id-Vg
+contract, including the 0.15 dex low-current limit, 10% on-state limit,
+and the minimum drain-current-to-KCL-residual ratio of 10 at the three
+deep-off points.

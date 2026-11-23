@@ -315,6 +315,7 @@ std::string ddSolutionStateHash(const DDSolution& state)
     appendVector(state.n);
     appendVector(state.p);
     if (state.populationLow.size()) appendVector(state.populationLow);
+    if (state.dgElectrostaticPotentialLow_V.size()) appendVector(state.dgElectrostaticPotentialLow_V);
     std::ostringstream output;
     output << std::hex << std::setfill('0') << std::setw(16) << hash;
     return output.str();

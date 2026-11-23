@@ -528,13 +528,19 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                static_cast<vela::ArithmeticReal>(phin_i))
             : static_cast<vela::ArithmeticReal>(solution.phin(j)) -
               static_cast<vela::ArithmeticReal>(solution.phin(i));
-        const vela::ArithmeticReal holeQfDropLong = hasReferencedHoleQf
+        const Real electrostaticTailDrop =
+            solution.dgElectrostaticPotentialLow_V.size() == solution.psi.size()
+            ? solution.dgElectrostaticPotentialLow_V(j) - solution.dgElectrostaticPotentialLow_V(i)
+            : 0.0;
+        const vela::ArithmeticReal holeQfDropBase = hasReferencedHoleQf
             ? (static_cast<vela::ArithmeticReal>(holeReference_j) -
                static_cast<vela::ArithmeticReal>(holeReference_i)) +
               (static_cast<vela::ArithmeticReal>(phip_j) -
                static_cast<vela::ArithmeticReal>(phip_i))
             : static_cast<vela::ArithmeticReal>(solution.phip(j)) -
               static_cast<vela::ArithmeticReal>(solution.phip(i));
+        const auto holeQfDropLong = holeQfDropBase +
+            static_cast<vela::ArithmeticReal>(electrostaticTailDrop);
         const Real electronQfDrop = static_cast<Real>(electronQfDropLong);
         const Real holeQfDrop = static_cast<Real>(holeQfDropLong);
         const bool sentaurusExponential =
@@ -643,7 +649,7 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                         n_i, n_j, fermiDensityI, fermiDensityJ,
                         etaI, etaJ, driftPotential,
                         electronQfDropLong, thermalVoltage_, coef, carrierStatistics_.sgFormulation);
-            } else if (solution.stateVariables == "potential_density") {
+            } else if (solution.stateVariables == "potential_density" && !electronQuantumPotentialConfig_.enabled) {
                 electronContinuityFlux01 = sgBoltzmannPopulationContinuityFlux(
                     n_i, n_j, ni_i, ni_j,
                     dpsi, thermalVoltage_, coef, bgnEnabled_);
@@ -678,7 +684,7 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                     + std::log(ni_i / Nv_[idxI]);
                 const Real etaJ = (phip_j_forHole - holePsi_j) / thermalVoltage_
                     + std::log(ni_j / Nv_[idxJ]);
-                const Real driftPotential = psi_j - psi_i
+                const Real driftPotential = psi_j - psi_i + electrostaticTailDrop
                     + thermalVoltage_ * std::log(
                         (ni_i / Nv_[idxI]) / (ni_j / Nv_[idxJ]));
                 holeGeneralizedFactor = sgGeneralizedEinsteinFactor(
@@ -696,7 +702,7 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             } else if (solution.stateVariables == "potential_density" && !holeQfDropOverrideApplied) {
                 holeContinuityFlux01 = sgBoltzmannPopulationContinuityFlux(
                     p_i, p_j, ni_i, ni_j,
-                    -dpsi, thermalVoltage_, coef, bgnEnabled_);
+                    -(dpsi + electrostaticTailDrop), thermalVoltage_, coef, bgnEnabled_);
             } else {
                 const Real holePsiRelative_i = holePsi_i;
                 const Real holePsiRelative_j = static_cast<Real>(

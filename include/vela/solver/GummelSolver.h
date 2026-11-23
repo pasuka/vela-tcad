@@ -58,6 +58,8 @@ struct DDSolution {
     /// Continuous Phi/q state for all-material density-gradient restart [V].
     /// Lambda is reconstructed per material from this field.
     VectorXd electronQuantumPotentialLike;
+    /// Electrostatic remainder in volts for the coupled DG population state.
+    VectorXd dgElectrostaticPotentialLow_V;
     Real electronQfReference_V = 0.0; ///< Reference for phinIncrement.
     Real holeQfReference_V = 0.0; ///< Reference for phipIncrement.
     /// Optional per-node references for cancellation-free quasi-Fermi states.

@@ -302,7 +302,11 @@ Newton numerical and geometry controls added for explicit validation profiles:
   HDF5 checkpoints store the three low components as one bundle. It is
   supported for voltage-controlled sweeps. Terminal totals use the compensated
   transport fluxes. Spatial fields in VTU retain the usual binary64 output
-  representation.
+  representation. In the experimental `monolithic_box` DG solver, the same
+  switch preserves only the electrostatic potential remainder. Poisson uses
+  compensated edge and charge accumulation, and the continuity and DG rows
+  include the remainder through the corresponding Jacobian column.
+  The restart requires a mesh-bound HDF5 state archive.
 - `solver.population_stopping_rule`: `native_approx` (BVMethods population default) or
   `legacy`. Approximate stop is valid E<1 OR a valid mapped RHS infinity norm
   <1e-5. E uses the physical raw direction and actual protected post-state.
@@ -1488,8 +1492,12 @@ Hybrid Gummel-Newton keys:
 Notes:
 - `line_search` and `damping_factor` apply to Newton config.
 - `electron_quantum_potential` enables the electron density-gradient quantum
-  correction.  The object accepts `coupling_mode` (`outer`, the default, or
-  `frozen` for an imported restart potential), `transport_coupling`
+  correction. The object accepts `coupling_mode` (`outer`, the default,
+  `frozen` for an imported restart potential, or experimental `monolithic_box`
+  for simultaneous Poisson, electron and hole continuity, and DG Newton
+  corrections using the global fitted box with quasi-Fermi coordinates
+  or Unit population coordinates).
+  It accepts `transport_coupling`
   (`direct_band_edge`, the compatibility default corresponding to Sentaurus
   `DirectQuantumCorrection`, or experimental `sentaurus_exponential`), and
   `transport_coupling_weight` (finite in `[0,1]`, default `1`; an optional

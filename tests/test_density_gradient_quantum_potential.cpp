@@ -2,8 +2,10 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "vela/core/PhysicalConstants.h"
+#include "vela/equation/CoupledDDAssembler.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/physics/DensityGradientQuantumPotential.h"
+#include "vela/solver/NewtonSolver.h"
 
 #include <cmath>
 #include <filesystem>
@@ -100,6 +102,195 @@ TEST_CASE("Density-gradient coefficient follows Ancona-Tiersten form",
             Catch::Approx(expected).epsilon(1.0e-14));
 }
 
+TEST_CASE("DG population Poisson preserves a sub-ULP electrostatic correction",
+          "[density_gradient][population][compensation]")
+{
+    const auto mesh = stripMesh();
+    MaterialDatabase materials;
+    Material silicon = materials.getMaterial("Si");
+    silicon.name = "Silicon";
+    materials.addMaterial(silicon);
+    const DopingModel doping(mesh.numNodes());
+    const int nodes = static_cast<int>(mesh.numNodes());
+    DDScalingSpec scaling;
+    scaling.enabled = true;
+    scaling.V0 = 0.03125;
+    scaling.stateVariables = "potential_density";
+    const CoupledDDAssembler assembler(
+        mesh, materials, doping, constants::Vt_300, {}, {}, {}, {}, {}, {}, scaling);
+
+    VectorXd state = VectorXd::Constant(3 * nodes, 4.);
+    VectorXd low = VectorXd::Zero(nodes);
+    low[0] = std::ldexp(1., -54);
+    REQUIRE(state[0] + low[0] == state[0]);
+    const auto residual = assembler.compensatedPopulationPoissonResidual(state, low, {});
+    REQUIRE(residual[0] > 0.);
+
+    // A flat high part cancels and the independently resolvable perturbation
+    // must give the same linear response after rescaling.
+    VectorXd resolved = state;
+    resolved[0] += 0.25;
+    const auto reference = assembler.compensatedPopulationPoissonResidual(
+        resolved, VectorXd::Zero(nodes), {});
+    REQUIRE((residual - (low[0] / 0.25) * reference).isZero(1.e-28));
+    REQUIRE(std::abs(residual.sum()) < 1.e-28);
+}
+
+TEST_CASE("Fitted DG box exposes both material-side drive derivatives",
+          "[density_gradient][quantum][coupling]")
+{
+    const auto mesh = twoMaterialStripMesh();
+    DensityGradientQuantumPotentialConfig config;
+    config.globalDiscretization = "sentaurus_box";
+    config.sentaurusInterfaceSiliconReactionWeight = 1.3;
+    config.sentaurusInterfaceInsulatorAtSiliconReactionWeight = 2.1;
+    constexpr Real vt = 0.026;
+    std::vector<DensityGradientCellMaterial> cells(mesh.numCells());
+    for (Index c = 0; c < cells.size(); ++c) {
+        auto& data = cells[c];
+        data.cellId = c;
+        data.isTransport = c < 2;
+        data.coefficientVm2 = densityGradientCoefficientVm2(data.isTransport ? 3.6 : 1.0, 0.5);
+        for (int k = 0; k < 3; ++k) {
+            const Index node = mesh.getCell(c).node_ids[k];
+            data.materialBandDrive_V[k] = (data.isTransport ? 0.12 : 0.08) + 0.01 * node;
+            data.dynamicDrivingPotential_V[k] = (data.isTransport ? -0.02 : 0.013) * node;
+        }
+    }
+    const VectorXd band = VectorXd::Constant(6, 0.1);
+    const VectorXd state = VectorXd::LinSpaced(6, -0.16, -0.07);
+    const std::vector<bool> active{true, true, true, false, true, true};
+    const std::unordered_map<Index, Real> dirichlet{{0, 0.01}, {5, 0.0}};
+    const auto evaluate = [&](const auto& input, const VectorXd& drive, const VectorXd& phi) {
+        return linearizeElectronDensityGradientBox(
+            mesh, input, drive, active, dirichlet, vt, PhysicalUnitSystem::legacySI(), config, phi);
+    };
+    const auto jacobian = evaluate(cells, band, state);
+    const VectorXd phiDirection = VectorXd::LinSpaced(6, 0.3, -0.2);
+    const VectorXd materialDirection = VectorXd::LinSpaced(6, -0.7, 0.5);
+    const VectorXd transportDirection = VectorXd::LinSpaced(6, -0.2, -0.8);
+    const VectorXd insulatorDirection = VectorXd::LinSpaced(6, 0.7, -0.35);
+    const auto perturb = [&](Real step) {
+        auto shifted = cells;
+        for (auto& data : shifted) {
+            const auto& nodes = mesh.getCell(data.cellId).node_ids;
+            for (int k = 0; k < 3; ++k) {
+                data.materialBandDrive_V[k] += step * materialDirection[nodes[k]];
+                data.dynamicDrivingPotential_V[k] += step *
+                    (data.isTransport ? transportDirection[nodes[k]] : insulatorDirection[nodes[k]]);
+            }
+        }
+        return evaluate(shifted, band + step * materialDirection, state + step * phiDirection).residual;
+    };
+    constexpr Real delta = 1.0e-7;
+    const VectorXd finiteDifference = (perturb(delta) - perturb(-delta)) / (2.0 * delta);
+    const VectorXd assembled = jacobian.potentialLike * phiDirection
+        + jacobian.materialDriveDiagonal.cwiseProduct(materialDirection)
+        + jacobian.transportDrive * transportDirection
+        + jacobian.insulatorDrive * insulatorDirection;
+    for (int row = 0; row < 6; ++row)
+        REQUIRE(assembled[row] == Catch::Approx(finiteDifference[row]).epsilon(1.0e-7));
+    REQUIRE(jacobian.residual[3] == state[3]);
+    REQUIRE(jacobian.materialDriveDiagonal[0] == 1.0);
+    REQUIRE(jacobian.materialDriveDiagonal[3] == 0.0);
+    REQUIRE(jacobian.transportDrive.coeff(1, 0) != 0.0);
+    REQUIRE(jacobian.insulatorDrive.coeff(1, 2) != 0.0);
+}
+
+TEST_CASE("Coupled DG Newton preserves referenced quasi-Fermi contact voltages",
+          "[density_gradient][quantum][coupling]")
+{
+    auto mesh = stripMesh();
+    mesh.addContact({0, "source", 0, {0, 3}, {}});
+    mesh.addContact({1, "drain", 0, {2, 5}, {}});
+    MaterialDatabase materials;
+    auto silicon = materials.getMaterial("Si");
+    silicon.name = "Silicon";
+    materials.addMaterial(silicon);
+    const auto doping = DopingModel::fromMeshAndRegions(
+        mesh, std::vector<RegionDopingSpec>{{"silicon", 1.e21, 0.}});
+    NewtonConfig cfg;
+    cfg.maxIter = 40;
+    cfg.warmStart = true;
+    cfg.quasiFermiReference = "contact_basin";
+    cfg.electronQuantumPotential.enabled = true;
+    cfg.electronQuantumPotential.includeInsulators = true;
+    cfg.electronQuantumPotential.globalDiscretization = "sentaurus_box";
+    cfg.electronQuantumPotential.couplingMode = "monolithic_box";
+    const NewtonSolver equilibrium(mesh, materials, doping,
+        {{"source", 0.}, {"drain", 0.}}, cfg);
+    const auto initial = equilibrium.solve();
+    CAPTURE(initial.failureDiagnostics.failureReason);
+    REQUIRE(initial.converged);
+
+    constexpr Real bias = 1.e-3;
+    const NewtonSolver biased(mesh, materials, doping, {{"source", 0.}, {"drain", bias}}, cfg);
+    const auto result = biased.solve(initial.solution);
+    CAPTURE(result.failureDiagnostics.failureReason);
+    REQUIRE(result.converged);
+    REQUIRE(result.convergenceReason == "four_field_dg_newton+electron_density_gradient");
+    REQUIRE(result.solution.hasReferencedElectronQuasiFermi());
+    REQUIRE(result.solution.hasReferencedHoleQuasiFermi());
+    REQUIRE(result.solution.electronQuantumPotentialLike.size() == mesh.numNodes());
+    REQUIRE(result.solution.electronQuantumPotentialLike.allFinite());
+    for (int node : {0, 3})
+        REQUIRE(result.solution.electronQuasiFermiAt(node) == Catch::Approx(0.).margin(1.e-14));
+    for (int node : {2, 5})
+        REQUIRE(std::abs(result.solution.electronQuasiFermiAt(node)) == Catch::Approx(bias));
+}
+
+TEST_CASE("Local DG transport tangent matches the live quantum field response",
+          "[density_gradient][quantum][coupling]")
+{
+    const auto mesh = stripMesh();
+    MaterialDatabase materials;
+    auto silicon = materials.getMaterial("Si");
+    silicon.name = "Silicon";
+    materials.addMaterial(silicon);
+    const DopingModel doping(mesh.numNodes());
+    MobilityModelConfig mobility;
+    mobility.jacobianFieldDerivatives = false;
+    CarrierStatisticsConfig statistics;
+    statistics.model = "fermi_dirac";
+    DensityGradientQuantumPotentialConfig quantum;
+    quantum.enabled = true;
+    RecombinationModelConfig recombination;
+    recombination.srhDopingDependence.densityCoupling = "quantum_band_edge";
+    CoupledDDAssembler assembler(mesh, materials, doping, constants::Vt_300,
+        mobility, recombination, {}, {}, {}, {}, {}, {}, statistics, quantum);
+    REQUIRE(assembler.supportsLocalDgTransportTangent());
+
+    constexpr int nodes = 6;
+    const VectorXd state = assembler.pack({
+        VectorXd::LinSpaced(nodes, 0.15, 0.2),
+        VectorXd::LinSpaced(nodes, -0.03, 0.05),
+        VectorXd::Zero(nodes)});
+    const VectorXd shift = VectorXd::LinSpaced(nodes, -0.01, 0.02);
+    const VectorXd direction = VectorXd::LinSpaced(nodes, -0.4, 0.3);
+    CoupledDDBoundaryConditions boundary;
+    boundary.phin.emplace(0, 0.);
+    boundary.phip.emplace(5, 0.);
+    assembler.setElectronQuantumPotential(shift);
+    SparseMatrixd tangent;
+    assembler.assembleJacobianWithDgTransportTangent(state, boundary, tangent);
+    const VectorXd action = tangent * direction;
+
+    constexpr Real step = 1.e-6;
+    assembler.setElectronQuantumPotential(shift + step * direction);
+    const VectorXd plus = assembler.residual(state, boundary);
+    assembler.setElectronQuantumPotential(shift - step * direction);
+    const VectorXd reference = (plus - assembler.residual(state, boundary)) / (2. * step);
+    for (int offset : {nodes, 2 * nodes}) {
+        CAPTURE(offset);
+        const auto expected = reference.segment(offset, nodes);
+        REQUIRE(expected.cwiseAbs().maxCoeff() > 0.);
+        REQUIRE((action.segment(offset, nodes) - expected).cwiseAbs().maxCoeff()
+            <= 2.e-6 * expected.cwiseAbs().maxCoeff());
+    }
+    REQUIRE(action[nodes] == 0.);
+    REQUIRE(action[3 * nodes - 1] == 0.);
+}
+
 TEST_CASE("DEVSIM oxide WKB penetration depth matches the analytic barrier",
           "[density_gradient][quantum][oxide_oracle]")
 {
@@ -184,6 +375,17 @@ TEST_CASE("GSS fitted operator keeps Lambda continuous across a band step",
     REQUIRE(result.residualInfinityNorm < 1.0e-9);
     REQUIRE(result.potential_V.lpNorm<Eigen::Infinity>() < 1.0e-10);
     REQUIRE(result.potentialLike_V.size() == 0);
+
+    // Keep the same manufactured solution with both inactive and prescribed
+    // rows, including an inactive node that also carries a Dirichlet value.
+    std::vector<bool> active(6, true);
+    active[0] = active[3] = false;
+    const auto constrained = solveElectronDensityGradientPotentialLikeGlobal(
+        mesh, materials, VectorXd::Zero(6), active,
+        {{0, 0.0}, {2, 0.0}, {5, 0.0}}, vt, PhysicalUnitSystem::legacySI(), config,
+        VectorXd::Constant(6, 1.0e-3));
+    REQUIRE(constrained.converged);
+    REQUIRE(constrained.potential_V.lpNorm<Eigen::Infinity>() < 1.0e-10);
 
     config.globalDiscretization = "p1_lambda_direct";
     const auto expanded = solveElectronDensityGradientPotentialLikeGlobal(

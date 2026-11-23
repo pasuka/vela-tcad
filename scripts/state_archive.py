@@ -15,7 +15,8 @@ import numpy as np
 SCHEMA = 'vela.state/2'
 MAX_BYTES = 2**30
 UNITS = {name:'V' for name in ('psi', 'phin', 'phip', 'electron_quantum_potential_V',
-    'electron_quantum_potential_like_V', 'electron_qf_increment_V', 'hole_qf_increment_V',
+    'electron_quantum_potential_like_V', 'dg_electrostatic_potential_low_V',
+    'electron_qf_increment_V', 'hole_qf_increment_V',
     'electron_qf_reference_V', 'hole_qf_reference_V')}
 UNITS.update(electrons_m3='m^-3', holes_m3='m^-3', temperature_K='K')
 REQUIRED = {'psi', 'phin', 'phip', 'electrons_m3', 'holes_m3'}
@@ -109,6 +110,8 @@ def translate(source, destination, subtract, active_nodes, expected_nodes, expec
     if any(name in fields for name in PACKED):
         raise ValueError('Packed DD frame translation requires an explicit coordinate transformation')
     active = set(active_nodes)
+    electrostatic_low = ('dg_electrostatic_potential_low_V'
+                         if 'dg_electrostatic_potential_low_V' in fields else POPULATION_LOW[0])
     for i in range(expected_nodes):
         live = i in active
         for carrier in ('electron','hole'):
@@ -118,11 +121,11 @@ def translate(source, destination, subtract, active_nodes, expected_nodes, expec
                 fields[ref][i]=new if live else 0.
                 fields[inc][i]=math.fsum((a,-subtract,-new,b)) if live else 0.
         for key in ('psi','phin','phip'):
-            if key == 'psi' and POPULATION_LOW[0] in fields:
-                high, low = float(fields[key][i]), float(fields[POPULATION_LOW[0]][i])
+            if key == 'psi' and electrostatic_low in fields:
+                high, low = float(fields[key][i]), float(fields[electrostatic_low][i])
                 translated = math.fsum((high, low, -subtract))
                 fields[key][i] = translated
-                fields[POPULATION_LOW[0]][i] = math.fsum((high, low, -subtract, -translated))
+                fields[electrostatic_low][i] = math.fsum((high, low, -subtract, -translated))
             else:
                 fields[key][i]=float(fields[key][i])-subtract if key=='psi' or live else 0.
     if 'population_psi_normalized' in fields:
@@ -137,6 +140,8 @@ def translate(source, destination, subtract, active_nodes, expected_nodes, expec
                 normalized = float((Decimal.from_float(float(raw))*v0-offset)/v0)
                 fields['population_psi_normalized'][i] = normalized
                 fields['psi'][i] = normalized * scale
+    if 'dg_electrostatic_potential_low_V' in fields:
+        fields['electron_quantum_potential_like_V'] += subtract
     metadata['potential_origin_V'] += subtract
     if 'population_psi_normalized' in fields:
         metadata['population_potential_origin_V'] = metadata['potential_origin_V']
@@ -169,6 +174,10 @@ def validate(fields, metadata):
         raise ValueError('Temperature/mode mismatch')
     if 'electron_quantum_potential_like_V' in fields and 'electron_quantum_potential_V' not in fields:
         raise ValueError('Partial quantum state')
+    if 'dg_electrostatic_potential_low_V' in fields and (
+            metadata['mode'] != 'dd' or metadata.get('state_variables') != 'potential_density'
+            or 'electron_quantum_potential_like_V' not in fields):
+        raise ValueError('Incomplete compensated DG state')
     if len(SPLIT.intersection(fields)) not in (0, 4):
         raise ValueError('Partial split QF state')
     packed = len(set(PACKED).intersection(fields))

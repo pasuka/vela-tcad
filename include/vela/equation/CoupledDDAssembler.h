@@ -473,6 +473,13 @@ public:
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs) const;
 
+    /// For supported DG/QF transport, collect the continuity derivatives with
+    /// respect to the quantum band shift during the usual DD assembly.
+    bool supportsLocalDgTransportTangent() const;
+    SparseMatrixd assembleJacobianWithDgTransportTangent(
+        const VectorXd& x, const CoupledDDBoundaryConditions& bcs,
+        SparseMatrixd& quantumTransport) const;
+
     /// Assemble the potential block at fixed quasi-Fermi coordinates.
     SparseMatrixd assemblePoissonJacobian(
         const VectorXd& x,
@@ -556,11 +563,17 @@ public:
     bool usesScaledState() const { return scaling_.enabled; }
     Real potentialScale() const { return scaling_.V0; }
     Real concentrationScale() const { return scaling_.C0; }
+    VectorXd compensatedPopulationPoissonResidual(
+        const VectorXd& state, const VectorXd& potentialLow,
+        const CoupledDDBoundaryConditions& bcs) const;
     Real continuityResidualScale() const { return scaling_.enabled ? scaling_.C0 * scaling_.D0 : 1.0; }
     std::string impactIonizationConfigurationFingerprint() const;
     std::string impactIonizationActiveBranchFingerprint(const VectorXd& x) const;
 
 private:
+    SparseMatrixd assembleJacobianImpl(
+        const VectorXd& x, const CoupledDDBoundaryConditions& bcs,
+        SparseMatrixd* quantumTransport) const;
     PopulationPhysicalFields populationPhysicalFieldsWithEta(const VectorXd& x,
                                                              VectorXd* fermiEta) const;
     VectorXd legacyPopulationQfCoordinates(const VectorXd& populations,

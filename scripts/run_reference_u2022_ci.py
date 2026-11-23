@@ -32,6 +32,7 @@ CASES = {
     "transportmodels_idvd": "transportmodels_sentaurus2022",
     "transportmodels_dg_idvd": "transportmodels_sentaurus2022",
     "transportmodels_idvg": "transportmodels_sentaurus2022",
+    "transportmodels_dg_idvg": "transportmodels_sentaurus2022",
     "singledevice_idvg_linear": "singledevice_sentaurus2018",
 }
 
@@ -61,6 +62,12 @@ def stage_inputs(fixture, output, stem, grid):
 
 
 def run_sdevice(launcher, output, stem, env, report, *, final_only=False):
+    monolithic_dg = report.get("dg_coupling") == "monolithic_box"
+    if monolithic_dg:
+        sidecar = output / (stem + ".vela.json")
+        config = read_json(sidecar)
+        config["solver"]["electron_quantum_potential"]["coupling_mode"] = "monolithic_box"
+        write_json(sidecar, config)
     command = [str(launcher), "--physical-constants-profile", "sentaurus_u2022_12",
                "--threads", "1", "--exit-on-failure", "-q"]
     if final_only:
@@ -281,11 +288,19 @@ def qualify_density_gradient(run, plan, report):
     node_count = len(read_json(run / "mesh.json")["nodes"])
     potentials = []
     report["electron_quantum_potential"] = []
+    monolithic = report.get("dg_coupling") == "monolithic_box"
     for stage in plan:
+        solver = read_json(run / stage["deck"])["solver"]
+        coupling = solver["electron_quantum_potential"].get("coupling_mode", "outer")
+        if coupling != ("monolithic_box" if monolithic else "outer"):
+            raise ValueError(f"Incorrect DG coupling mode in {stage['deck']}: {coupling}")
         points = [row for row in read_csv(run / stage["csv"]) if row["converged"] == "1"]
         if not points or any(not row["newton_convergence_reason"].endswith("+electron_density_gradient")
                             for row in points):
             raise ValueError("Expected self-consistent density-gradient convergence at every accepted point")
+        if monolithic and any(row["newton_convergence_reason"] !=
+                              "four_field_dg_newton+electron_density_gradient" for row in points):
+            raise ValueError("Expected four-field Newton convergence at every accepted point")
         fields, metadata = inspect(run / stage["output_state"])
         values = fields.get("electron_quantum_potential_V")
         contact = stage.get("sweep", {}).get("contact", "drain")
@@ -305,8 +320,9 @@ def qualify_density_gradient(run, plan, report):
     report["max_quantum_potential_change_V"] = float(change)
 
 
-def transportmodels_idvg_samples(launcher, fixture, work, env, report, bias_contract, *, deep_off=False):
-    stem = "pp6_des"
+def transportmodels_idvg_samples(launcher, fixture, work, env, report, bias_contract, *,
+                                 density_gradient=False, deep_off=False):
+    stem = "pp7_des" if density_gradient else "pp6_des"
     stage_transportmodels_inputs(fixture, work, stem)
     targets = bias_contract["gate_bias_V"]
     gate_span = targets[-1] - targets[0]
@@ -337,12 +353,18 @@ def transportmodels_idvg_samples(launcher, fixture, work, env, report, bias_cont
         raise ValueError("Expected cold equilibrium at Vg=-1 V and Vd=0 V")
 
     coordinates = ({"state_variables": "potential_quasi_fermi", "quasi_fermi_reference": "contact_basin"}
-                   if deep_off else {"state_variables": "potential_density", "primary_variable_coordinates": "unit"})
+                   if density_gradient or deep_off else
+                   {"state_variables": "potential_density", "primary_variable_coordinates": "unit"})
     for index, stage in enumerate(plan):
         solver = read_json(run / stage["deck"])["solver"]
-        expected = {**coordinates, "max_iter": 20, "temperature_K": 300.0}
+        expected = {**coordinates, "max_iter": 80 if density_gradient else 20, "temperature_K": 300.0}
         if any(solver.get(key) != value for key, value in expected.items()):
             raise ValueError(f"Unexpected TransportModels solver settings in {stage['deck']}")
+        if density_gradient:
+            quantum = solver.get("electron_quantum_potential", {})
+            if (not quantum.get("enabled") or not quantum.get("include_insulators")
+                    or quantum.get("global_discretization") != "sentaurus_box"):
+                raise ValueError(f"Unexpected TransportModels DG settings in {stage['deck']}")
         if index and stage["input_state"] != plan[index-1]["output_state"]:
             raise ValueError("TransportModels stages must consume their preceding state")
     poisson = read_json(run / "stage00_poisson_initialization.json")
@@ -376,26 +398,32 @@ def transportmodels_idvg_samples(launcher, fixture, work, env, report, bias_cont
         if any(not math.isclose(sample[name]["outer_voltage_V"], voltage, rel_tol=0, abs_tol=1e-12)
                for name, voltage in {**drain_goal, "gate": bias}.items()):
             raise ValueError(f"Incorrect electrode voltage at target Vg={bias:g} V in {stem}")
+    if density_gradient:
+        qualify_density_gradient(run, plan, report)
     return contacts, samples
 
 
-def transportmodels_idvg_gates(launcher, fixture, output, env, report):
+def transportmodels_idvg_gates(launcher, fixture, output, env, report, *, density_gradient=False):
     contract = read_json(fixture.parent / "vela/contracts/transportmodels_dd_dg_sentaurus2022_v1.json")
     bias_contract = contract["bias_contract"]["idvg"]
     targets = bias_contract["gate_bias_V"]
-    reference = read_csv(fixture / "sentaurus_idvg_reference.csv")
+    name = "sentaurus_dg_idvg_reference.csv" if density_gradient else "sentaurus_idvg_reference.csv"
+    reference = read_csv(fixture / name)
     if [float(row["bias_V"]) for row in reference] != targets:
         raise ValueError("Expected the 21 native TransportModels Id-Vg biases")
-    contacts, population = transportmodels_idvg_samples(
-        launcher, fixture, output / "inputs", env, report, bias_contract)
-    _, deep = transportmodels_idvg_samples(
-        launcher, fixture, output / "deep_off_inputs", env, report, bias_contract, deep_off=True)
-    samples = deep + population[len(deep):]
+    contacts, full_sweep = transportmodels_idvg_samples(
+        launcher, fixture, output / "inputs", env, report, bias_contract, density_gradient=density_gradient)
+    samples = full_sweep
+    if not density_gradient:
+        _, deep = transportmodels_idvg_samples(
+            launcher, fixture, output / "deep_off_inputs", env, report, bias_contract, deep_off=True)
+        samples = deep + full_sweep[len(deep):]
     limits = contract["acceptance"]
     comparison = []
-    for index, (bias, sample, oracle) in enumerate(zip(targets, samples, reference)):
+    for index, (bias, sample, oracle) in enumerate(zip(targets, samples, reference, strict=True)):
         currents = {name: sample[name]["total_current_A_per_um"] for name in contacts}
-        if not all(math.isfinite(value) for value in (*currents.values(), population[index]["drain"]["total_current_A_per_um"])):
+        full_current = full_sweep[index]["drain"]["total_current_A_per_um"]
+        if not all(math.isfinite(value) for value in (*currents.values(), full_current)):
             raise ValueError(f"Nonfinite current at target Vg={bias:g} V")
         native = float(oracle["drain_A_per_um"])
         measured = currents["drain"]
@@ -411,9 +439,10 @@ def transportmodels_idvg_gates(launcher, fixture, output, env, report):
             if regime == "deep_off":
                 passed = passed and (ratio is None or ratio >= limits["deep_off_min_id_to_kcl_ratio"])
         comparison.append({
-            "bias_V": bias, "regime": regime, "coordinate_mode": "contact_basin" if index < len(deep) else "population",
+            "bias_V": bias, "regime": regime,
+            "coordinate_mode": "contact_basin" if density_gradient or index < 3 else "population",
             "vela_A_per_um": measured, "sentaurus_A_per_um": native,
-            "population_drain_A_per_um": population[index]["drain"]["total_current_A_per_um"],
+            **({} if density_gradient else {"population_drain_A_per_um": full_current}),
             "relative_error": relative_error, "log_error_dex": log_error, "kcl_residual_A_per_um": kcl,
             "drain_to_abs_kcl_ratio": ratio, "pass": passed,
         })
@@ -575,7 +604,11 @@ def main():
     parser.add_argument("--launcher", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--linear-solver", required=True, choices=("pardiso_mkl", "umfpack", "sparselu"))
+    parser.add_argument("--dg-coupling", choices=("outer", "monolithic_box"), default="outer")
     args = parser.parse_args()
+    if args.dg_coupling != "outer" and args.case not in (
+            "transportmodels_dg_idvd", "transportmodels_dg_idvg", "singledevice_idvg_linear"):
+        parser.error("--dg-coupling=monolithic_box requires a density-gradient case")
     launcher = args.launcher.resolve(strict=True)
     fixture = REFERENCE_ROOT / CASES[args.case] / "ci_u2022_12"
     args.output.mkdir(parents=True, exist_ok=True)
@@ -588,6 +621,8 @@ def main():
     )
     env.pop("MKL_CBWR", None)
     report = {"case": args.case, "linear_solver": args.linear_solver, "status": "incomplete", "runs": []}
+    if args.case in ("transportmodels_dg_idvd", "transportmodels_dg_idvg", "singledevice_idvg_linear"):
+        report["dg_coupling"] = args.dg_coupling
     print(f"Reports: {output}", flush=True)
     try:
         verify_inputs(fixture)
@@ -596,8 +631,9 @@ def main():
         elif args.case in ("transportmodels_idvd", "transportmodels_dg_idvd"):
             passed = transportmodels_idvd_gates(
                 launcher, fixture, output, env, report, density_gradient=args.case == "transportmodels_dg_idvd")
-        elif args.case == "transportmodels_idvg":
-            passed = transportmodels_idvg_gates(launcher, fixture, output, env, report)
+        elif args.case in ("transportmodels_idvg", "transportmodels_dg_idvg"):
+            passed = transportmodels_idvg_gates(
+                launcher, fixture, output, env, report, density_gradient=args.case == "transportmodels_dg_idvg")
         elif args.case == "singledevice_idvg_linear":
             passed = singledevice_idvg_gates(launcher, fixture, output, env, report)
         else:
