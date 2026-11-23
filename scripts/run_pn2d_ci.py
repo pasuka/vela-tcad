@@ -62,6 +62,27 @@ def stage_inputs(source, output, deck, spec, experiment, branch):
         shutil.copyfile(source / sidecar, output / sidecar)
 
 
+def select_field_snapshots(output, deck, case, spec, branch):
+    """Keep the snapshots used by the field gates and the final device plot."""
+    if case == '0v':
+        return
+    if case == 'bv':
+        contract = acceptance.read_json(acceptance.CONTRACT)
+        biases = contract['biased_spatial_qualification']['pn2d_bv']['required_biases_V']
+        stages = {'0': [0.], '1': biases}
+    elif case == 'iv':
+        stages = {'0': [0.], '1': [.2, 10.]}
+    else:
+        saved = set(spec['saved_biases_V'])
+        stages = {str(index): [bias] if bias in saved else []
+                  for index, bias in enumerate(campaign.biases(spec['branches'][branch]))}
+    path = output / Path(deck).with_suffix('.vela.json')
+    sidecar = (acceptance.read_json(path) if path.is_file()
+               else {'schema': 'vela.sdevice_sidecar.v1'})
+    sidecar['stage_vtk_bias_points'] = stages
+    campaign.write_json(path, sidecar)
+
+
 def sdevice_arguments(deck, compensated):
     args = ['--physical-constants-profile', 'sentaurus_u2022_12',
             '--threads', '1', '--allow-lossy', '--exit-on-failure']
@@ -227,6 +248,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix=f'{case}-', dir=args.output) as folder:
         output = Path(folder).resolve()
         stage_inputs(source, output, deck, spec, experiment, branch)
+        select_field_snapshots(output, deck, case, spec, branch)
         try:
             run, status, plan = run_sdevice(args.launcher.resolve(), output, deck, log,
                                             case != '0v', args.linear_solver)

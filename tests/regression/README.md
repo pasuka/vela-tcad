@@ -71,6 +71,8 @@ PN2D uses the shared Release build, `sentaurus_u2022_12` constants and the check
 It runs equilibrium, the complete IV and compensated BV sweeps, and both
 compensated sweeps for all eight M3 variants through `sd-sim`. It checks the
 requested biases, current and conservation gates, and saved spatial fields.
+The staged CI sidecar selects the VTU biases used for spatial comparison and
+the final device plot. All CMD voltage targets remain in the sweep.
 The compensated BV and all sixteen M3 sweep CTests select UMFPACK when CMake
 finds it. Builds without UMFPACK run those same cases and acceptance checks
 with Eigen SparseLU.

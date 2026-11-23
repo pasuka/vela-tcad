@@ -269,6 +269,25 @@ class DeckEmitterTests(unittest.TestCase):
         self.assertEqual(reverse["vtk_bias_points"][-1], -10)
         self.assertEqual(reverse["max_step"], 0.25)
 
+    def test_stage_vtk_selection_preserves_cmd_landing_points(self):
+        baseline = emit(self.ir)
+        sidecar = {"schema": "vela.sdevice_sidecar.v1",
+                   "stage_vtk_bias_points": {"0": [], "1": [.2, 10.]}}
+        result = emit(self.ir, sidecar=sidecar)
+        self.assertEqual(result.decks[0]["sweep"]["vtk_bias_points"], [])
+        self.assertFalse(result.decks[0]["sweep"]["write_vtk"])
+        self.assertFalse(result.stage_plan["stages"][1]["vtu_write"]["per_accepted_step"])
+        expected = deepcopy(baseline.decks[1]["sweep"])
+        expected["required_bias_points"] = expected["vtk_bias_points"]
+        expected.update(write_vtk=False, vtk_bias_points=[.2, 10.])
+        self.assertEqual(result.decks[1]["sweep"], expected)
+        self.assertEqual(result.stage_plan["stages"][1]["required_t"],
+                         baseline.stage_plan["stages"][1]["required_t"])
+        self.assert_error("E409", emit, self.ir,
+                          sidecar={**sidecar, "stage_vtk_bias_points": {"1": [.123]}})
+        self.assert_error("E409", emit, self.ir,
+                          sidecar={**sidecar, "stage_vtk_bias_points": {"2": [0.]}})
+
     def test_initial_stage_merge_and_state_chain(self):
         result = emit(self.ir)
         self.assertEqual(len(result.decks), 2)

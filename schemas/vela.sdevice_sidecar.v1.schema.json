@@ -45,6 +45,11 @@
       "description": "Positive Newton relative residual tolerances keyed by zero-based executable stage index. Omitted stages use solver.reltol. Load does not run Newton.",
       "additionalProperties": {"type": "number", "exclusiveMinimum": 0}
     },
+    "stage_vtk_bias_points": {
+      "type": "object",
+      "description": "Limit runner VTU output for the specified executable stages to existing voltage targets in V. An empty list suppresses VTU output for a stage. Sweep targets and state checkpoints are retained.",
+      "additionalProperties": {"type": "array", "items": {"type": "number"}, "uniqueItems": true}
+    },
     "solver": {
       "type": "object",
       "description": "Merged into deck.solver. Physics model selections are rejected: the emitter owns mobility/recombination/impact_ionization/bandgap_narrowing/carrier_statistics model choices.",

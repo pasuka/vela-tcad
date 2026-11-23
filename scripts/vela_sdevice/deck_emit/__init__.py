@@ -440,8 +440,9 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
     solver = _physics(ir, report, decisions)
     solver_overrides = (sidecar or {}).get("solver", {})
     stage_reltols = (sidecar or {}).get("stage_newton_reltol", {})
+    stage_vtk_biases = (sidecar or {}).get("stage_vtk_bias_points", {})
     reserved_sidecar_keys = {
-        "schema", "description", "apply_to", "stage_newton_reltol",
+        "schema", "description", "apply_to", "stage_newton_reltol", "stage_vtk_bias_points",
         "avalanche_current_support_profile", "high_field_gradient_discretization",
         "bvmethods_operator_profile", "sentaurus_step_control",
     }
@@ -851,6 +852,23 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 raise DeckEmitError("E407", detail="Quasistationary controls imply an unrepresentable retry count")
             sweep["max_retries"] = retries
             entry["sweep"]["step_V"] = v1 - v0
+        if str(index) in stage_vtk_biases:
+            if entry.get("sweep", {}).get("mode") == "current":
+                raise DeckEmitError("E409", file="sidecar", detail="stage_vtk_bias_points requires known voltage targets")
+            output_targets = sweep.get("vtk_bias_points", [])
+            required = sweep.get("required_bias_points", []) + output_targets
+            targets = [v0, v1, *required]
+            selected = []
+            for bias in stage_vtk_biases[str(index)]:
+                target = next((v for v in targets if math.isclose(bias, v, rel_tol=0., abs_tol=1e-12)), None)
+                if target is None:
+                    raise DeckEmitError("E409", file="sidecar", detail=f"Stage {index} has no voltage target {bias:g} V")
+                selected.append(target)
+            sweep.update(write_vtk=False, vtk_bias_points=selected)
+            if required:
+                sweep["required_bias_points"] = required
+            entry["vtu_write"]["per_accepted_step"] = False
+            entry["sidecar_overrides"].append("stage_vtk_bias_points")
         if any(c["type"] == "schottky" for c in contacts) and deck["solver"]["method"] not in ("newton", "frozen_state"):
             raise DeckEmitError("E407", detail="thermionic Schottky contacts require the Newton path")
         geometry = deck["mesh_geometry"]
@@ -868,6 +886,8 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         raise DeckEmitError("E409", file="sidecar", detail="apply_to names an absent stage")
     if stage_reltols.keys() - {str(index) for index in range(len(decks))}:
         raise DeckEmitError("E409", file="sidecar", detail="stage_newton_reltol names an absent stage")
+    if stage_vtk_biases.keys() - {str(index) for index in range(len(decks))}:
+        raise DeckEmitError("E409", file="sidecar", detail="stage_vtk_bias_points names an absent stage")
     result = StagePlanResult(plan, decks, decisions, deepcopy({"ir": ir, "mesh": mesh, "report": report,
         "work_dir": work_dir, "cmd_name": cmd_name, "sha": sha, "options": options,
         "sidecar": sidecar, "rebases": rebases, "current_starts": current_starts,
