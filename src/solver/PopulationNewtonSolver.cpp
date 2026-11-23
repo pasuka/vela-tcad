@@ -591,8 +591,8 @@ NewtonResult NewtonSolver::solveMonolithicDensityGradientBox(
     VectorXd columns = VectorXd::Ones(state.size());
     if (population)
         columns.head(ddSize) = primaryVariableScales().device;
-    LinearSolver solver;
-    const auto solveScaled = [&](SparseMatrixd& jacobian, const VectorXd& residual,
+    const auto solveScaled = [](LinearSolver& solver,
+                                 SparseMatrixd& jacobian, const VectorXd& residual,
                                  const VectorXd& columnScale) -> VectorXd {
         VectorXd rowMax = VectorXd::Zero(residual.size());
         for (int c = 0; c < jacobian.outerSize(); ++c)
@@ -614,6 +614,8 @@ NewtonResult NewtonSolver::solveMonolithicDensityGradientBox(
     const bool coldQuantum = initial.electronQuantumPotentialLike.size() != nodes &&
         (initial.electronQuantumPotential.size() != nodes || initial.electronQuantumPotential.isZero(0.));
     if (coldQuantum && initial.phin.size() == nodes && initial.phip.size() == nodes) {
+        // The two-field initializer must not evict the sweep's four-field pattern.
+        LinearSolver equilibriumSolver;
         const auto equilibriumPopulations = [&](VectorXd& x, VectorXd* slopes) {
             for (int node = 0; node < nodes; ++node) {
                 if (ni[node] <= 0.)
@@ -671,7 +673,7 @@ NewtonResult NewtonSolver::solveMonolithicDensityGradientBox(
             jacobian.setFromTriplets(entries.begin(), entries.end());
             VectorXd delta;
             try {
-                delta = solveScaled(jacobian, residual, VectorXd::Ones(2 * nodes));
+                delta = solveScaled(equilibriumSolver, jacobian, residual, VectorXd::Ones(2 * nodes));
             } catch (const std::runtime_error&) {
                 break;
             }
@@ -757,6 +759,8 @@ NewtonResult NewtonSolver::solveMonolithicDensityGradientBox(
     result.failureDiagnostics.failureReason = "Four-field DG Newton iteration budget exhausted";
     SparseMatrixd cachedTangent;
     bool reuseTangent = false;
+    auto localSolver = cfg_.sequentialLinearSolver ? nullptr : std::make_unique<LinearSolver>();
+    LinearSolver& coupledSolver = cfg_.sequentialLinearSolver ? *cfg_.sequentialLinearSolver : *localSolver;
     for (int iter = 0; iter < cfg_.maxIter && norm > 1.; ++iter) {
         const bool reusedTangent = reuseTangent;
         reuseTangent = false;
@@ -767,7 +771,7 @@ NewtonResult NewtonSolver::solveMonolithicDensityGradientBox(
         auto scaledJacobian = compensatePotential ? system.jacobian : std::move(system.jacobian);
         VectorXd direction;
         try {
-            direction = solveScaled(scaledJacobian, system.residual, columns);
+            direction = solveScaled(coupledSolver, scaledJacobian, system.residual, columns);
         } catch (const std::runtime_error& error) {
             result.failureDiagnostics.failureReason = error.what();
             break;

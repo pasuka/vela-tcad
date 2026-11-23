@@ -5386,7 +5386,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
     if (quantumTransport)
         quantumEntries.reserve(4 * mesh_.numEdges() + 2 * N);
     const auto addQuantum = [&](int row, int node, Real derivative) {
-        if (derivative != 0. && !constrainedRows[static_cast<std::size_t>(row)])
+        // Keep the coupling's structural slot when its derivative vanishes.
+        // DG Newton reuses the symbolic factorization of this stencil.
+        if (!constrainedRows[static_cast<std::size_t>(row)])
             quantumEntries.emplace_back(row, node, scaleDerivative(row, node, derivative));
     };
 
@@ -7956,32 +7958,35 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
                 psiOffset() + ii, phinOffset() + ii, phipOffset() + ii};
             const Real recombinationRate = nodeRecombinationRate(
                 i, n(ii), nSrh, p(ii), dPhi, &srhState, &augerState);
-            const bool activeCarrierRows =
+            const bool activeRecombination = recombinationRate != 0.0 ||
                 hasElectronContribution[static_cast<std::size_t>(ii)] ||
                 hasHoleContribution[static_cast<std::size_t>(ii)];
-            if (recombinationRate != 0.0 || activeCarrierRows) {
             if (quantumTransport &&
                 (recombination_.augerEnabled() ||
                  (recombination_.srhEnabled() && !usesSentaurusDefaultSrhDensityCoupling()))) {
-                const auto sourceAtShift = [&](Real shift) {
-                    const Real density = vela::electronDensity(
-                        ni, Nc_[i], psiRelativeN - shift, electronIncrement, Vt_,
-                        carrierStatisticsModel_);
-                    const Real srhDensity = usesSentaurusDefaultSrhDensityCoupling() ? nSrh : density;
-                    const auto srh = generalizedSrhCarrierState(
-                        srhDensity, p(ii), ni, Nc_[i], Nv_[i], dPhi, Vt_, carrierStatisticsModel_,
-                        recombinationConfig_.srhDopingDependence.usesQuantumBandEdge() ? shift : 0.);
-                    const auto auger = generalizedSrhCarrierState(
-                        density, p(ii), ni, Nc_[i], Nv_[i], dPhi, Vt_, carrierStatisticsModel_);
-                    return nodeRecombinationRate(i, density, srhDensity, p(ii), dPhi, &srh, &auger);
-                };
-                constexpr Real step = 1.e-6;
-                const Real shift = electronQuantumPotential_V_(ii);
-                const Real derivative = (sourceAtShift(shift + step) - sourceAtShift(shift - step))
-                    * (srhVol_[i] * sourceIntegralFactor / (2. * step));
+                Real derivative = 0.;
+                if (activeRecombination) {
+                    const auto sourceAtShift = [&](Real shift) {
+                        const Real density = vela::electronDensity(
+                            ni, Nc_[i], psiRelativeN - shift, electronIncrement, Vt_,
+                            carrierStatisticsModel_);
+                        const Real srhDensity = usesSentaurusDefaultSrhDensityCoupling() ? nSrh : density;
+                        const auto srh = generalizedSrhCarrierState(
+                            srhDensity, p(ii), ni, Nc_[i], Nv_[i], dPhi, Vt_, carrierStatisticsModel_,
+                            recombinationConfig_.srhDopingDependence.usesQuantumBandEdge() ? shift : 0.);
+                        const auto auger = generalizedSrhCarrierState(
+                            density, p(ii), ni, Nc_[i], Nv_[i], dPhi, Vt_, carrierStatisticsModel_);
+                        return nodeRecombinationRate(i, density, srhDensity, p(ii), dPhi, &srh, &auger);
+                    };
+                    constexpr Real step = 1.e-6;
+                    const Real shift = electronQuantumPotential_V_(ii);
+                    derivative = (sourceAtShift(shift + step) - sourceAtShift(shift - step))
+                        * (srhVol_[i] * sourceIntegralFactor / (2. * step));
+                }
                 addQuantum(phinOffset() + ii, ii, derivative);
                 addQuantum(phipOffset() + ii, ii, derivative);
             }
+            if (activeRecombination) {
             for (int k = 0; k < 3; ++k) {
                 Real derivative = 0.0;
                 if (recombination_.srhEnabled()) {

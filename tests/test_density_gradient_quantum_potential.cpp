@@ -7,6 +7,7 @@
 #include "vela/physics/DensityGradientQuantumPotential.h"
 #include "vela/solver/NewtonSolver.h"
 
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -289,6 +290,19 @@ TEST_CASE("Local DG transport tangent matches the live quantum field response",
     }
     REQUIRE(action[nodes] == 0.);
     REQUIRE(action[3 * nodes - 1] == 0.);
+
+    const VectorXd equilibrium = assembler.pack({
+        VectorXd::Constant(nodes, 0.15), VectorXd::Zero(nodes), VectorXd::Zero(nodes)});
+    assembler.setElectronQuantumPotential(VectorXd::Zero(nodes));
+    SparseMatrixd equilibriumTangent;
+    assembler.assembleJacobianWithDgTransportTangent(equilibrium, boundary, equilibriumTangent);
+    REQUIRE(equilibriumTangent.nonZeros() == tangent.nonZeros());
+    REQUIRE(std::equal(tangent.outerIndexPtr(), tangent.outerIndexPtr() + tangent.outerSize() + 1,
+                       equilibriumTangent.outerIndexPtr()));
+    REQUIRE(std::equal(tangent.innerIndexPtr(), tangent.innerIndexPtr() + tangent.nonZeros(),
+                       equilibriumTangent.innerIndexPtr()));
+    REQUIRE(std::count(equilibriumTangent.valuePtr(),
+                       equilibriumTangent.valuePtr() + equilibriumTangent.nonZeros(), 0.) > 0);
 }
 
 TEST_CASE("DEVSIM oxide WKB penetration depth matches the analytic barrier",
