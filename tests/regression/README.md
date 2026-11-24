@@ -206,3 +206,22 @@ ctest --test-dir build-u2022 --output-on-failure --no-tests=error -L '^reference
 
 Each run writes its configs, curves, logs and `result.json` to a fresh directory
 under the build's `reference-u2022-reports/` directory.
+
+## SLOT LDMOS device regressions
+
+Configure with `VELA_ENABLE_SLOT_LDMOS_CI=ON` to register
+`slot_ldmos_bvds_sdevice` and `slot_ldmos_idvg_sdevice`. Set
+`VELA_SLOT_LDMOS_BVDS_CMD` and `VELA_SLOT_LDMOS_IDVG_CMD` to preprocessed
+CMD files in self-contained input directories. Include the input mesh,
+doping, parameter files, and any SLOT sidecar and restart state required by
+the CMD. Use paths relative to the CMD for inputs and outputs. The device
+inputs are supplied separately from the repository.
+
+Build `sd-sim` and its runtime targets, then run `ctest -L slot-ldmos --output-on-failure`.
+The runner uses the build's `sd-sim` by default. `VELA_SLOT_LDMOS_SD_SIM`
+can explicitly select a separately qualified SLOT-capable runtime with its
+companion tools and scripts. The tests require successful `sd-sim`
+execution, verify potential and density unknowns with unit scaling in the
+emitted stages, and check the completed voltage sweep or BVDS current stop.
+Each test keeps its run directory and logs under `slot-ldmos-reports/` in
+the build tree.

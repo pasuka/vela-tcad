@@ -2156,6 +2156,33 @@ if(_reference_u2022_cases)
     endforeach()
 endif()
 
+option(VELA_ENABLE_SLOT_LDMOS_CI "Register the SLOT LDMOS BVDS and IdVg sd-sim regressions" OFF)
+if(VELA_ENABLE_SLOT_LDMOS_CI)
+    set(VELA_SLOT_LDMOS_BVDS_CMD "" CACHE FILEPATH "Prepared SLOT LDMOS BVDS CMD with its input package")
+    set(VELA_SLOT_LDMOS_IDVG_CMD "" CACHE FILEPATH "Prepared SLOT LDMOS IdVg CMD with its input package")
+    set(VELA_SLOT_LDMOS_SD_SIM "" CACHE FILEPATH "Optional sd-sim from a separately qualified SLOT runtime")
+    set(_slot_launcher $<TARGET_FILE:sd-sim>)
+    if(VELA_SLOT_LDMOS_SD_SIM)
+        if(NOT EXISTS "${VELA_SLOT_LDMOS_SD_SIM}" OR IS_DIRECTORY "${VELA_SLOT_LDMOS_SD_SIM}")
+            message(FATAL_ERROR "VELA_SLOT_LDMOS_SD_SIM must point to the sd-sim executable")
+        endif()
+        set(_slot_launcher "${VELA_SLOT_LDMOS_SD_SIM}")
+    endif()
+    foreach(_slot_case IN ITEMS bvds idvg)
+        string(TOUPPER "${_slot_case}" _slot_case_upper)
+        set(_slot_input_var VELA_SLOT_LDMOS_${_slot_case_upper}_CMD)
+        if(NOT EXISTS "${${_slot_input_var}}" OR IS_DIRECTORY "${${_slot_input_var}}")
+            message(FATAL_ERROR "Set ${_slot_input_var} to the prepared SLOT CMD to enable SLOT CTest coverage")
+        endif()
+        set(_slot_test slot_ldmos_${_slot_case}_sdevice)
+        add_test(NAME ${_slot_test}
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_slot_ldmos_ci.py
+                ${_slot_case} --cmd "${${_slot_input_var}}" --launcher "${_slot_launcher}"
+                --output "${CMAKE_CURRENT_BINARY_DIR}/slot-ldmos-reports")
+        set_tests_properties(${_slot_test} PROPERTIES LABELS "slot-ldmos;sdevice" TIMEOUT 14400)
+        vela_set_windows_msys2_test_path(${_slot_test})
+    endforeach()
+endif()
 add_test(NAME sdevice_gate_contact_mapping
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_sdevice_gate_contact_mapping)
