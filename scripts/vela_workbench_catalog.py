@@ -1,5 +1,7 @@
 """Materialize the numerical sd-sim CTest cases for Windows distribution."""
+import json
 from pathlib import Path
+import re
 import shutil
 
 import run_bvmethods_ci as bvmethods
@@ -10,6 +12,14 @@ import run_reference_u2022_ci as u2022
 ORIGINAL = "sentaurus-original.cmd"
 COMPATIBLE_ARGS = ["--physical-constants-profile", "sentaurus_u2022_12",
                    "--threads", "1", "--exit-on-failure"]
+LABEL_RULES = json.loads(Path(__file__).with_name("vela_workbench_labels.json").read_text(encoding="utf-8"))
+
+
+def case_labels(ctest):
+    devices = [label for label, pattern in LABEL_RULES.items() if re.search(pattern, ctest, re.IGNORECASE)]
+    if len(devices) != 1:
+        raise ValueError(f"Expected exactly one SDS device label for {ctest}")
+    return devices
 
 
 def _entry(name, deck, ctest, arguments, solver, **extra):
@@ -20,6 +30,7 @@ def _entry(name, deck, ctest, arguments, solver, **extra):
         "original_script": ORIGINAL,
         "linear_solver": solver,
         "ctest": ctest,
+        "labels": case_labels(ctest),
         **extra,
     }
 

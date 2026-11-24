@@ -33,6 +33,7 @@ class Case:
     stop_criterion: str | None = None
     ctest: str | None = None
     name_zh: str | None = None
+    labels: tuple[str, ...] = ()
 
 
 def _hash(path):
@@ -72,7 +73,14 @@ def prepare_cases(destination):
 
 def read_cases(directory):
     manifest = json.loads((directory / "cases.json").read_text(encoding="utf-8"))
-    return {key: Case(source=directory / key, **value) for key, value in manifest.items()}
+    cases = {}
+    for key, value in manifest.items():
+        value["labels"] = tuple(
+            "sds-device-pn2d" if label == "sds-device-pn" else label
+            for label in value.get("labels", ()) if label.startswith("sds-device-")
+        )
+        cases[key] = Case(source=directory / key, **value)
+    return cases
 
 
 def verify_inputs(case, directory):

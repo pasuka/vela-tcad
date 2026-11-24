@@ -8,12 +8,14 @@ Run a case
 Select a built-in case and choose Run Current. Use Ctrl or Shift to select multiple cases, then choose Run Selected. Stop Queue cancels the cases waiting to run. The current case can finish and save its results.
 
 Open and inspect results
-Select the case, then choose File → Open Saved Run and select its run folder. Use the Curve toolbar to choose inner or outer voltage, set either axis to Linear or Log, and zoom around the center with + or −. Log scales omit non-positive values.
+Use Device type to filter the sample list. Select a case and choose File → Open Saved Run to open existing results.
+
+Use + and − on the plot toolbars to zoom around the center. In rectangle zoom mode, drag with the left button to zoom in or with the right button to zoom out. Home restores the original view. In Curve, choose inner or outer voltage, axis scales, line style and markers. Log scales omit non-positive values.
 
 In the Mesh and Final Field toolbars, use ↶, ↷ or 0° to rotate or reset both views. In Final Field, use the toolbar dropdown to select a field and turn on Show Mesh to overlay the triangle edges.
 
 Find run files and settings
-Use the Log tab for the main run log and the Sentaurus Script tab for the original input. File → Open Run Folder opens the full set of artifacts. Change the language or open the configuration file from Settings.
+Use the Log tab for the main run log and the Sentaurus Script tab for read-only syntax highlighting of the original input. File → Open Run Folder opens the full set of artifacts. Change the language or open the configuration file from Settings.
 """
 
 GUIDE_ZH = """SDS 使用文档
@@ -22,12 +24,14 @@ GUIDE_ZH = """SDS 使用文档
 选中内置算例后点击「运行当前」。按 Ctrl 或 Shift 可选中多个算例，再点击「运行选中」。「停止队列」会取消等待中的算例，当前算例继续运行并保存结果。
 
 打开和查看结果
-选中对应算例，从「文件 → 打开已有运行」选择运行目录。在曲线工具栏可切换内压和外压，单独设置 X、Y 轴的线性或对数坐标，并用 + 或 − 围绕图形中心缩放。对数坐标会省略非正数。
+通过「器件类型」筛选算例。选中算例后，从「文件 → 打开已有运行」选择运行目录。
+
+绘图工具栏的 +、− 围绕图形中心缩放。启用框选缩放后，左键拖框放大，右键拖框缩小。房子图标恢复初始视图。在曲线工具栏可切换内压和外压、X/Y 轴比例、线型和标记。对数坐标会省略非正数。
 
 「网格」和「末态云图」页的绘图工具栏中，↶、↷ 和 0° 可同步旋转或复位两页视图。在末态云图页可在工具栏选择物理量，也可勾选「显示网格」叠加三角单元边线。
 
 查找文件和设置
-在「日志」页可查看主日志，在「Sentaurus 脚本」页可查看原始输入。从「文件 → 打开运行目录」可查看完整输出。从「设置」菜单可切换语言或打开配置文件。
+在「日志」页可查看主日志，在「Sentaurus 脚本」页可只读查看和复制带高亮的原始输入。从「文件 → 打开运行目录」可查看完整输出。从「设置」菜单可切换语言或打开配置文件。
 """
 
 ZH = {
@@ -55,6 +59,11 @@ ZH = {
     "Could not open the settings file: {}": "无法打开配置文件：{}",
     "Could not open run for {}: {}": "无法打开 {} 的运行结果：{}",
     "Built-in cases": "内置算例",
+    "Device type": "器件类型",
+    "All": "全部",
+    "MOS / Gate": "MOS / 栅极",
+    "Schottky": "肖特基",
+    "No matching cases": "没有匹配的算例",
     "Case": "算例",
     "Status": "状态",
     "PN2D Zero Bias": "PN2D 零偏",
@@ -75,6 +84,18 @@ ZH = {
     "Outer voltage": "外压",
     "Linear": "线性",
     "Log10": "对数",
+    "Line style": "线型",
+    "Marker": "标记",
+    "Solid": "实线",
+    "Dashed": "虚线",
+    "Dash-dot": "点划线",
+    "Dotted": "点线",
+    "Automatic": "自动",
+    "No marker": "无标记",
+    "Circle": "圆形",
+    "Rectangle": "矩形",
+    "Triangle": "三角形",
+    "Diamond": "菱形",
     "Zoom In": "放大",
     "Zoom Out": "缩小",
     "Log scales omit non-positive values.": "对数坐标已省略零值和负值。",

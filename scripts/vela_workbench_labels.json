@@ -1,0 +1,6 @@
+{
+  "sds-device-pn2d": "^pn2d",
+  "sds-device-mos": "^(bvmethods_ci_|reference_u2022_(gate_contacts|transportmodels_|singledevice_))",
+  "sds-device-schottky": "^reference_u2022_schottky_iv$",
+  "sds-device-bjt": "^(reference_u2022_)?bjt"
+}

@@ -216,6 +216,21 @@ ctest --test-dir build-u2022 --output-on-failure --no-tests=error -L '^reference
 Each run writes its configs, curves, logs and `result.json` to a fresh directory
 under the build's `reference-u2022-reports/` directory.
 
+### SDS numerical case labels
+
+Numerical regressions that explicitly launch `sd-sim` receive one SDS device
+label when their existing CMake options are enabled. The groups are PN2D
+(`sds-device-pn2d`), MOS / Gate (`sds-device-mos`), Schottky
+(`sds-device-schottky`), and BJT (`sds-device-bjt`).
+
+Preview the selected tests in an already configured build. CTest adds the
+fixture setup required by the selected numerical tests.
+
+```powershell
+ctest --test-dir build-release/sentaurus2022 -N -L "^sds-device-pn2d$"
+ctest --test-dir build-release/sentaurus2022 -N -L "^sds-device-bjt$"
+```
+
 ## SLOT LDMOS device regressions
 
 Configure with `VELA_ENABLE_SLOT_LDMOS_CI=ON` to register

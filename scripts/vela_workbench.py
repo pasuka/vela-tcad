@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from math import isfinite
 import os
 from pathlib import Path
 from queue import Empty, Queue
@@ -185,6 +186,16 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
     pane.add(sidebar)
     case_heading = ttk.Label(sidebar, style="Heading.Surface.TLabel")
     case_heading.pack(anchor="w", pady=(1, 8))
+    device_options = (
+        ("All", ""), ("PN2D", "sds-device-pn2d"), ("MOS / Gate", "sds-device-mos"),
+        ("Schottky", "sds-device-schottky"), ("BJT", "sds-device-bjt"),
+    )
+    filter_row = ttk.Frame(sidebar, style="Surface.TFrame")
+    filter_row.pack(fill="x", pady=(0, 5))
+    device_heading = ttk.Label(filter_row, style="Surface.TLabel")
+    device_heading.pack(side="left", padx=(0, 6))
+    device_picker = ttk.Combobox(filter_row, state="readonly", width=13)
+    device_picker.pack(side="right", fill="x", expand=True)
     case_list = ttk.Frame(sidebar, style="Surface.TFrame")
     case_list.pack(fill="both", expand=True)
     tree = ttk.Treeview(case_list, columns=("status",), selectmode="extended", height=8)
@@ -232,6 +243,10 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         figure = Figure(figsize=(5.7, 4.5), layout="compressed" if tab == cloud_tab else "constrained")
         canvas = FigureCanvasTkAgg(figure, master=tab)
         navigation = NavigationToolbar2Tk(canvas, tab, pack_toolbar=False)
+        plot_zoom_buttons[tab] = add_plot_buttons(navigation, (
+            ("+", "Zoom In", lambda: zoom_plot(tab, 0.8)),
+            ("−", "Zoom Out", lambda: zoom_plot(tab, 1.25)),
+        ))
         if tab == curve_tab:
             add_curve_tools(navigation)
         else:
@@ -247,7 +262,13 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         ("Y", ("Linear", "Log10"), 6),
     )
     curve_pickers = {}
-    curve_zoom_buttons = []
+    curve_style_options = (
+        ("Line style", (("Solid", "-"), ("Dashed", "--"), ("Dash-dot", "-."), ("Dotted", ":")), 10),
+        ("Marker", (("Automatic", "auto"), ("No marker", None), ("Circle", "o"),
+                    ("Rectangle", "rectangle"), ("Triangle", "^"), ("Diamond", "D")), 11),
+    )
+    curve_style_pickers = {}
+    plot_zoom_buttons = {}
 
     show_field_mesh = tk.BooleanVar(root, value=False)
     field_heading = field_picker = mesh_toggle = None
@@ -256,7 +277,7 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         readout = next(widget for widget in navigation.pack_slaves() if widget.pack_info()["side"] == "right")
         buttons = []
         for icon, label, command in actions:
-            button = tk.Button(navigation, text=icon, width=3, relief="flat",
+            button = tk.Button(navigation, text=icon, width=2, relief="flat",
                                background=navigation.cget("background"), foreground=ink,
                                activebackground=selection_fill, command=command)
             button.pack(side="left", before=readout, padx=(3, 0))
@@ -283,14 +304,14 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         return heading, picker
 
     def add_curve_tools(navigation):
-        curve_zoom_buttons.extend(add_plot_buttons(navigation, (
-            ("+", "Zoom In", lambda: zoom_curve(0.8)),
-            ("−", "Zoom Out", lambda: zoom_curve(1.25)),
-        )))
         controls = plot_toolbar_row(navigation)
         for label, _, width in curve_options:
             curve_pickers[label] = plot_picker(controls, label, width, select_curve_axes)
         size_toolbar_row(navigation, controls)
+        appearance = plot_toolbar_row(navigation)
+        for label, _, width in curve_style_options:
+            curve_style_pickers[label] = plot_picker(appearance, label, width, select_curve_style)
+        size_toolbar_row(navigation, appearance)
 
     def add_geometry_tools(navigation, tab):
         nonlocal field_heading, field_picker, mesh_toggle
@@ -346,6 +367,12 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
 
     log_view = text_view(log_tab)
     script_view = text_view(script_tab)
+    for tag, color in (
+        ("keyword", accent), ("comment", "#566F56"), ("string", "#8A391A"), ("number", "#6D3F91"),
+        ("directive", "#006A72"), ("placeholder", "#A2274D"),
+    ):
+        script_view.tag_configure(tag, foreground=color)
+    script_view.tag_raise("sel")
 
     progress_panel = ttk.Frame(root, padding=(16, 4, 16, 12))
     progress_panel.pack(side="bottom", fill="x", before=pane)
@@ -378,17 +405,33 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
     field_error = None
     view_key = None
     curve_axes = {}
+    curve_styles = {}
     mesh_angles = {}
 
     def focused():
         return tree.focus() or (tree.selection() or ("",))[0]
 
+    def filter_cases(_event=None):
+        label = device_options[device_picker.current()][1]
+        visible = [key for key, case in cases.items() if not label or label in case.labels]
+        previous = focused()
+        selected = set(tree.selection())
+        tree.set_children("", *visible)
+        for index, key in enumerate(visible):
+            tree.item(key, tags=("alternate",) if index % 2 else ())
+        current = previous if previous in visible else (visible[0] if visible else "")
+        tree.focus(current)
+        tree.selection_set([key for key in visible if key in selected] or ([current] if current else []))
+        if current:
+            tree.see(current)
+        refresh()
+
     def sync_actions():
         states = (
-            ("Run Current", not active),
+            ("Run Current", not active and bool(focused())),
             ("Run Selected", not active and bool(tree.selection())),
             ("Stop Queue", active and not stop_pending.is_set()),
-            ("Open Saved Run", not active),
+            ("Open Saved Run", not active and bool(focused())),
             ("Open Run Folder", focused() in directories),
             ("Open Settings File", config_path is not None),
         )
@@ -405,6 +448,22 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         if follow:
             view.see("end")
         view.configure(state="disabled")
+
+    def show_script(case):
+        content = tr("Original script unavailable. Prepare a new case catalog.")
+        if not case.original_script:
+            replace_text(script_view, content)
+            return
+        try:
+            content = (case.source / case.original_script).read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as error:
+            replace_text(script_view, tr("Could not read original script: {}", error))
+            return
+        from vela_workbench_highlight import script_spans
+
+        replace_text(script_view, content)
+        for tag, row, start, end in script_spans(content):
+            script_view.tag_add(tag, f"{row}.{start}", f"{row}.{end}")
 
     def log_update():
         nonlocal remembered_log
@@ -439,6 +498,11 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         navigation.update()
         return figure.add_subplot()
 
+    def finish_plot(tab):
+        _, canvas, navigation = plots[tab]
+        navigation.push_current()
+        draw_plot(canvas)
+
     def plot_message(tab, message=None):
         label, default = placeholders[tab]
         label.configure(text=message or tr(default))
@@ -472,7 +536,7 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
             return
         from matplotlib.tri import Triangulation
 
-        cloud_figure, cloud_canvas, axes = show_plot(cloud_tab)
+        cloud_figure, _, axes = show_plot(cloud_tab)
         name = field_keys[selection]
         x, y = display_geometry(axes)
         mesh = Triangulation(x, y, triangles=field.triangles)
@@ -488,7 +552,7 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         if bias is not None:
             title += "\n" + tr("{} outer voltage {:.6g} V", tr(field_terminal.capitalize()), bias)
         axes.set_title(title, fontsize="medium")
-        draw_plot(cloud_canvas)
+        finish_plot(cloud_tab)
 
     def toggle_field_mesh():
         for line in field_mesh_lines:
@@ -501,6 +565,20 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         key = focused()
         directory = directories.get(key)
         sync_actions()
+        selected = tabs.select()
+        tab = tabs.nametowidget(selected) if selected else None
+        if not key:
+            view_key = None
+            drawn.clear()
+            result_heading.configure(text=tr("No matching cases"))
+            log_heading.configure(text="")
+            log_update()
+            replace_text(script_view, "")
+            if tab in placeholders:
+                if tab == curve_tab:
+                    curve_notice.pack_forget()
+                plot_message(tab)
+            return
         case = cases[key]
         result_heading.configure(text=case_name(key))
         log_heading.configure(text=case.log if directory else "")
@@ -526,16 +604,8 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
         if view_key is not None and view_key[0] != key:
             drawn.clear()
         if view_key is None or view_key[0] != key or view_key[2] != chinese:
-            script = tr("Original script unavailable. Prepare a new case catalog.")
-            if case.original_script:
-                try:
-                    script = (case.source / case.original_script).read_text(encoding="utf-8")
-                except (OSError, UnicodeError) as error:
-                    script = tr("Could not read original script: {}", error)
-            replace_text(script_view, script)
+            show_script(case)
         view_key = identity
-        selected = tabs.select()
-        tab = tabs.nametowidget(selected) if selected else None
         if tab not in placeholders or drawn.get(tab) == identity:
             return
         drawn[tab] = identity
@@ -564,7 +634,11 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
             picker = curve_pickers[label][1]
             picker.configure(values=tuple(tr(option) for option in options))
             picker.current(index)
-        for button in curve_zoom_buttons:
+        for (label, options, _), index in zip(curve_style_options, curve_styles.get(focused(), (0, 0))):
+            picker = curve_style_pickers[label][1]
+            picker.configure(values=tuple(tr(name) for name, _ in options))
+            picker.current(index)
+        for button in plot_zoom_buttons[curve_tab]:
             button.configure(state="disabled")
 
         def empty_curve(message):
@@ -595,7 +669,7 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
             if visible.any():
                 xy[~visible] = np.nan
                 label = tr("Stage {} · {}", index, terminal) if index is not None else terminal
-                curve.plot(*xy.T, marker="." if visible.sum() == 1 else None, label=label)
+                curve.plot(*xy.T, label=label)
                 terminals.add(terminal.casefold())
         if not terminals:
             if omitted_by_log:
@@ -623,32 +697,55 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
             ylabel=tr("Anode total current (A/µm)" if curve_path else "Swept terminal current (A/µm)"),
             xscale="log" if log_axes[0] else "linear", yscale="log" if log_axes[1] else "linear",
         )
+        apply_curve_style(curve)
         if not curve_path:
             curve.legend()
         curve.grid(alpha=.25)
-        for button in curve_zoom_buttons:
+        for button in plot_zoom_buttons[curve_tab]:
             button.configure(state="normal")
-        plots[curve_tab][2].push_current()
+        finish_plot(curve_tab)
+
+    def apply_curve_style(axes):
+        line_index, marker_index = curve_styles.get(focused(), (0, 0))
+        linestyle = curve_style_options[0][1][line_index][1]
+        marker = curve_style_options[1][1][marker_index][1]
+        if marker == "rectangle":
+            from matplotlib.path import Path as MarkerPath
+
+            marker = MarkerPath([(-.5, -.3), (.5, -.3), (.5, .3), (-.5, .3), (-.5, -.3)], closed=True)
+        for line in axes.lines:
+            line.set_linestyle(linestyle)
+            if marker == "auto":
+                line.set_marker("." if sum(isfinite(x) for x in line.get_xdata()) == 1 else "None")
+            else:
+                line.set_marker(marker if marker is not None else "None")
+
+    def select_curve_style(_event):
+        curve_styles[focused()] = tuple(picker.current() for _, picker in curve_style_pickers.values())
+        figure, canvas, _ = plots[curve_tab]
+        axes = figure.axes[0]
+        apply_curve_style(axes)
+        if axes.get_legend() is not None:
+            axes.legend()
         draw_plot(canvas)
 
-    def zoom_curve(factor):
+    def zoom_plot(tab, factor):
         import numpy as np
 
-        figure, canvas, navigation = plots[curve_tab]
-        curve = figure.axes[0]
-        scale = curve.transScale
-        limits = scale.transform(list(zip(curve.get_xlim(), curve.get_ylim())))
+        figure, _, _ = plots[tab]
+        axes = figure.axes[0]
+        scale = axes.transScale
+        limits = scale.transform(list(zip(axes.get_xlim(), axes.get_ylim())))
         center = limits[0] / 2 + limits[1] / 2
         with np.errstate(over="ignore", under="ignore", invalid="ignore"):
             updated = scale.inverted().transform(center + factor * (limits - center)).T
         if not np.isfinite(updated).all() or np.any(updated[:, 0] == updated[:, 1]):
             return
-        for log, lower in zip((curve.get_xscale(), curve.get_yscale()), updated.min(axis=1)):
+        for log, lower in zip((axes.get_xscale(), axes.get_yscale()), updated.min(axis=1)):
             if log == "log" and lower <= 0:
                 return
-        curve.set(xlim=updated[0], ylim=updated[1])
-        navigation.push_current()
-        draw_plot(canvas)
+        axes.set(xlim=updated[0], ylim=updated[1])
+        finish_plot(tab)
 
     def draw_mesh_or_field(tab, field_path, field_stamp, stages):
         nonlocal field, field_keys, field_terminal, field_revision, field_error
@@ -675,10 +772,10 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
                     )
         if tab == mesh_tab:
             if field:
-                _, mesh_canvas, mesh = show_plot(mesh_tab)
+                _, _, mesh = show_plot(mesh_tab)
                 x, y = display_geometry(mesh)
                 mesh.triplot(x, y, field.triangles, linewidth=.45)
-                draw_plot(mesh_canvas)
+                finish_plot(mesh_tab)
             else:
                 message = tr("Could not read mesh or field: {}", field_error) if field_error else None
                 plot_message(mesh_tab, message)
@@ -789,6 +886,10 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
             if button is not None:
                 button.configure(text=text)
         case_heading.configure(text=tr("Built-in cases"))
+        selection = max(0, device_picker.current())
+        device_heading.configure(text=tr("Device type"))
+        device_picker.configure(values=[tr(name) for name, _ in device_options])
+        device_picker.current(selection)
         tree.heading("#0", text=tr("Case"))
         tree.heading("status", text=tr("Status"))
         for key, status in statuses.items():
@@ -798,8 +899,9 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
             (log_tab, "Log"), (script_tab, "Sentaurus Script"),
         ):
             tabs.tab(tab, text=tr(label))
-        for label, (heading, _) in curve_pickers.items():
-            heading.configure(text=tr(label))
+        for pickers in (curve_pickers, curve_style_pickers):
+            for label, (heading, _) in pickers.items():
+                heading.configure(text=tr(label))
         if field_picker is not None:
             mesh_toggle.configure(text=tr("Show Mesh"))
             field_heading.configure(text=tr("Field"))
@@ -947,6 +1049,7 @@ def launch(launcher, cases, runs, saved_run=None, *, config_path=None):
     add_action("Help", "Documentation", None, open_guide)
     add_action("Help", "About SDS", None, show_about)
     root.protocol("WM_DELETE_WINDOW", close)
+    device_picker.bind("<<ComboboxSelected>>", filter_cases)
     tree.bind("<<TreeviewSelect>>", refresh)
     tabs.bind("<<NotebookTabChanged>>", refresh)
     first = saved_run[0] if saved_run else next(iter(cases))
