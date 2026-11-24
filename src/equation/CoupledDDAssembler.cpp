@@ -1934,7 +1934,14 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
     };
 
     const Real fieldFactor = scaling_.fieldFromCoordinateDeltaFactor;
-    const auto vectorFields = [&](bool electron) {
+    const bool evaluateAvalanche = includeImpactIonization && impactIonizationEnabled_;
+    using CellDrops = std::vector<std::array<Real, 3>>;
+    CellDrops electronCellDrops, holeCellDrops;
+    const auto vectorFields = [&](bool electron, CellDrops& cellDrops) {
+        // Both high-field mobility and the avalanche source use these same
+        // directed, compensated drops from the first vertex of each cell.
+        if (evaluateAvalanche)
+            cellDrops.resize(mesh_.numCells());
         detail::CellScalarGradientCache gradients;
         gradients.gradients.resize(mesh_.numCells());
         gradients.areas.resize(mesh_.numCells());
@@ -1943,7 +1950,14 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
             const Cell& cell = mesh_.getCell(id);
             bool valid = false;
             const Index anchor = cell.node_ids.front();
+            if (evaluateAvalanche && cell.node_ids.size() >= 3)
+                for (std::size_t k = 0; k < 3; ++k)
+                    cellDrops[id][k] = static_cast<Real>(qfDrop(electron, anchor, cell.node_ids[k]));
             gradients.gradients[id] = detail::cellScalarGradient(mesh_,cell,[&](Index node) {
+                if (evaluateAvalanche) {
+                    const std::size_t vertex = node == anchor ? 0 : node == cell.node_ids[1] ? 1 : 2;
+                    return cellDrops[id][vertex];
+                }
                 return static_cast<Real>(qfDrop(electron,anchor,node));
             },valid,gradients.areas[id]);
             gradients.valid[id] = valid;
@@ -1951,8 +1965,8 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
         return detail::transportCellVectorEdgeGradientMagnitudesFromCache(
             mesh_,edgeCells_,cellMaterials_,gradients,fieldFactor);
     };
-    const auto enFields = vectorQfMobilityEnabled_ ? vectorFields(true) : std::vector<Real>{};
-    const auto hpFields = vectorQfMobilityEnabled_ ? vectorFields(false) : std::vector<Real>{};
+    const auto enFields = vectorQfMobilityEnabled_ ? vectorFields(true, electronCellDrops) : std::vector<Real>{};
+    const auto hpFields = vectorQfMobilityEnabled_ ? vectorFields(false, holeCellDrops) : std::vector<Real>{};
 
     CoupledDDPhysicalDiagnostics result;
     auto& terms = result.unconstrainedTerms;
@@ -2052,7 +2066,7 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
         terms[j].holeFluxAbsSum += std::abs(fh);
     }
 
-    if (includeImpactIonization && impactIonizationEnabled_) {
+    if (evaluateAvalanche) {
         const Real scale = sourceFactor / continuityScale;
         for (Index id = 0; id < mesh_.numCells(); ++id) {
             const Cell& cell = mesh_.getCell(id);
@@ -2060,11 +2074,17 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
             std::array<Real,3> localPsi{}, localPhin{}, localPhip{}, localN{}, localP{}, localNi{};
             std::array<Real,3> localEn{}, localHp{};
             std::array<vela::ArithmeticReal,3> drops{}, dropCorrections{};
+            if (vectorQfMobilityEnabled_) {
+                localPhin = electronCellDrops[id];
+                localPhip = holeCellDrops[id];
+            }
             for (std::size_t k = 0; k < 3; ++k) {
                 const Index i = cell.node_ids[k], j = cell.node_ids[(k+1)%3];
                 localPsi[k] = static_cast<Real>(drop(anchor,i));
-                localPhin[k] = static_cast<Real>(qfDrop(true,anchor,i));
-                localPhip[k] = static_cast<Real>(qfDrop(false,anchor,i));
+                if (!vectorQfMobilityEnabled_) {
+                    localPhin[k] = static_cast<Real>(qfDrop(true,anchor,i));
+                    localPhip[k] = static_cast<Real>(qfDrop(false,anchor,i));
+                }
                 localN[k] = n[i];
                 localP[k] = p[i];
                 localNi[k] = ni_[i];

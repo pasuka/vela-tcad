@@ -336,7 +336,6 @@ NewtonResult NewtonSolver::solveMonolithicDensityGradientBox(
     auto assembler = makeArclengthAssembler();
     const bool population = assembler->usesPopulationState();
     if (!population) {
-        assembler->setStructureCache(cfg_.sequentialJacobianStructure);
         assembler->setFermiNodeCache(cfg_.diagnosticFermiNodeCache);
         if (cfg_.quasiFermiRecenterOnInitialState)
             assembler->setQuasiFermiReferenceFields(initial.phin, initial.phip);

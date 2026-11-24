@@ -4,6 +4,7 @@
 #include <map>
 #include <queue>
 #include <stdexcept>
+#include <utility>
 
 namespace vela {
 
@@ -29,6 +30,62 @@ VectorXd ConstraintReduction::recover(const VectorXd& direction) const {
     VectorXd full = recoveryOffset + recoveryMatrix * direction;
     if (!full.allFinite()) throw std::runtime_error("nonfinite constraint recovery");
     return full;
+}
+
+ConstraintReduction detail::eliminateDiagonalLinearConstraints(
+    const SparseMatrixd& matrix, const VectorXd& rhs, std::vector<int> rows)
+{
+    const int size = static_cast<int>(matrix.rows());
+    const int reducedSize = size - static_cast<int>(rows.size());
+    ConstraintReduction out;
+    out.eliminated = std::move(rows);
+    out.kept.reserve(reducedSize);
+    out.recoveryOffset = VectorXd::Zero(size);
+    std::vector<int> reducedIndex(size, -1);
+    for (int row : out.eliminated)
+        out.recoveryOffset[row] = rhs[row] / matrix.coeff(row, row);
+    out.rhs.resize(reducedSize);
+    auto prescribed = out.eliminated.begin();
+    for (int row = 0; row < size; ++row) {
+        if (prescribed != out.eliminated.end() && row == *prescribed) {
+            ++prescribed;
+            continue;
+        }
+        const int index = static_cast<int>(out.kept.size());
+        reducedIndex[row] = index;
+        out.kept.push_back(row);
+        out.rhs[index] = rhs[row];
+    }
+
+    // The retained CSC entries are already sorted. Process prescribed columns
+    // in ascending order so the RHS corrections keep their original order.
+    out.matrix.resize(reducedSize, reducedSize);
+    out.matrix.reserve(matrix.nonZeros());
+    for (int col = 0; col < size; ++col) {
+        const int targetColumn = reducedIndex[col];
+        if (targetColumn >= 0)
+            out.matrix.startVec(targetColumn);
+        for (SparseMatrixd::InnerIterator entry(matrix, col); entry; ++entry) {
+            const int targetRow = reducedIndex[entry.row()];
+            if (targetRow < 0)
+                continue;
+            if (targetColumn >= 0)
+                out.matrix.insertBack(targetRow, targetColumn) = entry.value();
+            else if (entry.value() != 0.)
+                out.rhs[targetRow] -= entry.value() * out.recoveryOffset[col];
+        }
+    }
+    out.matrix.finalize();
+    out.recoveryMatrix.resize(size, reducedSize);
+    out.recoveryMatrix.reserve(reducedSize);
+    for (int col = 0; col < reducedSize; ++col) {
+        out.recoveryMatrix.startVec(col);
+        out.recoveryMatrix.insertBack(out.kept[col], col) = 1.;
+    }
+    out.recoveryMatrix.finalize();
+    if (!out.recoveryOffset.allFinite() || !out.rhs.allFinite())
+        throw std::runtime_error("nonfinite constraint substitution");
+    return out;
 }
 
 ConstraintReduction eliminateLinearConstraints(

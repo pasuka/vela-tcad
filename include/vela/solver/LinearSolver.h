@@ -97,6 +97,8 @@ private:
     bool eliminateConstraints_ = true;
     Eigen::Index lastReducedDimension_ = 0;
     VectorXd solveUnreduced(const SparseMatrixd& A, const VectorXd& b);
+    VectorXd solveReduced(const SparseMatrixd& original, const VectorXd& rhs,
+                          const ConstraintReduction& reduced);
     std::string backend_;
     std::string captureDirectory_;
     /// VELA_LINEAR_FACTOR_STATISTICS=0 disables optional factor diagnostics.

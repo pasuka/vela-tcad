@@ -84,6 +84,27 @@ TEST_CASE("Constraint substitution rejects cycles singular pivots and invalid me
     CHECK_THROWS_AS(diagonalConstraintRows(a),std::invalid_argument);
 }
 
+TEST_CASE("Diagonal substitution preserves ordered RHS corrections and sparse slots",
+          "[linear_solver][constraints]") {
+    SparseMatrixd matrix(5, 5);
+    const std::vector<Eigen::Triplet<double>> entries{
+        {0,0,1.}, {0,3,0.}, {1,0,1.e16}, {1,1,2.}, {1,2,-1.e16},
+        {1,3,0.}, {1,4,-5.}, {2,2,1.}, {3,1,3.}, {3,3,5.},
+        {3,4,0.}, {4,4,1.}};
+    matrix.setFromTriplets(entries.begin(), entries.end());
+    VectorXd rhs(5);
+    rhs << 1., 1., 1., 3., 1.;
+    const auto rows = diagonalConstraintRows(matrix);
+    REQUIRE(rows == std::vector<int>{0, 2, 4});
+    const auto reduced = detail::eliminateDiagonalLinearConstraints(matrix, rhs, rows);
+    REQUIRE(reduced.matrix.nonZeros() == 4);
+    CHECK(reduced.rhs[0] == 5.);
+    CHECK(reduced.rhs[1] == 3.);
+    LinearSolver solver("sparselu");
+    const auto expected = solver.solve(matrix, rhs, rows);
+    CHECK((solver.solve(matrix, rhs) - expected).norm() == 0.);
+}
+
 TEST_CASE("Constraint validation ignores unused uncompressed sparse capacity", "[linear_solver][constraints]") {
     SparseMatrixd a(3,3);a.reserve(Eigen::VectorXi::Constant(3,5));
     a.insert(0,0)=2.;a.insert(1,0)=.1;a.insert(1,1)=3.;a.insert(2,1)=.2;a.insert(2,2)=4.;

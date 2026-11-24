@@ -3747,6 +3747,7 @@ std::shared_ptr<CoupledDDAssembler> NewtonSolver::makeArclengthAssembler() const
         cfg_.electronQuantumPotential.couplingMode == "monolithic_box"
             ? cfg_.electronQuantumPotential : DensityGradientQuantumPotentialConfig{});
     configureAssemblerNumerics(*assembler);
+    assembler->setStructureCache(cfg_.sequentialJacobianStructure);
     return assembler;
 }
 

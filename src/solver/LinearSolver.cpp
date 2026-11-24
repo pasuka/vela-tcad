@@ -554,9 +554,18 @@ bool solveSpqrSystem(const SparseMatrixd& A,
 
 VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b)
 {
+    if (A.rows() != A.cols() || A.rows() != b.size())
+        throw std::invalid_argument("LinearSolver: invalid system dimensions");
     if (!b.allFinite() || !sparseAllFinite(A))
         return solveUnreduced(A,b);
-    return solve(A,b,eliminateConstraints_ ? diagonalConstraintRows(A) : std::vector<int>{});
+    lastReducedDimension_ = A.rows();
+    if (!eliminateConstraints_)
+        return solveUnreduced(A, b);
+    auto rows = diagonalConstraintRows(A);
+    if (rows.empty())
+        return solveUnreduced(A, b);
+    ScopedPerformanceTimer timer("linear.constraint_elimination");
+    return solveReduced(A, b, detail::eliminateDiagonalLinearConstraints(A, b, std::move(rows)));
 }
 
 VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b,
@@ -570,9 +579,15 @@ VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b,
     if (!eliminateConstraints_ || constraints.empty()) return solveUnreduced(A,b);
     ScopedPerformanceTimer timer("linear.constraint_elimination");
     const auto reduced = eliminateLinearConstraints(A,b,constraints);
+    return solveReduced(A, b, reduced);
+}
+
+VectorXd LinearSolver::solveReduced(const SparseMatrixd& A, const VectorXd& b,
+                                    const ConstraintReduction& reduced)
+{
     lastReducedDimension_ = reduced.matrix.rows();
     observePerformanceValue("linear.original_rows",static_cast<double>(A.rows()));
-    observePerformanceValue("linear.eliminated_rows",static_cast<double>(constraints.size()));
+    observePerformanceValue("linear.eliminated_rows",static_cast<double>(reduced.eliminated.size()));
     observePerformanceValue("linear.reduced_rows",static_cast<double>(reduced.matrix.rows()));
     VectorXd direction;
     try {

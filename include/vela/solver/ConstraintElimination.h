@@ -26,4 +26,11 @@ ConstraintReduction eliminateLinearConstraints(
     const SparseMatrixd& matrix, const VectorXd& rhs,
     const std::vector<int>& constraintRows);
 
+namespace detail {
+/// Fast substitution for rows returned by diagonalConstraintRows on a finite system.
+ConstraintReduction eliminateDiagonalLinearConstraints(const SparseMatrixd& matrix,
+                                                       const VectorXd& rhs,
+                                                       std::vector<int> rows);
+}
+
 } // namespace vela
