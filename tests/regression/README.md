@@ -275,3 +275,22 @@ the accepted-point numerical checks. The native curve is bounded at 100 V. Its i
 with a 1e-12 A/um denominator floor. BV uses the first 1e-4 A/um
 crossing and a 0.5% tolerance against the qualified 6.673833 V anchor.
 Reports are written to `<build>/bvmethods-reports/`.
+
+## SLOT LDMOS device regressions
+
+Configure with `VELA_ENABLE_SLOT_LDMOS_CI=ON` to register
+`slot_ldmos_bvds_sdevice` and `slot_ldmos_idvg_sdevice`. Set
+`VELA_SLOT_LDMOS_BVDS_CMD` and `VELA_SLOT_LDMOS_IDVG_CMD` to preprocessed
+CMD files in self-contained input directories. Include the input mesh,
+doping, parameter files, and any SLOT sidecar and restart state required by
+the CMD. Use paths relative to the CMD for inputs and outputs. The device
+inputs are supplied separately from the repository.
+
+Build `sd-sim` and its runtime targets, then run `ctest -L slot-ldmos --output-on-failure`.
+The runner uses the build's `sd-sim` by default. `VELA_SLOT_LDMOS_SD_SIM`
+can explicitly select a separately qualified SLOT-capable runtime with its
+companion tools and scripts. The tests require successful `sd-sim`
+execution, verify potential and density unknowns with unit scaling in the
+emitted stages, and check the completed voltage sweep or BVDS current stop.
+Each test keeps its run directory and logs under `slot-ldmos-reports/` in
+the build tree.
