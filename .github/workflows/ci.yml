@@ -36,7 +36,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up GCC
         uses: egor-tensin/setup-gcc@v2
@@ -58,7 +58,7 @@ jobs:
         run: bash .github/scripts/apt-dependencies.sh plan
 
       - name: Cache APT package archives
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ runner.temp }}/vela-apt-debs/*.deb
           key: apt-debs-v1-ubuntu26.04-${{ runner.arch }}-${{ steps.apt-plan.outputs.key }}
@@ -68,7 +68,7 @@ jobs:
         run: bash .github/scripts/apt-dependencies.sh install
 
       - name: Cache GCC compilation results
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.CCACHE_DIR }}
           key: ccache-v1-ubuntu26.04-${{ runner.arch }}-${{ steps.compiler.outputs.key }}-${{ github.sha }}-${{ env.REQUESTED_SUITE }}
@@ -81,7 +81,7 @@ jobs:
           patchelf --version
 
       - name: Cache pinned Gmsh wheel
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: build/gmsh-inputs
           key: sde-gmsh-inputs-v1-ubuntu26.04-${{ runner.arch }}-${{ hashFiles('configs/sde_external_runtimes.json') }}
@@ -99,7 +99,7 @@ jobs:
 
       - name: Upload Gmsh probe report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: gmsh-runtime-probe
           path: |
@@ -110,7 +110,7 @@ jobs:
       - name: Cache Intel oneMKL runtime
         if: env.REQUESTED_SUITE != 'pn2d'
         id: mkl-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .ci-onemkl
           key: onemkl-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.VELA_MKL_VERSION }}
@@ -133,7 +133,7 @@ jobs:
 
       - name: Cache pinned Eigen and HighFive sources
         id: cmake-source-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             build/_deps/vela_eigen-src
@@ -195,7 +195,7 @@ jobs:
 
       - name: Cache locked SDE offline inputs
         if: env.REQUESTED_SUITE == 'all'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: build/p6-assets
           key: sde-offline-inputs-v1-ubuntu26.04-${{ runner.arch }}-${{ hashFiles('configs/sde_offline_inputs.json') }}
@@ -236,7 +236,7 @@ jobs:
 
       - name: Retain SDE package and structured qualification
         if: always() && env.REQUESTED_SUITE == 'all'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sde-qualification-ubuntu26.04
           path: |
@@ -249,7 +249,7 @@ jobs:
 
       - name: Upload CTest regression reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-regression
           path: |
