@@ -59,6 +59,42 @@ TEST_CASE("Extended population extrapolation preserves positive densities", "[ex
     CHECK_THROWS_AS(predictPopulation<long double>(invalid, current, 2.0L), std::domain_error);
 }
 
+TEST_CASE("Extended EFT retains product tails and extended subnormal defects", "[extended80]") {
+    const long double delta = 0x1p-40L;
+    const auto tiny = std::numeric_limits<long double>::denorm_min();
+    ExtendedSparseMatrix matrix(3, 4);
+    matrix.insert(0, 0) = 1.L + delta;
+    matrix.insert(1, 1) = tiny;
+    matrix.insert(2, 2) = 0x1p100L;
+    matrix.insert(2, 3) = -0x1p100L;
+    const auto residual = (ExtendedVector(3) << -1.L, 0.L, low).finished();
+    const auto direction = (ExtendedVector(4) << 1.L - delta, 2.L, 1.L, 1.L).finished();
+
+    const auto eft = linear_refinement::extendedEftDefect(matrix, residual, direction);
+    const auto precise = linear_refinement::computeHighPrecisionDefect(matrix, residual, direction);
+    CHECK(eft.values[0] == -0x1p-80L);
+    CHECK(eft.values[0] == precise.values[0]);
+    CHECK(eft.values[1] == 2.L * tiny);
+    CHECK(eft.componentwiseBackwardErrors[1] == 1.L);
+    CHECK(eft.values[2] == low);
+    CHECK(eft.componentwiseBackwardErrors[2] == precise.componentwiseBackwardErrors[2]);
+    CHECK(eft.backwardMax == 1.L);
+
+    // The leading product stays near one, including when splitting one
+    // operand would leave the exponent range used by the fast path.
+    ExtendedSparseMatrix scaled(1, 1);
+    scaled.insert(0, 0) = 1.L;
+    const ExtendedVector target = ExtendedVector::Constant(1, -1.L);
+    ExtendedVector update(1);
+    for (const int exponent : {-16310, -16295, -100, 100, 16335, 16345}) {
+        scaled.coeffRef(0, 0) = std::ldexp(1.L + delta, exponent);
+        update[0] = std::ldexp(1.L - delta, -exponent);
+        const auto result = linear_refinement::extendedEftDefect(scaled, target, update);
+        CHECK(result.values[0] == -0x1p-80L);
+        CHECK(result.backwardMax == 0x1p-81L);
+    }
+}
+
 TEST_CASE("Prepared extended refinement defects preserve uncached arithmetic", "[extended80]") {
     ExtendedSparseMatrix matrix(3, 3);
     matrix.insert(0, 0) = 1.0L + low;

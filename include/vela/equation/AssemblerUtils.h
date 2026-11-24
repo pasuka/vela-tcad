@@ -2543,12 +2543,16 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
 {
     const bool observedIal=usesIalElementAvalancheSource(config);
     const bool phumobElement=usesPhuMobElementAvalancheSource(config);
+    const bool laggedPhuMobSgSource =
+        config.currentApproximation=="phumob_element_sg_best_vertex" &&
+        config.sourceJacobianMode=="frozen";
     if (phumobElement &&
         (config.model!="van_overstraeten" || config.generation!="current_density" ||
          config.drivingForce!="quasi_fermi_gradient" ||
          config.quasiFermiGradientDiscretization!="cell_gradient" ||
          config.sourceMappingMode!="element_vertex_box_measure" ||
-         config.sourceJacobianMode!="local_ad" || config.ialmobBoundaryFieldProjection ||
+         (config.sourceJacobianMode!="local_ad" && !laggedPhuMobSgSource) ||
+         config.ialmobBoundaryFieldProjection ||
          config.drivingForceInterpolation!="none" ||
          config.electronDrivingForceRefDensity!=0. || config.holeDrivingForceRefDensity!=0. ||
          config.quasiFermiCarrierTruncation!=0. || config.sourceVolumeFactor!=0. ||
@@ -2558,7 +2562,7 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
          (!config.gradQfContactField && config.contactElectricFieldFallback &&
           (config.contactElectricFieldFallbackScope!="contact_node_cell" ||
            config.contactElectricFieldFallbackMode!="cell_gradient_magnitude"))))
-        throw std::invalid_argument(std::string(context)+": PhuMob source requires its explicit 300 K GradQF/local_ad profile");
+        throw std::invalid_argument(std::string(context)+": PhuMob source requires its explicit 300 K GradQF profile, with frozen tangents supported only for SG");
     if (observedIal &&
         (config.model!="van_overstraeten" || config.generation!="current_density" ||
          config.drivingForce!="quasi_fermi_gradient" ||

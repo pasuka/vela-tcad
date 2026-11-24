@@ -248,6 +248,7 @@ _UNSUPPORTED_TOP = {"thermodynamic", "hydrodynamic", "etemperature", "htemperatu
 _DEFAULT_VELA = {
     "Mobility.DopingDependence": "solver.mobility.model=masetti",
     "Mobility.ConstantMobility": "solver.mobility.model=constant",
+    "Mobility.PhuMob": "solver.mobility.model=phumob",
     "Mobility.Enormal": "solver.mobility.model+=_lombardi",
     "Recombination.Auger": "solver.recombination+=auger",
     "EffectiveIntrinsicDensity.OldSlotboom": "solver.bandgap_narrowing=old_slotboom",
@@ -372,6 +373,8 @@ def _canonicalise_model(model: dict, scope: PhysicsScope, ctx: ParseContext, lin
                 else:
                     params = {"model": sub[0]["name"]} if sub else {}
                     _add_effective(scope, "Mobility.Enormal", params, vela=_DEFAULT_VELA["Mobility.Enormal"])
+            elif a in ("phumob", "philipsunifiedmobility") and not sub and "value" not in arg:
+                _add_effective(scope, "Mobility.PhuMob", {}, vela=_DEFAULT_VELA["Mobility.PhuMob"])
             elif a in ("ialmob", "carriercarrierscattering", "phumob", "philipsunifiedmobility",
                        "hydrodynamic", "thinlayer", "tomobility", "negativejunction", "monteCarlo".lower()):
                 key = f"Mobility.{arg['name']}"
@@ -597,6 +600,10 @@ def combine_physics(scopes: List[PhysicsScope], ctx: ParseContext) -> dict:
                           detail=f"{first_scope.scope}={first_scope.target} vs {scope.scope}={scope.target}: "
                                  + ", ".join(differing))
         effective = first
+    if "Mobility.PhuMob" in effective and (
+            "Mobility.DopingDependence" in effective or "Mobility.ConstantMobility" in effective):
+        ctx.error("E113", 0, section, "Mobility",
+                  detail="PhuMob conflicts with another low-field mobility model")
     narrowing_models = {f"EffectiveIntrinsicDensity.{model}" for model in _BGN_MODELS.values()
                         if model != "NoFermi"}
     if len(narrowing_models.intersection(effective)) > 1:

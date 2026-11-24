@@ -65,13 +65,65 @@ def material_result(ir: dict, materials: tuple = ("Si",), *, constants_profile="
 
 
 def emit(ir: dict, **kwargs):
+    report = kwargs.pop("materials_report", None)
+    if report is None:
+        report = material_result(ir).report
     return emit_stage_plan(ir, mesh_qualification=kwargs.pop("mesh_qualification", qualification(ir)),
-        materials_report=kwargs.pop("materials_report", material_result(ir).report),
+        materials_report=report,
         work_dir="device_vela", cmd_basename=ir["source"]["path"],
         cmd_sha256=ir["source"]["sha256"], options=kwargs.pop("options", EmitOptions(allow_lossy=True)), **kwargs)
 
 
 class DeckEmitterTests(unittest.TestCase):
+    def test_phumob_cmd_and_materials_emit_solver_units(self):
+        ir = parse_cmd_text("""
+File { Grid="mesh.grd" Parameter="device.par" }
+Electrode { { Name="source" Voltage=0 } { Name="drain" Voltage=0 } }
+Physics (Material="Silicon") {
+    Mobility(Phumob HighFieldSaturation Enormal(Lombardi))
+    Recombination(Auger)
+}
+Math { Iterations=20 }
+Solve { Coupled { Poisson Electron Hole } }
+""", path_name="device_des.cmd")
+        self.assertTrue(ir["verdict"]["accepted"], ir["errors"])
+        self.assertIn("PhuMob", active_models_from_ir(ir))
+        with tempfile.TemporaryDirectory() as directory:
+            par = Path(directory) / "device.par"
+            par.write_text("""
+Material="Silicon" {
+    PhuMob {
+        mumax_As = 1417
+        n_ref_As = 1.0e17
+        alpha1_g_k = -0.007
+        alpha1_g_m = -1.5952
+    }
+    Auger {
+        A = 6.7e-32, 7.2e-32
+        B = 2.45e-31, 4.5e-33
+        C = -2.2e-32, 2.63e-32
+        H = 3.46667, 8.25688
+        N0 = 1e18, 2e18
+    }
+}
+""", encoding="utf-8")
+            report = emit_materials(par, active_models=active_models_from_ir(ir),
+                                    temperature_K=300, mesh_materials=["Si"],
+                                    effective_models=ir["physics"]["effective"]).report
+        solver = emit(ir, materials_report=report).decks[0]["solver"]
+        mobility = solver["mobility"]
+        self.assertEqual("phumob_field_lombardi", mobility["model"])
+        self.assertEqual(1417.0, mobility["phumob"]["electron_arsenic"]["mu_max_cm2_V_s"])
+        self.assertEqual(1.0e17, mobility["phumob"]["electron_arsenic"]["n_ref_cm3"])
+        self.assertEqual(0.007, mobility["phumob"]["g_alpha_prime"])
+        silicon = report["materials"][0]
+        meyer = next(row for row in silicon["parameters"] if row["parameter"] == "alpha1_g_m")
+        self.assertEqual("inactive", meyer["status"])
+        self.assertEqual({
+            "electron": {"enhancement": 3.46667, "reference_density_cm3": 1e18},
+            "hole": {"enhancement": 8.25688, "reference_density_cm3": 2e18},
+        }, solver["auger_density_dependence"])
+
     def test_pn2d_population_uses_original_physics_and_quasistationary_controls(self):
         root = REPO / "reference_tcad/pn2d_sentaurus2018"
         paths = sorted(root.rglob("*_sdevice.cmd"))

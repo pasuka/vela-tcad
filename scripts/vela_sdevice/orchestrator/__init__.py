@@ -213,7 +213,10 @@ class DeviceRun:
             sv.validate(sv.load_schema(resource_root() / "schemas/vela.mesh_qualification.v1.schema.json"), mesh)
             constants_profile = getattr(self.options, "physical_constants_profile", None) or "sentaurus_u2022_12"
             electrode_materials = [e["attributes"]["material"] for e in self.ir["electrodes"] if "material" in e["attributes"]]
+            default_par = getattr(self.options, "default_par", None)
             if slot_context:
+                if default_par is not None:
+                    raise RunError("E407", "--default-par applies to the generic material importer")
                 constants_profile = slot_context["reference"].get("physical_constants_profile", "codata2018")
                 slot_report["effective_doping"] = check_slot_effective_doping(
                     self.work / "doping.csv", Path(slot_report["inputs"]["doping"]["path"]))
@@ -229,7 +232,10 @@ class DeviceRun:
                 write_json(self.work / "slot_ialmob_binding.json", slot_report)
                 material_report = {"schema": "vela.sdevice_materials_report.v1", "lossy": [], "inert": []}
             else:
+                if default_par is not None and not default_par.is_file():
+                    raise RunError("E303", f"Material defaults file '{default_par}' is unavailable")
                 materials = emit_materials(self.cmd.parent / self.ir["files"]["parameter"]["resolved"],
+                    default_par=default_par,
                     constants_profile=constants_profile,
                     active_models=active_models_from_ir(self.ir), temperature_K=self.ir["physics"]["temperature_K"] or 300,
                     mesh_materials=mesh["materials"], electrode_materials=electrode_materials,

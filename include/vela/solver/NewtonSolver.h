@@ -211,6 +211,7 @@ struct NewtonConfig {
     Real residualFilterEnvelopeFactor = 2.0;
     bool verbose = true;
     bool warmStart = false; ///< Preserve supplied quasi-Fermi potentials instead of resetting interiors.
+    bool contactPreprojection = false; ///< Project fixed-voltage population trial seeds onto Dirichlet targets.
     bool diagnostics = false; ///< Store detailed line-search diagnostics in NewtonResult::history.
     std::string progressDirectory; ///< Opt-in diagnostic-only per-accepted-iterate snapshots (new directory).
     bool captureLinearSystem = false; ///< In-memory matrices/directions in progressDirectory; diagnostic only.

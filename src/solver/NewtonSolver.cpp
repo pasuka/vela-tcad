@@ -2405,6 +2405,7 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         "residual_filter_envelope_factor", cfg.residualFilterEnvelopeFactor);
     cfg.verbose = json.value("verbose", cfg.verbose);
     cfg.warmStart = json.value("warm_start", cfg.warmStart);
+    cfg.contactPreprojection = json.value("contact_preprojection", cfg.contactPreprojection);
     cfg.diagnostics = json.value("diagnostics", cfg.diagnostics);
     cfg.diagnostics = json.value("diagnostic_history", cfg.diagnostics);
     cfg.progressDirectory = json.value("progress_directory", std::string{});
@@ -3640,8 +3641,11 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
             throw std::invalid_argument("BVMethods profile requires ordinary classical QF coordinates");
         if(cfg.carrierStatistics.model!="fermi_dirac_joyce_dixon")
             throw std::invalid_argument("BVMethods profile requires explicit Joyce-Dixon statistics");
-    } else if(cfg.carrierStatistics.model=="fermi_dirac_joyce_dixon") {
-        throw std::invalid_argument("Joyce-Dixon Newton dispatch requires bvmethods_tri3_qf");
+    } else if(cfg.carrierStatistics.model=="fermi_dirac_joyce_dixon" &&
+              (cfg.coupledOperator!="legacy" || cfg.stateVariables!="potential_density" ||
+               cfg.carrierStatistics.transport!="effective_band_sg")) {
+        throw std::invalid_argument(
+            "Legacy Joyce-Dixon Newton requires potential_density with effective_band_sg");
     }
 
     validatePopulationNumerics(cfg);
@@ -4565,23 +4569,28 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
                 if(previous[k]==current[k])next[k]=current[k];
             (void)assembler->unpack(next);return next;
         };
-        system.jacobianInColumns=[self,assembler,biasesAt](const VectorXd& x,Real v,const VectorXd& columns){
-            return assembler->populationJacobianInColumns(x,self->buildBoundaryConditions(*assembler,biasesAt(v)),columns);
-        };
-        system.bootstrapJacobianInColumns=[self,assembler,biasesAt](const VectorXd& x,Real v,const VectorXd& columns){
-            return assembler->populationJacobianInColumns(x,self->buildBoundaryConditions(*assembler,biasesAt(v)),columns,true);
-        };
-        system.automaticDerivativeRecovery=cfg_.populationDerivativeRecovery=="automatic";
-        system.postProtectionDerivativeRecovery=cfg_.populationDerivativeRecovery=="after_protection";
-        system.protectedJacobian=[self,assembler,biasesAt](const VectorXd& x,Real v) {
-            return assembler->populationProtectedJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)));
-        };
-        system.protectedJacobianInColumns=[self,assembler,biasesAt](const VectorXd& x,Real v,const VectorXd& columns) {
-            return assembler->populationProtectedJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)),&columns);
-        };
-        system.bootstrapJacobian=[self,assembler,biasesAt](const VectorXd& x,Real v) {
-            return assembler->populationBootstrapJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)));
-        };
+        // Only BVMethods can assemble its population tangents directly in
+        // relative carrier columns. Legacy keeps its physical Jacobian and
+        // the ordinary row/column equilibration for dilute states.
+        if (assembler->usesBvMethodsOperator()) {
+            system.jacobianInColumns=[self,assembler,biasesAt](const VectorXd& x,Real v,const VectorXd& columns){
+                return assembler->populationJacobianInColumns(x,self->buildBoundaryConditions(*assembler,biasesAt(v)),columns);
+            };
+            system.bootstrapJacobianInColumns=[self,assembler,biasesAt](const VectorXd& x,Real v,const VectorXd& columns){
+                return assembler->populationJacobianInColumns(x,self->buildBoundaryConditions(*assembler,biasesAt(v)),columns,true);
+            };
+            system.automaticDerivativeRecovery=cfg_.populationDerivativeRecovery=="automatic";
+            system.postProtectionDerivativeRecovery=cfg_.populationDerivativeRecovery=="after_protection";
+            system.protectedJacobian=[self,assembler,biasesAt](const VectorXd& x,Real v) {
+                return assembler->populationProtectedJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)));
+            };
+            system.protectedJacobianInColumns=[self,assembler,biasesAt](const VectorXd& x,Real v,const VectorXd& columns) {
+                return assembler->populationProtectedJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)),&columns);
+            };
+            system.bootstrapJacobian=[self,assembler,biasesAt](const VectorXd& x,Real v) {
+                return assembler->populationBootstrapJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)));
+            };
+        }
         const double vt=thermalVoltageForInputs(cfg_.temperature_K, cfg_.unitScalingRefs);
         system.columnScales=[assembler,nodeCount,potentialScale,vt](const ArclengthState& state) {
             (void)assembler->unpack(state.x);VectorXd scale=VectorXd::Ones(3*nodeCount+1);

@@ -17,7 +17,11 @@ NewtonResult NewtonSolver::solvePopulation(const DDSolution& initial) const {
     const auto bias=contactBiases_.find(contact);
     if(bias==contactBiases_.end())throw std::invalid_argument("population Newton requires the reference contact bias");
     auto system=makeArclengthSystem(contact);
-    const auto y=packArclengthState(initial);
+    auto y=packArclengthState(initial);
+    if (cfg_.contactPreprojection && cfg_.maxIter > 0) {
+        const auto assembler = makeArclengthAssembler();
+        assembler->projectPopulationBoundarySeed(y, buildBoundaryConditions(*assembler));
+    }
     const auto initialF=system.residual(y,bias->second);
     const auto blocks=ResidualNorm::computeBlocks(initialF,mesh_.numNodes());
     const ResidualBlockNormValue scales{

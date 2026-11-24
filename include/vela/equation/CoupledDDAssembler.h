@@ -417,6 +417,8 @@ public:
 
     VectorXd pack(const CoupledDDState& state) const;
     CoupledDDState unpack(const VectorXd& x) const;
+    /// Initialize only explicitly prescribed coordinates of a fixed-bias population seed.
+    void projectPopulationBoundarySeed(VectorXd& seed, const CoupledDDBoundaryConditions& bcs) const;
     bool usesPopulationState() const { return scaling_.stateVariables == "potential_density"; }
     bool usesLegacyPopulationState() const {
         return usesPopulationState() && !usesBvMethodsOperator() &&

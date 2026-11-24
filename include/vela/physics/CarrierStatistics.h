@@ -87,6 +87,7 @@ Real fermiDiracHalf(Real eta);
 /// DOS * F_{1/2}(eta), retaining representable populations when F alone underflows.
 /// Uses the same scaled evaluation as electronDensity/holeDensity; no density floor.
 Real scaledFermiDiracHalf(Real densityOfStates, Real eta);
+Real scaledFermiDiracHalf(Real densityOfStates, Real eta, CarrierStatisticsModel model);
 Real fermiDiracHalfDerivative(Real eta);
 /// Second derivative of the same high-accuracy representation.
 Real fermiDiracHalfSecondDerivative(Real eta);

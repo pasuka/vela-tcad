@@ -486,12 +486,15 @@ class FailClosedTest(unittest.TestCase):
             inert = {(x["section"], x["parameter"]) for x in result.report["inert"]}
             self.assertIn(("Auger", "H"), inert)
             self.assertIn(("Auger", "N0"), inert)
-            # H != 0 is a real carrier-density enhancement Vela lacks: fatal even with allow_lossy.
             par2 = _write_par(Path(tmp), text.replace("H = 0 , 0", "H = 3.46667 , 8.25688"), "enh.par")
-            with self.assertRaises(mat.MaterialsError) as ctx:
-                mat.emit_materials(par2, active_models=["Auger"], temperature_K=300.0, mesh_materials=["Si"],
-                                   allow_lossy=True)
-            self.assertIn("Si.Auger.H", ctx.exception.message)
+            enhanced = mat.emit_materials(par2, active_models=["Auger"], temperature_K=300.0, mesh_materials=["Si"])
+            configured = {(r["parameter"], r["carrier"]): r for r in enhanced.report["solver_parameters"]}
+            self.assertEqual(3.46667, configured[("H", "electron")]["value_si"])
+            self.assertEqual(8.25688, configured[("H", "hole")]["value_si"])
+            for carrier in ("electron", "hole"):
+                ref = configured[("N0", carrier)]
+                self.assertEqual(1e24, ref["value_si"])
+                self.assertEqual(f"solver.auger_density_dependence.{carrier}.reference_density_m3", ref["target"])
 
     def test_electrode_work_function(self) -> None:
         text = 'Material = "Gold" {\nBandgap\n{\n  WorkFunction = 5.1  # [eV]\n}\n}\n'

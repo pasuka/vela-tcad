@@ -101,7 +101,8 @@ ExtendedFixedBiasNewtonResult solveExtendedPopulationNewton(
         const auto goal = (circuit || config.refineToLinearGoal) ? std::optional{ExtendedLinearAccuracyGoal{
             config.maxLinearBackwardError, config.maxScaledLinearDefect}} : std::nullopt;
         const auto linear = solveExtendedBorderedSystem(*system, eliminate,
-            frame.device.retainedIndependentPotentialRows, config.refinementCorrections, goal);
+            frame.device.retainedIndependentPotentialRows, config.refinementCorrections, goal,
+            config.linearDefectMethod);
         result.factoredDimension = linear.factoredDimension;
         result.linearBackwardError = linear.backwardError;
         result.scaledLinearDefect = linear.scaledResidualInfinityNorm;

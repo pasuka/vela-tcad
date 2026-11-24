@@ -218,6 +218,7 @@
         "grad_qf_contact_field": {"enum": ["electric_field", "quasi_fermi_gradient"], "default": "electric_field"},
         "arithmetic_precision": {"enum": ["double", "extended80"], "default": "double"},
         "extended80_stage_profile": {"enum": ["slot_population_bvds_v1", "slot_population_fixed_bias_v1"]},
+        "extended80_linear_defect": {"enum": ["eft", "mp100"], "default": "eft", "description": "Linear defect accumulation for SLOT extended80 BVDS and fixed-bias stages."},
         "require_end_to_end_precision": {"type": "boolean", "default": false},
         "primary_variable_coordinates": {"enum": ["unit", "physical"], "description": "Population Newton coordinates; default unit for BVMethods population state, physical is the explicit rollback."},
         "compensated_population_state": {"type": "boolean", "default": false},
@@ -233,6 +234,7 @@
           }
         },
         "state_variables": {"type": "string", "enum": ["potential_quasi_fermi", "potential_density"], "description": "Nonlinear primary state; explicit legacy Boltzmann/Fermi or BVMethods Joyce-Dixon physics."},
+        "contact_preprojection": {"type": "boolean", "default": false, "description": "Project fixed-voltage population Newton trial seeds onto the prescribed contact coordinates."},
         "population_sg_bootstrap_linearization": {"enum": ["unchanged", "floor_adjacent_edges"], "default": "unchanged", "description": "Opt-in approximate-only SG population feedback freezing on carrier edges touching the configured positive density floor; requires potential_density and quasi_fermi SG."},
         "population_writeback": {"enum": ["independent", "boltzmann_psi_compensated"], "default": "independent"},
         "population_sg_current": {"enum": ["quasi_fermi", "band_population"], "default": "quasi_fermi", "description": "Experimental direct population/ni-band SG arithmetic; band_population requires potential_density."},

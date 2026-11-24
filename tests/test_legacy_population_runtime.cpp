@@ -69,8 +69,51 @@ DeviceMesh populationMesh() {
 }
 }
 
+TEST_CASE("Prescribed population seed projects only boundary coordinates", "[legacy_population][contact_preprojection]") {
+    const auto model = GENERATE(std::string("boltzmann"), std::string("fermi_dirac"));
+    auto mesh = populationMesh();
+    MaterialDatabase materials;
+    DopingModel doping(mesh.numNodes());
+    for (Index node = 0; node < mesh.numNodes(); ++node)
+        doping.setNodeDoping(node, 1e24, 0.);
+    const Real vt = constants::Vt_300;
+    DDScalingSpec scaling;
+    scaling.enabled = true;
+    scaling.V0 = vt;
+    scaling.C0 = 1e23;
+    scaling.D0 = .01;
+    scaling.stateVariables = "potential_density";
+    CoupledDDAssembler assembler(mesh, materials, doping, vt,
+        mobilityModelConfig("constant"), recombinationModelConfig({}), bandgapNarrowingConfig("none"),
+        {}, {}, {}, scaling, {}, {model, model == "boltzmann" ? "generalized_einstein" : "effective_band_sg"});
+    const int count = static_cast<int>(mesh.numNodes());
+    VectorXd parent = assembler.packPopulation(VectorXd::Zero(count),
+        VectorXd::Constant(count, 1e23), VectorXd::Constant(count, 1e10));
+    CoupledDDBoundaryConditions boundary;
+    boundary.psi[0] = .47 / vt;
+    boundary.phin[0] = boundary.phip[0] = .1 / vt;
+    boundary.psi[2] = .2 / vt;
+    VectorXd seed = parent;
+    assembler.projectPopulationBoundarySeed(seed, boundary);
+    const auto residual = assembler.residual(seed, boundary);
+    CHECK(seed[0] == boundary.psi[0]);
+    CHECK(seed[2] == boundary.psi[2]);
+    CHECK(std::abs(residual[count] * vt) < 5e-14);
+    CHECK(std::abs(residual[2 * count] * vt) < 5e-14);
+    for (const int node : {1, 2, 3}) {
+        CHECK(seed[count + node] == parent[count + node]);
+        CHECK(seed[2 * count + node] == parent[2 * count + node]);
+    }
+    CHECK(seed[1] == parent[1]);
+    CHECK(seed[3] == parent[3]);
+    CHECK(parent[0] == 0.);
+    CHECK_FALSE(newtonConfigFromJson(nlohmann::json::object()).contactPreprojection);
+    CHECK(newtonConfigFromJson({{"contact_preprojection", true}}).contactPreprojection);
+}
+
 TEST_CASE("Legacy population coordinates retain classical SLOT models and physical Jacobian", "[legacy_population]") {
-    const auto model=GENERATE(std::string("boltzmann"),std::string("fermi_dirac"));
+    const auto model=GENERATE(std::string("boltzmann"),std::string("fermi_dirac"),
+                              std::string("fermi_dirac_joyce_dixon"));
     const auto mobilityName=GENERATE(std::string("constant"),std::string("phumob"));
     const bool scaled=GENERATE(false,true);
     INFO(model);INFO(mobilityName);INFO(scaled);
@@ -80,8 +123,9 @@ TEST_CASE("Legacy population coordinates retain classical SLOT models and physic
     mobility.dopingConcentrationBasis="total_impurity";
     if(mobilityName=="phumob")mobility.edgeAveraging="element_box_phumob";
     auto rec=recombinationModelConfig({"srh","auger"});
-    auto bgn=bandgapNarrowingConfig(model=="fermi_dirac"?"bennett_wilson":"old_slotboom");
-    CarrierStatisticsConfig statistics{model,model=="fermi_dirac"?"effective_band_sg":"generalized_einstein"};
+    const bool isFermi=model!="boltzmann";
+    auto bgn=bandgapNarrowingConfig(isFermi?"bennett_wilson":"old_slotboom");
+    CarrierStatisticsConfig statistics{model,isFermi?"effective_band_sg":"generalized_einstein"};
     DDScalingSpec q;q.enabled=scaled;q.V0=constants::Vt_300;q.C0=1e23;q.D0=.01;
     q.regionResolvedInterfaceAssembly.transportEdgeGeometry="element_box";
     auto p=q;p.stateVariables="potential_density";
@@ -256,4 +300,38 @@ TEST_CASE("Main population defaults remain scoped to BVMethods", "[legacy_popula
     CHECK(bv.populationStoppingRule=="native_approx");
     CHECK(bv.populationDerivativeRecovery=="after_protection");
     CHECK(bv.populationMinimumDensity_cm3==1e-100);
+}
+
+TEST_CASE("Legacy Newton keeps its physical Jacobian for dilute populations",
+          "[legacy_population][arclength]")
+{
+    auto mesh = populationMesh();
+    MaterialDatabase database;
+    DopingModel doping(mesh.numNodes());
+    for (Index node = 0; node < mesh.numNodes(); ++node)
+        doping.setNodeDoping(node, 1e22, 0.);
+    auto config = newtonConfigFromJson({
+        {"coupled_operator", "legacy"},
+        {"state_variables", "potential_density"},
+        {"carrier_statistics", {{"model", "fermi_dirac"}, {"transport", "effective_band_sg"}}}
+    });
+    config.mobility = mobilityModelConfig("constant");
+    config.maxIter = 1;
+    NewtonSolver solver(mesh, database, doping, {{"source", 0.}, {"drain", .006}}, config);
+    const auto system = solver.makeArclengthSystem("drain");
+
+    DDSolution state;
+    state.psi = VectorXd::Constant(4, .25);
+    state.phin = VectorXd::Zero(4);
+    state.phip = VectorXd::Zero(4);
+    state.n = VectorXd::Constant(4, 1e22);
+    state.p = VectorXd::Constant(4, 1e10);
+    state.p[2] = 1e-160;
+    const auto packed = solver.packArclengthState(state);
+    const auto scales = system.columnScales({packed, .006});
+    REQUIRE(scales[10] < std::sqrt(std::numeric_limits<Real>::min()));
+    CHECK_FALSE(system.jacobianInColumns);
+    CHECK_FALSE(system.bootstrapJacobianInColumns);
+    CHECK(system.jacobian(packed, .006).coeff(10, 10) != 0.);
+    CHECK_NOTHROW(solver.solve(state));
 }

@@ -36,9 +36,10 @@ private:
     bool held_;
 };
 
-void twoSum(double a, double b, double& high, double& low) {
+template<class Scalar>
+void twoSum(Scalar a, Scalar b, Scalar& high, Scalar& low) {
     high = a + b;
-    const double shifted = high - a;
+    const Scalar shifted = high - a;
     low = (a - (high - shifted)) + (b - shifted);
 }
 
@@ -58,17 +59,18 @@ int leastSetBit(double v) {
     return (exponent ? exponent - 1023 - 52 : -1074) + std::countr_zero(mantissa);
 }
 
+template<class Scalar>
 struct Accumulator {
-    double sum = 0, first = 0, second = 0;
+    Scalar sum = 0, first = 0, second = 0;
     bool discarded = false;
 
-    void add(double value, double tail) {
-        double q1, q2, q3;
+    void add(Scalar value, Scalar tail) {
+        Scalar q1, q2, q3;
         twoSum(sum, value, sum, q1);
         twoSum(first, q1, first, q2);
         twoSum(first, tail, first, q3);
-        const double combined = q2 + q3;
-        const double updated = second + combined;
+        const Scalar combined = q2 + q3;
+        const Scalar updated = second + combined;
         // Detect the cancellation witness where the third level loses a
         // nonzero term and later cancels to zero. Keep the K3 sum order.
         discarded |= (combined == q2 && q3 != 0.) ||
@@ -84,7 +86,7 @@ struct Accumulator {
 
     template<class Number>
     bool finish(Number& value) const {
-        double sumHigh, sumLow, high, low;
+        Scalar sumHigh, sumLow, high, low;
         twoSum(sum, first, sumHigh, sumLow);
         twoSum(sumHigh, sumLow + second, high, low);
         if (!std::isfinite(high) || !std::isfinite(low) ||
@@ -97,7 +99,7 @@ struct Accumulator {
 
 enum class FallbackReason { none, range, cancellation };
 struct Row {
-    Accumulator residual, denominator;
+    Accumulator<double> residual, denominator;
     FallbackReason fallback = FallbackReason::none;
 
     explicit Row(double f) : residual{f}, denominator{std::abs(f)} {}
@@ -265,6 +267,173 @@ Defect eftDefectImpl(const SparseMatrixd& J, const VectorXd& F, const VectorXd& 
     incrementPerformanceCounter("linear.eft_defect.cancellation_fallback_rows", cancellationRows);
     return result;
 }
+#if defined(VELA_ARITHMETIC_EXTENDED80)
+using Wide = long double;
+using WideMatrix = Eigen::SparseMatrix<Wide>;
+using WideVector = Eigen::VectorX<Wide>;
+using exact_binary64::Integer;
+using exact_binary64::Rational;
+constexpr int wideDigits = std::numeric_limits<Wide>::digits;
+static_assert(wideDigits == 64 && std::numeric_limits<Wide>::radix == 2);
+
+Rational fromWide(Wide value) {
+    if (!std::isfinite(value))
+        throw std::invalid_argument("Nonfinite extended refinement operand");
+    if (value == 0)
+        return 0;
+    int exponent;
+    const auto fraction = std::frexp(std::abs(value), &exponent);
+    Integer mantissa = static_cast<std::uint64_t>(std::ldexp(fraction, wideDigits));
+    if (std::signbit(value))
+        mantissa = -mantissa;
+    const int shift = exponent - wideDigits;
+    if (shift >= 0)
+        return Rational(mantissa << shift);
+    return Rational(mantissa, Integer(1) << -shift);
+}
+
+// Keep the subnormal range and round once to nearest, ties to even.
+Wide toWide(const Rational& value) {
+    Integer numerator = boost::multiprecision::numerator(value);
+    if (numerator == 0)
+        return 0;
+    const bool negative = numerator < 0;
+    if (negative)
+        numerator = -numerator;
+    Integer denominator = boost::multiprecision::denominator(value);
+    int exponent = static_cast<int>(msb(numerator)) - static_cast<int>(msb(denominator));
+    if (exponent >= 0 ? numerator < (denominator << exponent) : (numerator << -exponent) < denominator)
+        --exponent;
+    if (exponent >= std::numeric_limits<Wide>::max_exponent)
+        return negative ? -std::numeric_limits<Wide>::infinity() : std::numeric_limits<Wide>::infinity();
+    int shift = wideDigits - 1 - std::max(exponent, std::numeric_limits<Wide>::min_exponent - 1);
+    if (shift >= 0)
+        numerator <<= shift;
+    else
+        denominator <<= -shift;
+    Integer quotient, remainder;
+    divide_qr(numerator, denominator, quotient, remainder);
+    remainder <<= 1;
+    if (remainder > denominator || (remainder == denominator && bit_test(quotient, 0)))
+        ++quotient;
+    if (quotient != 0 && msb(quotient) >= wideDigits) {
+        quotient >>= 1;
+        --shift;
+    }
+    const auto rounded = std::scalbn(static_cast<Wide>(quotient.convert_to<std::uint64_t>()), -shift);
+    return negative ? -rounded : rounded;
+}
+
+bool finishWide(const Accumulator<Wide>& accumulator, Wide& value) {
+    Wide high, low;
+    twoSum(accumulator.sum, accumulator.first, high, low);
+    value = high + (low + accumulator.second);
+    return std::isfinite(value) && !(accumulator.discarded && value == 0);
+}
+
+Wide wideProductTail(Wide a, Wide b, Wide product) {
+    // Split the 64-bit significands in a range where their partial products
+    // stay normal and the splitting multiplication cannot overflow.
+    if (std::abs(a) >= 0x1p-16300L && std::abs(a) <= 0x1p16340L &&
+        std::abs(b) >= 0x1p-16300L && std::abs(b) <= 0x1p16340L &&
+        std::abs(product) >= 0x1p-16250L && std::abs(product) <= 0x1p16380L) {
+        constexpr Wide splitter = 0x1.00000001p32L;
+        const Wide sa = splitter * a;
+        const Wide sb = splitter * b;
+        const Wide ah = sa - (sa - a);
+        const Wide bh = sb - (sb - b);
+        const Wide al = a - ah;
+        const Wide bl = b - bh;
+        const Wide e1 = product - ah * bh;
+        const Wide e2 = e1 - al * bh;
+        const Wide e3 = e2 - ah * bl;
+        const Wide tail = al * bl - e3;
+        return tail == 0.L ? 0.L : tail;
+    }
+    return std::fma(a, b, -product);
+}
+
+BasicDefect<Wide> extendedEftDefectImpl(const WideMatrix& matrix, const WideVector& residual,
+                                       const WideVector& direction) {
+    ScopedPerformanceTimer timer("linear.extended_eft_defect.total");
+    incrementPerformanceCounter("linear.extended_eft_defect.calls");
+    struct WideRow { Accumulator<Wide> residual, denominator; bool range = false; };
+    std::vector<WideRow> rows(residual.size());
+    for (Eigen::Index i = 0; i < residual.size(); ++i) {
+        rows[i].residual.sum = residual[i];
+        rows[i].denominator.sum = std::abs(residual[i]);
+    }
+    // A normal leading product is insufficient near underflow because the
+    // fused remainder may need another two mantissas of exponent range.
+    constexpr auto exactProductFloor = std::numeric_limits<Wide>::min() * 0x1p128L;
+    for (Eigen::Index col = 0; col < matrix.outerSize(); ++col) {
+        for (WideMatrix::InnerIterator entry(matrix, col); entry; ++entry) {
+            auto& row = rows[entry.row()];
+            if (row.range)
+                continue;
+            const auto a = entry.value(), b = direction[col];
+            const auto product = a * b;
+            if (!std::isfinite(product) || (a != 0 && b != 0 && std::abs(product) < exactProductFloor)) {
+                row.range = true;
+                continue;
+            }
+            const auto tail = wideProductTail(a, b, product);
+            row.residual.add(product, tail);
+            row.denominator.add(std::abs(product), std::signbit(product) ? -tail : tail);
+        }
+    }
+
+    BasicDefect<Wide> result{WideVector(residual.size()), 0, WideVector(residual.size())};
+    const auto writeRow = [&](Eigen::Index i, Wide value, Wide error) {
+        if (!std::isfinite(value) || !std::isfinite(error))
+            throw std::runtime_error("Nonfinite extended linear refinement defect");
+        result.values[i] = value;
+        result.componentwiseBackwardErrors[i] = error;
+        result.backwardMax = std::max(result.backwardMax, error);
+    };
+    struct ExactRow { Eigen::Index index; Rational residual, denominator; };
+    std::vector<Eigen::Index> exactIndex(residual.size(), -1);
+    std::vector<ExactRow> exactRows;
+    std::uint64_t rangeFallbacks = 0;
+    for (Eigen::Index i = 0; i < residual.size(); ++i) {
+        const auto& row = rows[i];
+        Wide sum, scale;
+        if (!row.range && finishWide(row.residual, sum) && finishWide(row.denominator, scale) && scale >= 0) {
+            writeRow(i, sum, scale == 0 ? 0 : std::abs(sum) / scale);
+            continue;
+        }
+        rangeFallbacks += row.range;
+        exactIndex[i] = static_cast<Eigen::Index>(exactRows.size());
+        const auto exact = fromWide(residual[i]);
+        exactRows.push_back({i, exact, abs(exact)});
+    }
+    if (!exactRows.empty()) {
+        for (Eigen::Index col = 0; col < matrix.outerSize(); ++col) {
+            std::optional<Rational> exactDirection;
+            for (WideMatrix::InnerIterator entry(matrix, col); entry; ++entry) {
+                const auto index = exactIndex[entry.row()];
+                if (index < 0)
+                    continue;
+                if (!exactDirection)
+                    exactDirection = fromWide(direction[col]);
+                const Rational term = fromWide(entry.value()) * *exactDirection;
+                auto& row = exactRows[index];
+                row.residual += term;
+                row.denominator += abs(term);
+            }
+        }
+        for (const auto& row : exactRows) {
+            const auto error = row.denominator == 0 ? 0.L : toWide(Rational(abs(row.residual) / row.denominator));
+            writeRow(row.index, toWide(row.residual), error);
+        }
+    }
+    incrementPerformanceCounter("linear.extended_eft_defect.range_fallback_rows", rangeFallbacks);
+    incrementPerformanceCounter("linear.extended_eft_defect.cancellation_fallback_rows",
+                                exactRows.size() - rangeFallbacks);
+    return result;
+}
+#endif
+
 #endif
 } // namespace
 
@@ -287,5 +456,21 @@ Defect eftDefect(const SparseMatrixd& J, const VectorXd& F, const VectorXd& step
 #endif
     incrementPerformanceCounter("linear.eft_defect.whole_call_fallbacks");
     return highPrecisionDefect(J, F, step);
+}
+
+BasicDefect<long double> extendedEftDefect(const Eigen::SparseMatrix<long double>& matrix,
+    const Eigen::VectorX<long double>& residual, const Eigen::VectorX<long double>& direction) {
+#if defined(VELA_ARITHMETIC_EXTENDED80) && defined(VELA_STRICT_EFT_FP) && defined(VELA_EFT_MXCSR)
+    if (matrix.rows() != residual.size() || matrix.cols() != direction.size() ||
+        !residual.allFinite() || !direction.allFinite())
+        throw std::invalid_argument("Invalid extended refinement defect dimensions or input");
+    {
+        FloatingEnvironment environment;
+        if (environment.supported())
+            return extendedEftDefectImpl(matrix, residual, direction);
+    }
+#endif
+    incrementPerformanceCounter("linear.extended_eft_defect.whole_call_fallbacks");
+    return computeHighPrecisionDefect(matrix, residual, direction);
 }
 } // namespace vela::linear_refinement

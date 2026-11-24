@@ -2107,6 +2107,7 @@ Newton-specific keys:
 - line_search
 - bank_rose (explicit alternative to backtracking, default disabled)
 - warm_start
+- contact_preprojection
 - contact_boundary_reconstruction
 - contact_boundary_minority_electron_relaxation
 - contact_boundary_minority_electron_relaxation_bias_threshold_V
@@ -2685,9 +2686,10 @@ The coupled Newton drift-diffusion solver accepts either form below:
 
 Supported values are `boltzmann` (the compatibility default),
 `fermi_dirac`, and the explicitly restricted `fermi_dirac_joyce_dixon`.
-The last option requires `solver.coupled_operator: "bvmethods_tri3_qf"`;
-see [the operator contract](bvmethods_operator_contract.md) for its supported
-models, coordinates and diagnostics. `solver.coupled_operator` otherwise
+Joyce–Dixon is supported with `bvmethods_tri3_qf` or with classical `legacy`
+`potential_density` and `solver.carrier_statistics.transport: "effective_band_sg"`.
+See [the BVMethods operator contract](bvmethods_operator_contract.md) for that
+operator's supported models, coordinates and diagnostics. `solver.coupled_operator` otherwise
 defaults to `legacy`. The defining-integral Fermi-Dirac selection is one atomic physics path: carrier
 densities use the normalized complete integral `F_{1/2}`, ideal Ohmic contacts
 solve charge neutrality with the same statistics, continuity edges use the
@@ -3068,6 +3070,13 @@ constrain intermediate Newton steps.
 `warm_start: true` preserves supplied quasi-Fermi potentials when continuing
 from a previous solution. The default `false` keeps the conservative
 cold-start behavior.
+
+`contact_preprojection: true` initializes fixed-voltage population Newton
+trials at the prescribed potential and carrier boundary values before the
+first assembly. Only the potential is assigned at a potential-only boundary.
+The default is `false`. Quasi-Fermi voltage-controlled Newton already presets
+its prescribed coordinates. Circuit-controlled ports and zero-update archive
+checks use their respective state and constraints.
 
 ### band_to_band
 
@@ -4631,6 +4640,13 @@ the trial's initial state independently. On the ordinary and SLOT extended80
 prescribed-bias potential/density paths, it selects linear potential and
 logarithmic population extrapolation.
 
+SLOT extended80 BVDS and fixed-bias Newton stages use EFT accumulation for
+the physical linear defect and componentwise backward error. The runner
+reports `linear_defect_method`. Set `solver.extended80_linear_defect` to
+`"mp100"` to reproduce the previous accumulation. EFT uses exact dyadic
+arithmetic on rows with unsafe product range or unresolved cancellation.
+The SparseLU factorization and linear accuracy limits are shared by both modes.
+
 For example, to migrate a coupled deck:
 
 ```json
@@ -5385,7 +5401,10 @@ The effective-band SG formula uses live positive populations and QF differences:
 electrons and `s=-1` for holes; the physical particle-current drop is `-s*f`.
 The statistical band correction is represented by the population/QF relation,
 not by adding a generalized-Einstein multiplier to this source formula.
-All live-population, mobility, field and source derivatives enter local AD.
+By default, all live-population, mobility, field and source derivatives enter
+local AD. For this SG source profile, explicit `source_jacobian: "frozen"`
+omits the avalanche source tangents while retaining the live avalanche residual
+and the transport derivatives.
 Both the reconstructed source current and the avalanche GradQF force follow
 the element partial-layer projection;
 the existing explicit contact electric-field fallback has precedence.

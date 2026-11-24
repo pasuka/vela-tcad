@@ -295,6 +295,9 @@ def _physics(ir: dict, report: dict, decisions: list) -> dict:
             raise DeckEmitError("E407", detail="lossy materials report is not authorized")
         path = v2_key(row["target"])
         value = row["value_si"] if path.startswith("solver.band_to_band.") else row["value_par"]
+        if row["section"] == "PhuMob" and row["parameter"] == "alpha1_g_k":
+            path = path.removesuffix(" = -source")
+            value = -value
         if row["target"] in ("solver.auger_cn_m6_per_s", "solver.auger_cp_m6_per_s"):
             # Older reports include the raw A/B/C rows as well as the combined row.
             if row["parameter"] != "A+B(T/300)+C(T/300)^2":

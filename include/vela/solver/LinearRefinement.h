@@ -146,6 +146,9 @@ inline Defect highPrecisionDefect(const SparseMatrixd& J, const VectorXd& F,
 bool useBvMethodsEftDefect();
 Defect eftDefect(const SparseMatrixd&, const VectorXd&, const VectorXd&);
 
+BasicDefect<long double> extendedEftDefect(const Eigen::SparseMatrix<long double>&,
+    const Eigen::VectorX<long double>&, const Eigen::VectorX<long double>&);
+
 template<class Scalar, class Solve, class Observer>
 Eigen::Matrix<Scalar, Eigen::Dynamic, 1> refineWithSolve(
     const Eigen::SparseMatrix<Scalar>& J,

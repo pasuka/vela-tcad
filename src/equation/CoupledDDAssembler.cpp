@@ -1315,10 +1315,10 @@ CoupledDDState CoupledDDAssembler::unpack(const VectorXd& x) const
                 state.phip[i]=holeQuasiFermiPotential(ni_[i],Nv_[i],psi,state.p[i],Vt_,carrierStatistics_)/potentialScale;
             } else {
                 const long double electronWork=usesFermiDirac_
-                    ? static_cast<long double>(slot_population::populationEtaAccurate(state.n[i],Nc_[i]))-std::log(static_cast<long double>(niElectron_[i])/Nc_[i])
+                    ? static_cast<long double>(slot_population::populationEtaAccurate(state.n[i],Nc_[i],carrierStatisticsModel_))-std::log(static_cast<long double>(niElectron_[i])/Nc_[i])
                     : std::log(static_cast<long double>(state.n[i])/niElectron_[i]);
                 const long double holeWork=usesFermiDirac_
-                    ? static_cast<long double>(slot_population::populationEtaAccurate(state.p[i],Nv_[i]))-std::log(static_cast<long double>(niHole_[i])/Nv_[i])
+                    ? static_cast<long double>(slot_population::populationEtaAccurate(state.p[i],Nv_[i],carrierStatisticsModel_))-std::log(static_cast<long double>(niHole_[i])/Nv_[i])
                     : std::log(static_cast<long double>(state.p[i])/niHole_[i]);
                 state.phin[i]=static_cast<Real>((static_cast<long double>(psi)-Vt_*electronWork)/potentialScale);
                 state.phip[i]=static_cast<Real>((static_cast<long double>(psi)+Vt_*holeWork)/potentialScale);
@@ -1386,6 +1386,31 @@ VectorXd CoupledDDAssembler::packPopulation(const VectorXd& psi, const VectorXd&
     y.segment(count,count)=n; y.tail(count)=p;
     (void)unpack(y);
     return y;
+}
+
+void CoupledDDAssembler::projectPopulationBoundarySeed(
+    VectorXd& seed, const CoupledDDBoundaryConditions& bcs) const
+{
+    const auto count = mesh_.numNodes();
+    if (!usesPopulationState() || seed.size() != 3 * count)
+        throw std::invalid_argument("Boundary projection requires packed population coordinates");
+    for (const auto& [node, target] : bcs.psi)
+        seed[node] = target;
+    const Real scale = scaling_.enabled ? scaling_.V0 : 1.0;
+    const auto populationTarget = [&](Index node, Real qf, bool electron) {
+        if (usesLegacyPopulationState())
+            return legacyPopulationContactTarget(node, qf, bcs, electron);
+        const Real drop = (bcs.psi.at(node) - qf) * scale;
+        if (electron)
+            return vela::electronDensity(usesBvMethodsOperator() ? ni_[node] : niElectron_[node],
+                Nc_[node], drop, 0.0, Vt_, carrierStatisticsModel_);
+        return vela::holeDensity(usesBvMethodsOperator() ? ni_[node] : niHole_[node],
+            Nv_[node], drop, 0.0, Vt_, carrierStatisticsModel_);
+    };
+    for (const auto& [node, qf] : bcs.phin)
+        seed[count + node] = populationTarget(node, qf, true);
+    for (const auto& [node, qf] : bcs.phip)
+        seed[2 * count + node] = populationTarget(node, qf, false);
 }
 
 VectorXd CoupledDDAssembler::legacyPopulationQfCoordinates(const VectorXd& populations) const
@@ -2787,8 +2812,8 @@ VectorXd CoupledDDAssembler::residualImpl(
                 const Real driftPotential = electronDpsi + edgeKernel.electronDriftOffset;
                 nFlux = sgElectronFermiDiracQuantumContinuityFlux(
                     n(i), n(j),
-                    (carrierStatisticsModel_==CarrierStatisticsModel::FermiDiracJoyceDixon?Nc_[idxI]*fermiDiracHalf(etaI,carrierStatisticsModel_):scaledFermiDiracHalf(Nc_[idxI],etaI)),
-                    (carrierStatisticsModel_==CarrierStatisticsModel::FermiDiracJoyceDixon?Nc_[idxJ]*fermiDiracHalf(etaJ,carrierStatisticsModel_):scaledFermiDiracHalf(Nc_[idxJ],etaJ)),
+                    scaledFermiDiracHalf(Nc_[idxI], etaI, carrierStatisticsModel_),
+                    scaledFermiDiracHalf(Nc_[idxJ], etaJ, carrierStatisticsModel_),
                     etaI, etaJ, driftPotential,
                     phin_i, phin_j, Vt_, coef, effectiveBandSg_);
             } else if (usesIalPopulationEdgeSg()) {
@@ -3477,8 +3502,8 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
                 const Real drift = (electronPsi_j - electronPsi_i) + edgeKernel.electronDriftOffset;
                 nFlux = sgElectronFermiDiracQuantumContinuityFlux(
                     n(i), n(j),
-                    scaledFermiDiracHalf(Nc_[idxI], etaI),
-                    scaledFermiDiracHalf(Nc_[idxJ], etaJ),
+                    scaledFermiDiracHalf(Nc_[idxI], etaI, carrierStatisticsModel_),
+                    scaledFermiDiracHalf(Nc_[idxJ], etaJ, carrierStatisticsModel_),
                     etaI, etaJ, drift, phin_i, phin_j, Vt_, coef, effectiveBandSg_);
             } else if (usesIalPopulationEdgeSg()) {
                 nFlux = sgBoltzmannPopulationContinuityFluxFromDrift(
@@ -3870,8 +3895,8 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                 + std::log(niElectron_[idxJ] / Nc_[idxJ]);
             electronDriftPotential += Vt_ * std::log(
                 (niElectron_[idxJ] / Nc_[idxJ]) / (niElectron_[idxI] / Nc_[idxI]));
-            electronFermiDensityI = scaledFermiDiracHalf(Nc_[idxI], electronEtaI);
-            electronFermiDensityJ = scaledFermiDiracHalf(Nc_[idxJ], electronEtaJ);
+            electronFermiDensityI = scaledFermiDiracHalf(Nc_[idxI], electronEtaI, carrierStatisticsModel_);
+            electronFermiDensityJ = scaledFermiDiracHalf(Nc_[idxJ], electronEtaJ, carrierStatisticsModel_);
             electronGeneralizedEinsteinFactor = sgGeneralizedEinsteinFactor(
                 electronFermiDensityI, electronFermiDensityJ,
                 electronEtaI, electronEtaJ);
@@ -5188,7 +5213,11 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     bool includeCarrierDiagonalFloor) const
 {
     if(auto runtime=coupledStateRuntime())return runtime->jacobian(x,bcs);
-    return assembleSourceDiagnosticJacobian(x,bcs,0,includeCarrierDiagonalFloor);
+    const bool freezePhuMobSgSource =
+        impactIonizationConfig_.currentApproximation=="phumob_element_sg_best_vertex" &&
+        impactIonizationConfig_.sourceJacobianMode=="frozen";
+    return assembleSourceDiagnosticJacobian(x,bcs,freezePhuMobSgSource ? 2 : 0,
+                                             includeCarrierDiagonalFloor);
 }
 
 SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
@@ -6590,7 +6619,7 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
                 const Real psiRelative = electronPsi_i - electronReferenceI;
                 v.eta = (psiRelative - phin_i) / Vt_ + edgeKernel.electronLogNiNc0;
                 v.density = electronDensityAt(idxI, psi_i - electronReferenceI, phin_i);
-                v.fermiDensity = (carrierStatisticsModel_ == CarrierStatisticsModel::FermiDiracJoyceDixon ? Nc_[idxI] * fermiDiracHalf(v.eta, carrierStatisticsModel_) : scaledFermiDiracHalf(Nc_[idxI], v.eta));
+                v.fermiDensity = scaledFermiDiracHalf(Nc_[idxI], v.eta, carrierStatisticsModel_);
                 return v;
             });
             const auto right = endpointState(fermiNodeCacheEnabled_ ? electronNodes[idxJ] : electronEndpoints[1],
@@ -6600,7 +6629,7 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
                 const Real psiRelative = electronPsi_j - electronReferenceI;
                 v.eta = (psiRelative - phin_j) / Vt_ + edgeKernel.electronLogNiNc1;
                 v.density = electronDensityAt(idxJ, psi_j - electronReferenceJ, phinJLocal);
-                v.fermiDensity = (carrierStatisticsModel_ == CarrierStatisticsModel::FermiDiracJoyceDixon ? Nc_[idxJ] * fermiDiracHalf(v.eta, carrierStatisticsModel_) : scaledFermiDiracHalf(Nc_[idxJ], v.eta));
+                v.fermiDensity = scaledFermiDiracHalf(Nc_[idxJ], v.eta, carrierStatisticsModel_);
                 return v;
             });
             const Real driftPotential =
@@ -6700,7 +6729,7 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
                 EndpointState v{};
                 const Real psiRelative = psi_i - holeReferenceI;
                 v.eta = (phip_i - psiRelative) / Vt_ + edgeKernel.holeLogNiNv0;
-                v.density = (carrierStatisticsModel_ == CarrierStatisticsModel::FermiDiracJoyceDixon ? Nv_[idxI] * fermiDiracHalf(v.eta, carrierStatisticsModel_) : scaledFermiDiracHalf(Nv_[idxI], v.eta));
+                v.density = scaledFermiDiracHalf(Nv_[idxI], v.eta, carrierStatisticsModel_);
                 return v;
             });
             const auto right = endpointState(fermiNodeCacheEnabled_ ? holeNodes[idxJ] : holeEndpoints[1],
@@ -6709,7 +6738,7 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
                 EndpointState v{};
                 const Real psiRelative = psi_j - holeReferenceI;
                 v.eta = (phip_j - psiRelative) / Vt_ + edgeKernel.holeLogNiNv1;
-                v.density = (carrierStatisticsModel_ == CarrierStatisticsModel::FermiDiracJoyceDixon ? Nv_[idxJ] * fermiDiracHalf(v.eta, carrierStatisticsModel_) : scaledFermiDiracHalf(Nv_[idxJ], v.eta));
+                v.density = scaledFermiDiracHalf(Nv_[idxJ], v.eta, carrierStatisticsModel_);
                 return v;
             });
             const Real driftPotential = dpsi + edgeKernel.holeDriftOffset;
@@ -7762,7 +7791,8 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
         ScopedPerformanceTimer cellPhysicsTimer("jacobian.cell_physics");
         if (cellLocalAvalanche &&
             (impactIonizationConfig_.sourceJacobianMode == "local_ad" ||
-             impactIonizationConfig_.sourceJacobianMode == "finite_difference")) {
+             impactIonizationConfig_.sourceJacobianMode == "finite_difference" ||
+             sourceMode == 2)) {
         const auto supportsAvalancheTransport = [&](Index cellId) {
             const Material& material =
                 cellMaterials_.at(static_cast<std::size_t>(cellId));

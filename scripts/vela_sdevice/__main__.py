@@ -94,6 +94,8 @@ def main(argv=None):
     device.add_argument("-q", action="store_true", dest="quiet")
     reserved_options(device, argv)
     device.add_argument("--check", action="store_true", dest="check")
+    device.add_argument("--default-par", type=Path, metavar="PAR",
+                        help="Use this material defaults library beneath File{Parameter}")
     device.add_argument("--check-arithmetic-input", action="store_true",
                         help="Check DF-ISE or HDF5 TDR numeric input in the extended80 runner without solving")
     device.add_argument("--doping-mode", choices=("auto", "net-only", "reported"), default="auto",

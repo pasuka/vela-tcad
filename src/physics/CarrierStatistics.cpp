@@ -119,7 +119,8 @@ CarrierStatisticsModel carrierStatisticsModel(const CarrierStatisticsConfig& con
 {
     if (config.transport != "generalized_einstein" && config.transport != "effective_band_sg")
         throw std::invalid_argument("carrier_statistics.transport must be 'generalized_einstein' or 'effective_band_sg'.");
-    if (config.transport == "effective_band_sg" && config.model != "fermi_dirac")
+    if (config.transport == "effective_band_sg" && config.model != "fermi_dirac" &&
+        config.model != "fermi_dirac_joyce_dixon")
         throw std::invalid_argument("effective_band_sg transport requires Fermi-Dirac statistics.");
     if (config.model == "boltzmann")
         return CarrierStatisticsModel::Boltzmann;
@@ -145,6 +146,11 @@ Real fermiDiracHalf(Real eta)
 Real scaledFermiDiracHalf(Real densityOfStates, Real eta)
 {
     return scaledFermiHalf(densityOfStates, eta);
+}
+
+Real scaledFermiDiracHalf(Real densityOfStates, Real eta, CarrierStatisticsModel model)
+{
+    return scaledFermiHalf(densityOfStates, eta, model);
 }
 
 Real fermiDiracHalfDerivative(Real eta)

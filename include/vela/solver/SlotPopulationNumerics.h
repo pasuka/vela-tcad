@@ -148,6 +148,15 @@ inline double populationEtaAccurate(double density,double dos) {
  if(std::abs(mismatch)>1e-12L)throw std::runtime_error("relative population inverse did not converge");
  return eta;
 }
+inline double populationEtaAccurate(double density, double dos, CarrierStatisticsModel model) {
+    if (model != CarrierStatisticsModel::FermiDiracJoyceDixon)
+        return populationEtaAccurate(density, dos);
+    validatePopulationCoordinates(density, dos);
+    const double ratio = density / dos;
+    if (ratio < std::numeric_limits<double>::min())
+        return std::log(density) - std::log(dos);
+    return inverseFermiDiracHalf(ratio, model);
+}
 inline bool usesDiluteLogInversePopulation(double density,double dos,double rel) {
  validatePopulationCoordinates(density,dos);
  const double z=density/dos;

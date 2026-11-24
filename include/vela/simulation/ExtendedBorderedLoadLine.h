@@ -19,6 +19,8 @@ struct ExtendedBorderedDirection {
     long double scaledResidualInfinityNorm;
 };
 
+enum class ExtendedLinearDefectMethod { mp100, eft };
+
 struct ExtendedLinearAccuracyGoal {
     long double backwardError, scaledDefect;
 };
@@ -31,6 +33,7 @@ ExtendedBorderedDirection solveExtendedBorderedSystem(
     const std::vector<int>& eliminatedRows,
     std::span<const int> retainedIndependentRows,
     int refinementCorrections,
-    std::optional<ExtendedLinearAccuracyGoal> goal = {});
+    std::optional<ExtendedLinearAccuracyGoal> goal = {},
+    ExtendedLinearDefectMethod defectMethod = ExtendedLinearDefectMethod::mp100);
 
 } // namespace vela

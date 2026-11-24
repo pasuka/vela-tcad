@@ -475,7 +475,7 @@ TEST_CASE("Fermi PhuMob element avalanche preserves pair generation and its full
     impact.quasiFermiGradientDiscretization="cell_gradient";
     impact.sourceMappingMode="element_vertex_box_measure";impact.sourceJacobianMode="local_ad";
     REQUIRE_NOTHROW(detail::validateImpactIonizationDrivingForce(impact,"test"));
-    auto invalid=impact;invalid.sourceJacobianMode="frozen";
+    auto invalid=impact;invalid.sourceJacobianMode="finite_difference";
     REQUIRE_THROWS(detail::validateImpactIonizationDrivingForce(invalid,"test"));
     CoupledDDAssembler assembler(mesh,db,doping,constants::Vt_300,cfg,recombinationModelConfig({"none"}),
         {},impact, {},{},scaling(),{},CarrierStatisticsConfig{"fermi_dirac", transportMode});
@@ -639,8 +639,12 @@ TEST_CASE("Diagnostic transport QF linearization preserves residuals and source 
     impact.quasiFermiGradientDiscretization="cell_gradient";
     impact.sourceMappingMode="element_vertex_box_measure";impact.sourceJacobianMode="local_ad";
     REQUIRE_NOTHROW(detail::validateImpactIonizationDrivingForce(impact,"test"));
-    auto invalid=impact;invalid.sourceJacobianMode="frozen";
-    REQUIRE_THROWS(detail::validateImpactIonizationDrivingForce(invalid,"test"));
+    auto laggedImpact=impact;laggedImpact.sourceJacobianMode="frozen";
+    const bool sgSource=impact.currentApproximation=="phumob_element_sg_best_vertex";
+    if (sgSource)
+        REQUIRE_NOTHROW(detail::validateImpactIonizationDrivingForce(laggedImpact,"test"));
+    else
+        REQUIRE_THROWS(detail::validateImpactIonizationDrivingForce(laggedImpact,"test"));
     CoupledDDAssembler assembler(mesh,db,doping,constants::Vt_300,cfg,recombinationModelConfig({"none"}),
         {},impact, {},{},scaling(),{},CarrierStatisticsConfig{"fermi_dirac"});
     ImpactIonizationModelConfig noImpact;
@@ -657,6 +661,16 @@ TEST_CASE("Diagnostic transport QF linearization preserves residuals and source 
     REQUIRE_FALSE(assembler.impactIonizationActiveBranchFingerprint(x).empty());
     const VectorXd residual=assembler.residual(x,{});
     const SparseMatrixd exact=assembler.assembleJacobian(x,{}), exactTransport=transport.assembleJacobian(y,{});
+    if (sgSource) {
+        CoupledDDAssembler laggedAssembler(mesh,db,doping,constants::Vt_300,cfg,
+            recombinationModelConfig({"none"}),{},laggedImpact,{},{},scaling(),{},
+            CarrierStatisticsConfig{"fermi_dirac"});
+        REQUIRE(laggedAssembler.residual(x,{})==residual);
+        const SparseMatrixd laggedJacobian=laggedAssembler.assembleJacobian(x,{});
+        const SparseMatrixd expected=assembler.assembleSourceDiagnosticJacobian(x,{},2);
+        REQUIRE((laggedJacobian-expected).norm()==0.);
+        REQUIRE((laggedJacobian-exact).norm()>0.);
+    }
     assembler.setDiagnosticFreezeTransportQfMobility(true);
     transport.setDiagnosticFreezeTransportQfMobility(true);
     REQUIRE((assembler.residual(x,{}).array()==residual.array()).all());

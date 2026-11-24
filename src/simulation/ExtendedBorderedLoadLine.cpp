@@ -15,7 +15,8 @@ ExtendedBorderedDirection solveExtendedBorderedSystem(
     const std::vector<int>& eliminatedRows,
     std::span<const int> retainedIndependentRows,
     int refinementCorrections,
-    std::optional<ExtendedLinearAccuracyGoal> goal)
+    std::optional<ExtendedLinearAccuracyGoal> goal,
+    ExtendedLinearDefectMethod defectMethod)
 {
     const auto size = system.augmented.rows();
     if (size <= 0 || system.augmented.cols() != size ||
@@ -41,9 +42,12 @@ ExtendedBorderedDirection solveExtendedBorderedSystem(
     auto direction = recoverDirection(reduced);
     const ExtendedVector residual = -system.rawRhs;
     std::optional<linear_refinement::PreparedMpDefect<long double>> preparedDefect;
-    if (!retainedIndependentRows.empty() || (!goal && refinementCorrections > 0))
+    if (defectMethod == ExtendedLinearDefectMethod::mp100 &&
+        (!retainedIndependentRows.empty() || (!goal && refinementCorrections > 0)))
         preparedDefect.emplace(system.rawAugmented);
     const auto evaluateDefect = [&] {
+        if (defectMethod == ExtendedLinearDefectMethod::eft)
+            return linear_refinement::extendedEftDefect(system.rawAugmented, residual, direction);
         if (preparedDefect)
             return preparedDefect->evaluate(residual, direction);
         return linear_refinement::computeHighPrecisionDefect(system.rawAugmented, residual, direction);

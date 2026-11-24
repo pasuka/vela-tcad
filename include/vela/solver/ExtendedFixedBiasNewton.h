@@ -3,6 +3,7 @@
 #include "vela/equation/ExtendedPopulationDevice.h"
 #include "vela/solver/DensityUpdateConvergence.h"
 #include "vela/solver/PopulationState.h"
+#include "vela/simulation/ExtendedBorderedLoadLine.h"
 #include <functional>
 #include <optional>
 #include <string>
@@ -40,6 +41,7 @@ struct ExtendedFixedBiasNewtonConfig {
     std::optional<BasicPopulationTrialLimits<long double>> exactProtection;
     std::optional<ExtendedRhsGrowthControl> rhsGrowth = std::nullopt;
     bool refineToLinearGoal = false;
+    ExtendedLinearDefectMethod linearDefectMethod = ExtendedLinearDefectMethod::mp100;
 };
 
 struct ExtendedFixedBiasNewtonResult {

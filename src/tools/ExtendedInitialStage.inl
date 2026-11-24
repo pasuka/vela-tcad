@@ -399,6 +399,11 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         config.maxIter, CoupledLoadLineConfig{}.maxLineSearchSteps, config.linearRefinementIterations,
         rawInput.value("damping_factor", 1.L), 1e-10L, 1e-8L, metric,
         config.populationUpdate, config.lineSearch, {}};
+    const auto defectMethod = rawInput.value("extended80_linear_defect", std::string("eft"));
+    if (defectMethod == "eft")
+        corrector.linearDefectMethod = ExtendedLinearDefectMethod::eft;
+    else if (defectMethod != "mp100")
+        throw std::invalid_argument("Unsupported extended80_linear_defect: " + defectMethod);
     if (fixedProfile) {
         corrector.refineToLinearGoal = true;
         corrector.refinementCorrections = std::max(corrector.refinementCorrections, 3);
@@ -558,20 +563,30 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
                     }
                 }
             }
-            const auto solve = [&](const auto& initial) {
+            const auto solve = [&] {
+                if (config.contactPreprojection) {
+                    const auto count = problem.mesh.numNodes();
+                    for (Index node = 0; node < count; ++node) {
+                        if (const auto target = targets.potential[node]) {
+                            seed.coordinates[node] = *target;
+                            seed.coordinates[count + node] = targets.electrons[node] / concentration_cm3;
+                            seed.coordinates[2 * count + node] = targets.holes[node] / concentration_cm3;
+                        }
+                    }
+                }
                 try {
-                    return solveExtendedFixedBiasNewton(initial, corrector, assemble);
+                    return solveExtendedFixedBiasNewton(seed, corrector, assemble);
                 } catch (const std::runtime_error& error) {
                     ExtendedFixedBiasNewtonResult failed;
                     failed.failure = error.what();
                     return failed;
                 }
             };
-            result = solve(seed);
+            result = solve();
             int updates = result.updates;
             if (!result.converged && extrapolated) {
                 seed.coordinates = state.coordinates;
-                result = solve(seed);
+                result = solve();
                 updates += result.updates;
             }
             return detail::DCSweepStepAttemptResult{result.converged, updates};
@@ -717,6 +732,7 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
 
     out.update({{"converged", result.converged}, {"coupled_converged", result.converged},
         {"coupled_updates", result.updates}, {"scaled_device_residual", result.scaledResidual},
+        {"linear_defect_method", defectMethod},
         {"linear_backward_error", result.linearBackwardError}, {"scaled_linear_defect", result.scaledLinearDefect},
         {"accepted_alpha", result.acceptedAlpha}, {"factored_dimension", result.factoredDimension},
         {"update_error", result.updateError.valid ? nlohmann::json(result.updateError.rms) : nlohmann::json()},

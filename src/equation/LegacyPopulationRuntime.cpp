@@ -16,7 +16,8 @@ struct LegacyPopulationRuntime::Impl {
         if(!a.usesPopulationState() || a.usesBvMethodsOperator() ||
            a.splitDDEnabled_ || a.electronQuantumPotentialConfig_.enabled || a.extendedPoissonResidual_ ||
            a.scaling_.populationSgCurrent!="quasi_fermi" ||
-           a.carrierStatisticsModel_==CarrierStatisticsModel::FermiDiracJoyceDixon)
+           (a.carrierStatisticsModel_==CarrierStatisticsModel::FermiDiracJoyceDixon &&
+            !a.effectiveBandSg_))
             throw std::invalid_argument("legacy population runtime requires classical Boltzmann/Fermi SLOT physics without split or quantum coordinates");
         auto scaling=a.scaling_;scaling.stateVariables="potential_quasi_fermi";
         qf=std::make_unique<CoupledDDAssembler>(a.mesh_,a.matdb_,a.doping_,a.Vt_,
@@ -248,9 +249,11 @@ struct LegacyPopulationRuntime::Impl {
             const Real density=y[v.col()],dos=electron?owner.Nc_[i]:owner.Nv_[i];
             long double logarithmicSlope=1.;
             if(owner.usesFermiDirac_) {
-                const Real eta=slot_population::populationEtaAccurate(density,dos);
+                const auto model=owner.carrierStatisticsModel_;
+                const Real eta=slot_population::populationEtaAccurate(density,dos,model);
                 if(eta>=-40.) {
-                    const Real value=fermiDiracHalf(eta),derivative=fermiDiracHalfDerivative(eta);
+                    const Real value=fermiDiracHalf(eta,model);
+                    const Real derivative=fermiDiracHalfDerivative(eta,model);
                     if(!(value>0.) || !(derivative>0.))throw std::domain_error("invalid population statistical slope");
                     logarithmicSlope=static_cast<long double>(derivative)/value;
                 }
