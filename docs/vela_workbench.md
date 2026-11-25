@@ -1,8 +1,33 @@
-# Windows 仿真工作台原型
+# SDS 桌面工作台
 
-工作台通过 `sd-sim.exe` 运行只读算例库。25 个可运行输入对应 23 项 CTest，
-包括 PN2D 零偏、正向 I–V、反向 BV 和 16 个变体，以及三个栅极算例、肖特基、
-BJT M1 和 BVMethods。栅极的三个输入分别显示在列表中。
+SDS（Semiconductor Device Simulator）通过 `sd-sim.exe` 运行只读算例库。首次使用可先看
+[中文入门 GIF](media/sds-getting-started-zh.gif)或[英文入门 GIF](media/sds-getting-started-en.gif)。
+
+## 快速入门
+
+1. 解压整个 Windows ZIP，双击其中的 `SDS.exe`。点击工具栏的语言图标切换中英文。
+2. 在「器件类型」选 PN2D，再选「PN2D 零偏」，点击蓝色三角形「运行当前」。
+3. 状态显示「达到目标」后，在「二维曲线」查看零偏工作点。切换到「网格」「末态云图」
+   和「日志」可查看同次运行的几何、物理量与求解过程。
+4. 查看之前的结果时，先选中对应算例，再点「文件 → 打开已有运行」，选择运行目录。
+   「文件 → 打开运行目录」可找到本次运行的输入和输出文件。
+
+## 随包算例与 CTest
+
+| 器件类型 | Windows 包可运行输入 | 包含的算例 |
+| --- | ---: | --- |
+| PN2D | 19 | 零偏、正向 I–V、反向 BV、16 个变体 |
+| MOS / 栅极 | 4 | 三个栅极输入、BVMethods 完整击穿 |
+| 肖特基 | 1 | 正向 I–V |
+| BJT | 1 | BJT M1 |
+
+这 25 个输入对应 23 项数值 CTest，因为三个栅极输入合在一项 CTest 中。
+App 运行从参考回归准备的冻结输入，随包清单列出每个输入的 CTest ID 和器件标签。
+源码还提供 BJT M0、SLOT LDMOS BVDS 与 Id–Vg 等可选回归。启用方式和输入要求见
+[回归指南](../tests/regression/README.md)。这版 Windows 算例库的范围以上表为准。
+
+## 界面操作
+
 界面默认使用英文，可通过「设置」菜单或工具栏的语言图标切换。应用会保存显示语言。
 算例列表按器件类型筛选，选项为全部、PN2D、MOS / 栅极、肖特基和 BJT。
 名称以 PN2D 开头的算例归入 PN2D，以 BJT 开头的算例归入 BJT。
@@ -60,10 +85,10 @@ Tkinter、Matplotlib 及准备参考算例所用的回归依赖。
 
 ```powershell
 $env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"
-cmake --preset windows-ucrt64-release
-cmake --build --preset windows-ucrt64-release --target sd-sim vela_example_runner sentaurus_import
+cmake --preset windows-ucrt64-release-sentaurus2022
+cmake --build --preset windows-ucrt64-release-sentaurus2022 --target sd-sim vela_example_runner sentaurus_import
 python scripts/vela_workbench.py --stage-cases build/vela-workbench-cases
-python scripts/vela_workbench.py --cases build/vela-workbench-cases --launcher build-release/sd-sim.exe --runs build/workbench-runs
+python scripts/vela_workbench.py --cases build/vela-workbench-cases --launcher build-release/sentaurus2022/sd-sim.exe --runs build/workbench-runs
 ```
 
 已有 `sentaurus_u2022_12` 常数配置的 Vela runtime 时，可以将
@@ -108,17 +133,20 @@ ELF 程序、共享库及 Tk 图形依赖。
 
 求解器使用 MSYS2 UCRT64 Release 构建。GUI 和 SDevice 前端用独立的
 Windows x64 CPython 3.12 构建，需在该解释器中安装 Nuitka 和 Matplotlib。
+CMake 选中的回归 Python 需要安装[回归指南](../tests/regression/README.md)中的算例准备依赖，
+包括 NumPy、h5py 和 jsonschema。
 Nuitka 首次构建时会下载 Zig 工具链。设置 `$nuitkaPython` 为此
 解释器路径，设置 `$mklRoot` 为本机 oneMKL 2026.1 安装目录。
 
 ```powershell
-cmake --preset windows-ucrt64-release "-DVELA_SDS_NUITKA_PYTHON=$nuitkaPython" "-DVELA_SDS_MKL_ROOT=$mklRoot"
-cmake --build --preset windows-ucrt64-release --target sds_package
+cmake --preset windows-ucrt64-release-sentaurus2022 "-DVELA_SDS_NUITKA_PYTHON=$nuitkaPython" "-DVELA_SDS_MKL_ROOT=$mklRoot"
+cmake --build --preset windows-ucrt64-release-sentaurus2022 --target sds_package
 ```
 
 配置时提供这两个路径即可启用 `sds_package`。该目标按需执行，并先构建
-求解器和导入工具。产物为 `build-release/sds-package/SDS-windows-x64.zip`
-和同目录下的 `SDS/SDS.exe`。再次执行时，通过检查的新包会替换该目录中的旧包。
+求解器和导入工具。上述预设的产物为
+`build-release/sentaurus2022/sds-package/SDS-windows-x64.zip` 和同目录下的
+`SDS/SDS.exe`。再次执行时，通过检查的新包会替换该目录中的旧包。
 
 解压整个 `SDS-windows-x64.zip` 后，双击其中的 `SDS.exe`。目录包带有
 已编译的 GUI 和 SDevice 前端、Tk、绘图库、`sd-sim`、只读算例库和
@@ -126,3 +154,12 @@ oneMKL 顺序运行时。打包程序会检查最终 ZIP 及其内嵌 ZIP 格式
 Python 源码、字节码和 zipapp 文件。Sentaurus 原始输入仍作为算例资料提供。
 启动器为 BJT M1 和 BVMethods 设置随包 PARDISO 所用的库路径。内部发行的
 测试记录应注明使用的 `sd-sim` 版本和验证过的 Windows 环境。
+
+### Windows 包验收记录
+
+2026-11-24 在 ThinkPad T470p、Windows 10 x64 上验收了按器件类型筛选的 Windows ZIP。
+包内 `sd-sim` 报告 Vela 0.1.0、求解器基线 `65b9b4b0`。解压后实跑 PN2D 零偏，
+并用 App 打开该次结果及已有 BVMethods 结果。随包的 25 个输入均有一个器件标签。
+该记录覆盖这次解压启动、短算例和已有结果查看。
+
+ZIP SHA-256 `5465d59c6c81b5b7217156271ea270d78d19d297d423c814b840ab22e21a29c6`。

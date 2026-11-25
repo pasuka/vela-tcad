@@ -16,6 +16,18 @@ Current source builds provide `sd-sim [options] deck.cmd` as the preferred entry
 [CLI support and reserved options](docs/sentaurus_sdevice_workflow.md#21-调用形式).
 Previously qualified packages retain their recorded entry points and capabilities.
 
+## SDS Desktop Quick Start
+
+Semiconductor Device Simulator (SDS) is the Windows desktop app for running
+built-in `sd-sim` cases. Extract the full Windows ZIP and open `SDS.exe`.
+The tutorial runs PN2D Zero Bias and opens a saved BVMethods result to show the
+curve, mesh, final field, log and original Sentaurus input.
+
+![SDS English quick-start tutorial recorded on a ThinkPad T470p](docs/media/sds-getting-started-en.gif)
+
+[中文入门教程](docs/media/sds-getting-started-zh.gif) ·
+[SDS user guide and Windows packaging](docs/vela_workbench.md)
+
 ## What Is Implemented
 
 Core solver capabilities:
@@ -55,8 +67,10 @@ Implementation boundaries:
   indicators, not a calibrated avalanche breakdown prediction.
 - Quasi-static CV is finite-difference terminal-charge extraction, not an AC
   small-signal matrix solve.
-- Schottky support is a prototype barrier-style path; Newton sweeps reject
-  Schottky contacts until a future implementation handles that model.
+- Schottky DC sweeps support the `dirichlet_barrier` prototype with Gummel and
+  voltage-driven `thermionic_robin` contacts with coupled Newton. The
+  thermionic model requires positive electron and hole emission velocities.
+  See the [contact configuration](docs/config_schema.md#contacts).
 
 Current PN2D BV template policy:
 
@@ -74,6 +88,8 @@ Current PN2D BV template policy:
 Start here:
 
 - [docs/README.md](docs/README.md): documentation index and reading paths.
+- [SDevice workflow](docs/sentaurus_sdevice_workflow.md): run a prepared CMD
+  with `sd-sim` and interpret its outputs.
 - [docs/architecture.md](docs/architecture.md): implementation and module map.
 - [docs/config_schema.md](docs/config_schema.md): JSON configuration reference.
 - [docs/validation/pn2d_bv_validation.md](docs/validation/pn2d_bv_validation.md):
@@ -267,6 +283,10 @@ Validated device inputs, comparison reports, and reproduction entry points are
 listed in [reference_tcad/README.md](reference_tcad/README.md).  Each fixture
 documents the required run order because multi-stage continuation cases cannot
 in general be launched from a single standalone deck.
+
+The [regression guide](tests/regression/README.md) lists CMake options for
+source-level tests. The [SDS catalog](docs/vela_workbench.md#随包算例与-ctest)
+lists the cases included in the desktop package.
 
 ## Optional Python API
 

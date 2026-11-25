@@ -1,5 +1,28 @@
 # Vela Documentation
 
+## 从这里开始
+
+| 目标 | 阅读入口 |
+| --- | --- |
+| 使用 SDS 桌面 App | [用户手册与打包](vela_workbench.md)、[中文入门 GIF](media/sds-getting-started-zh.gif)、[英文入门 GIF](media/sds-getting-started-en.gif) |
+| 用 `sd-sim` 运行 SDevice CMD | [命令行、输入和输出](sentaurus_sdevice_workflow.md)、[运行时打包](sdevice_packaging.md)、[版本与验收范围](sdevice_delivery.md) |
+| 编译、开发和验证 | [构建指南](../README.md#build)、[架构](architecture.md)、[配置字段](config_schema.md)、[回归指南](../tests/regression/README.md) |
+
+## 按主题查找验证证据
+
+- PN2D 和 BVMethods。查看 [PN2D BV 当前资格](validation/pn2d_bv_validation.md)
+  和 [BVMethods 正式入口回归证据](validation/bvmethods_production_integration_2026-11-08.md)。
+- BJT、Schottky 和 DG。查看[源码回归入口](../tests/regression/README.md#sdevice-numerical-reference-regressions)
+  和[具名发行包的验收记录](sdevice_delivery.md#具名输入的资格上限)。
+- LDMOS。查看 [Templates LDMOS 当前验证状态](validation/templates_ldmos_current_status.md)
+  和 [SLOT LDMOS 可选回归](../tests/regression/README.md#slot-ldmos-device-regressions)。
+- SDE 与参考数据。查看 [SDE 当前交付](sde_delivery.md)
+  和[参考输入索引](../reference_tcad/README.md#checked-in-validation-chains)。
+
+## 验证记录与历史材料
+
+以下带日期的报告记录对应版本和算例的证据。当前配置与验收范围请以上方的主题入口为准。
+
 - [BVMethods电子797与接触234/235局部项补证，2026-11-10](validation/bvmethods_native_local_terms_2026-11-10.md)：
   两份真实RHS停止后态的源项/输运分账、8单元散射与同态Vela对照；主要差收窄到输运形成与边界合同，严格RHSMin等价仍未取得。
 - [BVMethods原生组装阶段与消费者账本，2026-11-09](validation/bvmethods_native_rhs_stage_ledger_2026-11-09.md)：

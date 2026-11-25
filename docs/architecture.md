@@ -265,5 +265,9 @@ physical voltage before returning or writing output.
   not calibrated breakdown voltages.
 - CV sweeps use finite-difference terminal charge, not AC small-signal
   admittance extraction.
-- Schottky support is available in the Poisson and Gummel prototype paths.
-  Newton rejects Schottky contacts with a clear error.
+- The Poisson driver supports Schottky electrostatic boundaries. In DC
+  sweeps, Gummel uses the `dirichlet_barrier` prototype. Coupled Newton
+  supports explicitly configured `thermionic_robin` voltage contacts with
+  positive electron and hole emission velocities. The thermionic boundary
+  fixes electrostatic potential and imposes carrier flux in the continuity
+  equations. See the [contact configuration](config_schema.md#contacts).

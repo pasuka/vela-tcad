@@ -71,8 +71,10 @@ PN2D uses the shared Release build, `sentaurus_u2022_12` constants and the check
 It runs equilibrium, the complete IV and compensated BV sweeps, and both
 compensated sweeps for all eight M3 variants through `sd-sim`. It checks the
 requested biases, current and conservation gates, and saved spatial fields.
-The staged CI sidecar selects the VTU biases used for spatial comparison and
-the final device plot. All CMD voltage targets remain in the sweep.
+The staged CI sidecar sets `stage_vtk_bias_points` for spatial comparison and
+the final device plot. A VTU file is expected for each selected bias. The
+solver still runs the complete CMD sweep and checks all required current
+points. See the [SDevice output contract](../../docs/sentaurus_sdevice_workflow.md).
 The compensated BV and all sixteen M3 sweep CTests select UMFPACK when CMake
 finds it. Builds without UMFPACK run those same cases and acceptance checks
 with Eigen SparseLU.
@@ -156,9 +158,11 @@ methods.
 ## SDevice numerical reference regressions
 
 Enable `VELA_ENABLE_REFERENCE_U2022_CI` to register `reference_u2022_gate_contacts`,
-`reference_u2022_schottky_iv`, and `reference_u2022_bjt_m1`. They run their
-CMDs through the built `sd-sim` with the U-2022.12 constants profile. CI enables
-them in the full suite and exposes `suite=reference-u2022` for a manual run.
+`reference_u2022_schottky_iv`, `reference_u2022_bjt_m0`, and `reference_u2022_bjt_m1`.
+Use `ctest --test-dir <build> -N -L '^reference-u2022$'` to check registration
+for the configured source revision. These tests use the built `sd-sim` with
+the U-2022.12 constants profile. CI enables the group in its full suite and
+exposes `suite=reference-u2022` for a manual run.
 
 Gate checks zero barrier, +0.55 V and -0.30 V barriers, and both zero and
 nonzero work-function offsets against the frozen analytical flat-band references.
@@ -191,7 +195,7 @@ It runs through `sd-sim` in Unit potential-density coordinates and requires
 the 0.70 V base stage, all 31 collector points, finite terminal currents,
 active-region current signs, and the existing KCL limits. It reports current
 and gain differences against the archived T-2022.03-SP2 M0 curve for
-characterization. The U-2022.12 M1 parity gate retains its own reference.
+characterization. The M1 0.05 dex gate applies to its own U-2022.12 reference.
 
 Enable `VELA_ENABLE_TRANSPORTMODELS_IDVD_CI` to register the TransportModels
 qualification test while the full-sweep solver is being validated. It compares
@@ -199,6 +203,24 @@ the isothermal DD Id-Vd sweep at Vg = 1 V against 21 archived T-2022.03-SP2
 output points. See the
 [TransportModels fixture](../../reference_tcad/transportmodels_sentaurus2022/ci_u2022_12/README.md)
 for the input provenance, step controls and current acceptance criteria.
+
+### DG reference tests
+
+The CMake options below are off by default for local configurations. The
+full Release configuration in the `CI` workflow sets them as shown.
+
+| Test | CMake option | Full Release CI | DG coupling used by CTest |
+| --- | --- | --- | --- |
+| `reference_u2022_transportmodels_dg_idvd` | `VELA_ENABLE_TRANSPORTMODELS_DG_IDVD_CI` | On | `monolithic_box` |
+| `reference_u2022_transportmodels_dg_idvg` | `VELA_ENABLE_TRANSPORTMODELS_DG_IDVG_CI` | Off | `outer` when explicitly enabled |
+| `reference_u2022_singledevice_idvg_linear` | `VELA_ENABLE_SINGLEDEVICE_IDVG_CI` | On | `monolithic_box` |
+
+The two monolithic selections are set by CTest. See the
+[TransportModels fixture](../../reference_tcad/transportmodels_sentaurus2022/ci_u2022_12/README.md)
+and the [SingleDevice fixture](../../reference_tcad/singledevice_sentaurus2018/ci_u2022_12/README.md)
+for the bias ranges and acceptance gates.
+
+### Running the U-2022.12 group locally
 
 BJT and TransportModels use single-threaded oneMKL PARDISO. Set `VELA_MKL_RT_LIBRARY` to the
 absolute path of the installed MKL runtime. Schottky uses UMFPACK when
@@ -218,9 +240,9 @@ under the build's `reference-u2022-reports/` directory.
 
 ### SDS numerical case labels
 
-Numerical regressions that explicitly launch `sd-sim` receive one SDS device
-label when their existing CMake options are enabled. The groups are PN2D
-(`sds-device-pn2d`), MOS / Gate (`sds-device-mos`), Schottky
+The PN2D, BVMethods and U-2022.12 registrations covered by the SDS
+classification receive one device label when their CMake options are enabled.
+The groups are PN2D (`sds-device-pn2d`), MOS / Gate (`sds-device-mos`), Schottky
 (`sds-device-schottky`), and BJT (`sds-device-bjt`).
 
 Preview the selected tests in an already configured build. CTest adds the
@@ -231,21 +253,25 @@ ctest --test-dir build-release/sentaurus2022 -N -L "^sds-device-pn2d$"
 ctest --test-dir build-release/sentaurus2022 -N -L "^sds-device-bjt$"
 ```
 
+The [desktop catalog](../../docs/vela_workbench.md#随包算例与-ctest)
+lists the packaged inputs. The BJT label also selects the source-only
+BJT M0 regression. Select the two SLOT LDMOS tests with `slot-ldmos`.
+
 ## SLOT LDMOS device regressions
 
-Configure with `VELA_ENABLE_SLOT_LDMOS_CI=ON` to register
-`slot_ldmos_bvds_sdevice` and `slot_ldmos_idvg_sdevice`. Set
-`VELA_SLOT_LDMOS_BVDS_CMD` and `VELA_SLOT_LDMOS_IDVG_CMD` to preprocessed
-CMD files in self-contained input directories. Include the input mesh,
-doping, parameter files, and any SLOT sidecar and restart state required by
-the CMD. Use paths relative to the CMD for inputs and outputs. The device
-inputs are supplied separately from the repository.
+Set `VELA_ENABLE_SLOT_LDMOS_CI=ON` to register
+`slot_ldmos_bvds_sdevice` and `slot_ldmos_idvg_sdevice`. Point
+`VELA_SLOT_LDMOS_BVDS_CMD` and `VELA_SLOT_LDMOS_IDVG_CMD` to the prepared CMD
+files. Each CMD directory must contain its referenced mesh, doping,
+parameters, and any required sidecar or restart state. Use paths relative to
+the CMD for inputs and outputs. These device inputs are supplied separately.
 
-Build `sd-sim` and its runtime targets, then run `ctest -L slot-ldmos --output-on-failure`.
-The runner uses the build's `sd-sim` by default. `VELA_SLOT_LDMOS_SD_SIM`
-can explicitly select a separately qualified SLOT-capable runtime with its
-companion tools and scripts. The tests require successful `sd-sim`
-execution, verify potential and density unknowns with unit scaling in the
-emitted stages, and check the completed voltage sweep or BVDS current stop.
-Each test keeps its run directory and logs under `slot-ldmos-reports/` in
-the build tree.
+Build `sd-sim` and its runtime targets. By default the runner uses the build's
+`sd-sim`. `VELA_SLOT_LDMOS_SD_SIM` can select a separately qualified
+SLOT-capable runtime with its companion tools and scripts. Check registration with
+`ctest --test-dir <build> -N -L '^slot-ldmos$'`, then run with
+`ctest --test-dir <build> --output-on-failure --no-tests=error -L '^slot-ldmos$'`.
+The tests require successful `sd-sim` execution, verify potential and density
+unknowns with unit scaling in the emitted stages, and check the completed
+Id-Vg sweep or BVDS current stop. Each test keeps its run directory and logs
+in the build's `slot-ldmos-reports/` directory.
