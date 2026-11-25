@@ -25,7 +25,6 @@ curve, mesh, final field, log and original Sentaurus input.
 
 ![SDS English quick-start tutorial recorded on a ThinkPad T470p](docs/media/sds-getting-started-en.gif)
 
-[中文入门教程](docs/media/sds-getting-started-zh.gif) ·
 [SDS user guide and Windows packaging](docs/vela_workbench.md)
 
 ## What Is Implemented
@@ -285,7 +284,7 @@ documents the required run order because multi-stage continuation cases cannot
 in general be launched from a single standalone deck.
 
 The [regression guide](tests/regression/README.md) lists CMake options for
-source-level tests. The [SDS catalog](docs/vela_workbench.md#随包算例与-ctest)
+source-level tests. The [SDS catalog](docs/vela_workbench.md#packaged-cases-and-ctest)
 lists the cases included in the desktop package.
 
 ## Optional Python API

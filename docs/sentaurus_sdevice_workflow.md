@@ -1,4 +1,4 @@
-# `sd-sim`：SDevice 命令文件直跑工作流
+# Running SDevice command files with `sd-sim`
 
 2026-10-23 CLI 更新：新首选入口为 `sd-sim [选项] <cmd>`；`vela device [选项] <cmd>`
 保留兼容。新源码不自动继承既有发行包的验收资格；后续安排见
@@ -283,9 +283,13 @@ VTU 在文件闭合后按 C4 全局编号及 FilePrefix 复制，PVD 原子更�
 保留状态文件、输入、计划和诊断记录。失败与中止保留中间产物。FieldData 的 goal 状态针对该段；
 整个流程的完成状态见 `run_manifest.json` 的退出码和各段记录。
 
-PN2D 电压扫描 CI 在 sidecar 中用 `stage_vtk_bias_points` 限制阶段 VTU 输出。键为从 0 开始的执行阶段编号字符串，
-值为该段已有目标偏压的列表（单位 V）。空列表抑制该段 VTU，扫描要求的偏压点和状态检查点仍会保留，
-电流曲线与数值门仍覆盖回归要求的完整偏压范围。SDS 对随包算例使用 `--plot-final-only`，只发布最后接受点的 VTU。
+PN2D voltage-sweep CI uses the `stage_vtk_bias_points` sidecar field to limit
+stage VTU output. Each key is a zero-based executable stage index encoded
+as a string, and each value lists existing voltage targets for that stage
+in volts. An empty list suppresses stage VTU output. Required sweep points
+and state checkpoints are retained, and current curves and acceptance
+checks still cover the required bias range. SDS passes `--plot-final-only`
+for packaged cases, so it publishes the VTU at the last accepted point.
 
 runner 以 ASCII 暂存名读写输入与运行日志，编排器在段结束后将 runtime 日志合并至唯一用户日志，
 以支持 Windows 中文和空格路径。用户日志含版本/提交/哈希、cmd 回显、映射决策、每段结果与结束摘要。
@@ -412,7 +416,7 @@ Vela 替换：器件 plot `.tdr` → `.vtu`；`.sav` → `.h5`；另生成 `<plo
   <NewCurrentPrefix><Current 解析名>   # DF-ISE xyplot，每接受步追加（写 .tmp 再 rename）
   <Plot 解析名 .tdr→.vtu>             # 末态；失败/中止时为最后接受的状态，FieldData goal_reached=false
   <FilePrefix>_NNNN_des.vtu ...        # Solve 内 Plot(Time=...)；全局序号
-  <Plot stem>_NNNN_des.vtu ...         # 按输出配置写入，默认每个接受偏压点一个
+  <Plot stem>_NNNN_des.vtu ...         # Configurable, one per accepted bias by default
   <Plot stem>.pvd
   name_des_vela/                       # 中间产物：execution_ir.json mesh.json doping.csv materials.json
                                        # mesh_qualification.json stage_plan.json simulation_stageNN.json

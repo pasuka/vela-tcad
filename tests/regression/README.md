@@ -253,7 +253,7 @@ ctest --test-dir build-release/sentaurus2022 -N -L "^sds-device-pn2d$"
 ctest --test-dir build-release/sentaurus2022 -N -L "^sds-device-bjt$"
 ```
 
-The [desktop catalog](../../docs/vela_workbench.md#随包算例与-ctest)
+The [desktop catalog](../../docs/vela_workbench.md#packaged-cases-and-ctest)
 lists the packaged inputs. The BJT label also selects the source-only
 BJT M0 regression. Select the two SLOT LDMOS tests with `slot-ldmos`.
 

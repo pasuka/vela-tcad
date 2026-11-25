@@ -1,23 +1,27 @@
 # SDevice 前端交付入口与支持矩阵
 
-## 使用入口与验收范围
+## Entry points and validation scope
 
-| 入口 | 用途 | 验收范围 |
+| Entry point | Use | Validation scope |
 |---|---|---|
-| Windows SDS 桌面包 | 双击 `SDS.exe`，运行随包算例并查看曲线、网格、末态场和日志 | 随包 25 个只读算例。本次 Windows 10 x64 验收实跑 PN2D 零偏，重新打开已保存的 PN2D 零偏和 BVMethods 结果。见 [SDS 桌面工作台](vela_workbench.md)。 |
-| 源码构建的 `sd-sim [选项] <cmd>` | 检查或执行 SDevice 命令文件 | 以具体输入、选项、后端和 CTest 数值门为准。见 [SDevice 工作流](sentaurus_sdevice_workflow.md)和[回归指南](../tests/regression/README.md)。 |
-| 2026-10-23 D1–D4 CLI 归档包 | 使用对应 Windows 或 Ubuntu 快照运行 `vela device` | 具名输入的运行资格见 [D1–D3 账本](validation/sdevice_delivery_revalidation_2026-10-22.json)和 [D4 两机验证](validation/sdevice_delivery_d4_2026-10-23.md)。 |
+| SDS desktop package for Windows | Open `SDS.exe` to run built-in cases and view curves, meshes, final fields, and logs | The package carries 25 read-only inputs. Validation on Windows 10 x64 ran PN2D Zero Bias and reopened saved PN2D and BVMethods results. See the [SDS user guide](vela_workbench.md). |
+| `sd-sim [options] <cmd>` built from source | Check or execute SDevice command files | Qualification depends on the input, options, solver backend, and CTest acceptance criteria. See the [SDevice workflow](sentaurus_sdevice_workflow.md) and [regression guide](../tests/regression/README.md). |
+| Archived D1-D4 CLI packages from 2026-10-23 | Run `vela device` with the matching Windows or Ubuntu snapshot | See the [D1-D3 ledger](validation/sdevice_delivery_revalidation_2026-10-22.json) and [D4 validation on both machines](validation/sdevice_delivery_d4_2026-10-23.md) for the qualification of individual inputs. |
 
-源码提供 BJT M0 Bennett-Wilson 的独立 `sd-sim` 回归，覆盖 31 个集电极偏压点及电流符号和 KCL。
-与参考数据的电流及增益差异用于表征。BJT M1 的 0.05 dex 门限适用于 M1 自身的对齐窗口。
-SLOT LDMOS 的 BVDS 和 Id–Vg 回归可在提供两套输入后显式启用。
-这些资格对应各自的源码及测试输入，SDS 随包名录和以下归档包矩阵各自记录已经交付的范围。
+The BJT M0 Bennett-Wilson `sd-sim` regression checks 31 collector bias
+points, terminal current signs, and KCL. It reports current and gain
+differences for characterization. The 0.05 dex threshold applies to the
+BJT M1 comparison window. The SLOT LDMOS BVDS and Id-Vg regressions are
+opt-in and require two prepared input sets. The desktop catalog and the
+archived package matrix document the cases delivered with each package.
 
 ## 选择发行包
 
-以下为 2026-10-23 D1–D4 归档包。构建 CLI 发行包见[打包指南](sdevice_packaging.md)。
-归档运行时快照为 `6a56593bf3917cc213a00aeab4f4a614befa52ca`。版本号同为 `0.1.0` 的旧包不能仅凭
-文件名区分，交付时应核对以下 SHA-256 及包内 `PACKAGE_MANIFEST.json` 的 `commit`。
+The packages below are the D1-D4 archives from 2026-10-23. See the
+[packaging guide](sdevice_packaging.md) to build CLI packages.
+The archived runtime revision is `6a56593bf3917cc213a00aeab4f4a614befa52ca`.
+Verify the SHA-256 below and the `commit` in `PACKAGE_MANIFEST.json` to
+identify packages that share the `0.1.0` version and filename.
 
 | 平台 | 包文件 | SHA-256 |
 |---|---|---|
@@ -91,7 +95,9 @@ cat device_des_vela/run_manifest.json
 
 ## 具名输入的资格上限
 
-本节对应上述 D1–D4 归档包。精确原文、LF 哈希、模型及已验证资格见[机器可读支持矩阵](sdevice_support_matrix.json)。
+This section covers the D1-D4 archives above. The [machine-readable support
+matrix](sdevice_support_matrix.json) lists exact inputs, LF hashes, models,
+and validated capabilities.
 `reference_tcad` 的 43 个 cmd 包含变体和消融，不能根据文件存在推断全部支持。
 
 | 输入/版本 | 资格 | 边界 |
