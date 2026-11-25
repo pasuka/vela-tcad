@@ -27,6 +27,7 @@ from vela_sdevice.plt import read_plt_document
 REFERENCE_ROOT = Path(__file__).resolve().parents[1] / "reference_tcad"
 CASES = {
     "schottky_iv": "schottky_charon_sentaurus2018",
+    "bjt_m0": "genius_bjt_sentaurus2022",
     "bjt_m1": "genius_bjt_sentaurus2022",
     "gate_contacts": "gate_reference",
     "transportmodels_idvd": "transportmodels_sentaurus2022",
@@ -53,9 +54,9 @@ def verify_inputs(fixture):
             raise ValueError(f"Reference input checksum mismatch: {fixture / name}")
 
 
-def stage_inputs(fixture, output, stem, grid):
+def stage_inputs(fixture, output, stem, grid, *, parameter="models.par"):
     output.mkdir()
-    for name in (stem + ".cmd", stem + ".vela.json", "models.par"):
+    for name in (stem + ".cmd", stem + ".vela.json", parameter):
         shutil.copyfile(fixture / name, output / name)
     for path in grid:
         shutil.copyfile(path, output / path.name)
@@ -179,19 +180,34 @@ def schottky_gates(fixture, run, stage, report):
     )
 
 
-def bjt_gates(fixture, run, stage, report):
+def bjt_gates(fixture, run, stage, report, *, model):
     curve_path = run / stage["csv"]
     contract = read_json(fixture.parent / "contracts" / "comparison_thresholds.json")
     parity = contract["wp3_wp5_vela_comparison"]["numerical_parity"]
+    reference = (fixture.parent / "reference_curves" / "bjt_m0_output.csv"
+                 if model == "M0" else fixture / "sentaurus_reference.csv")
     points, summary = compare_model(
-        "M1", fixture / "sentaurus_reference.csv", curve_path.with_name(curve_path.stem + "_terminal_balance.csv"),
-        tuple(parity["active_region_VCE_range_V"]), parity["models"]["M1"],
+        model, reference, curve_path.with_name(curve_path.stem + "_terminal_balance.csv"),
+        tuple(parity["active_region_VCE_range_V"]), parity["models"][model],
     )
+    if model == "M0":
+        terminal_keys = ("vela_Ic_A_per_um", "vela_Ib_A_per_um", "vela_Ie_A_per_um")
+        summary["all_terminal_currents_finite"] = all(
+            math.isfinite(point[key]) for point in points for key in terminal_keys
+        )
+        lo, hi = parity["active_region_VCE_range_V"]
+        summary["active_region_current_signs_pass"] = all(
+            point["vela_Ic_A_per_um"] > 0 and point["vela_Ib_A_per_um"] > 0 and point["vela_Ie_A_per_um"] < 0
+            for point in points if lo <= point["VCE_V"] <= hi
+        )
     with (run.parent / "comparison.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(points[0]))
         writer.writeheader()
         writer.writerows(points)
     report["comparison"] = summary
+    if model == "M0":
+        return (summary["operational_pass"] and summary["all_terminal_currents_finite"]
+                and summary["active_region_current_signs_pass"])
     return summary["operational_pass"] and summary["numerical_parity_gate"]["pass"]
 
 
@@ -638,11 +654,13 @@ def main():
             passed = singledevice_idvg_gates(launcher, fixture, output, env, report)
         else:
             schottky = args.case == "schottky_iv"
-            stem = "schottky_n_des" if schottky else "bjt_m1_des"
+            stem = "schottky_n_des" if schottky else f"{args.case}_des"
             mesh = "schottky_n_msh" if schottky else "bjt_msh"
             grid_dir = REFERENCE_ROOT / "sdevice_check_only" if schottky else fixture
             work = output / "inputs"
-            stage_inputs(fixture, work, stem, [grid_dir / f"{mesh}.{ext}" for ext in ("grd", "dat")])
+            parameter = "bjt_m0.par" if args.case == "bjt_m0" else "models.par"
+            stage_inputs(fixture, work, stem, [grid_dir / f"{mesh}.{ext}" for ext in ("grd", "dat")],
+                         parameter=parameter)
             run, plan = run_sdevice(launcher, work, stem, env, report, final_only=True)
             expected = [("anode", 1.0)] if schottky else [("base", 0.7), ("collector", 3.0)]
             actual = [(stage["sweep"]["contact"], stage["sweep"]["stop_V"]) for stage in plan[1:]]
@@ -653,8 +671,10 @@ def main():
                 if (solver.get("state_variables") != "potential_density"
                         or solver.get("primary_variable_coordinates") != "unit"):
                     raise ValueError(f"{stage['deck']}: expected Unit population coordinates")
-            gates = schottky_gates if schottky else bjt_gates
-            passed = gates(fixture, run, plan[-1], report)
+            if schottky:
+                passed = schottky_gates(fixture, run, plan[-1], report)
+            else:
+                passed = bjt_gates(fixture, run, plan[-1], report, model=args.case[-2:].upper())
         report["status"] = "passed" if passed else "gate_failed"
     finally:
         write_json(output / "result.json", report)

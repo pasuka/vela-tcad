@@ -1944,6 +1944,15 @@ Supported `model` values:
 - `none`
 - `slotboom`
 - `old_slotboom`
+- `bennett_wilson`
+
+Bennett-Wilson uses total donor plus acceptor concentration. The narrowing
+is zero at or below `Nref` and is `Ebgn * log(Ntotal / Nref)^2` above it.
+The defaults are `Ebgn = 0.00684 eV` and `Nref = 3.162e18 cm^-3`. In
+`sd-sim`, select it explicitly with `EffectiveIntrinsicDensity(BennettWilson)`.
+The `Bennett` block in the PAR supplies optional overrides. The emitted
+format-version 2 deck uses `reference_doping_cm3`, and the material
+`Bandgap.dEg0(Bennett)` offset is folded into the base intrinsic density.
 
 The low-level Slotboom and OldSlotboom prototypes compute the positive
 bandgap-narrowing term from the maximum of the supplied impurity concentration

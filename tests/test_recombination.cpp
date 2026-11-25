@@ -600,6 +600,22 @@ TEST_CASE("Slotboom bandgap narrowing grows effective intrinsic density", "[bgn]
     REQUIRE(niEff == Catch::Approx(ni * std::exp(high / (2.0 * Vt))));
 }
 
+TEST_CASE("Bennett-Wilson narrowing uses total dopants in both unit systems", "[bgn]")
+{
+    for (const UnitScalingConfig scaling :
+         {UnitScalingConfig{}, UnitScalingConfig{UnitScalingMode::UnitScaling}}) {
+        const auto config = bandgapNarrowingConfig("bennett_wilson", scaling);
+        const auto model = makeBandgapNarrowingModel(config);
+        const auto units = scaling.unitSystem();
+        const Real emitterImpurity = units.m3ToInternalConcentration(7.4605e25);
+        REQUIRE(model->deltaEg(config.referenceDoping, emitterImpurity, 0.0) == 0.0);
+        REQUIRE(model->deltaEg(emitterImpurity, 0.0, 0.0)
+                == Catch::Approx(0.068344860299766));
+        REQUIRE(model->deltaEg(emitterImpurity, 2.0 * emitterImpurity, 0.0)
+                == model->deltaEg(emitterImpurity, 0.0, 0.0));
+    }
+}
+
 TEST_CASE("Effective intrinsic density caps overflow", "[bgn]")
 {
     const Real ni = 1.0e16;

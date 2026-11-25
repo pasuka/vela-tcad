@@ -184,6 +184,15 @@ Its numerical regression uses EFT for the linear defect checks and records
 the requested collector points in CSV. `sd-sim` publishes only the final
 collector field, with intermediate runner artifacts in the report directory.
 
+BJT M0 uses the same GRD/DAT mesh and retains Boltzmann statistics and SRH.
+Its CMD explicitly selects Bennett–Wilson, with coefficients from the archived
+T-2022.03-SP2 PAR, to reproduce the native M0 default.
+It runs through `sd-sim` in Unit potential-density coordinates and requires
+the 0.70 V base stage, all 31 collector points, finite terminal currents,
+active-region current signs, and the existing KCL limits. It reports current
+and gain differences against the archived T-2022.03-SP2 M0 curve for
+characterization. The U-2022.12 M1 parity gate retains its own reference.
+
 Enable `VELA_ENABLE_TRANSPORTMODELS_IDVD_CI` to register the TransportModels
 qualification test while the full-sweep solver is being validated. It compares
 the isothermal DD Id-Vd sweep at Vg = 1 V against 21 archived T-2022.03-SP2

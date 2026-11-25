@@ -248,6 +248,7 @@ _DEFAULT_VELA = {
     "Mobility.Enormal": "solver.mobility.model+=_lombardi",
     "Recombination.Auger": "solver.recombination+=auger",
     "EffectiveIntrinsicDensity.OldSlotboom": "solver.bandgap_narrowing=old_slotboom",
+    "EffectiveIntrinsicDensity.BennettWilson": "solver.bandgap_narrowing=bennett_wilson",
     "EffectiveIntrinsicDensity.NoBandGapNarrowing": "solver.bandgap_narrowing=none",
     "EffectiveIntrinsicDensity.NoFermi": "solver.bandgap_narrowing.fermi_statistics_correction=false",
     "Fermi": "solver.carrier_statistics.model=fermi_dirac",
@@ -453,7 +454,13 @@ def _canonicalise_model(model: dict, scope: PhysicsScope, ctx: ParseContext, lin
             else:
                 ctx.error("E107", _line_of(arg, line), section, arg["name"], text=arg["name"])
     elif lower == "effectiveintrinsicdensity":
+        options = []
         for arg in args:
+            if arg["name"].lower() == "bandgapnarrowing":
+                options.extend(arg.get("args") or [{"name": "BennettWilson"}])
+            else:
+                options.append(arg)
+        for arg in options:
             a = arg["name"].lower()
             canonical = _BGN_MODELS.get(a)
             if canonical is None:
@@ -585,6 +592,11 @@ def combine_physics(scopes: List[PhysicsScope], ctx: ParseContext) -> dict:
                           detail=f"{first_scope.scope}={first_scope.target} vs {scope.scope}={scope.target}: "
                                  + ", ".join(differing))
         effective = first
+    narrowing_models = {f"EffectiveIntrinsicDensity.{model}" for model in _BGN_MODELS.values()
+                        if model != "NoFermi"}
+    if len(narrowing_models.intersection(effective)) > 1:
+        ctx.error("E113", 0, section, "EffectiveIntrinsicDensity",
+                  detail="conflicting bandgap narrowing selections")
     fixed_charges: List[dict] = []
     for scope in scopes:
         fixed_charges.extend(scope.fixed_charges)

@@ -1,0 +1,57 @@
+{
+  "schema": "vela.sdevice_sidecar.v1",
+  "sentaurus_step_control": true,
+  "solver": {
+    "method": "newton",
+    "reltol": 1e-08,
+    "line_search": false,
+    "warm_start": true,
+    "state_variables": "potential_density",
+    "primary_variable_coordinates": "unit",
+    "population_stopping_rule": "native_approx",
+    "population_update_convergence": {
+      "digits": 5,
+      "electron_reference_cm3": 10000000.0,
+      "hole_reference_cm3": 10000000.0
+    },
+    "global_continuity_closure": {
+      "mode": "report",
+      "tolerance": 0.01,
+      "source_floor": 1e-14
+    },
+    "quasi_fermi_reference": "none",
+    "continuity_row_scaling": {
+      "enabled": false
+    },
+    "quasi_fermi_update_limit_V": 0.0,
+    "abstol": 1e-09,
+    "population_linear_defect": "eft",
+    "carrier_row_convergence": {
+      "mode": "report",
+      "eps_row": 0.001,
+      "scale_floor": 1e-30,
+      "min_source_scale": 1e-18,
+      "min_source_scale_fraction": 0.001,
+      "min_source_global_fraction": 1e-06,
+      "min_flux_scale_fraction": 1e-06,
+      "min_flux_scale": 0.0,
+      "min_newton_max_iter": 200,
+      "min_carrier_density_cm3": 1e+16
+    }
+  },
+  "sweep": {
+    "vtk_fields": [
+      "ElectrostaticPotential"
+    ],
+    "diagnostics": {
+      "terminal_balance": {
+        "enabled": true,
+        "contacts": [
+          "emitter",
+          "base",
+          "collector"
+        ]
+      }
+    }
+  }
+}

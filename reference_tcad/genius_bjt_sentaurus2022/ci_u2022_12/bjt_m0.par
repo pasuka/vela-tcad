@@ -1,0 +1,6 @@
+* Bennett coefficients from the archived T-2022.03-SP2 BJT M0 parameters.
+Bennett
+{
+  Ebgn = 0.00684
+  Nref = 3.162e18
+}

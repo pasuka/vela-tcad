@@ -186,6 +186,25 @@ class DeckEmitterTests(unittest.TestCase):
                                      "fermi_dirac" if fermi else None)
                     self.assertEqual(solver["bandgap_narrowing"]["model"], "old_slotboom")
 
+    def test_bennett_par_overrides_solver_defaults_in_cm3(self):
+        text = """File {Grid="mesh.grd" Parameter="models.par"}
+                   Electrode { {Name="a" Voltage=0} {Name="c" Voltage=0} }
+                   Physics { EffectiveIntrinsicDensity(BennettWilson) }
+                   Solve { Coupled { Poisson Electron Hole } }"""
+        ir = parse_cmd_text(text, path_name="bgn.cmd")
+        with tempfile.TemporaryDirectory() as folder:
+            par = Path(folder) / "models.par"
+            par.write_text("Bennett\n{\n Ebgn = 0.0092\n Nref = 4.113e18\n}\n",
+                           encoding="utf-8")
+            report = emit_materials(par, active_models=active_models_from_ir(ir),
+                                    temperature_K=300, mesh_materials=["Si"]).report
+        solver = emit(ir, materials_report=report).decks[0]["solver"]
+        self.assertEqual(solver["bandgap_narrowing"], {
+            "model": "bennett_wilson", "coefficient_eV": 0.0092,
+            "reference_doping_cm3": 4.113e18,
+        })
+        self.assertNotIn("carrier_statistics", solver)
+
     def test_resistor_qs_emits_adaptive_outer_continuation(self):
         ir = accepted("bvmethods_sentaurus2018/external_resistor_sdevice.cmd")
         result = emit(ir, mesh_qualification=qualification(ir, ("Si", "SiO2")),

@@ -2099,7 +2099,7 @@ option(VELA_ENABLE_TRANSPORTMODELS_DG_IDVG_CI "Register the TransportModels DG I
 option(VELA_ENABLE_SINGLEDEVICE_IDVG_CI "Register the SingleDevice linear and saturation DG Id-Vg sd-sim qualification test" OFF)
 set(_reference_u2022_cases)
 if(VELA_ENABLE_REFERENCE_U2022_CI)
-    list(APPEND _reference_u2022_cases gate_contacts schottky_iv bjt_m1)
+    list(APPEND _reference_u2022_cases gate_contacts schottky_iv bjt_m0 bjt_m1)
 endif()
 if(VELA_ENABLE_TRANSPORTMODELS_IDVD_CI)
     list(APPEND _reference_u2022_cases transportmodels_idvd)

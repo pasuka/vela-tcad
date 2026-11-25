@@ -219,14 +219,15 @@ def _physics(ir: dict, report: dict, decisions: list) -> dict:
     # to carrier-statistics selection. Explicit NoFermi overrides the default
     # without disabling Fermi populations, regardless of statement order.
     bgn = solver.get("bandgap_narrowing", {})
-    if bgn.get("model") == "old_slotboom":
+    if bgn.get("model") in ("old_slotboom", "bennett_wilson"):
         correction = (solver.get("carrier_statistics", {}).get("model") == "fermi_dirac")
         # Keep the qualified Boltzmann deck encoding unchanged. The C++ default
         # is false; explicit NoFermi remains explicit, including with Fermi.
         if correction:
             bgn.setdefault("fermi_statistics_correction", True)
         _decision(decisions, "EffectiveIntrinsicDensity.FermiCorrection",
-                  "Fermi + OldSlotboom; explicit NoFermi overrides",
+                  "Fermi + OldSlotboom; explicit NoFermi overrides"
+                  if bgn["model"] == "old_slotboom" else "Fermi + BennettWilson; explicit NoFermi overrides",
                   "solver.bandgap_narrowing.fermi_statistics_correction",
                   bgn.get("fermi_statistics_correction", False),
                   "SDevice intrinsic-density correction; material dEg0 remains folded in ni")

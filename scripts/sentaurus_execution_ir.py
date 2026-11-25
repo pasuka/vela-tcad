@@ -49,6 +49,7 @@ SUPPORTED_MODELS: dict[str, str] = {
     "Band2Band": "band-to-band tunneling generation",
     "EffectiveIntrinsicDensity": "effective intrinsic density container",
     "OldSlotboom": "Slotboom bandgap narrowing",
+    "BennettWilson": "Bennett-Wilson total-doping bandgap narrowing",
     "Enormal": "normal-field surface mobility degradation",
     "TempDependence": "power-law SRH lifetime temperature dependence",
     "eQuantumPotential": "electron density-gradient quantum correction",

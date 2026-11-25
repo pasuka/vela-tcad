@@ -136,6 +136,7 @@ MODEL_SECTIONS = {
     "SRH": "Scharfetter",
     "Auger": "Auger",
     "OldSlotboom": "OldSlotboom",
+    "BennettWilson": "Bennett",
     "VanOverstraeten": "vanOverstraetendeMan",
     "eQuantumPotential": "QuantumPotentialParameters",
 }
@@ -161,6 +162,8 @@ _SI_FACTORS: Dict[Tuple[str, str], Tuple[str, str, float]] = {
     ("Auger", "C"): ("cm^6/s", "m^6/s", 1.0e-12),
     ("Auger", "H"): ("1", "1", 1.0),
     ("Auger", "N0"): ("cm^-3", "m^-3", 1.0e6),
+    ("Bennett", "Ebgn"): ("eV", "eV", 1.0),
+    ("Bennett", "Nref"): ("cm^-3", "m^-3", 1.0e6),
     ("OldSlotboom", "Ebgn"): ("eV", "eV", 1.0),
     ("OldSlotboom", "Nref"): ("cm^-3", "m^-3", 1.0e6),
     ("OldSlotboom", "C"): ("1", "1", 1.0),
@@ -288,7 +291,8 @@ def intrinsic_density_cm3(nc_cm3: float, nv_cm3: float, effective_gap_eV: float,
 
 
 def evaluate_semiconductor(sections: Dict[str, Dict[str, Any]], temperature_K: float,
-                           fold_old_slotboom: bool, *, constants_profile: str = "sentaurus_u2022_12") -> Dict[str, Any]:
+                           fold_old_slotboom: bool, *, fold_bennett: bool = False,
+                           constants_profile: str = "sentaurus_u2022_12") -> Dict[str, Any]:
     """Evaluate the frozen material scalars from merged section parameter maps.
 
     ``sections[section][name]`` is a list of numbers (``dEg0`` variants are
@@ -308,7 +312,9 @@ def evaluate_semiconductor(sections: Dict[str, Dict[str, Any]], temperature_K: f
     for name in ("a", "ml", "mm"):
         if name not in e_dos:
             raise KeyError(f"eDOSMass.{name}")
-    d_eg0 = bandgap.get("dEg0(OldSlotboom)", [0.0])[0] if fold_old_slotboom else 0.0
+    old_slotboom_offset = bandgap.get("dEg0(OldSlotboom)", [0.0])[0] if fold_old_slotboom else 0.0
+    bennett_offset = bandgap.get("dEg0(Bennett)", [0.0])[0] if fold_bennett else 0.0
+    d_eg0 = old_slotboom_offset + bennett_offset
     me = electron_dos_mass(e_dos["a"][0], e_dos["ml"][0], e_dos["mm"][0],
                            eg_zero, eg_T, bandgap_offset_eV=d_eg0)
     h_coeff = {k: v[0] for k, v in h_dos.items() if k in ("a", "b", "c", "d", "e", "f", "g", "h", "i", "mm")}
@@ -328,7 +334,8 @@ def evaluate_semiconductor(sections: Dict[str, Dict[str, Any]], temperature_K: f
         "intrinsic_carrier_density_cm3": ni,
         "temperature_K": temperature_K,
         "derivation": {
-            "Eg_T_eV": eg_T, "Eg_0_eV": eg_zero, "dEg0_OldSlotboom_folded_eV": d_eg0,
+            "Eg_T_eV": eg_T, "Eg_0_eV": eg_zero, "dEg0_OldSlotboom_folded_eV": old_slotboom_offset,
+            **({"dEg0_Bennett_folded_eV": bennett_offset} if fold_bennett else {}),
             "electron_dos_gap_T_eV": effective_gap, "electron_dos_gap_0_eV": eg_zero + d_eg0,
             "effective_gap_eV": effective_gap, "electron_dos_mass_ratio": me, "hole_dos_mass_ratio": mh,
             "kT_eV": c["kb_J_per_K"] / c["q_C"] * temperature_K,
@@ -373,7 +380,7 @@ def _at_reference_temperature(ctx: _Context) -> bool:
     return abs(ctx.temperature_K - _REFERENCE_T) <= _T_TOL
 
 
-_BGN_MODELS = ("OldSlotboom", "Slotboom", "Bennett", "delAlamo", "BandGapNarrowing")
+_BGN_MODELS = ("OldSlotboom", "Slotboom", "BennettWilson", "delAlamo", "BandGapNarrowing")
 
 
 def _bgn_active(ctx: _Context) -> bool:
@@ -682,7 +689,8 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
                 if model in model_set:
                     if section in merged:
                         relevant_sections.add(section)
-                    elif role == ROLE_TRANSPORT:
+                    # Bennett-Wilson's native defaults are supplied by the solver factory.
+                    elif role == ROLE_TRANSPORT and model != "BennettWilson":
                         raise MaterialsError("E404", path=f"{vela_name}.{section}", model=model,
                                              status="missing_section")
         for section, params in merged.items():
@@ -825,7 +833,9 @@ def _emit_material_entry(vela_name: str, role: str, sections: Dict[str, Dict[str
         material_report["derivation"] = {"role": role, "bandgap_eV": entry.get("bandgap_eV")}
         return entry
     try:
-        values = evaluate_semiconductor(sections, ctx.temperature_K, "OldSlotboom" in model_set, constants_profile=ctx.constants_profile)
+        values = evaluate_semiconductor(sections, ctx.temperature_K, "OldSlotboom" in model_set,
+                                        fold_bennett="BennettWilson" in model_set,
+                                        constants_profile=ctx.constants_profile)
     except KeyError as missing:
         raise MaterialsError("E404", path=f"{vela_name}.{missing.args[0]}", model="Poisson",
                              status="missing_parameter") from None
@@ -851,7 +861,9 @@ def _emit_material_entry(vela_name: str, role: str, sections: Dict[str, Dict[str
                            + ("/ConstantMobility" if "electron_mobility_cm2_per_V_s" in entry else "")
                            + f"; {derivation['law']}"
                            + (f"; dEg0(OldSlotboom)={derivation['dEg0_OldSlotboom_folded_eV']:g} eV applied to electron DOS mass and ni"
-                              if derivation["dEg0_OldSlotboom_folded_eV"] else "; no bandgap narrowing folded")
+                              if derivation["dEg0_OldSlotboom_folded_eV"] else
+                              f"; dEg0(Bennett)={derivation['dEg0_Bennett_folded_eV']:g} eV applied to electron DOS mass and ni"
+                              if "dEg0_Bennett_folded_eV" in derivation else "; no bandgap narrowing folded")
                            + ("; CODATA 2018 constants" if ctx.constants_profile == "codata2018" else "; Sentaurus U-2022.12 compatible constants"))
     material_report["derivation"] = derivation
     return entry

@@ -18,7 +18,12 @@
     "bjt_m1_des.vela.json": "aad84b613e9f60dffada9da1652ad6fd4f0c27413b3d18853f1e919dea9542f2",
     "bjt_msh.dat": "ac77d23db591b6a3a5812dc16840d5827d816e568bc8252ceb3bf45efd6fe3e7",
     "bjt_msh.grd": "eb7ea06db6af0f5263cea07030caab71b075780db11b6590e3d4909d65d2d224",
-    "models.par": "c33f70fd204ae8ec4a04dfd5545d3a4dfcec1aeedd7c0a90dd02ac1133d8151c"
+    "models.par": "c33f70fd204ae8ec4a04dfd5545d3a4dfcec1aeedd7c0a90dd02ac1133d8151c",
+    "bjt_m0_des.cmd": "5597cea4d00babac8082689ab23e27ea330aaa7875098ad98580f3c23c9f66e8",
+    "bjt_m0_des.vela.json": "38224f456bea2ada66174baa1de2bf53da41a007796d45128ac5c10486c29bd7",
+    "../source/bjt_m0_des.cmd": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068",
+    "../reference_curves/bjt_m0_output.csv": "79300be7c215ca464eb33fe95e921ab68c217195ce8f146923e85a69715b7070",
+    "bjt_m0.par": "724879f36de7338e7567e86789590d9acc9573a868586be81d773fa2b96a5398"
   },
   "mesh_provenance": "DF-ISE serialization of the qualified vela/input mesh and doping. This is distinct from the native TDX fingerprints."
 }
