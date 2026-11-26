@@ -279,18 +279,25 @@ Reports are written to `<build>/bvmethods-reports/`.
 ## SLOT LDMOS device regressions
 
 Configure with `VELA_ENABLE_SLOT_LDMOS_CI=ON` to register
-`slot_ldmos_bvds_sdevice` and `slot_ldmos_idvg_sdevice`. Set
-`VELA_SLOT_LDMOS_BVDS_CMD` and `VELA_SLOT_LDMOS_IDVG_CMD` to preprocessed
-CMD files in self-contained input directories. Include the input mesh,
-doping, parameter files, and any SLOT sidecar and restart state required by
-the CMD. Use paths relative to the CMD for inputs and outputs. The device
-inputs are supplied separately from the repository.
+`slot_ldmos_bvds_sdevice`, `slot_ldmos_idvg_sdevice` and
+`slot_ldmos_idvd_sdevice`. The option defaults to `OFF`. Set
+`VELA_SLOT_LDMOS_BVDS_CMD`, `VELA_SLOT_LDMOS_IDVG_CMD` and
+`VELA_SLOT_LDMOS_IDVD_CMD` to preprocessed original CMD files in
+self-contained input directories. Include the TDR or GRD/DAT mesh and
+doping data, PAR files, and any required SLOT sidecar or restart state.
+Use paths relative to the CMD for inputs and outputs. The device inputs
+are supplied separately from the repository. If the IdVd package uses an
+explicit material defaults library, pass its path as
+`VELA_SLOT_LDMOS_IDVD_DEFAULT_PAR`.
 
 Build `sd-sim` and its runtime targets, then run `ctest -L slot-ldmos --output-on-failure`.
 The runner uses the build's `sd-sim` by default. `VELA_SLOT_LDMOS_SD_SIM`
 can explicitly select a separately qualified SLOT-capable runtime with its
 companion tools and scripts. The tests require successful `sd-sim`
-execution, verify potential and density unknowns with unit scaling in the
-emitted stages, and check the completed voltage sweep or BVDS current stop.
-Each test keeps its run directory and logs under `slot-ldmos-reports/` in
-the build tree.
+execution and verify potential and density unknowns with UnitScaling in
+every emitted stage. With `Math { ExtendedPrecision }`, each stage must
+report end-to-end float80 and produce a verified accepted-state archive.
+The tests check the CMD voltage endpoint or the BVDS current stop, as well
+as the current curve, final VTU and run log. IdVd must first complete the
+gate sweep at zero drain bias before sweeping the drain. Each test keeps
+its run directory and logs under `slot-ldmos-reports/` in the build tree.
