@@ -4657,6 +4657,16 @@ the trial's initial state independently. On the ordinary and SLOT extended80
 prescribed-bias potential/density paths, it selects linear potential and
 logarithmic population extrapolation.
 
+The `slot_population_bvds_v1` extended80 stage accepts
+`solver.population_derivative_recovery: "after_protection"` with
+`solver.population_update.protection: "local_nonpositive"`. Each supply
+trial starts with the full tangent. After a protected write, the next
+linearization omits IALMob transport feedback and avalanche source
+derivatives from the augmented system. Transport, recombination and
+avalanche values still enter the physical residual and the port current
+calculation. An unprotected write restores the full tangent. This profile
+uses `full` when the recovery setting is absent.
+
 SLOT extended80 BVDS and fixed-bias Newton stages use EFT accumulation for
 the physical linear defect and componentwise backward error. The runner
 reports `linear_defect_method`. Set `solver.extended80_linear_defect` to

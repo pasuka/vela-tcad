@@ -21,7 +21,7 @@ ExtendedIalPopulationContinuity assembleExtendedIalPopulationContinuity(
     std::optional<ExtendedRecombinationSupport> recombination,
     std::span<const long double> externalCouples,
     const ExtendedIalTransportMeasures* measures,
-    ExtendedContactCurrents* allContacts)
+    ExtendedContactCurrents* allContacts, bool omitAvalancheDerivatives)
 {
     if constexpr (compiledArithmeticPrecision != ArithmeticPrecision::Extended80)
         throw std::logic_error("Extended IALMob continuity requires the extended80 runner");
@@ -205,6 +205,8 @@ ExtendedIalPopulationContinuity assembleExtendedIalPopulationContinuity(
                 for (int carrier = 0; carrier < 2; ++carrier) {
                     const int equation = carrier * size + row;
                     out.residual[equation] -= local.value;
+                    if (omitAvalancheDerivatives)
+                        continue;
                     for (int i = 0; i < 9; ++i) {
                         const int col = column(cell, i);
                         add(equation, col, -direct(local.derivative[i], col));

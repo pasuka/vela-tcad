@@ -41,6 +41,6 @@ ExtendedIalPopulationContinuity assembleExtendedIalPopulationContinuity(
     std::optional<ExtendedRecombinationSupport> recombination = {},
     std::span<const long double> externalCouples = {},
     const ExtendedIalTransportMeasures* measures = nullptr,
-    ExtendedContactCurrents* allContacts = nullptr);
+    ExtendedContactCurrents* allContacts = nullptr, bool omitAvalancheDerivatives = false);
 
 } // namespace vela

@@ -733,6 +733,59 @@ TEST_CASE("Extended resistor corrector accepts a coupled wide update and preserv
     CHECK(distant.coordinates[0] == 1);
 }
 
+TEST_CASE("Extended resistor restores the full tangent after an unprotected write", "[extended80]") {
+    ExtendedPopulationState seed;
+    seed.coordinates = ExtendedVector::Ones(3);
+    seed.supplyBias_V = 0.125L;
+    seed.concentrationScale_m3 = 1e6L;
+    const auto assemble = [](const ExtendedPopulationState& state) {
+        ExtendedSeriesResistorFrame frame;
+        frame.device.residual = ExtendedVector::Zero(3);
+        const auto n = state.coordinates[1];
+        frame.device.residual[1] = n > 0.5L ? 2.L : n - 0.25L;
+        frame.device.jacobian.resize(3, 3);
+        frame.device.jacobian.setIdentity();
+        frame.device.electronFree = {true};
+        frame.device.holeFree = {true};
+        frame.device.voltageDerivative = ExtendedVector::Zero(3);
+        frame.portDerivative = ExtendedVector::Zero(3);
+        frame.current_A_per_um = 0.L;
+        return frame;
+    };
+    int recoveryAssemblies = 0;
+    const auto recover = [&](const ExtendedPopulationState& state) {
+        ++recoveryAssemblies;
+        CHECK(state.coordinates[1] < 0.02L);
+        auto frame = assemble(state);
+        frame.device.jacobian.coeffRef(1, 1) = 2.L;
+        return frame;
+    };
+    ExtendedFixedBiasNewtonConfig config{4, 0, 1, 1.L, 1e-10L, 1e-8L,
+                                         {5, 1.L, 1.L, 1.L}, {}, false};
+    config.protection.protection = "local_nonpositive";
+    std::vector<bool> recoveryUsed;
+    std::vector<std::size_t> protectedElectrons;
+    config.observeAcceptedUpdate = [&](const auto&, const ExtendedFixedBiasUpdateObservation& step) {
+        recoveryUsed.push_back(step.usedRecoveryJacobian);
+        protectedElectrons.push_back(step.protectedElectrons);
+    };
+    const ExtendedSeriesResistorNewtonConfig circuit{1.L, 1e-6L, 1.L, 1, 1, true};
+    const auto result = solveExtendedSeriesResistorNewton(seed, config, circuit, assemble, recover);
+    REQUIRE(result.converged);
+    CHECK(result.state.coordinates[1] == 0.25L);
+    CHECK(result.state.deviceBias_V == seed.supplyBias_V);
+    CHECK(recoveryAssemblies == 1);
+    CHECK(recoveryUsed == std::vector<bool>{false, true, false, false});
+    CHECK(protectedElectrons == std::vector<std::size_t>{1, 0, 0, 0});
+
+    recoveryUsed.clear();
+    protectedElectrons.clear();
+    REQUIRE(solveExtendedSeriesResistorNewton(seed, config, circuit, assemble).converged);
+    CHECK(recoveryAssemblies == 1);
+    CHECK(recoveryUsed == std::vector<bool>{false, false, false});
+    CHECK(protectedElectrons == std::vector<std::size_t>{1, 0, 0});
+}
+
 TEST_CASE("Extended resistor RHS growth includes the load line and respects report mode", "[extended80]") {
     ExtendedPopulationState seed;
     seed.coordinates = ExtendedVector::Ones(3);

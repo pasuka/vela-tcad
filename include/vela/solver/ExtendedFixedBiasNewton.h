@@ -96,9 +96,15 @@ struct ExtendedSeriesResistorFrame {
     long double current_A_per_um;
 };
 
+using ExtendedSeriesResistorAssembly =
+    std::function<ExtendedSeriesResistorFrame(const ExtendedPopulationState&)>;
+
+// The optional recovery assembly must retain the same residual and current
+// while supplying consistent device and circuit derivatives.
 ExtendedFixedBiasNewtonResult solveExtendedSeriesResistorNewton(
     const ExtendedPopulationState& seed, const ExtendedFixedBiasNewtonConfig& config,
     const ExtendedSeriesResistorNewtonConfig& circuit,
-    const std::function<ExtendedSeriesResistorFrame(const ExtendedPopulationState&)>& assemble);
+    const ExtendedSeriesResistorAssembly& assemble,
+    const ExtendedSeriesResistorAssembly& assembleAfterLocalProtection = {});
 
 } // namespace vela

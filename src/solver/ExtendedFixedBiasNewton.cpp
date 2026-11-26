@@ -36,7 +36,8 @@ BasicDensityUpdateError<long double> physicalUpdateError(
 ExtendedFixedBiasNewtonResult solveExtendedPopulationNewton(
     const ExtendedPopulationState& seed, const ExtendedFixedBiasNewtonConfig& config,
     const ExtendedSeriesResistorNewtonConfig* circuit,
-    const std::function<ExtendedSeriesResistorFrame(const ExtendedPopulationState&)>& assemble)
+    const ExtendedSeriesResistorAssembly& assemble,
+    const ExtendedSeriesResistorAssembly& assembleAfterLocalProtection = {})
 {
     const auto count = seed.coordinates.size();
     const auto nodes = count / 3;
@@ -79,7 +80,7 @@ ExtendedFixedBiasNewtonResult solveExtendedPopulationNewton(
     ExtendedVector rhsGrowthScale;
     bool useRecoveryJacobian = false;
     for (int update = 0; update < config.maxUpdates; ++update) {
-        if (useRecoveryJacobian) {
+        if (useRecoveryJacobian && config.afterLocalProtectionJacobian) {
             auto replacement = config.afterLocalProtectionJacobian(result.state);
             if (replacement.rows() != count || replacement.cols() != count)
                 throw std::invalid_argument("Invalid fixed-bias recovery Jacobian dimensions");
@@ -140,7 +141,11 @@ ExtendedFixedBiasNewtonResult solveExtendedPopulationNewton(
                 trial.coordinates = std::move(protectedTrial.state);
                 if (circuit)
                     trial.deviceBias_V += protectedTrial.alpha * linear.update[count];
-                auto next = assemble(trial);
+                const bool protectedWrite = !protectedTrial.protectedElectrons.empty()
+                    || !protectedTrial.protectedHoles.empty();
+                const auto& assembleNext = protectedWrite && assembleAfterLocalProtection
+                    ? assembleAfterLocalProtection : assemble;
+                auto next = assembleNext(trial);
                 if (!validFrame(next))
                     continue;
                 const auto merit = scaledNorm(next.device.residual);
@@ -190,7 +195,8 @@ ExtendedFixedBiasNewtonResult solveExtendedPopulationNewton(
             config.observeAcceptedUpdate(result.state, {result.updates, useRecoveryJacobian,
                 protectedElectrons, protectedHoles, result.acceptedAlpha, result.updateError.rms,
                 residualBefore, result.scaledResidual, frame.device.residual});
-        useRecoveryJacobian = config.afterLocalProtectionJacobian && (protectedElectrons || protectedHoles);
+        useRecoveryJacobian = (config.afterLocalProtectionJacobian || assembleAfterLocalProtection)
+            && (protectedElectrons || protectedHoles);
         if (result.updateError.valid && result.updateError.rms < 1 &&
             (!circuit || !circuit->enforceLoadLine ||
              std::abs(loadResidual(result.state, frame.current_A_per_um)) <= circuit->tolerance_V)) {
@@ -218,14 +224,16 @@ ExtendedFixedBiasNewtonResult solveExtendedFixedBiasNewton(
 ExtendedFixedBiasNewtonResult solveExtendedSeriesResistorNewton(
     const ExtendedPopulationState& seed, const ExtendedFixedBiasNewtonConfig& config,
     const ExtendedSeriesResistorNewtonConfig& circuit,
-    const std::function<ExtendedSeriesResistorFrame(const ExtendedPopulationState&)>& assemble)
+    const ExtendedSeriesResistorAssembly& assemble,
+    const ExtendedSeriesResistorAssembly& assembleAfterLocalProtection)
 {
     if (config.lineSearch || !std::isfinite(circuit.resistance_ohm_um) || circuit.resistance_ohm_um <= 0 ||
         !std::isfinite(circuit.tolerance_V) || circuit.tolerance_V <= 0 ||
         !std::isfinite(circuit.contactReference_V) || circuit.contactReference_V <= 0 ||
-        !circuit.contactAliases || (circuit.direction != 1 && circuit.direction != -1))
+        !circuit.contactAliases || (circuit.direction != 1 && circuit.direction != -1) ||
+        (assembleAfterLocalProtection && config.protection.protection != "local_nonpositive"))
         throw std::invalid_argument("Unsupported extended series-resistor Newton settings");
-    return solveExtendedPopulationNewton(seed, config, &circuit, assemble);
+    return solveExtendedPopulationNewton(seed, config, &circuit, assemble, assembleAfterLocalProtection);
 }
 
 } // namespace vela

@@ -154,8 +154,18 @@
             {"properties": {
               "coupled_operator": {"const": "legacy"},
               "carrier_statistics": {"type": "object", "properties": {"model": {"enum": ["boltzmann", "fermi_dirac"]}}},
-              "population_derivative_recovery": {"const": "full"},
-              "population_sg_current": {"const": "quasi_fermi"}}}
+              "population_sg_current": {"const": "quasi_fermi"}},
+             "anyOf": [
+               {"properties": {"population_derivative_recovery": {"const": "full"}}},
+               {"required": ["extended80_stage_profile", "arithmetic_precision", "require_end_to_end_precision",
+                             "population_derivative_recovery", "population_update"], "properties": {
+                 "extended80_stage_profile": {"const": "slot_population_bvds_v1"},
+                 "arithmetic_precision": {"const": "extended80"},
+                 "require_end_to_end_precision": {"const": true},
+                 "carrier_statistics": {"properties": {"model": {"const": "boltzmann"}}},
+                 "population_derivative_recovery": {"const": "after_protection"},
+                 "population_update": {"required": ["protection"], "properties": {"protection": {"const": "local_nonpositive"}}}}}
+             ]}
           ], "properties": {
             "method": {"enum": ["newton", "poisson_only", "frozen_state"]},
             "quasi_fermi_reference": {"const": "none"}, "split_dd_state": {"const": false},

@@ -9,13 +9,15 @@ bool isExtendedSlotStage(const nlohmann::json& deck)
     const auto statistics = solver.value("carrier_statistics", nlohmann::json::object()).value("model", "");
     const auto mobility = solver.value("mobility", nlohmann::json::object()).value("model", "");
     const bool phumob = profile == extendedSlotPhuMobProfile;
+    const auto recovery = solver.value("population_derivative_recovery", "full");
     return deck.value("simulation_type", "") == "dc_sweep"
         && solver.value("arithmetic_precision", "") == "extended80"
         && solver.value("state_variables", "") == "potential_density"
         && solver.value("coupled_operator", "") == "legacy"
         && solver.value("primary_variable_coordinates", "") == "physical"
         && solver.value("population_stopping_rule", "") == "native_approx"
-        && solver.value("population_derivative_recovery", "full") == "full"
+        && (recovery == "full" || (profile == extendedSlotStageProfile && recovery == "after_protection"
+            && solver.value("population_update", nlohmann::json::object()).value("protection", "") == "local_nonpositive"))
         && solver.value("population_writeback", "independent") == "independent"
         && (phumob ? statistics == "fermi_dirac_joyce_dixon" && mobility == "phumob_field_lombardi"
                    : statistics == "boltzmann" && mobility == "ialmob")
@@ -89,7 +91,15 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
     const auto inputHashes = stateInputProvenance(deck, directory);
     const auto deckHash = extendedStageFileHash(configFile);
     std::vector<long double> externalCouples;
-    auto problem = loadNewtonProblem(configFile, deck, &externalCouples);
+    const bool recoverAfterProtection = input.value("population_derivative_recovery", "full") == "after_protection";
+    auto problem = [&] {
+        if (!recoverAfterProtection)
+            return loadNewtonProblem(configFile, deck, &externalCouples);
+        // The generic legacy loader only validates its own derivative policy.
+        auto physicsDeck = deck;
+        physicsDeck["solver"]["population_derivative_recovery"] = "full";
+        return loadNewtonProblem(configFile, physicsDeck, &externalCouples);
+    }();
     auto& config = problem.newton;
     const auto& scaling = config.inputScaling;
     const auto& refs = config.unitScalingRefs;
@@ -518,8 +528,9 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         }
         return assembleExtendedIalPopulationContinuity(config.mobility, problem.mesh, problem.doping, point,
             material.electronIntrinsic, material.holeIntrinsic, length, unitConcentration_m3, vt, temperature,
-            config.bandgapNarrowing.model != "none", config.mobility.ialmobTransportFeedbackDerivatives,
-            avalanche, port->node_ids, ExtendedRecombinationSupport{sources, areas, &sourceCoefficients}, externalCouples, &measures, allContacts);
+            config.bandgapNarrowing.model != "none", config.mobility.ialmobTransportFeedbackDerivatives && !recover,
+            avalanche, port->node_ids, ExtendedRecombinationSupport{sources, areas, &sourceCoefficients},
+            externalCouples, &measures, allContacts, recover);
     };
     const auto assemble = [&](const ExtendedPopulationState& point) {
         // At fixed bias all potential constraints are independent.
@@ -863,9 +874,10 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
             stageControl(deck, "sweep", "resistance_ohm_um", circuit.at("resistance_ohm_um").get<double>()),
             rawCircuit.at("residual_tolerance_V").get<long double>(), update.at("contact_reference_V").get<long double>(),
             port->node_ids.size(), static_cast<int>(rawDirection), loadMode == "enforce"};
-        const auto assembleCircuit = [&](const ExtendedPopulationState& point) {
+        out["population_derivative_recovery"] = recoverAfterProtection ? "after_protection" : "full";
+        const auto circuitFrame = [&](const ExtendedPopulationState& point, bool recover) {
             return withUnitPopulations(point, [&](const auto& physical) {
-                const auto portState = continuity(physical);
+                const auto portState = continuity(physical, nullptr, recover);
                 ExtendedVector portDerivative = portState.currentDerivative[0] - portState.currentDerivative[1];
                 if (normalization)
                     portDerivative.tail(2 * problem.mesh.numNodes()) *= concentration_cm3;
@@ -875,6 +887,15 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
                     std::move(portDerivative), portState.current_A_per_um[0] - portState.current_A_per_um[1]};
             });
         };
+        const ExtendedSeriesResistorAssembly assembleCircuit = [&](const ExtendedPopulationState& point) {
+            return circuitFrame(point, false);
+        };
+        ExtendedSeriesResistorAssembly recoveryAssembly;
+        if (recoverAfterProtection) {
+            recoveryAssembly = [&](const ExtendedPopulationState& point) {
+                return circuitFrame(point, true);
+            };
+        }
         const auto& breakCriteria = sweep.value("breakdown", nlohmann::json::object());
         const auto breakContact = breakCriteria.value("current_contact", currentContact);
         if (breakContact != currentContact)
@@ -906,7 +927,7 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
                 auto seed = state;
                 seed.supplyBias_V = supply;
                 try {
-                    result = solveExtendedSeriesResistorNewton(seed, corrector, series, assembleCircuit);
+                    result = solveExtendedSeriesResistorNewton(seed, corrector, series, assembleCircuit, recoveryAssembly);
                 } catch (const std::runtime_error& error) {
                     result = {};
                     result.failure = error.what();
