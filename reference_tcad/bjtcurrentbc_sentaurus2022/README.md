@@ -111,7 +111,15 @@ per-bias 95th-percentile concentration errors were 22.01% for electrons
 and 2.86% for holes, using `max(|Sentaurus|, 1e7 cm^-3)` in the denominator.
 The pointwise maxima were 194.65% and 31.38%, respectively.
 
-Configure with `VELA_ENABLE_BJTCURRENTBC_CI=ON` to register the test.
+Fresh CMake configurations register `reference_u2022_bjtcurrentbc` by default
+with `sentaurus_u2022_12` constants and oneMKL PARDISO enabled. Set
+`VELA_MKL_RT_LIBRARY` to the absolute path of the oneMKL runtime before running
+CTest (`VELA_MKL_RT_DLL` also works on Windows). CTest reports a skip when the
+runtime path is unset.
+
+To adopt the new default in an existing build configured with this test off,
+reconfigure with `-UVELA_ENABLE_BJTCURRENTBC_CI`. An explicit
+`-DVELA_ENABLE_BJTCURRENTBC_CI=OFF` disables registration.
 
 ```sh
 ctest --test-dir <build> -R '^reference_u2022_bjtcurrentbc$' --no-tests=error --output-on-failure

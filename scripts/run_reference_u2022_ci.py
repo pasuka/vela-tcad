@@ -710,6 +710,12 @@ def main():
     if args.dg_coupling != "outer" and args.case not in (
             "transportmodels_dg_idvd", "transportmodels_dg_idvg", "singledevice_idvg_linear"):
         parser.error("--dg-coupling=monolithic_box requires a density-gradient case")
+    if args.case == "bjtcurrentbc" and args.linear_solver == "pardiso_mkl" and not (
+        os.environ.get("VELA_MKL_RT_LIBRARY") or os.environ.get("VELA_MKL_RT_DLL")
+    ):
+        print("BJTcurrentBC skipped: set VELA_MKL_RT_LIBRARY to the absolute path of the oneMKL runtime.",
+              flush=True)
+        return 77
     launcher = args.launcher.resolve(strict=True)
     fixture = REFERENCE_ROOT / CASES[args.case] / "ci_u2022_12"
     args.output.mkdir(parents=True, exist_ok=True)
