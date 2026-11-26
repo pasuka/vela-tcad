@@ -29,6 +29,7 @@ CASES = {
     "schottky_iv": "schottky_charon_sentaurus2018",
     "bjt_m0": "genius_bjt_sentaurus2022",
     "bjt_m1": "genius_bjt_sentaurus2022",
+    "bjtcurrentbc": "bjtcurrentbc_sentaurus2022",
     "gate_contacts": "gate_reference",
     "transportmodels_idvd": "transportmodels_sentaurus2022",
     "transportmodels_dg_idvd": "transportmodels_sentaurus2022",
@@ -209,6 +210,90 @@ def bjt_gates(fixture, run, stage, report, *, model):
         return (summary["operational_pass"] and summary["all_terminal_currents_finite"]
                 and summary["active_region_current_signs_pass"])
     return summary["operational_pass"] and summary["numerical_parity_gate"]["pass"]
+
+
+def bjtcurrentbc_gates(launcher, fixture, output, env, report):
+    stem = "bjtcurrentbc_des"
+    work = output / "inputs"
+    stage_inputs(fixture, work, stem, [fixture / "bjt.grd", fixture / "bjt.dat"])
+    run, plan = run_sdevice(launcher, work, stem, env, report, final_only=True)
+    expected = {"contact": "base", "value_A_per_um": 1e-8}
+    actual = [(stage["sweep"]["contact"], stage["sweep"]["mode"]) for stage in plan[1:]]
+    if (plan[0]["kind"] != "equilibrium" or actual != [("base", "voltage"), ("base", "current"),
+                                                       ("collector", "voltage")]
+            or plan[2]["sweep"]["stop_current_A_per_um"] != expected["value_A_per_um"]
+            or plan[3].get("fixed_contact_current") != expected
+            or plan[3]["input_state"] != plan[2]["output_state"]):
+        raise ValueError(f"Unexpected BJTcurrentBC stage contract: {actual}")
+    for stage in plan:
+        deck = read_json(run / stage["deck"])
+        solver = deck["solver"]
+        if (deck.get("format_version") != 2 or solver.get("state_variables") != "potential_density"
+                or solver.get("primary_variable_coordinates") != "unit"):
+            raise ValueError(f"Unexpected BJTcurrentBC Newton coordinates in {stage['deck']}")
+        if stage["index"] in (1, 3):
+            sweep = deck["sweep"]
+            span = 0.5 if stage["index"] == 1 else 1.0
+            expected_steps = {"initial_step": 0.01 * span, "min_step": 1e-6 * span,
+                              "max_step": 0.2 * span, "growth_factor": 1.3, "shrink_factor": 0.5,
+                              "step_growth_mode": "newton_iterations", "stop_below_minimum_step": True,
+                              "preserve_step_after_output_clip": True}
+            if any(sweep.get(key) != value for key, value in expected_steps.items()):
+                raise ValueError(f"Unexpected BJTcurrentBC voltage stepping in {stage['deck']}")
+        mobility = solver["mobility"]
+        if (mobility["model"] != "masetti_field"
+                or mobility.get("high_field_driving_force") != "quasi_fermi_gradient"
+                or mobility.get("high_field_gradient_discretization") != "element_box_vertex"
+                or mobility.get("edge_averaging") != "element_box"
+                or mobility.get("contact_electric_field_fallback") is not True):
+            raise ValueError(f"Unexpected BJTcurrentBC mobility in {stage['deck']}")
+    with (fixture / "sentaurus_reference.csv").open(newline="", encoding="ascii") as stream:
+        reference = [{name: float(value) for name, value in row.items()} for row in csv.DictReader(stream)]
+    bias_points = [index / 20 for index in range(21)]
+    _, rows = read_plt_document((work / plan[-1]["current_file"]).read_text(encoding="ascii"))
+    if len(reference) != len(bias_points) or len(rows) != len(bias_points):
+        raise ValueError("Expected all 21 requested BJTcurrentBC output points")
+    errors = []
+    for bias, native, vela in zip(bias_points, reference, rows):
+        if (abs(native["collector_V"] - bias) > 1e-12
+                or abs(vela["collector"]["inner_voltage_V"] - bias) > 1e-12
+                or abs(vela["emitter"]["inner_voltage_V"]) > 1e-12):
+            raise ValueError(f"Unexpected BJTcurrentBC terminal bias at {bias:g} V")
+        ib, ic, ie = (vela[name]["total_current_A_per_um"] for name in ("base", "collector", "emitter"))
+        target = expected["value_A_per_um"]
+        errors.append({
+            "collector_V": bias,
+            "native_base_V": native["base_V"],
+            "vela_base_V": vela["base"]["inner_voltage_V"],
+            "native_base_A_per_um": native["base_A_per_um"],
+            "vela_base_A_per_um": ib,
+            "native_collector_A_per_um": native["collector_A_per_um"],
+            "vela_collector_A_per_um": ic,
+            "native_emitter_A_per_um": native["emitter_A_per_um"],
+            "vela_emitter_A_per_um": ie,
+            "base_tracking_error_A_per_um": abs(ib - target),
+            "base_voltage_error_V": abs(vela["base"]["inner_voltage_V"] - native["base_V"]),
+            "collector_current_error_A_per_um": abs(ic - native["collector_A_per_um"]),
+            "collector_current_error_fraction": abs(ic - native["collector_A_per_um"])
+                / max(abs(native["collector_A_per_um"]), target),
+            "emitter_current_error_fraction": abs(ie - native["emitter_A_per_um"])
+                / max(abs(native["emitter_A_per_um"]), target),
+            "kcl_A_per_um": abs(math.fsum((ib, ic, ie))),
+        })
+    limits = {
+        "base_tracking_error_A_per_um": 1e-12,
+        "base_voltage_error_V": 5e-3,
+        "collector_current_error_fraction": 0.05,
+        "emitter_current_error_fraction": 0.05,
+        "kcl_A_per_um": 1e-11,
+    }
+    maximum = {name: max(row[name] for row in errors) for name in limits}
+    report["comparison"] = {"points": len(errors), "limits": limits, "maximum": maximum}
+    with (output / "comparison.csv").open("w", newline="", encoding="ascii") as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(errors[0]))
+        writer.writeheader()
+        writer.writerows(errors)
+    return all(maximum[name] <= limit for name, limit in limits.items())
 
 
 def transportmodels_idvd_gates(launcher, fixture, output, env, report, *, density_gradient=False):
@@ -650,6 +735,8 @@ def main():
         elif args.case in ("transportmodels_idvg", "transportmodels_dg_idvg"):
             passed = transportmodels_idvg_gates(
                 launcher, fixture, output, env, report, density_gradient=args.case == "transportmodels_dg_idvg")
+        elif args.case == "bjtcurrentbc":
+            passed = bjtcurrentbc_gates(launcher, fixture, output, env, report)
         elif args.case == "singledevice_idvg_linear":
             passed = singledevice_idvg_gates(launcher, fixture, output, env, report)
         else:

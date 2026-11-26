@@ -359,6 +359,8 @@ struct DCSweepConfig {
     SweepInitializationConfig initialization;
     ExternalResistorControlConfig externalResistor;
     VoltageToCurrentControlConfig voltageToCurrent;
+    std::string fixedCurrentContact;
+    Real fixedCurrent_A_per_um = 0.0;
     BoundaryControlPersistenceConfig boundaryControl;
     std::string writeStateEveryPointPrefix;
     /// Optional diagnostic history for accepted adaptive steps between

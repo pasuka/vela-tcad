@@ -5,6 +5,12 @@
 #include <stdexcept>
 
 namespace vela {
+inline bool usesMasettiElementHighField(const MobilityModelConfig& config)
+{
+    return config.model == "masetti_field" && config.edgeAveraging == "element_box" &&
+        config.highFieldGradientDiscretization == "element_box_vertex";
+}
+
 inline bool usesElementHighField(const MobilityModelConfig& c) {
     return c.model=="phumob_field_lombardi" &&
         c.edgeAveraging=="element_box_phumob" &&

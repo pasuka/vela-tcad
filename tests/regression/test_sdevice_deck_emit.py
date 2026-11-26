@@ -72,6 +72,41 @@ def emit(ir: dict, **kwargs):
 
 
 class DeckEmitterTests(unittest.TestCase):
+    def test_element_box_vertex_is_an_explicit_masetti_gradqf_profile(self):
+        text = '''File {Grid="mesh.grd" Parameter="models.par"}
+            Electrode { {Name="a" Voltage=0} {Name="c" Voltage=0} }
+            Physics { Mobility(DopingDep HighFieldSaturation) }
+            Solve {Coupled {Poisson Electron Hole}}'''
+        ir = parse_cmd_text(text, path_name="element_box.cmd")
+        sidecar = {"schema": "vela.sdevice_sidecar.v1",
+                   "high_field_gradient_discretization": "element_box_vertex",
+                   "solver": {"mobility": {"edge_averaging": "element_box"}}}
+        baseline = emit(ir).decks[0]["solver"]["mobility"]
+        fitted = emit(ir, sidecar=sidecar).decks[0]["solver"]["mobility"]
+        self.assertEqual(fitted, {**baseline, "edge_averaging": "element_box",
+                                  "high_field_gradient_discretization": "element_box_vertex"})
+        self.assert_error("E409", emit, ir, sidecar={**sidecar, "solver": {}})
+        inactive = parse_cmd_text(text.replace(" HighFieldSaturation", ""), path_name="low_field.cmd")
+        self.assert_error("E409", emit, inactive, sidecar=sidecar)
+
+    def test_contact_electric_field_fallback_requires_gradqf_high_field_mobility(self):
+        text = '''File {Grid="mesh.grd" Parameter="models.par"}
+            Electrode { {Name="a" Voltage=0} {Name="c" Voltage=0} }
+            Physics { Mobility(DopingDep DRIVE) } Solve {Coupled {Poisson Electron Hole}}'''
+        sidecar = {"schema": "vela.sdevice_sidecar.v1",
+                   "solver": {"mobility": {"contact_electric_field_fallback": True}}}
+        gradqf = parse_cmd_text(text.replace("DRIVE", "HighFieldSaturation"), path_name="contact.cmd")
+        default = emit(gradqf).decks[0]["solver"]["mobility"]
+        self.assertFalse(default.get("contact_electric_field_fallback", False))
+        corrected = emit(gradqf, sidecar=sidecar).decks[0]["solver"]["mobility"]
+        self.assertTrue(corrected["contact_electric_field_fallback"])
+        self.assertEqual(corrected["high_field_driving_force"], "quasi_fermi_gradient")
+        for unsupported in ("", "HighFieldSaturation(ElectricField)"):
+            with self.subTest(unsupported=unsupported):
+                ir = parse_cmd_text(text.replace("DRIVE", unsupported), path_name="contact.cmd")
+                with self.assertRaisesRegex(DeckEmitError, "requires active high-field GradQF mobility"):
+                    emit(ir, sidecar=sidecar)
+
     def test_pn2d_population_uses_original_physics_and_quasistationary_controls(self):
         root = REPO / "reference_tcad/pn2d_sentaurus2018"
         paths = sorted(root.rglob("*_sdevice.cmd"))
@@ -640,6 +675,31 @@ class DeckEmitterTests(unittest.TestCase):
         self.assertTrue(sv.is_valid(schema, [1, True]))
         self.assertFalse(sv.is_valid(schema, [1, 1.0]))
         self.assertFalse(sv.is_valid(schema, [{"a": 1}, {"a": 1}]))
+
+    def test_voltage_sweep_holds_explicit_current_until_set_voltage(self):
+        text = """
+File { Grid="mesh.grd" Parameter="models.par" }
+Electrode { {Name="base" Voltage=0} {Name="collector" Voltage=0} }
+Solve {
+  Coupled {Poisson Electron Hole}
+  Set("base" mode current)
+  Quasistationary(Goal{Name="base" Current=1e-8}) {Coupled{Poisson Electron Hole}}
+  Quasistationary(Goal{Name="collector" Voltage=1}) {Coupled{Poisson Electron Hole}}
+  Set("base" mode voltage)
+  Quasistationary(Goal{Name="collector" Voltage=2}) {Coupled{Poisson Electron Hole}}
+}
+"""
+        ir = parse_cmd_text(text, path_name="held_des.cmd")
+        self.assertTrue(ir["verdict"]["accepted"], ir["errors"])
+        sidecar = {"schema": "vela.sdevice_sidecar.v1", "sweep": {
+            "voltage_to_current": {"max_inner_voltage_step_V": 0.01}}}
+        result = emit(ir, sidecar=sidecar)
+        self.assertEqual(result.decks[1]["sweep"]["voltage_to_current"]["max_inner_voltage_step_V"], 0.01)
+        self.assertNotIn("voltage_to_current", result.decks[2]["sweep"])
+        target = {"contact": "base", "value_A_per_um": 1e-8}
+        self.assertEqual(result.decks[2]["sweep"]["fixed_contact_current"], target)
+        self.assertEqual(result.stage_plan["stages"][2]["fixed_contact_current"], target)
+        self.assertNotIn("fixed_contact_current", result.decks[3]["sweep"])
 
     def test_signed_current_goal_and_missing_initial_current(self):
         ir = deepcopy(self.ir)

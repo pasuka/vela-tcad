@@ -620,6 +620,12 @@ CoupledDDAssembler::CoupledDDAssembler(
             "without coupled impact ionization.");
     }
     highFieldMobilityEnabled_ = usesHighFieldMobility(mobilityConfig_);
+    if (usesMasettiElementHighField(mobilityConfig_)) {
+        if (usesFermiDirac_ || impactIonizationEnabled_ || electronQuantumPotentialConfig_.enabled ||
+            usesBvMethodsOperator())
+            throw std::invalid_argument("Element Masetti high field requires classical Boltzmann SG without avalanche or quantum potential.");
+        detail::updateElementHighFieldGeometry(mobilityConfig_, mesh_, edgeCells_, cellMaterials_);
+    }
     qfMobilityEnabled_ =
         mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient";
     vectorQfMobilityEnabled_ = qfMobilityEnabled_ &&
@@ -4443,8 +4449,9 @@ CoupledDDAssembler::transportEdgeJacobianDiagnostics(
     const CoupledDDBoundaryConditions& bcs,
     Real physicalFiniteDifferenceStep_V) const
 {
-    if(mobilityConfig_.edgeAveraging=="element_box_phumob")
-        throw std::invalid_argument("The endpoint-only edge Jacobian decomposition does not cover element_box_phumob; use the full Newton Jv probe with adjacent vertex columns.");
+    if (mobilityConfig_.edgeAveraging == "element_box_phumob" ||
+        usesMasettiElementHighField(mobilityConfig_))
+        throw std::invalid_argument("Use the full Newton Jv probe for box mobility Jacobians with adjacent vertex columns.");
     const int N = static_cast<int>(mesh_.numNodes());
     if (x.size() != 3 * N)
         throw std::invalid_argument(
@@ -5097,12 +5104,14 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
 
     const VectorXd n = electronDensity(state);
     const VectorXd p = holeDensity(state);
+    const bool elementBoxMasettiField = usesMasettiElementHighField(mobilityConfig_);
     const bool directPopulationTransport = usesLegacyPopulationState() && !usesFermiDirac_ &&
         !electronQuantumPotentialConfig_.enabled &&
-        (mobilityConfig_.model == "masetti" || mobilityConfig_.model == "masetti_field") &&
-        (mobilityConfig_.edgeAveraging == "legacy" || mobilityConfig_.edgeAveraging == "auto") &&
         mobilityConfig_.carrierCurrentDiscretization == "scharfetter_gummel_edge" &&
-        !mobilityConfig_.contactElectricFieldFallback && !carrierDiagonalFloor_.enabled;
+        (elementBoxMasettiField ||
+         ((mobilityConfig_.model == "masetti" || mobilityConfig_.model == "masetti_field") &&
+          (mobilityConfig_.edgeAveraging == "legacy" || mobilityConfig_.edgeAveraging == "auto") &&
+          !mobilityConfig_.contactElectricFieldFallback && !carrierDiagonalFloor_.enabled));
     experimental::AssemblyPopulationCaptureScope::record(x, n, p);
     refreshIalMobility(x);
     const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
@@ -5311,7 +5320,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
     const std::uint64_t boundarySignature = booleanMaskHash(constrainedRows);
     const bool includeCellStencil = mobilityConfig_.model == "ialmob" ||
         elementQfCurrent || sgCurrentAvalanche || surfaceMobilityEnabled_ ||
-        recombination_.bandToBandEnabled() || elementBoxPhuMob;
+        recombination_.bandToBandEnabled() || elementBoxPhuMob || elementBoxMasettiField;
     if (!hasFixedJacobianPattern_ ||
         boundarySignature != fixedJacobianBoundarySignature_ ||
         constrainedRows != fixedJacobian_->constrainedRows ||
@@ -6730,7 +6739,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
             mobilityConfig_.contactElectricFieldFallback && qfMobility &&
             edgeKernel.touchesTransportContact;
         const bool analyticQfMobilityFeedback =
-            !isPhuMobModel(mobilityConfig_) && mobilityConfig_.model != "ialmob" && transportMobilityDerivative && qfMobility && !vectorQfMobility &&
+            !elementBoxMasettiField && !isPhuMobModel(mobilityConfig_) && mobilityConfig_.model != "ialmob" && transportMobilityDerivative && qfMobility && !vectorQfMobility &&
             !surfaceMobilityEnabled_ && !contactMobilityFallbackActive;
         const bool vectorQfMobilityFeedback = mobilityConfig_.model != "ialmob" && transportMobilityDerivative &&
             highFieldMobilityEnabled_ && vectorQfMobility &&
@@ -6760,6 +6769,20 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
         // Scatter all carrier columns with the same conservative row signs.
         auto addBoxCarrierChain = [&](CarrierType carrier,Real flux,Real mobility) {
             const int rowOffset=carrier==CarrierType::Electron?phinOffset():phipOffset();
+            if (elementBoxMasettiField) {
+                for (const auto& term : detail::elementBoxMasettiFieldDerivatives(
+                         edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e, carrier,
+                         mobilityConfig_, psi, phinState, phipState)) {
+                    const int node = static_cast<int>(term.node);
+                    const Real dPsi = flux / mobility * term.potential;
+                    const Real dQf = flux / mobility * term.quasiFermi;
+                    add(rowOffset + i, psiOffset() + node, dPsi);
+                    add(rowOffset + j, psiOffset() + node, -dPsi);
+                    add(rowOffset + i, rowOffset + node, dQf);
+                    add(rowOffset + j, rowOffset + node, -dQf);
+                }
+                return;
+            }
             for(const auto& term:detail::elementBoxPhuMobDerivatives(
                     edgeCells_,mesh_,doping_,cellMaterials_,e,carrier,mobilityConfig_,n,p,&psi,&phinState,&phipState)) {
                 const int node=static_cast<int>(term.node);
@@ -6782,7 +6805,10 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
                 ? std::log(ni_[j] / ni_[i]) : 0.0;
             const auto addCarrier = [&](CarrierType carrier, Real field, Real qfDrop,
                                         const VectorXd& density, std::vector<bool>& hasContribution) {
-                const Real mu = cachedEdgeMobility(e, carrier, field, &psi);
+                const Real mu = elementBoxMasettiField
+                    ? cachedEdgeMobility(e, carrier, field, &psi,
+                        n(i), n(j), p(i), p(j), &n, &p, &phinState, &phipState)
+                    : cachedEdgeMobility(e, carrier, field, &psi);
                 if (mu <= 0.0)
                     return;
                 hasContribution[i] = hasContribution[j] = true;
@@ -6804,11 +6830,23 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
                 scatter(j, potentialDerivative);
                 scatter(offset + i, left);
                 scatter(offset + j, right);
-                if (!transportMobilityDerivative || field == 0.0)
+                if (!transportMobilityDerivative || (!elementBoxMasettiField && field == 0.0))
                     return;
                 const Real flux = sgBoltzmannPopulationContinuityFlux(
                     density(i), density(j), ni_[i], ni_[j], sign * dpsi, Vt_,
                     coefficient, bgnEnabled_);
+                if (elementBoxMasettiField) {
+                    for (const auto& term : detail::elementBoxMasettiFieldDerivatives(
+                             edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e, carrier,
+                             mobilityConfig_, psi, phinState, phipState)) {
+                        const int node = static_cast<int>(term.node);
+                        const Real factor = flux / mu;
+                        scatter(node, factor * (term.potential + term.quasiFermi));
+                        if (density(node) > 0.0)
+                            scatter(offset + node, -sign * Vt_ * factor * term.quasiFermi / density(node));
+                    }
+                    return;
+                }
                 if (vectorQfMobilityFeedback) {
                     addVectorQfMobilityFeedback(e, carrier, mu, flux, offset, true);
                     return;
@@ -6852,7 +6890,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
                         mun, noPerturbedNode, 0.0), phinOffset());
             }
 
-            if ((transportMobilityDerivative && !stablePhuMobEdge) || usesFermiDirac_) {
+            if ((transportMobilityDerivative && !stablePhuMobEdge && !elementBoxMasettiField) || usesFermiDirac_) {
                 const Real vals[6] = {
                     psi_i, psi_j, phin_i, phin_j, phip_i, phip_j};
                 const int cols[6] = {
@@ -6962,7 +7000,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
                 // Doping-only BGN changes eta but not d(eta)/d(psi). Its
                 // residual already uses a stable quasi-Fermi difference;
                 // differentiating that flux also preserves flat-qF equilibrium.
-                if ((stableBgnPsiDerivative || (stablePhuMobEdge && bgnEnabled_) ||
+                if ((stableBgnPsiDerivative || ((stablePhuMobEdge || elementBoxMasettiField) && bgnEnabled_) ||
                      (!bgnEnabled_ && compensatedEqualNiFlux_ && niI == niJ)) &&
                     std::abs((stablePsi0 - phin_i) / Vt_) < 500.0 &&
                     std::abs((stablePsi1 - phin_j_from_i) / Vt_) < 500.0 &&
@@ -6997,7 +7035,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
                     add(phinOffset() + j, phipOffset() + i, -crossI);
                     add(phinOffset() + j, phipOffset() + j, -crossJ);
                 }
-                if(elementBoxPhuMob)
+                if(elementBoxPhuMob || elementBoxMasettiField)
                     addBoxCarrierChain(CarrierType::Electron,sgElectronBoltzmannContinuityFlux(
                         niI,niJ,stablePsi0,stablePsi1,phin_i,phin_j_from_i,Vt_,coef,
                         SGBoltzmannFluxPolicy{bgnEnabled_,compensatedEqualNiFlux_}),mun);
@@ -7037,7 +7075,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
                         mup, noPerturbedNode, 0.0), phipOffset());
             }
 
-            if ((transportMobilityDerivative && !stablePhuMobEdge) || usesFermiDirac_) {
+            if ((transportMobilityDerivative && !stablePhuMobEdge && !elementBoxMasettiField) || usesFermiDirac_) {
                 const Real vals[6] = {
                     psi_i, psi_j, phip_i, phip_j, phin_i, phin_j};
                 const int cols[6] = {
@@ -7133,7 +7171,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
                 // Fixed-mobility partial; mobility chain terms are assembled separately.
                 const Real stablePsi0 = psi_i - holeQuasiFermiReferenceAt(idxI);
                 const Real stablePsi1 = psi_j - holeQuasiFermiReferenceAt(idxI);
-                if ((stableBgnPsiDerivative || (stablePhuMobEdge && bgnEnabled_) ||
+                if ((stableBgnPsiDerivative || ((stablePhuMobEdge || elementBoxMasettiField) && bgnEnabled_) ||
                      (!bgnEnabled_ && compensatedEqualNiFlux_ && niI == niJ)) &&
                     std::abs((stablePsi0 - phip_i) / Vt_) < 500.0 &&
                     std::abs((stablePsi1 - phip_j_from_i) / Vt_) < 500.0 &&
@@ -7168,7 +7206,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
                     add(phipOffset() + j, phinOffset() + i, -crossI);
                     add(phipOffset() + j, phinOffset() + j, -crossJ);
                 }
-                if(elementBoxPhuMob)
+                if(elementBoxPhuMob || elementBoxMasettiField)
                     addBoxCarrierChain(CarrierType::Hole,sgHoleBoltzmannContinuityFlux(
                         niI,niJ,stablePsi0,stablePsi1,phip_i,phip_j_from_i,Vt_,coef,
                         SGBoltzmannFluxPolicy{bgnEnabled_,compensatedEqualNiFlux_}),mup);

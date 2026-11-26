@@ -184,6 +184,99 @@ TEST_CASE("Delaunay generation rejects unsupported edges and conflicting inputs"
     REQUIRE_THROWS(parseBoxGeometryOptions(nlohmann::json{{"mesh_geometry",{{"cell_box_policy","unknown"}}}}));
 }
 
+TEST_CASE("Element Masetti high field uses box support and differentiates population transport",
+          "[element_box][masetti_element_hfs]")
+{
+    auto mesh = pairMesh();
+    mesh.buildBoxGeometry(options());
+    Contact contact;
+    contact.name = "test";
+    contact.node_ids = {2};
+    mesh.addContact(contact);
+    MaterialDatabase db;
+    DopingModel doping(4);
+    for (Index node = 0; node < 4; ++node)
+        doping.setNodeDoping(node, 1e23 * (node + 1), 2e22);
+    auto cfg = mobilityModelConfigFromJson(nlohmann::json{
+        {"model", "masetti_field"}, {"edge_averaging", "element_box"},
+        {"doping_concentration_basis", "total_impurity"},
+        {"high_field_driving_force", "quasi_fermi_gradient"},
+        {"high_field_gradient_discretization", "element_box_vertex"},
+        {"contact_electric_field_fallback", true}});
+    const auto cells = detail::buildEdgeCellMap(mesh);
+    const auto materials = detail::buildCellMaterials(mesh, db, 300.0);
+    detail::updateElementHighFieldGeometry(cfg, mesh, cells, materials);
+    const auto model = makeMobilityModel(cfg);
+    CoupledDDState physical{
+        (VectorXd(4) << -.01, .03, .3, -.06).finished(),
+        (VectorXd(4) << -.02, .04, -.2, -.24).finished(),
+        (VectorXd(4) << .03, -.035, .1, .09).finished()};
+    Index edge = 0;
+    while (!(mesh.getEdge(edge).n0 == 0 && mesh.getEdge(edge).n1 == 1)) ++edge;
+    REQUIRE(detail::cellBoxEdgeCoefficient(mesh, 0, edge) == 0.0);
+    REQUIRE(detail::cellBoxEdgeCoefficient(mesh, 1, edge) > 0.0);
+    const detail::EdgeMobilityCarrierState fields{
+        0., 0., 0., 0., nullptr, nullptr, &physical.phin, &physical.phip};
+    for (auto carrier : {CarrierType::Electron, CarrierType::Hole}) {
+        const auto& qf = carrier == CarrierType::Electron ? physical.phin : physical.phip;
+        const Real expectedField = std::hypot(qf(1) - qf(0),
+            (qf(3) - (qf(0) + qf(1)) / 2.0) / .9) / 1e-6;
+        const auto measures = detail::cellBoxNodeMeasures(mesh, 1);
+        const auto& parameters = carrier == CarrierType::Electron ? cfg.electronField : cfg.holeField;
+        Real expected = 0.0;
+        Real low = 0.0;
+        for (std::size_t k = 0; k < 3; ++k) {
+            const Real impurity = doping.totalImpurity(mesh.getCell(1).node_ids[k]);
+            const Real bulk = carrier == CarrierType::Electron
+                ? model->electronMobility(materials[1], impurity, 0., 0.)
+                : model->holeMobility(materials[1], impurity, 0., 0.);
+            const Real scaledField = bulk * expectedField / parameters.saturationVelocity;
+            expected += measures[k] * bulk /
+                std::pow(1.0 + std::pow(scaledField, parameters.beta), 1.0 / parameters.beta);
+            low += measures[k] * bulk;
+        }
+        REQUIRE(expected < low);
+        expected /= measures[0] + measures[1] + measures[2];
+        REQUIRE(detail::elementBoxEdgeMobility(cells, mesh, doping, *model, materials, edge,
+            carrier, cfg, &fields, &physical.psi) == Catch::Approx(expected).epsilon(1e-13));
+    }
+
+    auto populationScaling = scaling();
+    populationScaling.stateVariables = "potential_density";
+    const auto recombination = recombinationModelConfig({"none"});
+    CoupledDDAssembler qf(mesh, db, doping, constants::Vt_300, cfg,
+        recombination, {}, {}, {}, {}, scaling());
+    CoupledDDAssembler population(mesh, db, doping, constants::Vt_300, cfg,
+        recombination, {}, {}, {}, {}, populationScaling);
+    const auto q = qf.pack(physical);
+    const auto x = population.packPopulation(physical.psi, qf.electronDensity(q), qf.holeDensity(q));
+    const auto jacobian = population.assembleJacobian(x, {});
+    for (int col = 0; col < x.size(); ++col) {
+        VectorXd perturbation = VectorXd::Zero(x.size());
+        perturbation(col) = col < 4 ? 1e-7 : 1e-6 * x(col);
+        const VectorXd finiteDifference = (population.residual(x + perturbation, {}) -
+            population.residual(x - perturbation, {})) / 2.0;
+        const VectorXd analytic = jacobian * perturbation;
+        for (int block = 1; block <= 2; ++block) {
+            CAPTURE(col, block);
+            const auto comparison = analytic.segment(4 * block, 4);
+            const auto reference = finiteDifference.segment(4 * block, 4);
+            REQUIRE((comparison - reference).norm() <= 2e-6 * comparison.norm() + 1e-8);
+        }
+    }
+    DDSolution solution;
+    solution.psi = physical.psi;
+    solution.phin = physical.phin;
+    solution.phip = physical.phip;
+    solution.n = qf.electronDensity(q);
+    solution.p = qf.holeDensity(q);
+    ContactCurrent port(mesh, db, doping, cfg, 300., populationScaling);
+    const auto current = port.compute(solution, "test");
+    const auto residualCurrent = port.computeFromResidual(population, x, "test");
+    REQUIRE(current.electronCurrent == Catch::Approx(residualCurrent.electronCurrent).epsilon(1e-11));
+    REQUIRE(current.holeCurrent == Catch::Approx(residualCurrent.holeCurrent).epsilon(1e-11));
+}
+
 TEST_CASE("Element box mobility weights nodal Masetti values with actual cell measures", "[element_box]")
 {
     auto mesh=pairMesh();mesh.buildBoxGeometry(options());MaterialDatabase db;DopingModel doping(4);

@@ -225,10 +225,14 @@ python -m vela_sdevice.deck_emit --ir execution_ir.json --mesh-qualification mes
   零电压跨度变为单点平衡并记录 W211。
 - Plot/CurrentPlot 的 Time 范围展开后取排序去重并集；`vtk_bias_points` 保证电压必经点，C4 记录写出选择和全局 plot 序号。
   Current 目标要求先 `Set("<contact>" mode current)`，使用 `voltage_to_current`；达到后，
-  WP5 必须将实测接触电压传给 `rebase_stage`。
+  WP5 必须将实测接触电压传给 `rebase_stage`。sidecar 的
+  `sweep.voltage_to_current.max_inner_voltage_step_V` 可调整该段的求根电压步长基准。
   纯 WP4 发射器在没有实测初始电流时仍对显式 Time 中间点报 E407；WP5 用 `defer_current_times=True`
   先生成可校验计划，在运行 Current 段前用 `bind_current_start` 绑定前段 CSV 的实测电流与电压。
   `--check` 不求解，Current Time 映射会留待实际执行时绑定。
+  若后续 Quasistationary 扫描另一接触的电压，且先前接触仍处于电流模式，
+  Vela 可保持一个已设置的欧姆端电流。PLT 写出该端实际求得的内外电压，
+  后续阶段以最后一个接受点的电压接续。
   未达 Goal 或 Current 后续接时，WP5 调用 `rebase_stage(..., update_saved_state=True)`，
   使前段 Save 对应的电压表也记录实测值；默认库调用继续保留原快照语义。
 - 数值参数取 WP3 报告，按公开 v2 单位键写出；`band_to_band` 保留其 SI 约定，Auger 合成值由 SI 转 cm⁶/s。
@@ -258,6 +262,11 @@ python -m vela_sdevice.deck_emit --ir execution_ir.json --mesh-qualification mes
 - sidecar 的 `high_field_gradient_discretization=edge_projection|transport_cell_vector` 只指定
   已激活 GradQF 高场迁移率的数值恢复方式；不激活模型或覆盖系数，按阶段应用并记录 W207。
   PN2D BV 显式选择后者，局部 AD 与诊断路径采用相同梯度。原子雪崩五项配置和 PN2D IV 不变。
+- `solver.mobility.contact_electric_field_fallback: true` in the sidecar requires
+  active GradQF high-field mobility. It uses the electrostatic field magnitude
+  in transport cells touching a contact vertex and the carrier quasi-Fermi
+  gradient in the interior. The BJTcurrentBC sidecar uses this setting to match
+  the Sentaurus contact rule.
 - C4 和公开 deck schema 均校验；额外遍历拒绝非有限值与 v1 键。错误使用 `DeckEmitError(message_id, **fields)`。
 
 CTest `sdevice_deck_emit` 对七个 accepted 夹具比较完整 golden，并验证真实 runner 的平衡、电压扫描、电流目标与 HDF5 串接。

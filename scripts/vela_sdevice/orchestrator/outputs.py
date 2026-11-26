@@ -75,6 +75,10 @@ class OutputPublisher:
                         value = record.get(f"contact_{name}_{carrier}_A_per_um")
                         if value not in (None, ""):
                             row[name][key] = float(value)
+                if fixed := stage.get("fixed_contact_current"):
+                    name = fixed["contact"]
+                    voltage = float(record[f"contact_{name}_voltage_V"])
+                    row[name].update(outer_voltage_V=voltage, inner_voltage_V=voltage)
                 if sweep.get("mode") == "current":
                     initial = float(records[0]["current_total_A_per_um"])
                     target = sweep["stop_current_A_per_um"]

@@ -3396,7 +3396,8 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
     const auto cellMaterials = vela::detail::buildCellMaterials(
         mesh, matdb, newton.temperature_K);
     vela::detail::validateElementBoxMobilityContext(mesh,newton.mobility,newton.regionResolvedInterfaceAssembly);
-    if(vela::usesElementHighField(newton.mobility))throw std::invalid_argument("Use element_box_probe for element HFS; the legacy single-drive factorization is undefined for vertex saturation");
+    if (vela::usesElementHighField(newton.mobility) || vela::usesMasettiElementHighField(newton.mobility))
+        throw std::invalid_argument("Use element_box_probe for element HFS; vertex saturation uses a separate drive per cell.");
     const auto effectiveCoupling = vela::detail::computeEffectiveTransportEdgeCouplings(
         mesh, edgeCells, cellMaterials, newton.regionResolvedInterfaceAssembly);
     vela::MobilityModelConfig mobilityConfig = newton.mobility;
@@ -3603,12 +3604,15 @@ nlohmann::json runElementBoxProbe(const std::string& configFile, const nlohmann:
     vela::detail::validateElementBoxMobilityContext(mesh,config,problem.newton.regionResolvedInterfaceAssembly);
     if(config.edgeAveraging!="element_box" && config.edgeAveraging!="element_box_phumob")
         throw std::invalid_argument("element_box_probe requires a box mobility policy.");
-    const bool stateDependent=config.edgeAveraging=="element_box_phumob";
+    const bool masettiElementField=vela::usesMasettiElementHighField(config);
+    const bool stateDependent=config.edgeAveraging=="element_box_phumob" || masettiElementField;
     std::unique_ptr<DDStateCliScope> stateScope;
     if(stateDependent)stateScope=std::make_unique<DDStateCliScope>(problem,cfg,configDirectory(configFile));
     const auto state=stateDependent ? readExternalState(configDirectory(configFile),cfg,mesh.numNodes()) : vela::DDSolution{};
     const vela::detail::EdgeMobilityCarrierState populations{0.,0.,0.,0.,&state.n,&state.p,&state.phin,&state.phip};
     const auto materials=vela::detail::buildCellMaterials(mesh,problem.matdb,problem.newton.temperature_K);
+    if(masettiElementField)
+        vela::detail::updateElementHighFieldGeometry(config,mesh,vela::detail::buildEdgeCellMap(mesh),materials);
     if(vela::usesElementDistanceLombardi(config))
         vela::detail::updateSurfaceMobilityCellGeometry(config,mesh,vela::detail::buildEdgeCellMap(mesh),state.psi,config.surface.coordinateFieldFactor,&materials);
     const auto model=vela::makeMobilityModel(config);

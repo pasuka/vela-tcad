@@ -227,7 +227,8 @@ class DeviceRun:
                         raise RunError("E502", f"Stage {index} failed with ExitOnFailure", stderr=stderr)
                     if not records or not (self.work / stage["output_state"]).is_file():
                         raise RunError("E503", f"Stage {index} produced no accepted state for the next stage", stderr=stderr)
-                    if index + 1 < count and (not reached or stage.get("sweep", {}).get("mode") == "current"):
+                    if index + 1 < count and (not reached or stage.get("fixed_contact_current")
+                                               or stage.get("sweep", {}).get("mode") == "current"):
                         self.result = rebase_stage(self.result, index + 1, voltages, update_saved_state=True)
                         self.publisher.result = self.result
                         self.log("WARNING", f"W206: stage {index} reached {voltages}; rebasing later decks")
@@ -291,8 +292,9 @@ class DeviceRun:
             stage = self.result.stage_plan["stages"][index]
             metadata = {"CmdSHA256": self.ir["source"]["sha256"], "Stage": index}
             swept = deck["sweep"]["contact"]
+            held = stage.get("fixed_contact_current", {}).get("contact")
             for name, bias in stage["electrode_voltages_start_V"].items():
-                if name != swept:
+                if name not in (swept, held):
                     metadata[name + "_OuterVoltage_V"] = bias
                     metadata[name + "_InnerVoltage_V"] = bias
             deck["sweep"]["vtk_field_data"] = metadata
@@ -411,6 +413,9 @@ class DeviceRun:
         contact = self.result.decks[index]["sweep"]["contact"]
         last = records[-1]
         voltages[contact] = float(last.get("inner_voltage_V") or last["bias_V"])
+        if fixed := stage.get("fixed_contact_current"):
+            held = fixed["contact"]
+            voltages[held] = float(last[f"contact_{held}_voltage_V"])
         if sweep.get("mode") == "current":
             return abs(float(last["current_total_A_per_um"]) - sweep["stop_current_A_per_um"]) <= 1e-10, voltages
         outer = float(last.get("outer_voltage_V") or last["bias_V"])

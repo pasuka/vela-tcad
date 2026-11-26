@@ -695,6 +695,15 @@
         "stop": {
           "type": "number"
         },
+        "fixed_contact_current": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["contact", "value_A_per_um"],
+          "properties": {
+            "contact": {"type": "string", "minLength": 1},
+            "value_A_per_um": {"type": "number"}
+          }
+        },
         "voltage_to_current": {
           "additionalProperties": false,
           "properties": {

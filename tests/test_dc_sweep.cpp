@@ -1600,6 +1600,61 @@ TEST_CASE("DCSweep: voltage-to-current switches to a closed current boundary",
     REQUIRE(currentPoint.innerVoltage_V == Catch::Approx(0.2).margin(2.0e-3));
 }
 
+TEST_CASE("DCSweep holds one terminal current while sweeping another terminal voltage",
+          "[dc_sweep][current_boundary][integration]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto probeCsv = dir / "probe.csv";
+    const nlohmann::json solver = {{"method", "newton"}, {"reltol", 1.0e-8}};
+    const nlohmann::json sweepSettings = {
+        {"start", 0.50}, {"stop", 0.51}, {"step", 0.01}, {"current_contact", "cathode"}, {"write_vtk", false}
+    };
+    const auto probeConfig = writeUnitScalingSweepConfig(dir, meshPath, probeCsv, sweepSettings, solver);
+    DCSweep sweep;
+    const auto probe = sweep.runWithResult(probeConfig.string());
+    REQUIRE(probe.points.size() == 2);
+    REQUIRE(probe.points.front().converged);
+    REQUIRE(probe.points.back().converged);
+    const auto probeRows = readCsvRows(probeCsv);
+    const auto probeCurrent = csvColumnIndex(probeRows.front(), "current_total_A_per_um");
+    const Real cathodeTarget = csvReal(probeRows.at(1), probeCurrent);
+    REQUIRE(std::abs(cathodeTarget) > 1.0e-12);
+    REQUIRE(std::abs(csvReal(probeRows.at(2), probeCurrent) - cathodeTarget) > 0.05 * std::abs(cathodeTarget));
+
+    const auto controlCsv = dir / "held_current.csv";
+    auto controlSettings = sweepSettings;
+    controlSettings["fixed_contact_current"] = {{"contact", "cathode"}, {"value_A_per_um", cathodeTarget}};
+    controlSettings["write_vtk"] = true;
+    controlSettings["vtk_format"] = "vtu";
+    controlSettings["vtk_field_data"] = {{"cathode_InnerVoltage_V", 0.0}, {"cathode_OuterVoltage_V", 0.0}};
+    const auto controlConfig = writeUnitScalingSweepConfig(dir, meshPath, controlCsv, controlSettings, solver);
+    const auto controlled = sweep.runWithResult(controlConfig.string());
+    REQUIRE(controlled.points.size() == 2);
+    REQUIRE(controlled.points.front().converged);
+    REQUIRE(controlled.points.back().converged);
+    CHECK(controlled.points.back().outerVoltage_V == Catch::Approx(0.51));
+    const auto rows = readCsvRows(controlCsv);
+    const auto current = csvColumnIndex(rows.front(), "current_total_A_per_um");
+    const auto cathodeVoltage = csvColumnIndex(rows.front(), "contact_cathode_voltage_V");
+    CHECK(std::abs(csvReal(rows.at(2), current) - cathodeTarget) <= std::abs(cathodeTarget) * 1e-4);
+    CHECK(csvReal(rows.at(2), cathodeVoltage) - csvReal(rows.at(1), cathodeVoltage) > 1.0e-4);
+    CHECK(csvReal(rows.at(2), csvColumnIndex(rows.front(), "fixed_current_device_solves")) > 1);
+    CHECK(csvReal(rows.at(2), csvColumnIndex(rows.front(), "fixed_current_newton_iterations")) >=
+          csvReal(rows.at(2), csvColumnIndex(rows.front(), "newton_iterations")));
+    const std::string vtu = readTextFile(controlled.points.back().outputVtk);
+    for (const auto* name : {"cathode_InnerVoltage_V", "cathode_OuterVoltage_V"}) {
+        const std::string key = "Name=\"" + std::string(name) + "\"";
+        const auto start = vtu.find(key);
+        REQUIRE(start != std::string::npos);
+        REQUIRE(vtu.find(key, start + key.size()) == std::string::npos);
+        const auto data = vtu.find('>', start);
+        REQUIRE(data != std::string::npos);
+        CHECK(std::stod(vtu.substr(data + 1)) == Catch::Approx(csvReal(rows.at(2), cathodeVoltage)));
+    }
+}
+
 bool hasExtraField(const DCSweepPoint& point, const std::string& name, Real* outValue = nullptr)
 {
     const auto it = std::find_if(point.extraFields.begin(), point.extraFields.end(),

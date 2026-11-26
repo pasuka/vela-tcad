@@ -125,13 +125,14 @@ Explicit element-box transport and the restricted PhuMob candidate:
   triangles adjacent to the edge. The same local field is used at each vertex.
   The `cell_reconstructed_total_impurity` basis keeps its explicit cell
   reconstruction. Set `legacy` to reproduce the historical mobility evaluation.
-  The `element_box` option requires `model: constant` or `masetti`,
+  The `element_box` option supports `constant`, `masetti`, and
+  `masetti_field` with `high_field_gradient_discretization: element_box_vertex`.
+  It requires
   `doping_concentration_basis: total_impurity`, `element_box` transport and
   `cell_material` geometry. It first averages each node's model mobility with
   `M(T,i)=sum_j(g(T,ij)*length(ij)^2)/4`, divided by the actual sum of these
   measures. Edge mobility is `sum_T(g(T,e)*mu_T)/sum_T(g(T,e))` over transport
-  cells. Zero transport geometry yields zero mobility. Field-dependent,
-  surface and carrier-dependent models are rejected for this averaging mode.
+  cells. Zero transport geometry yields zero mobility.
   The explicit `element_box_masetti` mode uses the same box weights for
   `masetti_field_lombardi` with total impurity, preserving the local field and
   surface model at each sampled vertex.
@@ -2432,8 +2433,18 @@ controls how that magnitude is recovered. `edge_projection` (default) uses the
 potential difference projected onto each edge and preserves legacy Vela
 behavior. `transport_cell_vector` reconstructs the two-dimensional P1 gradient
 inside adjacent semiconductor cells, area-averages the gradient vectors, then
-takes the magnitude on each edge; this matches the orientation-independent `GradQuasiFermi` semantics used
-by Sentaurus on unstructured 2-D meshes.
+takes the magnitude on each edge.
+
+`element_box_vertex` requires `masetti_field`, `edge_averaging: element_box`,
+Boltzmann statistics, and SG edge currents in the coupled Newton solver.
+For each transport triangle it applies Canali saturation to the nodal Masetti
+mobilities using that triangle's gradient magnitude. It averages the saturated
+values with the triangle's nodal Box measures and combines the resulting cell
+mobilities with the Box coefficients of each edge. Triangles with zero edge
+coefficient contribute no mobility or derivative to that edge. When
+`contact_electric_field_fallback` is set, each triangle touching a contact
+uses its electrostatic potential gradient. Avalanche and quantum potential
+are outside this profile.
 
 For referenced quasi-Fermi states, the cell-vector mobility path forms each
 cell gradient from reference differences and explicit increments before
@@ -3342,6 +3353,22 @@ target with each entry in `current_points_A_per_um`. The accepted equation is
 `current_direction * Iterminal = Itarget`; tolerances and voltage-step limits
 have the same scalar-control meaning as for the resistor mode. The two modes
 are mutually exclusive.
+
+For a Newton voltage sweep, optional
+`sweep.fixed_contact_current: {"contact": "base", "value_A_per_um": 1e-8}`
+holds the signed current at a separate ohmic terminal. Each trial solves
+the device with the requested swept voltage and closes a scalar root on
+the current-controlled terminal's voltage. The current residual gate is
+`max(1e-18 A/µm, 1e-4 × abs(target))`. The accepted terminal voltage is
+written in `contact_<name>_voltage_V` and carried into the saved state.
+VTU field data contains the same solved terminal voltage under
+`<name>_InnerVoltage_V` and `<name>_OuterVoltage_V`.
+The sweep CSV also records `fixed_current_device_solves` and
+`fixed_current_newton_iterations`, which sum the device solves and Newton
+updates within that point's current root. The ordinary `newton_iterations`
+column gives the last device solve used by voltage step control.
+This controller is exclusive with series resistance, voltage-to-current
+switching and arclength continuation.
 
 When either mode is active, the main sweep CSV appends
 `boundary_control_mode`, `inner_voltage_V`, `outer_voltage_V`,

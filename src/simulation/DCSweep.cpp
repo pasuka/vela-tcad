@@ -1923,6 +1923,14 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
                 forcing.value("zero_converged_residual", false);
         }
     }
+    if (j.contains("fixed_contact_current")) {
+        const auto& fixed = j.at("fixed_contact_current");
+        sweep.fixedCurrentContact = fixed.at("contact").get<std::string>();
+        sweep.fixedCurrent_A_per_um = fixed.at("value_A_per_um").get<Real>();
+        if (sweep.fixedCurrentContact.empty() || !std::isfinite(sweep.fixedCurrent_A_per_um)) {
+            throw std::invalid_argument("DCSweep: fixed_contact_current requires a named contact and a finite current.");
+        }
+    }
     if (j.contains("voltage_to_current")) {
         const auto& control = j.at("voltage_to_current");
         if (!control.is_object())
@@ -3013,6 +3021,9 @@ void canonicalizeSweepContactsInPlace(const DeviceMesh& mesh,
 {
     canonicalizeContactNameInPlace(mesh, sweep.contact, "sweep.contact");
     canonicalizeContactNameInPlace(mesh, sweep.currentContact, "sweep.current_contact");
+    if (!sweep.fixedCurrentContact.empty()) {
+        canonicalizeContactNameInPlace(mesh, sweep.fixedCurrentContact, "sweep.fixed_contact_current.contact");
+    }
     canonicalizeContactNameInPlace(mesh, sweep.chargeContact, "sweep.terminal_charge.contact");
     for (TerminalChargeConfig& terminalCharge : sweep.terminalCharges) {
         canonicalizeContactNameInPlace(
@@ -3456,6 +3467,21 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     const PoissonChargeVolumePolicy poissonChargeVolumePolicy =
         parsePoissonChargeVolumePolicy(cfg);
     const SolverMethod solverMethod = solverMethodFromJson(cfg);
+    const bool fixedCurrentEnabled = !sweep.fixedCurrentContact.empty();
+    if (fixedCurrentEnabled) {
+        const auto declaredContacts = parseContactBoundarySpecs(cfg);
+        const bool ohmic = std::any_of(declaredContacts.begin(), declaredContacts.end(), [&](const auto& spec) {
+            return spec.type == ContactType::Ohmic &&
+                canonicalContactName(mesh, spec.name, "contacts[]") == sweep.fixedCurrentContact;
+        });
+        if (sweep.fixedCurrentContact == sweep.contact || !ohmic ||
+            solverMethod != SolverMethod::Newton || sweep.externalResistor.enabled ||
+            sweep.voltageToCurrent.enabled || sweep.continuation.arclength.enabled) {
+            throw std::invalid_argument(
+                "DCSweep: fixed_contact_current requires a separate ohmic contact and a Newton voltage sweep "
+                "without another boundary controller.");
+        }
+    }
     if(cfg.value("solver",nlohmann::json::object()).value("state_variables",std::string{"potential_quasi_fermi"})=="potential_density" &&
        solverMethod!=SolverMethod::Newton && solverMethod!=SolverMethod::PoissonOnly)
         throw std::invalid_argument("DCSweep: population coordinates require Newton or Poisson initialization");
@@ -3961,6 +3987,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     if (currentStopCriteriaEnabled) {
         header.push_back("stop_criterion");
         header.push_back("stop_current_A_per_um");
+    }
+    if (fixedCurrentEnabled) {
+        header.push_back("contact_" + sweep.fixedCurrentContact + "_voltage_V");
+        header.push_back("fixed_current_device_solves");
+        header.push_back("fixed_current_newton_iterations");
     }
     csv.writeHeader(header);
 
@@ -4704,6 +4735,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     int vtkIndex = 0;
 
     struct SolvePointAttempt {
+        std::optional<Real> fixedCurrentVoltage;
+        int fixedCurrentDeviceSolves = 0;
+        int fixedCurrentNewtonIterations = 0;
         std::uint64_t attemptId = 0;
         bool ok = false;
         DDSolution solution;
@@ -4880,17 +4914,22 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         }
     }
 
-    auto solvePoint = [&](Real voltage,
-                          const DDSolution* initial,
-                          bool allowContactCurrentQfFloorCapture) -> SolvePointAttempt {
+    auto solveDevicePoint = [&](Real voltage,
+                                const DDSolution* initial,
+                                bool allowContactCurrentQfFloorCapture,
+                                std::optional<Real> fixedCurrentVoltage) -> SolvePointAttempt {
         ScopedPerformanceTimer timer("dc.solve_point");
         incrementPerformanceCounter("dc.solve_point_calls");
         auto biases = baseBiases;
         biases[sweep.contact] = sweptContactPotential(voltage);
+        if (fixedCurrentVoltage) {
+            biases.at(sweep.fixedCurrentContact) = *fixedCurrentVoltage;
+        }
         try {
             bool solverConverged = false;
             DDSolution sol;
             SolvePointAttempt attempt;
+            attempt.fixedCurrentVoltage = fixedCurrentVoltage;
             attempt.attemptId = nextNonlinearAttemptId++;
             attempt.initialStateHash =
                 initial != nullptr ? ddSolutionStateHash(*initial)
@@ -5173,6 +5212,83 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         }
     };
 
+    auto solvePoint = [&](Real voltage, const DDSolution* initial,
+                          bool allowContactCurrentQfFloorCapture) -> SolvePointAttempt {
+        if (!fixedCurrentEnabled) {
+            return solveDevicePoint(voltage, initial, allowContactCurrentQfFloorCapture, std::nullopt);
+        }
+
+        // Eliminate the current-constrained terminal voltage with a scalar root.
+        // Every device trial holds the swept terminal at its requested voltage.
+        detail::MonotoneBoundaryRootConfig rootConfig;
+        rootConfig.maxStep = 0.001;
+        rootConfig.residualTolerance = std::max(1e-18, std::abs(sweep.fixedCurrent_A_per_um) * 1e-4);
+        SolvePointAttempt trial;
+        int deviceSolves = 0;
+        int newtonIterations = 0;
+        const auto solveTrial = [&](const DDSolution* seed, bool capture, Real terminalVoltage) {
+            auto attempt = solveDevicePoint(voltage, seed, capture, terminalVoltage);
+            ++deviceSolves;
+            newtonIterations += attempt.newtonIterations;
+            return attempt;
+        };
+        try {
+            const auto root = detail::solveMonotoneBoundaryRoot(
+                baseBiases.at(sweep.fixedCurrentContact), rootConfig, [&](Real terminalVoltage) {
+                    const DDSolution* seed = trial.ok ? &trial.solution : initial;
+                    auto candidate = solveTrial(seed, allowContactCurrentQfFloorCapture, terminalVoltage);
+                    if (!candidate.ok && trial.ok) {
+                        // Retry a difficult current-root probe along the held
+                        // terminal's voltage, with the same swept voltage.
+                        const Real start = *trial.fixedCurrentVoltage;
+                        const Real span = std::abs(terminalVoltage - start);
+                        if (span > 1e-6) {
+                            detail::DCSweepStepControlConfig steps;
+                            steps.start = start;
+                            steps.stop = terminalVoltage;
+                            steps.step = terminalVoltage - start;
+                            steps.initialStep = std::max<Real>(1e-6, 0.5 * span);
+                            steps.minStep = 1e-6;
+                            steps.maxStep = span;
+                            steps.growthFactor = 1.5;
+                            steps.shrinkFactor = 0.5;
+                            steps.maxRetries = 12;
+                            steps.stopOnFailure = true;
+                            detail::runDCSweepStepControl(steps,
+                                [&](Real intermediateVoltage, Real, int) {
+                                    candidate = solveTrial(&trial.solution, false, intermediateVoltage);
+                                    if (candidate.ok) {
+                                        trial = std::move(candidate);
+                                        return true;
+                                    }
+                                    return false;
+                                }, [](const auto&) {});
+                            if (std::abs(*trial.fixedCurrentVoltage - terminalVoltage) <= 1e-12) {
+                                candidate = std::move(trial);
+                            }
+                        }
+                    }
+                    trial = std::move(candidate);
+                    if (!trial.ok) {
+                        throw std::runtime_error("device trial at " + formatReal(terminalVoltage)
+                                                 + " V failed: " + trial.failureReason);
+                    }
+                    const auto measured = contactCurrent.compute(trial.solution, sweep.fixedCurrentContact);
+                    return currentPerInternalDepthToAPerUm(sweep.scaling, measured.totalCurrent)
+                        - sweep.fixedCurrent_A_per_um;
+                });
+            if (!root.converged || std::abs(root.residual) > rootConfig.residualTolerance) {
+                throw std::runtime_error("current residual exceeds tolerance");
+            }
+        } catch (const std::runtime_error& error) {
+            trial.ok = false;
+            trial.failureReason = std::string("fixed_contact_current: ") + error.what();
+        }
+        trial.fixedCurrentDeviceSolves = deviceSolves;
+        trial.fixedCurrentNewtonIterations = newtonIterations;
+        return trial;
+    };
+
     auto applyBranchAcceptance = [&](SolvePointAttempt& attempt) {
         const bool checkTerminalCurrent =
             sweep.continuation.branchAcceptance.terminalCurrentConsistency;
@@ -5330,9 +5446,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         return attempt;
     };
 
-    auto qfContactBiasesForVoltage = [&](Real voltage) {
+    auto qfContactBiasesForVoltage = [&](Real voltage, std::optional<Real> fixedCurrentVoltage) {
         auto biases = baseBiases;
         biases[sweep.contact] = sweptContactPotential(voltage);
+        if (fixedCurrentVoltage) {
+            biases.at(sweep.fixedCurrentContact) = *fixedCurrentVoltage;
+        }
         return transportContactBiases(biases);
     };
 
@@ -5383,7 +5502,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         attempt.qfBoundsEvaluation = evaluateQfBounds(
             mesh,
             attempt.solution,
-            qfContactBiasesForVoltage(voltage),
+            qfContactBiasesForVoltage(voltage, attempt.fixedCurrentVoltage),
             sweep.diagnostics.qfBounds,
             voltage);
         attempt.validationDiagnostics = appendQfBoundsDiagnostics(
@@ -5669,6 +5788,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                            const std::string& validationDiagnostics = std::string()) {
         ScopedPerformanceTimer timer("dc.record_point");
         incrementPerformanceCounter("dc.record_point_calls");
+        if (converged && attempt.fixedCurrentVoltage) {
+            baseBiases.at(sweep.fixedCurrentContact) = *attempt.fixedCurrentVoltage;
+        }
         ContactCurrentResult current{};
         ContactCurrentDetailedResult currentDetailed{};
         const DDSolution& sol = attempt.solution;
@@ -6896,6 +7018,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             }
             row.push_back(formatReal(currentPerInternalDepthToAPerUm(sweep.scaling, stopCurrent)));
         }
+        if (fixedCurrentEnabled) {
+            row.push_back(attempt.fixedCurrentVoltage ? formatReal(*attempt.fixedCurrentVoltage) : std::string{});
+            row.push_back(std::to_string(attempt.fixedCurrentDeviceSolves));
+            row.push_back(std::to_string(attempt.fixedCurrentNewtonIterations));
+        }
         csv.writeRow(row);
 
         if (releaseBVConfigAuditCsv != nullptr) {
@@ -7812,6 +7939,15 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 vtkOptions.fieldDataValues.emplace_back("goal_reached", reached ? 1.0 : 0.0);
                 vtkOptions.fieldDataValues.emplace_back(sweep.contact + "_OuterVoltage_V", outer);
                 vtkOptions.fieldDataValues.emplace_back(sweep.contact + "_InnerVoltage_V", voltage);
+            }
+            if (attempt.fixedCurrentVoltage) {
+                for (const std::string& name : {sweep.fixedCurrentContact + "_InnerVoltage_V",
+                                                sweep.fixedCurrentContact + "_OuterVoltage_V"}) {
+                    const auto matches = [&](const auto& entry) { return entry.first == name; };
+                    std::erase_if(vtkOptions.fieldDataStrings, matches);
+                    std::erase_if(vtkOptions.fieldDataValues, matches);
+                    vtkOptions.fieldDataValues.emplace_back(name, *attempt.fixedCurrentVoltage);
+                }
             }
             for (const auto& [name, currents] : point.contactCurrents) {
                 vtkOptions.fieldDataValues.emplace_back(

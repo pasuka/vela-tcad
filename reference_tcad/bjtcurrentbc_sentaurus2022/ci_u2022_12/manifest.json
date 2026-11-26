@@ -1,0 +1,19 @@
+{
+  "sentaurus_version": "U-2022.12",
+  "library_case": "GettingStarted/sdevice/BJTcurrentBC",
+  "native_input_output_sha256": {
+    "bjt_bnd.tdr": "9ef12b825852bc20723f8e0d6bb073b20d1fff8e18dea13d141710341c66c606",
+    "bjt_msh.cmd": "93d4cde7924e0d2f081ff6c8f091fc6b91be973b3ea2d638ee6ff3e8ebdb711c",
+    "bjt_msh.tdr": "a6b3230a29ee043fc4ad19806b22675d85dc77cc37093228bafbc2b1f14ba3c0",
+    "native_des.cmd": "122d8d5cb5f0714664b49d07f89dc28086b7a66b03b6e59d85203df8763cb73f",
+    "single_native.plt": "cd30adfe74edc45ae4eab9476da154891a2e237059ae6bd71374f5b2d528b9f4"
+  },
+  "files_sha256_lf": {
+    "bjt.dat": "2169a016a44212cfbac83136ac9151224e2658da9e35b6a166a427fd1c0d88b9",
+    "bjt.grd": "d5d6f1b668ba317d79a29ea3601b9e08ade1027f15e6ce5d11b354981205b1a3",
+    "bjtcurrentbc_des.cmd": "2c35a0d3246da6ab95eb2f811ace99e850bbb9b0beccda55db3b3017e39046dd",
+    "bjtcurrentbc_des.vela.json": "5cced42d59a3c3e51a1491ba5bb5bf30b12906e6a6a1e2683cb1b4fe3f40ae13",
+    "models.par": "5ee1aa88d561fb2fc519570083cbd646204c6c8a3b1f408cdb7bf01c1745c111",
+    "sentaurus_reference.csv": "980ef9892524ce32a5a9d77f7474e4e4f43a3e5de65f5e954811b2869d1bedd2"
+  }
+}

@@ -440,6 +440,16 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
     decisions = []
     solver = _physics(ir, report, decisions)
     solver_overrides = (sidecar or {}).get("solver", {})
+    box_masetti = (sidecar or {}).get("high_field_gradient_discretization") == "element_box_vertex"
+    if box_masetti and (
+        solver["mobility"]["model"] != "masetti_field"
+        or solver_overrides.get("mobility", {}).get("edge_averaging") != "element_box"
+    ):
+        raise DeckEmitError("E409", file="sidecar", detail="element_box_vertex requires CMD/PAR Masetti high-field mobility and element_box edge averaging")
+    if solver_overrides.get("mobility", {}).get("contact_electric_field_fallback"):
+        mobility = solver["mobility"]
+        if "_field" not in mobility["model"] or mobility.get("high_field_driving_force") != "quasi_fermi_gradient":
+            raise DeckEmitError("E409", file="sidecar", detail="contact field substitution requires active high-field GradQF mobility")
     stage_reltols = (sidecar or {}).get("stage_newton_reltol", {})
     stage_vtk_biases = (sidecar or {}).get("stage_vtk_bias_points", {})
     reserved_sidecar_keys = {
@@ -519,10 +529,18 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         else:
             groups.append([source])
     decks, snapshots = [], {}
+    current_targets = {}
+    statements = ir["solve"]["statements"]
+    previous_statement_index = -1
     global_plot = 0
     for group in groups:
         source = group[-1]
         kind = source["kind"]
+        statement_index = source["statement_index"]
+        for statement in statements[previous_statement_index + 1:statement_index]:
+            if statement["kind"] == "set" and statement["mode"] == "voltage":
+                current_targets.pop(statement["contact"], None)
+        previous_statement_index = statement_index
         if kind == "save":
             if not plan["stages"]:
                 raise DeckEmitError("E407", detail="Save precedes a solved stage")
@@ -535,7 +553,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 raise DeckEmitError("E407", detail="multiple Save aliases of one stage cannot be emitted")
             previous["output_state"] = state
             decks[-1]["sweep"]["write_state_file"] = state
-            snapshots[prefix] = (state, deepcopy(saved_voltages.get(state, voltages)))
+            snapshots[prefix] = (state, deepcopy(saved_voltages.get(state, voltages)), dict(current_targets))
             _decision(decisions, "Save", prefix, "sweep.write_state_file", state, "HDF5 snapshot", "W205")
             continue
         index = len(decks)
@@ -552,7 +570,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             prefix = ir["solve"]["statements"][source["statement_index"]]["file_prefix"]
             if prefix not in snapshots:
                 raise DeckEmitError("E407", detail=f"Load has no earlier Save: {prefix}")
-            input_state, voltages = deepcopy(snapshots[prefix])
+            input_state, voltages, current_targets = deepcopy(snapshots[prefix])
             _decision(decisions, "Load", prefix, "contacts.bias", voltages, "Saved voltages restored", "W208", index)
         start = deepcopy(voltages)
         goal = source.get("goal")
@@ -560,8 +578,20 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         if contact not in start:
             raise DeckEmitError("E407", detail=f"unknown goal contact {contact}")
         current = bool(goal and "current_A_per_um" in goal)
-        if current and contact not in source.get("current_mode_contacts", []):
+        current_contacts = source.get("current_mode_contacts", [])
+        if current and contact not in current_contacts:
             raise DeckEmitError("E407", detail="Current goal requires Set(mode current)")
+        fixed_current = None
+        if kind == "sweep":
+            held = [name for name in current_contacts if name != contact]
+            if contact in current_contacts and not current:
+                raise DeckEmitError("E407", detail=f"Voltage goal for {contact} requires Set(mode voltage)")
+            if held:
+                if current or len(held) != 1 or held[0] not in current_targets or not input_state:
+                    raise DeckEmitError("E407", detail="A voltage sweep can hold one previously reached Current goal")
+                fixed_current = {"contact": held[0], "value_A_per_um": current_targets[held[0]]}
+            if current:
+                current_targets[contact] = goal["current_A_per_um"]
         v0 = start[contact]
         v1 = _finite(goal["voltage_V"], "Goal") if goal and not current else v0
         voltages[contact] = v1
@@ -741,14 +771,23 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                       "solver.impact_ionization.coupling_mode", "postprocess_only",
                       "Evaluate impact ionization without adding an avalanche source to the continuity equations",
                       stage=index)
+        if fixed_current:
+            if deck["solver"]["method"] != "newton" or sweep.get("external_circuit") or entry["kind"] != "sweep":
+                raise DeckEmitError("E407", detail="Fixed terminal current requires an independent Newton voltage sweep")
+            sweep["fixed_contact_current"] = fixed_current
+            entry["fixed_contact_current"] = fixed_current
+            _decision(decisions, "Set(mode current)", fixed_current, "sweep.fixed_contact_current",
+                      fixed_current, "Hold the previously reached current while sweeping another terminal", stage=index)
         deck["sweep"] = sweep
         if use_sidecar:
             overrides = {key: deepcopy(value) for key, value in sidecar.items()
                          if key not in reserved_sidecar_keys}
             if stage_reltol is not None:
                 overrides.setdefault("solver", {})["reltol"] = stage_reltol
-            if "external_circuit" not in sweep and "sweep" in overrides:
-                overrides["sweep"].pop("external_circuit", None)
+            if "sweep" in overrides:
+                for key in ("external_circuit", "voltage_to_current"):
+                    if key not in sweep:
+                        overrides["sweep"].pop(key, None)
             _merge(deck, overrides,
                    "", entry["sidecar_overrides"], decisions, index)
             circuit = sweep.get("external_circuit")

@@ -1,0 +1,43 @@
+{
+  "schema": "vela.sdevice_sidecar.v1",
+  "sentaurus_step_control": true,
+  "high_field_gradient_discretization": "element_box_vertex",
+  "mesh_geometry": {
+    "cell_box_policy": "delaunay_transfer",
+    "poisson_permittivity_policy": "cell_material"
+  },
+  "solver": {
+    "method": "newton",
+    "mobility": {
+      "edge_averaging": "element_box",
+      "contact_electric_field_fallback": true
+    },
+    "region_resolved_interface_assembly": {
+      "transport_edge_geometry": "element_box",
+      "poisson_charge_node_volume": "signed_transport"
+    },
+    "state_variables": "potential_density",
+    "primary_variable_coordinates": "unit",
+    "reltol": 1e-09,
+    "abstol": 1e-10,
+    "auger_with_generation": false,
+    "auger_excess_product": "classical_np",
+    "population_linear_defect": "eft",
+    "quasi_fermi_reference": "none",
+    "quasi_fermi_update_limit_V": 0.0,
+    "continuity_row_scaling": {
+      "enabled": false
+    },
+    "population_update_convergence": {
+      "digits": 5,
+      "electron_reference_cm3": 10000000.0,
+      "hole_reference_cm3": 10000000.0
+    },
+    "population_stopping_rule": "native_approx"
+  },
+  "sweep": {
+    "voltage_to_current": {
+      "max_inner_voltage_step_V": 0.01
+    }
+  }
+}

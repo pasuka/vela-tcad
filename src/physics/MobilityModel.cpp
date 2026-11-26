@@ -215,10 +215,9 @@ void validateHighFieldDrivingForce(const std::string& value)
 
 void validateHighFieldGradientDiscretization(const std::string& value)
 {
-    if (value != "edge_projection" && value != "transport_cell_vector" && value != "element_vertex_partial_layer") {
-        throw std::invalid_argument(
-            "mobility.high_field_gradient_discretization must be "
-            "'edge_projection' or 'transport_cell_vector'.");
+    if (value != "edge_projection" && value != "transport_cell_vector" &&
+        value != "element_vertex_partial_layer" && value != "element_box_vertex") {
+        throw std::invalid_argument("Unknown mobility.high_field_gradient_discretization: " + value);
     }
 }
 
@@ -715,8 +714,9 @@ MobilityModelConfig mobilityModelConfigFromJson(
         throw std::invalid_argument("Unknown mobility.edge_averaging: " + config.edgeAveraging);
     if (config.edgeAveraging == "element_box_masetti" && config.model != "masetti_field_lombardi")
         throw std::invalid_argument("element_box_masetti requires masetti_field_lombardi.");
-    if (config.edgeAveraging == "element_box" && config.model != "masetti" && config.model != "constant")
-        throw std::invalid_argument("element_box mobility supports constant and Masetti without field or carrier dependence.");
+    if (config.edgeAveraging == "element_box" && config.model != "masetti" &&
+        config.model != "constant" && config.model != "masetti_field")
+        throw std::invalid_argument("element_box mobility supports constant and Masetti with optional element high field.");
     if (config.edgeAveraging == "element_box_phumob" && config.model != "phumob" && config.model != "phumob_lombardi" && config.model != "phumob_field_lombardi")
         throw std::invalid_argument("element_box_phumob is an explicit plain PhuMob candidate; field and surface models are unsupported.");
     config.highFieldDrivingForce = value.value(
@@ -805,6 +805,12 @@ MobilityModelConfig mobilityModelConfigFromJson(
     } else if (value.contains("ialmob")) {
         throw std::invalid_argument("ialmob block requires model=ialmob");
     }
+    const bool masettiElement = config.model == "masetti_field" && config.edgeAveraging == "element_box";
+    if ((config.highFieldGradientDiscretization == "element_box_vertex") != masettiElement ||
+        (masettiElement && (config.highFieldDrivingForce != "quasi_fermi_gradient" ||
+                           !config.jacobianFieldDerivatives ||
+                           config.carrierCurrentDiscretization != "scharfetter_gummel_edge")))
+        throw std::invalid_argument("element_box_vertex requires Masetti field mobility, element_box, SG edge currents and full GradQF derivatives.");
     const bool hfs=config.highFieldGradientDiscretization=="element_vertex_partial_layer";
     if(hfs != (config.model=="phumob_field_lombardi" && config.edgeAveraging=="element_box_phumob") ||
        (hfs && (config.highFieldDrivingForce!="quasi_fermi_gradient" || !config.jacobianFieldDerivatives)))

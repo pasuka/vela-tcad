@@ -334,12 +334,12 @@ inline void validateElementBoxMobilityContext(const DeviceMesh& mesh,
         (mobility.edgeAveraging=="element_box" && (mobility.model=="constant" || mobility.model=="masetti")) ||
         (mobility.edgeAveraging=="element_box_phumob" && mobility.model=="phumob") ||
         (mobility.edgeAveraging == "element_box_masetti" && mobility.model == "masetti_field_lombardi") ||
-        usesElementDistanceLombardi(mobility);
+        usesElementDistanceLombardi(mobility) || usesMasettiElementHighField(mobility);
     if(!modelSupported ||
        mobility.dopingConcentrationBasis!="total_impurity" ||
        assembly.transportEdgeGeometry!="element_box" ||
        mesh.poissonPermittivityPolicy()!=BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial)
-        throw std::invalid_argument("Box mobility requires constant/Masetti or the explicit plain PhuMob candidate, nodal total_impurity, element_box transport, and cell_material geometry.");
+        throw std::invalid_argument("Box mobility requires a supported mobility profile, nodal total_impurity, element_box transport, and cell_material geometry.");
     if(usesElementDistanceLombardi(mobility) && (!mobility.surface.surfaceRegion.empty() || !mobility.surface.surfaceInterface.empty()))
         throw std::invalid_argument("Element Lombardi custom interface selectors are not qualified");
 }
@@ -1339,20 +1339,24 @@ inline bool isTransportMaterial(const Material& material);
 inline void updateElementHighFieldGeometry(MobilityModelConfig& config,
     const DeviceMesh& mesh,const std::vector<std::vector<Index>>& edgeCells,
     const std::vector<Material>& materials) {
-    if(!usesElementHighField(config) || config.highFieldCells.size()==mesh.numCells())return;
+    const bool partialLayer = usesElementHighField(config);
+    if ((!partialLayer && !usesMasettiElementHighField(config)) ||
+        config.highFieldCells.size() == mesh.numCells()) return;
     if(!config.jacobianFieldDerivatives || config.highFieldDrivingForce!="quasi_fermi_gradient")
         throw std::invalid_argument("Element HFS requires full QF derivatives");
-    const auto cellEdges=buildCellEdgeMap(edgeCells,mesh);
+    const auto cellEdges = partialLayer ? buildCellEdgeMap(edgeCells,mesh)
+                                       : std::vector<std::vector<Index>>{};
     std::vector<bool> contact(mesh.numNodes(),false);
     for(const auto& c:mesh.contacts())for(Index n:c.node_ids)contact[n]=true;
     config.highFieldCells.resize(mesh.numCells());
     for(Index cid=0;cid<mesh.numCells();++cid) {
         if(!isTransportMaterial(materials.at(cid)))continue;
-        if(materials.at(cid).temperature_K.value_or(300.)!=300.)
+        if(partialLayer && materials.at(cid).temperature_K.value_or(300.)!=300.)
             throw std::invalid_argument("Element HFS currently qualifies 300 K only");
         const auto& cell=mesh.getCell(cid);auto& out=config.highFieldCells[cid];
         if(cell.node_ids.size()!=3)throw std::invalid_argument("Element HFS requires triangles");
-        for(Index n:cell.node_ids)out.contact=out.contact||contact[n];
+        if (partialLayer || config.contactElectricFieldFallback)
+            for (Index n : cell.node_ids) out.contact = out.contact || contact[n];
         const auto& a=mesh.getNode(cell.node_ids[0]);const auto& b=mesh.getNode(cell.node_ids[1]);const auto& c=mesh.getNode(cell.node_ids[2]);
         Real x1=b.x-a.x,y1=b.y-a.y,x2=c.x-a.x,y2=c.y-a.y,det=x1*y2-x2*y1;
         if(det==0.)throw std::invalid_argument("Degenerate HFS cell");
@@ -1360,7 +1364,7 @@ inline void updateElementHighFieldGeometry(MobilityModelConfig& config,
         // PartialLayer: intersect all true boundary tangents. A contact vertex
         // overrides the projection and selects the complete electric gradient.
         bool projected=false,corner=false;Point2 tangent=Point2::Zero();
-        if(!out.contact)for(Index e:cellEdges[cid]) {
+        if(partialLayer && !out.contact)for(Index e:cellEdges[cid]) {
             int transport=0;for(Index k:edgeCells[e])if(isTransportMaterial(materials[k]))++transport;
             if(transport!=1)continue;
             const auto& edge=mesh.getEdge(e);const auto& p=mesh.getNode(edge.n0);const auto& q=mesh.getNode(edge.n1);
@@ -1384,7 +1388,9 @@ inline ElementHighFieldDrive elementHighFieldDrive(const MobilityModelConfig& co
     const auto& s=g.stencil;
     const auto [gx, gy] = tri3Gradient(std::array<Real, 3>{z(i), z(j), z(k)}, s);
     ElementHighFieldDrive out;out.contact=g.contact;out.field=std::hypot(gx,gy);
-    if(out.field>=100./config.internalFieldToVPerM) {
+    const bool differentiable = usesMasettiElementHighField(config)
+        ? out.field > 0.0 : out.field >= 100. / config.internalFieldToVPerM;
+    if (differentiable) {
         out.derivative[1]=(gx*s[0]+gy*s[1])/out.field;
         out.derivative[2]=(gx*s[2]+gy*s[3])/out.field;
         out.derivative[0]=-out.derivative[1]-out.derivative[2];
@@ -1693,16 +1699,47 @@ inline PhuMobLogDensityDerivatives edgePhuMobLogDensityDerivatives(
     return result;
 }
 
-/// Return average model mobility [m^2/V/s] for edge @p edgeId.
+/// Return vertex-weighted mobility in one transport triangle.
 inline Real elementBoxCellMobility(const DeviceMesh& mesh,const DopingModel& doping,
     const MobilityModel& mobility,const Material& material,Index cid,CarrierType carrier,
-    const MobilityModelConfig* config=nullptr,const EdgeMobilityCarrierState* populations=nullptr,const VectorXd* psi=nullptr)
+    const MobilityModelConfig* config=nullptr,const EdgeMobilityCarrierState* populations=nullptr,
+    const VectorXd* psi=nullptr, Real* masettiFieldDerivative=nullptr)
 {
     const bool phumob=config && config->edgeAveraging=="element_box_phumob";
     if(phumob && (!populations || !populations->electrons || !populations->holes ||
         populations->electrons->size()!=mesh.numNodes() || populations->holes->size()!=mesh.numNodes()))
         throw std::invalid_argument("element_box_phumob requires complete live nodal electron and hole densities.");
     const auto measures=cellBoxNodeMeasures(mesh,cid);const auto& cell=mesh.getCell(cid);
+    if (config && usesMasettiElementHighField(*config)) {
+        if (!psi || !populations)
+            throw std::invalid_argument("Element Masetti high field requires live potential and carrier quasi-Fermi fields.");
+        const auto drive = elementHighFieldDrive(*config, mesh, cid, *psi,
+            carrier == CarrierType::Electron ? populations->phin : populations->phip);
+        const auto& params = carrier == CarrierType::Electron ? config->electronField : config->holeField;
+        ArithmeticReal weightedDerivative = 0.0;
+        const auto value = tri3VertexAverage<ArithmeticReal, ArithmeticReal>(measures, [&](std::size_t k) {
+            const Real impurity = doping.totalImpurity(cell.node_ids[k]);
+            const auto evaluate = [&](Real field) {
+                return carrier == CarrierType::Electron
+                    ? mobility.electronMobility(material, impurity, 0.0, 0.0, field)
+                    : mobility.holeMobility(material, impurity, 0.0, 0.0, field);
+            };
+            const Real limited = evaluate(drive.field);
+            if (masettiFieldDerivative && drive.field > 0.0 && limited > 0.0) {
+                const Real power = std::pow(evaluate(0.0) * drive.field / params.saturationVelocity,
+                                            params.beta);
+                const Real fraction = power <= 1.0 ? power / (1.0 + power) : 1.0 / (1.0 + 1.0 / power);
+                weightedDerivative -= static_cast<ArithmeticReal>(measures[k]) *
+                    limited * fraction / drive.field;
+            }
+            return limited;
+        });
+        if (masettiFieldDerivative) {
+            const ArithmeticReal volume = static_cast<ArithmeticReal>(measures[0]) + measures[1] + measures[2];
+            *masettiFieldDerivative = volume > 0 ? static_cast<Real>(weightedDerivative / volume) : 0.0;
+        }
+        return static_cast<Real>(value);
+    }
     return static_cast<Real>(tri3VertexAverage<ArithmeticReal, ArithmeticReal>(measures, [&](std::size_t k) {
         const Index node=cell.node_ids[k];
         const Real impurity=doping.totalImpurity(node);
@@ -1734,7 +1771,8 @@ inline Real elementBoxEdgeMobility(const std::vector<std::vector<Index>>& edgeCe
     const MobilityModelConfig& config,const EdgeMobilityCarrierState* populations=nullptr,const VectorXd* psi=nullptr)
 {
     const bool supported=usesElementDistanceLombardi(config) || (config.edgeAveraging=="element_box_phumob" && config.model=="phumob") ||
-        (config.edgeAveraging=="element_box" && (config.model=="constant" || config.model=="masetti"));
+        (config.edgeAveraging=="element_box" && (config.model=="constant" || config.model=="masetti")) ||
+        usesMasettiElementHighField(config);
     if (!supported || config.dopingConcentrationBasis!="total_impurity")
         throw std::invalid_argument("Unsupported element box mobility model or doping basis.");
     vela::ArithmeticReal weighted=0,geometry=0;
@@ -1755,6 +1793,40 @@ struct ElementBoxPhuMobDerivative {
     Real potential=0.; // d(edge mobility)/d(psi_node), holding populations fixed
     Real quasiFermi=0.; // direct derivative for the selected carrier
 };
+
+inline std::vector<ElementBoxPhuMobDerivative> elementBoxMasettiFieldDerivatives(
+    const std::vector<std::vector<Index>>& edgeCells, const DeviceMesh& mesh,
+    const DopingModel& doping, const MobilityModel& mobility, const std::vector<Material>& materials,
+    Index edgeId, CarrierType carrier, const MobilityModelConfig& config,
+    const VectorXd& psi, const VectorXd& phin, const VectorXd& phip)
+{
+    std::vector<ElementBoxPhuMobDerivative> result;
+    ArithmeticReal geometry = 0.0;
+    const EdgeMobilityCarrierState state{0., 0., 0., 0., nullptr, nullptr, &phin, &phip};
+    for (Index cid : edgeCells.at(edgeId)) {
+        const auto& material = materials.at(cid);
+        if (!isTransportMaterial(material)) continue;
+        const Real coefficient = cellBoxEdgeCoefficient(mesh, cid, edgeId);
+        if (coefficient == 0.0) continue;
+        geometry += coefficient;
+        Real response = 0.0;
+        elementBoxCellMobility(mesh, doping, mobility, material, cid, carrier, &config, &state, &psi, &response);
+        const auto drive = elementHighFieldDrive(config, mesh, cid, psi,
+            carrier == CarrierType::Electron ? &phin : &phip);
+        const auto& cell = mesh.getCell(cid);
+        for (std::size_t k = 0; k < 3; ++k) {
+            const Real derivative = coefficient * response * drive.derivative[k];
+            result.push_back({cell.node_ids[k], 0.0, 0.0,
+                drive.contact ? derivative : 0.0, drive.contact ? 0.0 : derivative});
+        }
+    }
+    if (geometry <= 0.0) return {};
+    for (auto& term : result) {
+        term.potential = static_cast<Real>(term.potential / geometry);
+        term.quasiFermi = static_cast<Real>(term.quasiFermi / geometry);
+    }
+    return result;
+}
 
 inline std::vector<ElementBoxPhuMobDerivative> elementBoxPhuMobDerivatives(
     const std::vector<std::vector<Index>>& edgeCells,const DeviceMesh& mesh,

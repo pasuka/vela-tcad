@@ -273,6 +273,9 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh_, matdb_, temperature_K);
     MobilityModelConfig evaluatedMobilityConfig = mobilityConfig_;
+    const bool masettiElementField = usesMasettiElementHighField(evaluatedMobilityConfig);
+    if (masettiElementField)
+        detail::updateElementHighFieldGeometry(evaluatedMobilityConfig, mesh_, edgeCells_, cellMaterials);
     if (isSurfaceMobilityModel(evaluatedMobilityConfig)) {
         detail::updateSurfaceMobilityCellGeometry(
             evaluatedMobilityConfig, mesh_, edgeCells_, solution.psi,
@@ -588,7 +591,9 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             electricField, contactElectricMobilityFields);
 
         const detail::EdgeMobilityCarrierState mobilityState{
-            n_i, n_j, p_i, p_j, &solution.n, &solution.p, &solution.phin, &solution.phip};
+            n_i, n_j, p_i, p_j, &solution.n, &solution.p,
+            masettiElementField ? &electronQf : &solution.phin,
+            masettiElementField ? &holeQf : &solution.phip};
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
             electronMobilityField,

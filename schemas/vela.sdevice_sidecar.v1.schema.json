@@ -13,7 +13,7 @@
   "properties": {
     "schema": {"const": "vela.sdevice_sidecar.v1"},
     "high_field_gradient_discretization": {
-      "enum": ["edge_projection", "transport_cell_vector"],
+      "enum": ["edge_projection", "transport_cell_vector", "element_box_vertex"],
       "description": "Numerical recovery of an active high-field mobility GradQuasiFermi drive. Sets only solver.mobility.high_field_gradient_discretization; models and coefficients remain owned by cmd/par."
     },
     "avalanche_current_support_profile": {
@@ -59,7 +59,8 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "edge_averaging": {"enum": ["auto", "legacy", "element_box_masetti"]},
+            "edge_averaging": {"enum": ["auto", "legacy", "element_box", "element_box_masetti"]},
+            "contact_electric_field_fallback": {"type": "boolean"},
             "jacobian_field_derivatives": {"type": "boolean"}
           }
         },
@@ -114,11 +115,19 @@
     "sweep": {
       "type": "object",
       "description": "Numerical diagnostics, explicit basic-state output selection and external-circuit solver controls only; physical resistance, electrodes, goals, step schedule and output names remain owned by cmd.",
-      "anyOf": [{"required": ["diagnostics"]}, {"required": ["external_circuit"]}, {"required": ["vtk_fields"]}],
+      "anyOf": [{"required": ["diagnostics"]}, {"required": ["external_circuit"]},
+                {"required": ["voltage_to_current"]}, {"required": ["vtk_fields"]}],
       "additionalProperties": false,
       "properties": {
         "vtk_fields": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["ElectrostaticPotential", "eDensity", "hDensity", "SpaceCharge", "DopingConcentration"]}, "description": "Explicit basic-state Plot projection, logged with W207. Does not change the CMD, physics, stop rules or output names; omitted fields are not qualified as exported."},
         "diagnostics": {"type": "object", "additionalProperties": true},
+        "voltage_to_current": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_inner_voltage_step_V": {"type": "number", "exclusiveMinimum": 0}
+          }
+        },
         "external_circuit": {
           "type": "object",
           "additionalProperties": false,

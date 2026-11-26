@@ -156,6 +156,15 @@
             }
           }
         },
+        "fixed_contact_current": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["contact", "value_A_per_um"],
+          "properties": {
+            "contact": {"type": "string"},
+            "value_A_per_um": {"type": "number"}
+          }
+        },
         "current_file": {"type": "string", "description": "User-directory .plt name this stage appends to (NewCurrentPrefix applied)."},
         "plt_write": {
           "oneOf": [
