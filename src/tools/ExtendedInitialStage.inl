@@ -5,6 +5,10 @@ bool isExtendedSlotStage(const nlohmann::json& deck)
         return false;
     const auto& solver = deck.at("solver");
     const auto& sweep = deck.at("sweep");
+    const auto profile = solver.value("extended80_stage_profile", "");
+    const auto statistics = solver.value("carrier_statistics", nlohmann::json::object()).value("model", "");
+    const auto mobility = solver.value("mobility", nlohmann::json::object()).value("model", "");
+    const bool phumob = profile == extendedSlotPhuMobProfile;
     return deck.value("simulation_type", "") == "dc_sweep"
         && solver.value("arithmetic_precision", "") == "extended80"
         && solver.value("state_variables", "") == "potential_density"
@@ -13,12 +17,11 @@ bool isExtendedSlotStage(const nlohmann::json& deck)
         && solver.value("population_stopping_rule", "") == "native_approx"
         && solver.value("population_derivative_recovery", "full") == "full"
         && solver.value("population_writeback", "independent") == "independent"
-        && solver.value("carrier_statistics", nlohmann::json::object()).value("model", "") == "boltzmann"
-        && solver.value("mobility", nlohmann::json::object()).value("model", "") == "ialmob"
+        && (phumob ? statistics == "fermi_dirac_joyce_dixon" && mobility == "phumob_field_lombardi"
+                   : statistics == "boltzmann" && mobility == "ialmob")
         && deck.contains("decimal_stage_controls") && sweep.value("mode", "") == "iv"
         && !sweep.contains("voltage_to_current")
-        && (!sweep.contains("continuation") ||
-            solver.value("extended80_stage_profile", "") == extendedSlotFixedBiasProfile)
+        && (!sweep.contains("continuation") || phumob || profile == extendedSlotFixedBiasProfile)
         && !sweep.contains("boundary_control");
 }
 
@@ -58,7 +61,9 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
     const bool coldStage = mode == "newton" && sweep.contains("initialization");
     const bool loadOnly = mode == "frozen_state";
     const bool circuitStage = mode == "newton" && sweep.contains("external_circuit");
-    const bool fixedProfile = input.value("extended80_stage_profile", "") == extendedSlotFixedBiasProfile;
+    const auto profile = input.value("extended80_stage_profile", "");
+    const bool phumob = profile == extendedSlotPhuMobProfile;
+    const bool fixedProfile = phumob || profile == extendedSlotFixedBiasProfile;
     const bool fixedSweep = fixedProfile && mode == "newton" && !coldStage && !circuitStage;
     if (publish) {
         const char* backend = std::getenv("VELA_LINEAR_SOLVER");
@@ -91,8 +96,8 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
     if (!scaling.isUnitScaling() || !refs.decimalTemperature_K ||
         !deck.contains("decimal_stage_controls") || !problem.fixedCharges.empty() ||
         !problem.sheetCharges.empty() || !parseBoundarySegmentSpecs(deck).empty() ||
-        config.mobility.model != "ialmob" ||
-        config.impactIonization.model != (fixedProfile ? "none" : "van_overstraeten") ||
+        config.mobility.model != (phumob ? "phumob_field_lombardi" : "ialmob") ||
+        config.impactIonization.model != (fixedProfile && !phumob ? "none" : "van_overstraeten") ||
         config.electronQuantumPotential.enabled || config.splitDDState ||
         config.recombinationVolumePolicy != "material_local_box" ||
         config.carrierRowConvergence.mode == "enforce" ||
@@ -119,8 +124,31 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
     const auto coefficient = [&](const std::string& key, Real view) {
         return decimalStageControl(sourceText.at(key), key, view);
     };
+    // This profile is emitted as a version 2 deck. Bind coefficients in its
+    // source units before converting the wide values to the kernel's units.
+    const auto sourceNumber = [&](const std::string& key, long double fallback) {
+        std::size_t begin = 0;
+        const WideJson* section = &rawInput;
+        for (auto end = key.find('.'); end != std::string::npos; end = key.find('.', begin)) {
+            const auto child = section->find(key.substr(begin, end - begin));
+            if (child == section->end())
+                return fallback;
+            section = &*child;
+            begin = end + 1;
+        }
+        const auto value = section->find(key.substr(begin));
+        if (value == section->end())
+            return fallback;
+        const auto& rawSources = wideDeck.at("decimal_stage_controls").at("solver").at("slot_source_coefficients");
+        return static_cast<long double>(decimalStageControl(
+            rawSources.at(key).get<std::string>(), key, value->get<double>()));
+    };
     const auto narrowingCoefficient = [&](const std::string& key, Real compatibility, long double fallback) {
-        const auto path = "bandgap_narrowing." + key;
+        auto path = "bandgap_narrowing." + key;
+        if (phumob) {
+            if (key == "reference_doping_m3") path = "bandgap_narrowing.reference_doping_cm3";
+            return sourceNumber(path, fallback);
+        }
         if (sourceText.contains(path))
             return coefficient(path, compatibility);
         if (static_cast<Real>(fallback) != compatibility)
@@ -138,8 +166,10 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
             narrowingCoefficient("coefficient_eV", narrowing.coefficient, bennett ? 6.84e-3L : 9.0e-3L),
             narrowingCoefficient("smoothing", narrowing.smoothing, bennett ? 0.L : 0.5L),
             narrowingCoefficient("offset_eV", narrowing.offset, 0.L)};
-    const auto material = buildExtendedBoltzmannMaterials(
-        problem.mesh, problem.matdb, problem.doping, narrowing, temperature, vt, narrowingCoefficients);
+    const auto statisticalModel = carrierStatisticsModel(config.carrierStatistics);
+    const auto material = buildExtendedEquilibriumMaterials(
+        problem.mesh, problem.matdb, problem.doping, narrowing, temperature, vt, narrowingCoefficients,
+        statisticalModel);
     auto zeroContacts = contacts;
     if (fixedProfile && !coldStage)
         for (auto& contact : zeroContacts) {
@@ -181,8 +211,8 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
     if (box.cellBoxPolicy != BoxGeometryBuilder::CellBoxPolicy::AverageIntersection ||
         config.poissonChargeVolumePolicy != PoissonChargeVolumePolicy::MaterialLocalBox)
         throw std::invalid_argument("Extended80 initial stage requires material-local AverageBox");
-    const auto permittivities = readExtendedPermittivities(
-        resolvePath(configDirectory(configFile), deck.at("materials_file").get<std::string>()), problem.matdb);
+    const auto materialPath = resolvePath(directory, deck.at("materials_file").get<std::string>());
+    const auto permittivities = readExtendedPermittivities(materialPath, problem.matdb);
     const auto geometry = buildExtendedAveragePoissonGeometry(
         problem.mesh, problem.matdb, temperature, permittivities);
     const auto normalizationInput = scaling.deckFormatVersion == 2
@@ -220,7 +250,7 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
     ArithmeticPoissonAssembler poisson(problem.mesh, problem.matdb, problem.doping, {}, {}, {}, po, vt);
     nlohmann::json out{
         {"arithmetic_precision", "extended80"},
-        {"scope", publish ? (fixedProfile ? extendedSlotFixedBiasProfile : extendedSlotStageProfile) : "initial_stage_check"},
+        {"scope", publish ? std::string_view(profile) : "initial_stage_check"},
         {"accepted_points", 0}, {"converged", false}, {"coupled_converged", false},
         {"potential_scale_V", vt}, {"nodes", problem.mesh.numNodes()}, {"poisson_geometry", "arithmetic_averagebox"},
         {"decimal_permittivities", permittivities.size()},
@@ -237,7 +267,7 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
                                  {"contacts", deck.at("contacts")}};
     if (fixedProfile) {
         identityInput.erase("port");
-        identityInput["profile"] = extendedSlotFixedBiasProfile;
+        identityInput["profile"] = profile;
     }
     for (auto& contact : identityInput.at("contacts"))
         contact.erase("bias");
@@ -249,13 +279,15 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
                            "contact_boundary_reconstruction"})
         if (input.contains(key)) identityInput["solver"][key] = input.at(key);
     identityInput["decimal_sources"] = deck.at("decimal_stage_controls").at("solver").at("slot_source_coefficients");
+    if (phumob)
+        identityInput["solver"]["carrier_statistics"] = input.at("carrier_statistics");
     identityInput["thermal_voltage_V"] = extendedStageDecimal(vt);
     if (normalization)
         identityInput["equation_normalization"] = out.at("equation_normalization");
     const ExtendedPopulationArchiveIdentity identity{extendedStateMeshIdentity(problem.mesh, length),
         stateSha256(identityInput.dump()), ExtendedPopulationArchiveRole::Accepted};
     if (coldStage) {
-        auto cold = solveExtendedBoltzmannColdStart(poisson, problem.doping, material, targets,
+        auto cold = solveExtendedEquilibriumColdStart(poisson, problem.doping, material, targets,
             vt, unitConcentration_m3, sweep.at("initialization").at("poisson_max_iter").get<int>(), rawInput.value("abstol", 1e-10L), &geometry);
         out.update({{"poisson_converged", cold.converged}, {"poisson_updates", cold.updates},
                     {"poisson_residual", cold.residual}});
@@ -286,17 +318,19 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         }
     }
 
-    prepareIalTransportGeometry(config.mobility, problem.mesh);
+    if (!phumob)
+        prepareIalTransportGeometry(config.mobility, problem.mesh);
     std::map<std::string, std::array<long double, 2>> mobilityByMaterial;
-    for (const auto& [name, values] : config.mobility.ialmob->constantMaterialMobility) {
+    if (config.mobility.ialmob) for (const auto& [name, values] : config.mobility.ialmob->constantMaterialMobility) {
         const auto prefix = "ialmob.constant_material_mobility_cm2_per_Vs." + name + ".";
         mobilityByMaterial.emplace(name, std::array<long double, 2>{
             coefficient(prefix + "electron", values[0]), coefficient(prefix + "hole", values[1])});
     }
-    for (const auto& axis : {config.mobility.ialmob->crystalX, config.mobility.ialmob->crystalY})
+    if (config.mobility.ialmob) for (const auto& axis : {config.mobility.ialmob->crystalX, config.mobility.ialmob->crystalY})
         if (std::ranges::any_of(axis, [](Real value) { return value != 0 && std::abs(value) != 1; }))
             throw std::invalid_argument("Extended SLOT requires axis-aligned crystal coordinates");
-    auto measures = readExtendedIalTransportMeasures(config.mobility, problem.mesh, length, mobilityByMaterial);
+    auto measures = phumob ? decltype(readExtendedIalTransportMeasures(config.mobility, problem.mesh, length, mobilityByMaterial)){}
+        : readExtendedIalTransportMeasures(config.mobility, problem.mesh, length, mobilityByMaterial);
     out["arithmetic_ial_surface_cells"] = measures.surface.size();
     out["arithmetic_ial_vertex_cells"] = measures.vertex.size();
     out["arithmetic_ial_avalanche_cells"] = measures.avalanche.size();
@@ -315,13 +349,26 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         throw std::invalid_argument("Extended SLOT SRH temperature law is not bound to decimal input");
     const auto lifetime = [&](const std::string& carrier, const SRHLifetimeParameters& p) {
         const auto prefix = "srh_doping_dependence." + carrier + ".";
+        if (phumob)
+            return ArithmeticBoltzmannSourceCoefficients::Lifetime{
+                sourceNumber(prefix + "tau_min_s", 0), sourceNumber(prefix + "tau_max_s", 0),
+                sourceNumber(prefix + "reference_doping_cm3", 0), sourceNumber(prefix + "gamma", 1)};
         return ArithmeticBoltzmannSourceCoefficients::Lifetime{
             coefficient(prefix + "tau_min_s", p.tauMin), coefficient(prefix + "tau_max_s", p.tauMax),
             coefficient(prefix + "reference_doping_m3", p.referenceDoping), coefficient(prefix + "gamma", p.gamma)};
     };
     const auto& srh = sourceConfig.srhDopingDependence;
     const auto& auger = sourceConfig.augerDensityDependence;
-    const ArithmeticBoltzmannSourceCoefficients sourceCoefficients{
+    const ArithmeticBoltzmannSourceCoefficients sourceCoefficients = phumob ?
+        ArithmeticBoltzmannSourceCoefficients{
+            sourceNumber("tau_n_s", 1e-6L), sourceNumber("tau_p_s", 1e-6L),
+            {lifetime("electron", srh.electron), lifetime("hole", srh.hole)},
+            {sourceNumber("auger_cn_cm6_per_s", 2.90e-31L), sourceNumber("auger_cp_cm6_per_s", 1.028e-31L)},
+            {sourceNumber("auger_density_dependence.electron.enhancement", 0),
+             sourceNumber("auger_density_dependence.hole.enhancement", 0)},
+            {sourceNumber("auger_density_dependence.electron.reference_density_cm3", 1e18L),
+             sourceNumber("auger_density_dependence.hole.reference_density_cm3", 1e18L)}} :
+        ArithmeticBoltzmannSourceCoefficients{
         coefficient("taun", sourceConfig.taun), coefficient("taup", sourceConfig.taup),
         {lifetime("electron", srh.electron), lifetime("hole", srh.hole)},
         {coefficient("auger_cn_m6_per_s", sourceConfig.augerCn),
@@ -361,6 +408,96 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         if (included[node])
             areas[node] = geometry.chargeVolumes[node] * length * length;
     const auto avalanche = detail::ialElementAvalancheOptionsFromConfig(config.impactIonization);
+    std::optional<ExtendedPhuMobMeshSupport> phumobMesh;
+    ArithmeticPhuMobTransportCoefficients phumobCoefficients{};
+    std::array<long double, 2> polyMobility{};
+    std::vector<unsigned char> omitAvalanche;
+    if (phumob) {
+        if (temperature != 300 || impact.drivingForce != "quasi_fermi_gradient" ||
+            impact.generation != "current_density" || impact.parameterSet != "default" ||
+            impact.aScale != 1 || impact.bScale != 1 ||
+            config.mobility.highFieldDrivingForce != "quasi_fermi_gradient" ||
+            config.recombinationMaterials != std::vector<std::string>{"Si"})
+            throw std::invalid_argument("Unsupported SLOT extended80 PhuMob physical settings");
+        phumobMesh = prepareExtendedPhuMobMesh(problem.mesh, length);
+        omitAvalanche.assign(phumobMesh->cells.size(), 1);
+        const auto phuParameter = [&](const std::string& key, long double fallback) {
+            return sourceNumber("mobility.phumob." + key, fallback);
+        };
+        const auto carrier = [&](auto& parameters, const std::string& name) {
+            parameters.muMax = phuParameter(name + ".mu_max_cm2_V_s", parameters.muMax * 1e4L) * 1e-4L;
+            parameters.muMin = phuParameter(name + ".mu_min_cm2_V_s", parameters.muMin * 1e4L) * 1e-4L;
+            parameters.nRef = phuParameter(name + ".n_ref_cm3", parameters.nRef * 1e-6L) * 1e6L;
+            parameters.theta = phuParameter(name + ".theta", parameters.theta);
+            parameters.alpha = phuParameter(name + ".alpha", parameters.alpha);
+        };
+        auto& bulk = phumobCoefficients.bulk;
+        carrier(bulk.electronArsenic, "electron_arsenic");
+        carrier(bulk.electronPhosphorus, "electron_phosphorus");
+        carrier(bulk.holeBoron, "hole_boron");
+        bulk.donorClusterReference = phuParameter("donor_cluster_reference_cm3", 4e20L) * 1e6L;
+        bulk.acceptorClusterReference = phuParameter("acceptor_cluster_reference_cm3", 7.2e20L) * 1e6L;
+        for (const auto& [key, value] : std::initializer_list<std::pair<const char*, long double*>>{
+                 {"donor_cluster_coefficient", &bulk.donorClusterCoefficient},
+                 {"acceptor_cluster_coefficient", &bulk.acceptorClusterCoefficient},
+                 {"electron_mass_ratio", &bulk.electronMassRatio}, {"hole_mass_ratio", &bulk.holeMassRatio},
+                 {"conwell_weisskopf_factor", &bulk.conwellWeisskopfFactor},
+                 {"brooks_herring_factor", &bulk.brooksHerringFactor},
+                 {"electron_hole_scattering_factor", &bulk.electronHoleScatteringFactor},
+                 {"hole_electron_scattering_factor", &bulk.holeElectronScatteringFactor},
+                 {"g_a", &bulk.gA}, {"g_b", &bulk.gB}, {"g_c", &bulk.gC}, {"g_alpha", &bulk.gAlpha},
+                 {"g_alpha_prime", &bulk.gAlphaPrime}, {"g_beta", &bulk.gBeta}, {"g_gamma", &bulk.gGamma}})
+            *value = phuParameter(key, *value);
+        const auto cFactor = std::pow(.01L, 5.L / 3);
+        phumobCoefficients.surface = {{{4.7500e5L, 5.8000e2L * cFactor, 1e6L, 1e6L, .125L, 1.L,
+            5.8200e10L, 2.L, 0, 5.8200e32L, 1e-8L, 1.L, 1.L},
+            {9.9250e4L, 2.9470e3L * cFactor, 1e6L, 1e6L, .0317L, 1.L,
+            2.0546e10L, 2.L, 0, 2.0546e32L, 1e-8L, 1.L, 1.L}}};
+        const auto switchField = sourceNumber("impact_ionization.switch_field_V_per_cm", 4e5L) * 100;
+        std::array<ArithmeticElementIonizationCurve*, 2> curves{
+            &phumobCoefficients.ionization.electron, &phumobCoefficients.ionization.hole};
+        for (int c = 0; c < 2; ++c) {
+            const std::string name = c == 0 ? "electron" : "hole";
+            auto& surface = phumobCoefficients.surface[c];
+            for (const auto& [key, value] : std::initializer_list<std::pair<const char*, long double*>>{
+                     {"B", &surface.B}, {"C", &surface.C}, {"N0", &surface.N0}, {"N2", &surface.N2},
+                     {"lambda", &surface.lambda}, {"k", &surface.k}, {"delta", &surface.delta},
+                     {"A", &surface.A}, {"alpha", &surface.alpha}, {"eta", &surface.eta},
+                     {"criticalLength", &surface.criticalLength}, {"acousticFactor", &surface.acousticFactor},
+                     {"roughnessFactor", &surface.roughnessFactor}})
+                *value = sourceNumber("mobility." + name + "_lombardi." + key, *value);
+            phumobCoefficients.highField[c] = {
+                sourceNumber("mobility." + name + "_saturation_velocity_cm_s", c == 0 ? 1.07e7L : 8.37e6L) * .01L,
+                sourceNumber("mobility." + name + "_field_beta", c == 0 ? 1.109L : 1.213L)};
+            const auto ionization = [&](const char* key, long double fallback) {
+                return 100 * sourceNumber("impact_ionization." + name + "_" + key, fallback);
+            };
+            *curves[c] = {ionization("a_low_cm_inv", c == 0 ? 7.03e5L : 1.582e6L),
+                          ionization("b_low_V_per_cm", c == 0 ? 1.231e6L : 2.036e6L),
+                          ionization("a_high_cm_inv", c == 0 ? 7.03e5L : 6.71e5L),
+                          ionization("b_high_V_per_cm", c == 0 ? 1.231e6L : 1.693e6L), switchField};
+        }
+        phumobCoefficients.ionization.minimumField_V_per_m =
+            100 * sourceNumber("impact_ionization.minimum_field_V_per_cm", 1.L);
+        std::ifstream materialFile(materialPath);
+        const auto materialInput = nlohmann::json::parse(materialFile);
+        const auto& list = materialInput.at("materials");
+        const auto poly = std::ranges::find_if(list, [](const auto& entry) {
+            return entry.at("name") == "PolySilicon";
+        });
+        if (poly == list.end())
+            throw std::invalid_argument("SLOT PhuMob requires a PolySilicon material definition");
+        const auto& mobility = poly->at("decimal_mobility_cm2_per_V_s");
+        polyMobility = {
+            1e-4L * decimalCompatibilityNumber(mobility.at(0), "PolySilicon electron mobility",
+                poly->at("electron_mobility_cm2_per_V_s").get<double>()),
+            1e-4L * decimalCompatibilityNumber(mobility.at(1), "PolySilicon hole mobility",
+                poly->at("hole_mobility_cm2_per_V_s").get<double>())};
+        out["arithmetic_phumob_cells"] = phumobMesh->cells.size();
+        out["avalanche_roundoff_factor"] = 64;
+        out["recover_jacobian_after_local_protection"] = true;
+        out["carrier_statistics"] = config.carrierStatistics.model;
+    }
     const auto withUnitPopulations = [&](const ExtendedPopulationState& point, const auto& evaluate) {
         if (!normalization)
             return evaluate(point);
@@ -369,7 +506,16 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         physical.concentrationScale_m3 = unitConcentration_m3;
         return evaluate(physical);
     };
-    const auto continuity = [&](const ExtendedPopulationState& point, ExtendedContactCurrents* allContacts = nullptr) {
+    const auto continuity = [&](const ExtendedPopulationState& point, ExtendedContactCurrents* allContacts = nullptr,
+                                bool recover = false) {
+        if (phumob) {
+            const auto mask = recover || impact.sourceJacobianMode == "frozen"
+                ? std::span<const unsigned char>(omitAvalanche) : std::span<const unsigned char>();
+            return assembleExtendedPhuMobPopulationContinuity(*phumobMesh, problem.doping, point, material,
+                phumobCoefficients, polyMobility, vt, temperature, config.mobility.useElectricFieldAtGradQfContacts(true),
+                impact.useElectricFieldAtGradQfContacts(true), sources, sourceCoefficients, port->node_ids, allContacts,
+                mask, ExtendedPhuMobTangentOptions{64.L, recover});
+        }
         return assembleExtendedIalPopulationContinuity(config.mobility, problem.mesh, problem.doping, point,
             material.electronIntrinsic, material.holeIntrinsic, length, unitConcentration_m3, vt, temperature,
             config.bandgapNarrowing.model != "none", config.mobility.ialmobTransportFeedbackDerivatives,
@@ -408,6 +554,13 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         corrector.refineToLinearGoal = true;
         corrector.refinementCorrections = std::max(corrector.refinementCorrections, 3);
     }
+    if (phumob)
+        corrector.afterLocalProtectionJacobian = [&](const ExtendedPopulationState& point) {
+            return withUnitPopulations(point, [&](const auto& physical) {
+                return assembleExtendedPopulationDevice(poisson, physical, material, targets, {},
+                    continuity(physical, nullptr, true), &geometry, equationScales).jacobian;
+            });
+        };
     const auto rawProtection = rawInput.value("population_update", WideJson::object());
     corrector.exactProtection = BasicPopulationTrialLimits<long double>{
         rawProtection.value("local_retained_fraction", 0.01L), rawProtection.value("fraction_tau", 0.99L),
@@ -459,12 +612,14 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         add("eQuasiFermiPotential", "V", [&](Index i) {
             const auto n = state.coordinates[nodes + i] * concentration_cm3;
             return n > 0 && material.electronIntrinsic[i] > 0
-                ? vt * (state.coordinates[i] - std::log(n / material.electronIntrinsic[i])) : 0.L;
+                ? vt * (state.coordinates[i] - std::log(n / material.electronIntrinsic[i]) -
+                    (phumob ? extendedFermiDegeneracy(n / material.electronDOS[i], statisticalModel).logCorrection : 0.L)) : 0.L;
         });
         add("hQuasiFermiPotential", "V", [&](Index i) {
             const auto p = state.coordinates[2 * nodes + i] * concentration_cm3;
             return p > 0 && material.holeIntrinsic[i] > 0
-                ? vt * (state.coordinates[i] + std::log(p / material.holeIntrinsic[i])) : 0.L;
+                ? vt * (state.coordinates[i] + std::log(p / material.holeIntrinsic[i]) +
+                    (phumob ? extendedFermiDegeneracy(p / material.holeDOS[i], statisticalModel).logCorrection : 0.L)) : 0.L;
         });
         const auto arrays = plot.pointArrayNames();
         std::vector<std::string> skipped;
@@ -540,10 +695,57 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         control.stopBelowMinimum = true;
         control.preserveStepAfterOutputClip = true;
         control.mandatoryPoints = checkpoints;
+        if (phumob) {
+            const auto retries = std::ceil((std::log(control.maxStep) - std::log(control.minStep)) /
+                                           -std::log(control.shrinkFactor));
+            if (!(retries >= 0 && retries <= std::numeric_limits<int>::max()))
+                throw std::invalid_argument("Unrepresentable extended PhuMob sweep retry budget");
+            control.maxRetries = static_cast<int>(retries);
+        }
         const auto predictor = sweep.value("continuation", nlohmann::json::object())
             .value("predictor", nlohmann::json::object()).value("mode", std::string("none"));
         if (predictor != "none" && predictor != "linear")
             throw std::invalid_argument("Unsupported extended SLOT fixed-bias predictor");
+        // During zero-drain gate prebias, the oxide separates the gate's
+        // conducting component from the isopotential silicon contacts.
+        std::vector<unsigned char> conductingMaterial;
+        if (phumob && currentContact == "gate") {
+            conductingMaterial.resize(problem.mesh.numNodes());
+            bool separate = true;
+            for (const auto& cell : phumobMesh->cells) {
+                const unsigned char region = cell.silicon ? 1 : 2;
+                for (const auto node : cell.nodes) {
+                    separate &= conductingMaterial[node] == 0 || conductingMaterial[node] == region;
+                    conductingMaterial[node] = region;
+                }
+            }
+            for (const auto& terminal : problem.mesh.contacts()) {
+                const auto spec = std::ranges::find(contacts, terminal.name, &ContactBoundarySpec::name);
+                if (spec == contacts.end()) {
+                    for (const auto node : terminal.node_ids)
+                        separate &= conductingMaterial[node] == 0;
+                    continue;
+                }
+                const bool gate = terminal.name == currentContact;
+                separate &= gate || contactBias(*spec) == 0;
+                for (const auto node : terminal.node_ids)
+                    separate &= conductingMaterial[node] == (gate ? 2 : 1);
+            }
+            if (!separate)
+                conductingMaterial.clear();
+        }
+        if (phumob) {
+            out["gate_prebias_equilibrium_seed"] = !conductingMaterial.empty();
+            control.attemptObserved = [&](const auto& event) {
+                std::cout << "extended80 fixed-bias " << (event.converged ? "accepted " : "rejected ")
+                          << print(event.voltage) << " V updates=" << event.newtonIterations
+                          << " retry=" << event.retryCount;
+                if (!event.converged)
+                    std::cout << " reason=" << result.failure << " backward=" << print(result.linearBackwardError)
+                              << " defect=" << print(result.scaledLinearDefect);
+                std::cout << std::endl;
+            };
+        }
         std::optional<ExtendedPopulationState> previous;
         detail::runTypedDCSweepStepControl<long double>(control, [&](long double bias, long double, int retry) {
             auto seed = state;
@@ -575,6 +777,20 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
                     }
                 }
                 try {
+                    if (!conductingMaterial.empty()) {
+                        const auto count = problem.mesh.numNodes();
+                        ExtendedVector qf = ExtendedVector::Zero(count);
+                        for (Index node = 0; node < count; ++node)
+                            if (conductingMaterial[node] == 2)
+                                qf[node] = bias / vt;
+                        auto equilibrium = solveExtendedEquilibriumPoissonSeed(poisson, problem.doping, material, targets,
+                            vt, unitConcentration_m3, corrector.maxUpdates, rawInput.value("abstol", 1e-10L), &geometry,
+                            seed.coordinates.head(count), qf);
+                        if (equilibrium.converged) {
+                            seed.coordinates = std::move(equilibrium.state.coordinates);
+                            seed.coordinates.tail(2 * count) /= concentration_cm3;
+                        }
+                    }
                     return solveExtendedFixedBiasNewton(seed, corrector, assemble);
                 } catch (const std::runtime_error& error) {
                     ExtendedFixedBiasNewtonResult failed;
@@ -596,6 +812,8 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
                 state = std::move(result.state);
                 recordAccepted();
             }
+            if (phumob)
+                return; // Every attempt was reported by the controller observer.
             std::cout << "extended80 fixed-bias " << (event.converged ? "accepted " : "rejected ")
                       << print(event.voltage) << " V updates=" << event.newtonIterations;
             if (!event.converged)

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <limits>
 #include <string>
+#include <utility>
 
 namespace vela {
 
@@ -92,6 +93,23 @@ Real fermiDiracHalfDerivative(Real eta);
 /// Second derivative of the same high-accuracy representation.
 Real fermiDiracHalfSecondDerivative(Real eta);
 Real inverseFermiDiracHalf(Real value);
+
+struct ExtendedFermiDegeneracy {
+    long double logCorrection; ///< eta - log(density / DOS).
+    long double logSlope; ///< Derivative of the correction with respect to log(density).
+};
+ExtendedFermiDegeneracy extendedFermiDegeneracy(long double densityOverDOS,
+    CarrierStatisticsModel model = CarrierStatisticsModel::FermiDirac);
+
+// Defining-integral statistics for the wide population solver.
+long double extendedFermiDiracHalf(long double eta);
+long double extendedFermiDiracHalfDerivative(long double eta);
+long double extendedFermiDiracHalfSecondDerivative(long double eta);
+long double extendedInverseFermiDiracHalf(long double value);
+/// Population and its derivative with respect to the reduced potential.
+std::pair<long double, long double> extendedFermiPopulation(
+    long double densityOfStates, long double intrinsic, long double reducedPotential,
+    CarrierStatisticsModel model = CarrierStatisticsModel::FermiDirac);
 
 /// All four operations resolve the same explicitly selected approximation.
 Real fermiDiracHalf(Real eta, CarrierStatisticsModel model);

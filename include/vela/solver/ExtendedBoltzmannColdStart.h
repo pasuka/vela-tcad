@@ -18,11 +18,11 @@ struct ExtendedOhmicTargets {
 
 ExtendedOhmicTargets buildExtendedZeroBiasOhmicTargets(
     const DeviceMesh& mesh, const DopingModel& doping,
-    const ExtendedBoltzmannMaterials& materials,
+    const ExtendedEquilibriumMaterials& materials,
     const std::vector<ContactBoundarySpec>& contacts,
     long double thermalVoltage_V, bool dominantSignedContactMean);
 
-struct ExtendedBoltzmannColdStartResult {
+struct ExtendedEquilibriumColdStartResult {
     // Populations are recovered from the final Poisson linearization, in the
     // same reference and units as the potential passed on to the coupled solve.
     ExtendedPopulationState state;
@@ -31,11 +31,21 @@ struct ExtendedBoltzmannColdStartResult {
     bool converged;
 };
 
-ExtendedBoltzmannColdStartResult solveExtendedBoltzmannColdStart(
+ExtendedEquilibriumColdStartResult solveExtendedEquilibriumColdStart(
     BasicPoissonAssembler<long double>& poisson, const DopingModel& doping,
-    const ExtendedBoltzmannMaterials& materials, const ExtendedOhmicTargets& targets,
+    const ExtendedEquilibriumMaterials& materials, const ExtendedOhmicTargets& targets,
     long double thermalVoltage_V, long double concentrationScale_m3,
     int maxUpdates, long double absoluteResidualTolerance,
     const ExtendedAveragePoissonGeometry* geometry = nullptr);
+
+// Seed a voltage stage in which each disconnected conducting component
+// remains at a single electrochemical potential.
+ExtendedEquilibriumColdStartResult solveExtendedEquilibriumPoissonSeed(
+    BasicPoissonAssembler<long double>& poisson, const DopingModel& doping,
+    const ExtendedEquilibriumMaterials& materials, const ExtendedOhmicTargets& targets,
+    long double thermalVoltage_V, long double concentrationScale_m3,
+    int maxUpdates, long double absoluteResidualTolerance,
+    const ExtendedAveragePoissonGeometry* geometry,
+    const ExtendedVector& initialPotential, const ExtendedVector& quasiFermi);
 
 } // namespace vela

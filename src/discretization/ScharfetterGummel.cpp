@@ -246,6 +246,40 @@ SGPopulationEdgeDifferential sgBoltzmannPopulationEdge(
     return {flux, left, right, potential1};
 }
 
+SGPopulationEdgeDifferential sgFermiPopulationEdge(
+    ArithmeticReal psi0, ArithmeticReal psi1, ArithmeticReal population0,
+    ArithmeticReal population1, ArithmeticReal intrinsic0, ArithmeticReal intrinsic1,
+    ArithmeticReal dos0, ArithmeticReal dos1, ArithmeticReal signedPotentialScale,
+    ArithmeticReal Vt, ArithmeticReal coefficient, CarrierStatisticsModel model)
+{
+    for (const auto value : {population0, population1, intrinsic0, intrinsic1, dos0, dos1, Vt})
+        if (!(value > 0) || !std::isfinite(value))
+            throw std::domain_error("Effective-band SG requires positive finite populations, material and scale");
+    const auto ratio0 = static_cast<long double>(population0) / dos0;
+    const auto ratio1 = static_cast<long double>(population1) / dos1;
+    const auto correction0 = extendedFermiDegeneracy(ratio0, model);
+    const auto correction1 = extendedFermiDegeneracy(ratio1, model);
+    const auto delta = static_cast<ArithmeticReal>(correction0.logCorrection - correction1.logCorrection);
+    const auto potentialFactor = signedPotentialScale / Vt;
+    const auto classical = (psi1 - psi0) * potentialFactor +
+        arithmeticPopulationLogRatio(intrinsic1, intrinsic0);
+    const auto drift = classical + delta;
+    const auto imbalance = (classical + arithmeticPopulationLogRatio(population0, population1)) + delta;
+    const auto flux = populationFluxFromLogImbalance(population0, population1, drift, coefficient, 0, 0, imbalance);
+    const auto driftDerivative = -coefficient * (arithmeticBernoulliDerivative(-drift) * population0 +
+                                                 arithmeticBernoulliDerivative(drift) * population1);
+    // At fixed electrostatic potential the effective band itself depends on
+    // concentration. A ratio that underflows still has the dilute derivative.
+    const auto slope = [](long double ratio, long double logSlope, ArithmeticReal density, ArithmeticReal dos) {
+        return static_cast<ArithmeticReal>(ratio >= std::numeric_limits<long double>::min()
+            ? logSlope / density : 1 / (2 * std::sqrt(2.L) * dos));
+    };
+    return {flux,
+            coefficient * longDoubleBernoulli(-drift) + driftDerivative * slope(ratio0, correction0.logSlope, population0, dos0),
+            -coefficient * longDoubleBernoulli(drift) - driftDerivative * slope(ratio1, correction1.logSlope, population1, dos1),
+            driftDerivative * potentialFactor};
+}
+
 numerics::SplitCoordinate sgPopulationEdgeDrift(
     Real psi0, Real psi1, Real signedPotentialScale, Real Vt,
     Real ni0, Real ni1, bool includeNiGradientDrift)

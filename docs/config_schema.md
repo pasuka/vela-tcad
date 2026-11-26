@@ -827,6 +827,15 @@ Newton numerical and geometry controls added for explicit validation profiles:
   stage and its inputs before accepting or reloading a state.
   Use `--arithmetic-capabilities` to inspect the scope and backends.
   Strict requests outside validated scope are rejected before acceptance.
+  The `slot_population_phumob_fixed_bias_v1` profile covers the isothermal
+  SLOT IdVd CMD with prescribed voltages, Fermi statistics evaluated with the
+  Joyce–Dixon approximation, PhuMob, Lombardi, high-field saturation, and
+  silicon SRH, Auger and avalanche. It uses the same wide state, solver
+  and archive interfaces for equilibrium, gate prebias, Load, and drain
+  continuation. On the iteration after a local concentration rewrite, the
+  profile freezes the high-field drive tangent and omits avalanche tangents
+  while evaluating all residual terms at the current state. The avalanche
+  current-norm tangent is regularized at the SG cancellation scale.
   The profile exports a subset of the Plot fields as Float64 display arrays
   and reports skipped fields. HDF5 remains the authoritative restart state.
   This profile enables coupled equation normalization when any normalization
@@ -2781,6 +2790,14 @@ The SLOT binding reads `Bennett.Ebgn` and `Bennett.Nref` from the active PAR
 or uses the silicon defaults. It retains the decimal inputs for the 80-bit
 assembly. This profile requires shared Si/PolySilicon coefficients and
 symmetric band-edge splitting.
+
+For the SLOT IdVd Fermi/PhuMob CMD profile, an omitted narrowing model selects
+Bennett–Wilson before material projection. Fermi statistics enables its
+intrinsic-density correction. An explicit `NoFermi` disables that correction
+while keeping Fermi populations. Explicit narrowing selections take precedence.
+With `ExtendedPrecision`, the generated stages request potential–concentration
+coordinates and effective-band SG. Production execution requires a runner that
+advertises end-to-end support for the coupled model.
 
 Other `sd-sim` profiles accept explicit Bennett–Wilson and explicit disabling.
 Handwritten JSON continues to select the model through

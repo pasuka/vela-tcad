@@ -4,6 +4,7 @@
 #include "vela/core/ArithmeticStageInput.h"
 #include "vela/core/PhysicalConstants.h"
 
+#include <array>
 #include <fstream>
 #include <cmath>
 #include <nlohmann/json.hpp>
@@ -244,7 +245,7 @@ Material templatesLdmosMaterialFromJson(const nlohmann::json& j,
          "electron_quantum_coefficient_mass_ratio",
          "thermal_conductivity_W_per_m_K", "specific_heat_J_per_kg_K",
          "mass_density_kg_per_m3", "provenance", "decimal_semiconductor",
-         "decimal_eps_r", "decimal_intrinsic_reference_potential_V"},
+         "decimal_eps_r", "decimal_intrinsic_reference_potential_V", "decimal_mobility_cm2_per_V_s"},
         context);
     if (!j.contains("name") || !j.at("name").is_string() ||
         j.at("name").get<std::string>().empty()) {
@@ -280,6 +281,16 @@ Material templatesLdmosMaterialFromJson(const nlohmann::json& j,
         const Real value = finiteInRange(
             j, "hole_mobility_cm2_per_V_s", 0.0, 1.0e9, context);
         mat.mup = units.m2PerVSToInternalMobility(value * 1.0e-4);
+    }
+    if (const auto exact = j.find("decimal_mobility_cm2_per_V_s"); exact != j.end()) {
+        if (!exact->is_array() || exact->size() != 2)
+            throw std::invalid_argument(context + ".decimal_mobility_cm2_per_V_s requires two decimal literals.");
+        const std::array keys{"electron_mobility_cm2_per_V_s", "hole_mobility_cm2_per_V_s"};
+        for (std::size_t i = 0; i < keys.size(); ++i) {
+            if (!exact->at(i).is_string() ||
+                parseArithmeticDecimal<double>(exact->at(i).get<std::string>()) != j.at(keys[i]).get<Real>())
+                throw std::invalid_argument(context + ".decimal_mobility_cm2_per_V_s differs from the numeric fields.");
+        }
     }
     if (j.contains("bandgap_eV"))
         mat.bandgap_eV = finiteInRange(j, "bandgap_eV", 0.0, 100.0, context);

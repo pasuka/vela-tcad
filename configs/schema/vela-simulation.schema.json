@@ -142,6 +142,15 @@
               "coupled_operator": {"const": "bvmethods_tri3_qf"},
               "method": {"enum": ["newton", "poisson_only"]},
               "carrier_statistics": {"type": "object", "properties": {"model": {"const": "fermi_dirac_joyce_dixon"}}, "required": ["model"]}}},
+            {"required": ["extended80_stage_profile", "arithmetic_precision", "require_end_to_end_precision",
+                           "coupled_operator", "carrier_statistics"], "properties": {
+              "extended80_stage_profile": {"const": "slot_population_phumob_fixed_bias_v1"},
+              "arithmetic_precision": {"const": "extended80"},
+              "require_end_to_end_precision": {"const": true},
+              "coupled_operator": {"const": "legacy"},
+              "carrier_statistics": {"type": "object", "properties": {
+                "model": {"const": "fermi_dirac_joyce_dixon"},
+                "transport": {"const": "effective_band_sg"}}, "required": ["model", "transport"]}}},
             {"properties": {
               "coupled_operator": {"const": "legacy"},
               "carrier_statistics": {"type": "object", "properties": {"model": {"enum": ["boltzmann", "fermi_dirac"]}}},
@@ -217,7 +226,7 @@
       "properties": {
         "grad_qf_contact_field": {"enum": ["electric_field", "quasi_fermi_gradient"], "default": "electric_field"},
         "arithmetic_precision": {"enum": ["double", "extended80"], "default": "double"},
-        "extended80_stage_profile": {"enum": ["slot_population_bvds_v1", "slot_population_fixed_bias_v1"]},
+        "extended80_stage_profile": {"enum": ["slot_population_bvds_v1", "slot_population_fixed_bias_v1", "slot_population_phumob_fixed_bias_v1"]},
         "extended80_linear_defect": {"enum": ["eft", "mp100"], "default": "eft", "description": "Linear defect accumulation for SLOT extended80 BVDS and fixed-bias stages."},
         "require_end_to_end_precision": {"type": "boolean", "default": false},
         "primary_variable_coordinates": {"enum": ["unit", "physical"], "description": "Population Newton coordinates; default unit for BVMethods population state, physical is the explicit rollback."},

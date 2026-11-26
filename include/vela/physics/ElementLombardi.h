@@ -13,9 +13,9 @@ inline bool usesElementDistanceLombardi(const MobilityModelConfig& c) {
 // The explicit element profile currently qualifies the carrier-independent
 // Enhanced Lombardi exponent (alpha=0). Carrier dependence still enters through
 // the full live PhuMob model. SI inputs and inverse SI mobility output.
-template<class T>
+template<class T, class Temperature, class Parameters>
 T elementLombardiInverse(const T& field,const T& distance,const T& impurity,
-                        double temperature,const LombardiParameters& p) {
+                        Temperature temperature,const Parameters& p) {
     using std::exp;using std::pow;
     if(p.alpha!=0 || p.B<=0 || p.C<0 || p.N0<=0 || p.N2<0 || p.delta<=0 ||
        p.eta<=0 || p.criticalLength<=0 || p.A<1 || p.acousticFactor<0 ||

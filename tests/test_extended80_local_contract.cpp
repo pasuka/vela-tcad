@@ -11,6 +11,7 @@
 #include "vela/equation/ExtendedAveragePoissonGeometry.h"
 #include "vela/simulation/ConfigParsing.h"
 #include "vela/equation/ExtendedPopulationDevice.h"
+#include "vela/equation/ExtendedPhuMobPopulation.h"
 #include "vela/solver/ExtendedSparseLu.h"
 #include "vela/solver/ExtendedBoltzmannColdStart.h"
 #include "vela/solver/ExtendedFixedBiasNewton.h"
@@ -20,6 +21,7 @@
 #include "vela/io/MeshReader.h"
 #include "vela/io/StateIdentity.h"
 #include "vela/physics/IalMobilityJson.h"
+#include "vela/physics/MobilityModel.h"
 #include "vela/physics/IalInterfaceGeometry.h"
 #include "vela/physics/RecombinationModel.h"
 #include "vela/simulation/DCSweep.h"
@@ -28,7 +30,9 @@
 #include "vela/simulation/BorderedLoadLineSystem.h"
 #include "vela/simulation/ExtendedBorderedLoadLine.h"
 #include "vela/simulation/CoupledLoadLine.h"
+#include <boost/math/quadrature/gauss_kronrod.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <filesystem>
@@ -309,6 +313,130 @@ TEST_CASE("Wide SG value and direct density Jacobian share edge operands", "[ext
                                         evaluate(0.15L, 2, 3 - h).flux) / (2 * h)) < 1e-11L);
 }
 
+TEST_CASE("Wide Fermi statistics match quadrature and retain sub-binary64 changes", "[extended80][fermi_dirac]") {
+    for (const auto eta : {-16.L, -4.01L, -4.L, -1.23L, 0.L, 1.L, 4.L, 8.L, 16.L,
+                           24.L, 32.L, 48.L, 64.L, 96.L, 127.9L, 128.L, 160.L}) {
+        CAPTURE(eta);
+        for (int order = 0; order <= 2; ++order) {
+            CAPTURE(order);
+            const auto integrand = [=](long double t) {
+                const auto x = eta - t*t;
+                const auto z = std::exp(-std::abs(x));
+                const auto occupation = (x >= 0 ? 1.L : z) / (1 + z);
+                const auto complement = (x >= 0 ? z : 1.L) / (1 + z);
+                return t*t * occupation * (order > 0 ? complement : 1.L)
+                    * (order == 2 ? complement - occupation : 1.L);
+            };
+            const auto reference = 4 / std::sqrt(std::acos(-1.L))
+                * boost::math::quadrature::gauss_kronrod<long double, 61>::integrate(
+                    integrand, 0.L, std::sqrt(std::max(0.L, eta) + 88), 14, 2e-17L);
+            const auto actual = order == 0 ? extendedFermiDiracHalf(eta)
+                : order == 1 ? extendedFermiDiracHalfDerivative(eta)
+                             : extendedFermiDiracHalfSecondDerivative(eta);
+            CHECK(std::abs(actual / reference - 1) < 3e-16L);
+        }
+        const auto back = extendedInverseFermiDiracHalf(extendedFermiDiracHalf(eta));
+        CHECK(std::abs(back - eta) < 8e-18L * std::max(1.L, std::abs(eta)));
+    }
+    const auto v = extendedFermiDiracHalf(1.L);
+    const auto perturbed = extendedFermiDiracHalf(1.L + low);
+    CHECK(perturbed > v);
+    CHECK(static_cast<double>(perturbed) == static_cast<double>(v));
+    CHECK(extendedInverseFermiDiracHalf(perturbed) > extendedInverseFermiDiracHalf(v));
+
+    constexpr long double ratio = 5.94882e-13L;
+    const auto inverse = extendedInverseFermiDiracHalf(ratio);
+    CHECK(inverse > std::log(ratio));
+    CHECK(std::abs(extendedFermiDiracHalf(inverse) / ratio - 1) < 3e-18L);
+    CHECK_THROWS_AS(extendedInverseFermiDiracHalf(0), std::invalid_argument);
+}
+
+TEST_CASE("Wide effective-band SG differentiates directly in potential and populations",
+          "[extended80][fermi_dirac]") {
+    const auto model = GENERATE(CarrierStatisticsModel::FermiDirac,
+                                CarrierStatisticsModel::FermiDiracJoyceDixon);
+    constexpr auto psi0 = 25.L;
+    constexpr long double vt = .025L;
+    constexpr auto step = 0x1p-19L;
+    for (const auto carrierSign : {1.L, -1.L}) {
+        const auto evaluate = [&](long double psi1, long double c0, long double c1) {
+            return sgFermiPopulationEdge(psi0, psi1, c0, c1, 0.2L, 0.24L, 2.L, 3.L,
+                                         carrierSign * vt, vt, 1.L, model);
+        };
+        constexpr auto psi1 = psi0 + .125L;
+        constexpr auto c0 = 2.L, c1 = 3.L;
+        const auto edge = evaluate(psi1, c0, c1);
+        CHECK(std::abs(edge.potential1 - (evaluate(psi1 + step, c0, c1).flux - evaluate(psi1 - step, c0, c1).flux)
+                  / (2 * step)) < 1e-10L);
+        CHECK(std::abs(edge.population0 - (evaluate(psi1, c0 + step, c1).flux - evaluate(psi1, c0 - step, c1).flux)
+                  / (2 * step)) < 1e-10L);
+        CHECK(std::abs(edge.population1 - (evaluate(psi1, c0, c1 + step).flux - evaluate(psi1, c0, c1 - step).flux)
+                  / (2 * step)) < 1e-10L);
+
+        const auto equilibrium = sgFermiPopulationEdge(psi0, psi0, 2, 2, 1, 1, 3, 3,
+                                                       carrierSign * vt, vt, 1, model);
+        CHECK(equilibrium.flux == 0);
+        const auto delta = std::nextafter(psi0, psi0 + 1) - psi0;
+        const auto moved = sgFermiPopulationEdge(psi0, psi0 + delta, 2, 2, 1, 1, 3, 3,
+                                                 carrierSign * vt, vt, 1, model);
+        CHECK(std::abs(moved.flux / delta - equilibrium.potential1) < 1e-17L);
+    }
+}
+
+TEST_CASE("Wide Joyce-Dixon reproduces both native branches and retains population low bits",
+          "[extended80][joyce_dixon]") {
+    constexpr auto model = CarrierStatisticsModel::FermiDiracJoyceDixon;
+    // Independent source-contact and free-node values captured from the IdVd first assembly.
+    const std::array ratios{3.323611697570837L, 8.764915966392259L, 12.84025628279254L};
+    const std::array nativeEta{2.3263533883959486L, 4.9632158469736979L, 6.4904333280957132L};
+    for (std::size_t i = 0; i < ratios.size(); ++i) {
+        const auto z = ratios[i];
+        const auto law = extendedFermiDegeneracy(z, model);
+        const auto eta = std::log(z) + law.logCorrection;
+        CHECK(std::abs(eta - nativeEta[i]) < 4e-15L);
+        const auto [population, slope] = extendedFermiPopulation(1.L, 1.L, eta, model);
+        CHECK(std::abs(population / z - 1) < 9e-18L);
+        CHECK(std::abs(slope * (1 + law.logSlope) / z - 1) < 9e-18L);
+        const auto h = 0x1p-17L * z;
+        const auto plus = extendedFermiDegeneracy(z + h, model).logCorrection;
+        const auto minus = extendedFermiDegeneracy(z - h, model).logCorrection;
+        CHECK(std::abs(z * (plus - minus) / (2 * h) - law.logSlope) < 2e-9L);
+    }
+    const auto f = [](long double eta) { return extendedFermiPopulation(1.L, 1.L, eta, model).first; };
+    CHECK(f(5.L + low) > f(5.L));
+    CHECK(static_cast<double>(f(5.L + low)) == static_cast<double>(f(5.L)));
+}
+
+TEST_CASE("Wide PhuMob shares the low-field law and resolves both population slopes",
+          "[extended80][phumob]") {
+    const ExtendedPhuMobScalarState state{5e23L, 3e23L, 2.4e23L, 7e22L, 300.L};
+    const ExtendedPhuMobParameters parameters;
+    for (const auto carrier : {CarrierType::Electron, CarrierType::Hole}) {
+        const auto sample = evaluateExtendedPhuMobScalar(carrier, state, parameters);
+        const auto legacy = evaluatePhuMobScalar(carrier, {5e23, 3e23, 2.4e23, 7e22, 300.});
+        CHECK(std::abs(sample.mobility / legacy.mobility - 1) < 3e-15L);
+        const auto slopes = evaluateExtendedPhuMobLogDensityDerivatives(carrier, state, parameters);
+        constexpr long double increment = 0x1p-16L;
+        for (const auto electron : {true, false}) {
+            auto high = state, low = state;
+            auto field = electron ? &ExtendedPhuMobScalarState::electrons : &ExtendedPhuMobScalarState::holes;
+            high.*field *= std::exp(increment);
+            low.*field *= std::exp(-increment);
+            const auto plus = evaluateExtendedPhuMobScalar(carrier, high, parameters).mobility;
+            const auto minus = evaluateExtendedPhuMobScalar(carrier, low, parameters).mobility;
+            const auto slope = electron ? slopes.electrons : slopes.holes;
+            const auto reference = (plus - minus) / (2 * increment);
+            CHECK(std::abs(slope / reference - 1) < 2e-9L);
+        }
+    }
+    auto perturbed = parameters;
+    perturbed.electronArsenic.muMax += low;
+    const auto initial = evaluateExtendedPhuMobScalar(CarrierType::Electron, {}, parameters);
+    const auto shifted = evaluateExtendedPhuMobScalar(CarrierType::Electron, {}, perturbed);
+    CHECK(shifted.mobility > initial.mobility);
+    CHECK(static_cast<double>(shifted.mobility) == static_cast<double>(initial.mobility));
+}
+
 TEST_CASE("Wide Tri3 local differentiation keeps near-equilibrium increments", "[extended80]") {
     using Dual = detail::BasicTri3LocalForwardDual<ArithmeticReal>;
     const auto delta = Dual::variable(1.0L + low, 1) - Dual::variable(1.0L, 0);
@@ -423,7 +551,7 @@ TEST_CASE("Wide cold start hands off authoritative potential and equilibrium pop
     DopingModel doping(mesh.numNodes());
     doping.setNodeDoping(1, 1, 0);
     constexpr auto vt = 0.025L + low;
-    ExtendedBoltzmannMaterials material;
+    ExtendedEquilibriumMaterials material;
     material.intrinsic = ExtendedVector::Ones(3);
     material.intrinsicPotential_V = ExtendedVector::Constant(3, vt * (1 + low));
     material.electronIntrinsic = ExtendedVector::Constant(3, std::exp(-(1 + low)));
@@ -441,9 +569,9 @@ TEST_CASE("Wide cold start hands off authoritative potential and equilibrium pop
     scaling.enabled = true;
     scaling.permittivityReference_F_per_m = constants::eps0;
     ArithmeticPoissonAssembler poisson(mesh, database, doping, {}, {}, {}, scaling, vt);
-    const auto limited = solveExtendedBoltzmannColdStart(poisson, doping, material, targets, vt, 1, 0, 1e-15L);
+    const auto limited = solveExtendedEquilibriumColdStart(poisson, doping, material, targets, vt, 1, 0, 1e-15L);
     CHECK_FALSE(limited.converged);
-    const auto cold = solveExtendedBoltzmannColdStart(poisson, doping, material, targets, vt, 2, 12, 1e-15L);
+    const auto cold = solveExtendedEquilibriumColdStart(poisson, doping, material, targets, vt, 2, 12, 1e-15L);
     REQUIRE(cold.converged);
     CHECK(cold.updates > 0);
     CHECK(cold.state.potentialScale_V == vt);
@@ -490,6 +618,49 @@ TEST_CASE("Wide cold start hands off authoritative potential and equilibrium pop
     CHECK(normalized.jacobian.coeff(4, 2) == physical.jacobian.coeff(4, 2) * scales.continuityRowFactor);
     CHECK(normalized.jacobian.coeff(4, 4) ==
           physical.jacobian.coeff(4, 4) * scales.continuityRowFactor * scales.concentration_cm3);
+
+    material.statistics = GENERATE(CarrierStatisticsModel::FermiDirac,
+                                   CarrierStatisticsModel::FermiDiracJoyceDixon);
+    material.electronDOS = ExtendedVector::Constant(3, 3.L + low);
+    material.holeDOS = ExtendedVector::Constant(3, 2.L);
+    const auto fermiTargets = buildExtendedZeroBiasOhmicTargets(mesh, doping, material, contacts, vt, true);
+    CHECK(std::abs(fermiTargets.electrons[0] - fermiTargets.holes[0]) < 4e-18L);
+    CHECK(fermiTargets.electrons[0] < targets.electrons[0]);
+    const auto fermi = solveExtendedEquilibriumColdStart(poisson, doping, material, fermiTargets, vt, 2, 16, 1e-15L);
+    REQUIRE(fermi.converged);
+    CHECK(fermi.state.coordinates[0] == *fermiTargets.potential[0]);
+    CHECK(fermi.state.coordinates[3] == fermiTargets.electrons[0]);
+    CHECK(fermi.state.coordinates[6] == fermiTargets.holes[0]);
+
+    constexpr auto contactShift = 0.125L;
+    auto biasedTargets = fermiTargets;
+    *biasedTargets.potential[0] += contactShift;
+    const auto biased = solveExtendedEquilibriumPoissonSeed(poisson, doping, material, biasedTargets,
+        vt, 2, 16, 1e-15L, nullptr, fermi.state.coordinates.head(3),
+        ExtendedVector::Constant(3, contactShift));
+    REQUIRE(biased.converged);
+    CHECK(biased.state.coordinates[0] == *biasedTargets.potential[0]);
+    CHECK(((biased.state.coordinates.head(3) - fermi.state.coordinates.head(3)).array() - contactShift)
+              .abs().maxCoeff() < 1e-12L);
+    CHECK(biased.state.coordinates.tail(6).isApprox(fermi.state.coordinates.tail(6), 1e-12L));
+
+    ExtendedVector psi = fermi.state.coordinates.head(3);
+    const ExtendedVector zero = ExtendedVector::Zero(3);
+    const auto assemble = [&](const ExtendedVector& potential) {
+        return poisson.linearizeFermiEquilibrium(potential, zero, zero, material.electronIntrinsic,
+            material.holeIntrinsic, material.electronDOS, material.holeDOS, vt, {},
+            ArithmeticPoissonAssembler::DirichletCoordinate::PhysicalVoltage, nullptr, material.statistics);
+    };
+    const auto equilibrium = assemble(psi);
+    CHECK(fermi.state.coordinates.segment(3, 3) == equilibrium.electrons);
+    CHECK(fermi.state.coordinates.tail(3) == equilibrium.holes);
+    constexpr auto step = 0x1p-19L;
+    psi[1] += step;
+    const auto plus = assemble(psi);
+    psi[1] -= 2 * step;
+    const auto minus = assemble(psi);
+    const auto difference = (minus.rhs[1] - plus.rhs[1]) / (2 * step);
+    CHECK(std::abs(difference / equilibrium.jacobian.coeff(1, 1) - 1) < 1e-10L);
 }
 
 TEST_CASE("Extended fixed-bias Newton retains the direction and rejects an exhausted budget", "[extended80]") {
@@ -818,7 +989,7 @@ TEST_CASE("Material lookup preserves bound operating-temperature PAR values", "[
     DopingModel doping(mesh.numNodes());
     doping.setNodeDopingFromDecimal(2, "1e23", "1e22");
     const auto bgn = bandgapNarrowingConfig("old_slotboom");
-    const auto wide = buildExtendedBoltzmannMaterials(mesh, db, doping, bgn, 300.L, .025L);
+    const auto wide = buildExtendedEquilibriumMaterials(mesh, db, doping, bgn, 300.L, .025L);
     CHECK(wide.intrinsic[0] == 0);
     CHECK(wide.intrinsic[2] > wide.intrinsic[1]);
     CHECK(wide.intrinsic[1] == exact->intrinsicDensity_internal);
@@ -840,19 +1011,29 @@ TEST_CASE("Material lookup preserves bound operating-temperature PAR values", "[
     // Strong compensation puts the total above the threshold while leaving zero net charge.
     doping.setNodeDopingFromDecimal(2, "5e24", "5e24");
     doping.setNodeDopingFromDecimal(3, "1.581e24", "1.581e24");
-    const auto narrowed = buildExtendedBoltzmannMaterials(mesh, db, doping, bennett, 300.L, .025L, coefficients);
+    const auto narrowed = buildExtendedEquilibriumMaterials(mesh, db, doping, bennett, 300.L, .025L, coefficients);
     const long double logRatio = std::log(1e25L / 3.162e24L);
     const long double expected = std::exp(6.84e-3L * logRatio * logRatio / .05L);
     CHECK(std::abs(narrowed.intrinsic[2] / exact->intrinsicDensity_internal - expected) < 1e-18L);
     CHECK(narrowed.intrinsic[3] == exact->intrinsicDensity_internal);
-    const auto disabled = buildExtendedBoltzmannMaterials(
+    const auto disabled = buildExtendedEquilibriumMaterials(
         mesh, db, doping, bandgapNarrowingConfig("none"), 300.L, .025L);
     CHECK(disabled.intrinsic[2] == exact->intrinsicDensity_internal);
+
+    auto apparent = bennett;
+    apparent.fermiStatisticsCorrection = true;
+    constexpr auto jd = CarrierStatisticsModel::FermiDiracJoyceDixon;
+    doping.setNodeDoping(2, 10 * exact->electronsDOS_internal, 0);
+    const auto physical = buildExtendedEquilibriumMaterials(mesh, db, doping, bennett, 300.L, .025L, coefficients);
+    const auto corrected = buildExtendedEquilibriumMaterials(mesh, db, doping, apparent, 300.L, .025L, coefficients, jd);
+    const auto donors = doping.dopingOperandsForAssembly(2)[0];
+    const auto gamma = extendedFermiDegeneracy(donors / exact->electronsDOS_internal, jd).logCorrection;
+    CHECK(std::abs(2 * std::log(corrected.electronIntrinsic[2] / physical.electronIntrinsic[2]) - gamma) < 4e-18L);
 
     const auto replacement = db.getMaterial("PolySi");
     db.addMaterial(replacement);
     CHECK(db.decimalSemiconductor("PolySi", 300) == nullptr);
-    CHECK_THROWS_AS(buildExtendedBoltzmannMaterials(mesh, db, doping, bgn, 300.L, .025L),
+    CHECK_THROWS_AS(buildExtendedEquilibriumMaterials(mesh, db, doping, bgn, 300.L, .025L),
                     std::invalid_argument);
 }
 
@@ -1138,4 +1319,182 @@ TEST_CASE("Direct concentration SRH and Auger retain the side of equilibrium", "
     const auto minus = evaluate(1.3L,1.4L-h);
     CHECK(std::abs((plus.srh-minus.srh)/(2.L*h)-at.dSrhDp) < 1e-12L);
     CHECK(std::abs((plus.auger-minus.auger)/(2.L*h)-at.dAugerDp) < 1e-10L);
+}
+
+TEST_CASE("Wide PhuMob triangle includes surface, high-field and avalanche derivatives",
+          "[extended80][phumob]") {
+    const auto model = GENERATE(CarrierStatisticsModel::FermiDirac,
+                                CarrierStatisticsModel::FermiDiracJoyceDixon);
+    ArithmeticPhuMobTransportCoefficients coefficients{};
+    const ArithmeticPhuMobTransportCoefficients::Lombardi surface{
+        2e6L, 8.L, 1e23L, 1e20L, 0.1L, 1.L, 2e14L, 2.L, 0, 1e22L, 2e-8L, 1.L, 1.L};
+    coefficients.surface = {surface, surface};
+    coefficients.highField = {{{1e5L, 1.3L}, {8e4L, 1.2L}}};
+    const ArithmeticElementIonizationCurve curve{7e7L, 1.1e8L, 7e7L, 1.1e8L, 4e7L};
+    coefficients.ionization = {curve, curve, 100.L};
+    const ArithmeticPhuMobTriangle geometry{
+        {{{0, 0}, {8e-9L, 0}, {0, 9e-9L}}},
+        {0.6L, 0.3L, 0.4L}, {1e-17L, 2e-17L, 3e-17L}, {1e-9L, 5e-9L, 2e-9L},
+        {1.L, 0.L}, {1 / 8e-9L, 0, 0, 1 / 9e-9L}, 2, true};
+    const std::array<ArithmeticFermiPopulationVertex, 3> point{{
+        {.4L, 4e23L, 4e22L, 2e20L, 3e20L, 8e23L, 1e24L, 7e23L, 2e22L},
+        {.55L, 8e23L, 6e22L, 3e20L, 2e20L, 1.2e24L, 1e24L, 8e23L, 1e22L},
+        {.51L, 7e23L, 5e22L, 2e20L, 3e20L, 9e23L, 9e23L, 6e23L, 2e22L}}};
+    for (auto fallback : {false, true}) {
+        const auto evaluate = [&](const auto& z) {
+            return evaluateArithmeticPhuMobTriangle(geometry, z, coefficients, .02585L, 300.L,
+                                                     fallback, fallback, 1.L, model);
+        };
+        const auto original = evaluate(point);
+        CHECK(original.avalanche[2].value > 0);
+        const auto withOptions = [&](const ExtendedPhuMobTangentOptions& options) {
+            return evaluateArithmeticPhuMobTriangle(geometry, point, coefficients, .02585L, 300.L,
+                                                     fallback, fallback, 1.L, model, options);
+        };
+        const auto regularized = withOptions({1e38L, false, 1});
+        const auto frozen = withOptions({0, true, 1});
+        const auto inactive = withOptions({0, false, 0});
+        CHECK(regularized.avalanche[2].value == original.avalanche[2].value);
+        CHECK(regularized.avalanche[2].derivative != original.avalanche[2].derivative);
+        for (int k = 0; k < 3; ++k) {
+            CHECK(frozen.avalanche[k].value == original.avalanche[k].value);
+            CHECK(inactive.avalanche[k].value == 0);
+            for (const auto slope : inactive.avalanche[k].derivative)
+                CHECK(slope == 0);
+            for (int carrier = 0; carrier < 2; ++carrier) {
+                const auto& edge = original.edgeFlux[carrier][k];
+                CHECK(regularized.edgeFlux[carrier][k].value == edge.value);
+                CHECK(regularized.edgeFlux[carrier][k].derivative == edge.derivative);
+                CHECK(frozen.edgeFlux[carrier][k].value == edge.value);
+                CHECK(inactive.edgeFlux[carrier][k].derivative == edge.derivative);
+            }
+        }
+        constexpr auto scale = 0x1p-17L;
+        const auto check = [&](const auto& value, const auto& plus, const auto& minus, int column, long double h) {
+            const auto analytic = value.derivative[column] * h;
+            const auto numerical = (plus.value - minus.value) / 2;
+            const auto tolerance = 2e-7L * std::max({std::abs(analytic), std::abs(numerical),
+                                                    1e-6L * std::abs(value.value * scale)});
+            CAPTURE(fallback, column, analytic, numerical, tolerance);
+            CHECK(std::abs(analytic - numerical) <= tolerance);
+        };
+        for (int column = 0; column < 9; ++column) {
+            auto high = point, lowPoint = point;
+            const int node = column / 3;
+            const std::array fields{&ArithmeticFermiPopulationVertex::potential,
+                                    &ArithmeticFermiPopulationVertex::electrons,
+                                    &ArithmeticFermiPopulationVertex::holes};
+            const auto field = fields[column % 3];
+            const auto h = scale * (point[node].*field);
+            high[node].*field += h;
+            lowPoint[node].*field -= h;
+            const auto plus = evaluate(high), minus = evaluate(lowPoint);
+            for (int k = 0; k < 3; ++k) {
+                for (int c = 0; c < 2; ++c)
+                    check(original.edgeFlux[c][k], plus.edgeFlux[c][k], minus.edgeFlux[c][k], column, h);
+                check(original.avalanche[k], plus.avalanche[k], minus.avalanche[k], column, h);
+            }
+        }
+    }
+}
+
+TEST_CASE("Wide Fermi population sources retain degeneracy and direct concentration derivatives",
+          "[extended80][phumob]") {
+    const auto model = GENERATE(CarrierStatisticsModel::FermiDirac,
+                                CarrierStatisticsModel::FermiDiracJoyceDixon);
+    RecombinationModelConfig config;
+    config.mechanisms = {"srh", "auger"};
+    config.augerWithGeneration = true;
+    const ArithmeticBoltzmannSourceCoefficients coefficients{
+        2e-7L, 3e-7L, {}, {1e-31L, 2e-31L}, {}, {1e18L, 1e18L}};
+    constexpr long double n = 2e18L, p = 9e16L, nc = 7e17L, nv = 4e17L, ni = 2e17L;
+    for (const auto product : {"generalized_fermi", "classical_np"}) {
+        config.augerExcessProduct = product;
+        const RecombinationModel sources(config);
+        const auto evaluate = [&](long double electron, long double hole) {
+            return sources.fermiPopulationLinearization(electron, hole, ni, nc, nv, 0, 0, coefficients, model);
+        };
+        const auto original = evaluate(n,p);
+        const auto equilibrium = ni * ni * std::exp(
+            -extendedFermiDegeneracy(n / nc, model).logCorrection - extendedFermiDegeneracy(p / nv, model).logCorrection);
+        CHECK(std::abs(original.srh / ((n*p-equilibrium) /
+            (coefficients.taup * (n + ni * std::exp(-extendedFermiDegeneracy(n / nc, model).logCorrection)) +
+             coefficients.taun * (p + ni * std::exp(-extendedFermiDegeneracy(p / nv, model).logCorrection)))) - 1) < 1e-17L);
+        for (const bool electron : {false, true}) {
+            const auto h = 0x1p-17L * (electron ? n : p);
+            const auto plus = electron ? evaluate(n + h,p) : evaluate(n,p + h);
+            const auto minus = electron ? evaluate(n - h,p) : evaluate(n,p - h);
+            const auto dSrh = electron ? original.dSrhDn : original.dSrhDp;
+            const auto dAuger = electron ? original.dAugerDn : original.dAugerDp;
+            CHECK(std::abs(dSrh / ((plus.srh - minus.srh) / (2*h)) - 1) < 2e-9L);
+            CHECK(std::abs(dAuger / ((plus.auger - minus.auger) / (2*h)) - 1) < 2e-9L);
+        }
+    }
+}
+
+TEST_CASE("Fixed-bias derivative recovery follows only accepted local positivity rewrites", "[extended80]") {
+    ExtendedPopulationState seed;
+    seed.coordinates = (ExtendedVector(3) << 0, 1, 1).finished();
+    seed.potentialScale_V = 1;
+    seed.concentrationScale_m3 = 1e6;
+    ExtendedFixedBiasNewtonConfig config{3, 3, 0, 1.L, 1e-10L, 1e-8L, {5, 1, 1, 1e-6L}, {}, false};
+    config.exactProtection = BasicPopulationTrialLimits<long double>{.01L, .99L, 0};
+    std::vector<bool> recovered;
+    std::vector<std::size_t> protectedHoles;
+    std::vector<long double> alphas, residuals;
+    config.observeAcceptedUpdate = [&](const auto&, const auto& observation) {
+        recovered.push_back(observation.usedRecoveryJacobian);
+        protectedHoles.push_back(observation.protectedHoles);
+        alphas.push_back(observation.alpha);
+        residuals.push_back(observation.residual[2]);
+    };
+    int calls = 0;
+    config.afterLocalProtectionJacobian = [&](const auto& state) {
+        ++calls;
+        CHECK(state.coordinates[2] == .01L);
+        ExtendedSparseMatrix result(3, 3);
+        result.setIdentity();
+        result.coeffRef(2, 2) = 2;
+        return result;
+    };
+    const auto assemble = [&](const auto& state) {
+        ExtendedPopulationDeviceSystem frame;
+        frame.jacobian.resize(3, 3);
+        frame.jacobian.setIdentity();
+        const auto p = state.coordinates[2];
+        const auto residual = config.lineSearch ? (p == 1 ? 1.1L : p < .03L ? 2.L : p / 100)
+                                               : (p == 1 ? 2.L : p / 2);
+        frame.residual = (ExtendedVector(3) << 0, 0, residual).finished();
+        frame.electronFree = frame.holeFree = {true};
+        return frame;
+    };
+    SECTION("An accepted local rewrite enables recovery for the following update") {
+        const auto result = solveExtendedFixedBiasNewton(seed, config, assemble);
+        REQUIRE(result.updates == 3);
+        CHECK(calls == 1);
+        CHECK(recovered == std::vector<bool>{false, true, false});
+        CHECK(protectedHoles == std::vector<std::size_t>{1, 0, 0});
+        CHECK(residuals[0] == .005L);
+        CHECK(std::abs(result.state.coordinates[2] - .00375L) < 1e-19L);
+    }
+    SECTION("A rewritten but rejected trial cannot enable recovery") {
+        config.lineSearch = true;
+        config.maxUpdates = 2;
+        const auto result = solveExtendedFixedBiasNewton(seed, config, assemble);
+        REQUIRE(result.updates == 2);
+        CHECK(calls == 0);
+        CHECK(recovered == std::vector<bool>{false, false});
+        CHECK(protectedHoles == std::vector<std::size_t>{0, 0});
+        CHECK(alphas.front() == .5L);
+    }
+    SECTION("A fraction-to-boundary cap cannot enable recovery") {
+        config.protection.protection = "fraction_to_boundary";
+        config.maxUpdates = 2;
+        const auto result = solveExtendedFixedBiasNewton(seed, config, assemble);
+        REQUIRE(result.updates == 2);
+        CHECK(calls == 0);
+        CHECK(recovered == std::vector<bool>{false, false});
+        CHECK(protectedHoles == std::vector<std::size_t>{0, 0});
+        CHECK(alphas.front() < 1);
+    }
 }

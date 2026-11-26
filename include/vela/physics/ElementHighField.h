@@ -13,8 +13,8 @@ inline bool usesElementHighField(const MobilityModelConfig& c) {
 }
 // F and velocity use the active unit system. The calibrated 1 V/cm
 // branch is deliberately discontinuous; derivatives below are branch-local.
-template<class T> T elementCanali(const T& low,const T& field,
-    const FieldMobilityParameters& p,Real cutoff) {
+template<class T, class Parameters, class Cutoff> T elementCanali(const T& low,const T& field,
+    const Parameters& p,Cutoff cutoff) {
     using std::pow;
     if(!(p.saturationVelocity>0.) || !(p.beta>1.) || !(cutoff>0.))
         throw std::invalid_argument("Element Canali requires positive vsat, beta > 1 and cutoff");

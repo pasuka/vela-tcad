@@ -811,6 +811,15 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
                 material_report["arithmetic_input"] = arithmetic
             if extended80_temperature_literal is not None:
                 entry["decimal_semiconductor"] = {**arithmetic, "temperature_K": extended80_temperature_literal}
+        if extended80_temperature_literal is not None:
+            for section, parameter, field in (("Epsilon", "epsilon", "decimal_eps_r"),
+                                               ("ConstantMobility", "mumax", "decimal_mobility_cm2_per_V_s")):
+                operand = next((p for p in merged.get(section, {}).values()
+                                if p.raw_name == parameter), None)
+                if operand is not None:
+                    literals = _arithmetic_operand(operand)["literals"]
+                    if literals:
+                        entry[field] = literals if field.startswith("decimal_mobility") else literals[0]
         materials_out.append(entry)
         report["materials"].append(material_report)
 
@@ -845,12 +854,14 @@ def _route_solver_parameter(report: dict, material: str, section: str, param: _P
     values = _numbers(param.values)
     targets = _split_target(target, len(values))
     carriers = ["electron", "hole"] if len(values) == 2 else [None]
-    for value, path, carrier in zip(values, targets, carriers):
+    literals = _arithmetic_operand(param)["literals"]
+    for index, (value, path, carrier) in enumerate(zip(values, targets, carriers)):
         report["solver_parameters"].append({
             "material": material, "section": section, "parameter": param.raw_name, "variant": param.variant,
             "carrier": carrier, "target": path, "value_par": value, "unit_par": unit_par,
             "value_si": value * factor, "unit_si": unit_si, "status": status, "origin": param.origin,
             "source": param.source,
+            **({"decimal_par": literals[index]} if len(literals) == len(values) else {}),
         })
     if section == "Auger":
         _finish_auger(report, material, temperature_K)

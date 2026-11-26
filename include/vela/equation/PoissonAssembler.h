@@ -6,6 +6,7 @@
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
+#include "vela/physics/CarrierStatistics.h"
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -150,6 +151,18 @@ public:
         DirichletCoordinate coordinate = DirichletCoordinate::PhysicalVoltage,
         const ExtendedAveragePoissonGeometry* geometry = nullptr);
 
+    /// Fermi-Dirac counterpart. Intrinsic prefactors include the material
+    /// reference shift; DOS and prefactors use the same concentration scale.
+    /// A node without mobile charge has zero prefactors and zero DOS.
+    EquilibriumLinearization linearizeFermiEquilibrium(
+        const Vector& potential, const Vector& electronQf, const Vector& holeQf,
+        const Vector& electronIntrinsic, const Vector& holeIntrinsic,
+        const Vector& electronDOS, const Vector& holeDOS,
+        Scalar thermalVoltage_V, const std::unordered_map<Index, Scalar>& dirichlet,
+        DirichletCoordinate coordinate = DirichletCoordinate::PhysicalVoltage,
+        const ExtendedAveragePoissonGeometry* geometry = nullptr,
+        CarrierStatisticsModel model = CarrierStatisticsModel::FermiDirac);
+
     const Matrix& matrix() const { return A_; }
     const Vector& rhs() const { return b_; }
     Scalar potentialScale_V() const { return scaling_.enabled ? potentialScale_V_ : Scalar(1); }
@@ -162,6 +175,12 @@ public:
     Scalar mobileChargeWeight(Index node, const ExtendedAveragePoissonGeometry& geometry) const;
 
 private:
+    template<class Population>
+    EquilibriumLinearization linearizeEquilibrium(
+        const Vector& potential, const Vector& electronQf, const Vector& holeQf,
+        Scalar thermalVoltage_V, const std::unordered_map<Index, Scalar>& dirichlet,
+        DirichletCoordinate coordinate, const ExtendedAveragePoissonGeometry* geometry,
+        Population population);
     void assemble(const ExtendedAveragePoissonGeometry* geometry);
     Scalar mobileChargeScale(const ExtendedAveragePoissonGeometry* geometry = nullptr) const;
     const DeviceMesh&       mesh_;

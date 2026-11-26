@@ -50,6 +50,7 @@ ExtendedFixedBiasNewtonResult solveExtendedPopulationNewton(
         config.updateError.digits < 0 || config.updateError.digits > 15 ||
         !validPositive(config.updateError.potential_V) || !validPositive(config.updateError.electron_cm3) ||
         !validPositive(config.updateError.hole_cm3) ||
+        (circuit && config.afterLocalProtectionJacobian) ||
         (config.rhsGrowth && (!circuit || !validPositive(config.rhsGrowth->factor) || config.rhsGrowth->factor < 1)))
         throw std::invalid_argument("Invalid extended fixed-bias Newton settings");
     validatePopulationUpdate(config.protection);
@@ -76,7 +77,14 @@ ExtendedFixedBiasNewtonResult solveExtendedPopulationNewton(
             circuit->direction * circuit->resistance_ohm_um, current, state.supplyBias_V).voltage_V : 0.L;
     };
     ExtendedVector rhsGrowthScale;
+    bool useRecoveryJacobian = false;
     for (int update = 0; update < config.maxUpdates; ++update) {
+        if (useRecoveryJacobian) {
+            auto replacement = config.afterLocalProtectionJacobian(result.state);
+            if (replacement.rows() != count || replacement.cols() != count)
+                throw std::invalid_argument("Invalid fixed-bias recovery Jacobian dimensions");
+            frame.device.jacobian = std::move(replacement);
+        }
         ExtendedVector columns = ExtendedVector::Ones(count + 1);
         for (Eigen::Index i = nodes; i < count; ++i)
             if (result.state.coordinates[i] > 0)
@@ -118,7 +126,9 @@ ExtendedFixedBiasNewtonResult solveExtendedPopulationNewton(
         };
         result.scaledResidual = scaledNorm(frame.device.residual);
         const ExtendedVector direction = linear.update.head(count);
+        const auto residualBefore = result.scaledResidual;
         bool accepted = false;
+        std::size_t protectedElectrons = 0, protectedHoles = 0;
         const int maxBacktracks = config.lineSearch ? config.maxBacktracks : 0;
         for (int attempt = 0; attempt <= maxBacktracks; ++attempt) {
             auto trial = result.state;
@@ -150,6 +160,8 @@ ExtendedFixedBiasNewtonResult solveExtendedPopulationNewton(
                 result.scaledResidual = merit;
                 result.acceptedAlpha = protectedTrial.alpha;
                 ++result.updates;
+                protectedElectrons = protectedTrial.protectedElectrons.size();
+                protectedHoles = protectedTrial.protectedHoles.size();
                 if (auto& growth = result.rhsGrowth) {
                     const auto norm = std::max(
                         frame.device.residual.cwiseProduct(rhsGrowthScale.head(count)).cwiseAbs().maxCoeff(),
@@ -174,6 +186,11 @@ ExtendedFixedBiasNewtonResult solveExtendedPopulationNewton(
             result.failure = "extended fixed-bias line search rejected update";
             return result;
         }
+        if (config.observeAcceptedUpdate)
+            config.observeAcceptedUpdate(result.state, {result.updates, useRecoveryJacobian,
+                protectedElectrons, protectedHoles, result.acceptedAlpha, result.updateError.rms,
+                residualBefore, result.scaledResidual, frame.device.residual});
+        useRecoveryJacobian = config.afterLocalProtectionJacobian && (protectedElectrons || protectedHoles);
         if (result.updateError.valid && result.updateError.rms < 1 &&
             (!circuit || !circuit->enforceLoadLine ||
              std::abs(loadResidual(result.state, frame.current_A_per_um)) <= circuit->tolerance_V)) {

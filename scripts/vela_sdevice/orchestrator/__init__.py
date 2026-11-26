@@ -1,5 +1,6 @@
 """SDevice frontend gates and stage execution (WP5)."""
 from __future__ import annotations
+import csv
 import json
 from decimal import Decimal
 from hashlib import sha256
@@ -30,6 +31,48 @@ from .arithmetic_input import collect_effective_doping, collect_input, collect_s
 from .slot_ialmob import bind_slot_stage_inputs, check_slot_effective_doping, stage_slot_decimal_material
 from .support import RunError, RunLock, write_json
 
+
+def _is_slot_idvd_profile(ir, mesh):
+    keys = {entry["key"] for entry in ir["physics"]["effective"]}
+    return ({"Fermi", "Mobility.PhuMob", "Mobility.Enormal", "Mobility.HighFieldSaturation",
+             "Recombination.SRH", "Recombination.Auger", "Recombination.Avalanche"} <= keys
+            and {"Si", "PolySilicon"} <= set(mesh["materials"])
+            and {e["name"] for e in ir["electrodes"]} == {"source", "drain", "gate", "substrate"})
+
+
+def _slot_idvd_ohmic_polarity(work, contacts):
+    ohmic = {contact["name"] for contact in contacts if contact.get("type") == "ohmic"}
+    mesh = json.loads((work / "mesh.json").read_text(encoding="utf-8"))
+    nodes = {contact["name"]: contact["node_ids"] for contact in mesh["contacts"]
+             if contact["name"] in ohmic}
+    with (work / "doping.csv").open(encoding="utf-8", newline="") as source:
+        signs = {}
+        for row in csv.DictReader(source):
+            donors, acceptors = Decimal(row["donors_cm3"]), Decimal(row["acceptors_cm3"])
+            signs[int(row["node_id"])] = int(donors > acceptors) - int(donors < acceptors)
+    result = {}
+    for name, ids in nodes.items():
+        polarity = [signs[node] for node in ids]
+        result[name] = {"positive": polarity.count(1), "negative": polarity.count(-1),
+                        "zero": polarity.count(0)}
+    return result
+
+
+def _apply_slot_idvd_bgn_default(ir):
+    """Resolve the native SLOT IdVd default before PAR projection and deck emission."""
+    effective = ir["physics"]["effective"]
+    selectors = {entry["key"] for entry in effective
+                 if entry["key"].startswith("EffectiveIntrinsicDensity.")}
+    if selectors - {"EffectiveIntrinsicDensity.NoFermi"}:
+        return False
+    effective.append({
+        "key": "EffectiveIntrinsicDensity.BennettWilson",
+        "parameters": {},
+        "status": "supported",
+        "vela": "solver.bandgap_narrowing=bennett_wilson",
+    })
+    effective.sort(key=lambda entry: entry["key"])
+    return True
 
 def executable(name, bin_dir):
     variable = {
@@ -234,6 +277,11 @@ class DeviceRun:
             else:
                 if default_par is not None and not default_par.is_file():
                     raise RunError("E303", f"Material defaults file '{default_par}' is unavailable")
+                slot_idvd = _is_slot_idvd_profile(self.ir, mesh)
+                if slot_idvd and _apply_slot_idvd_bgn_default(self.ir):
+                    write_json(self.work / "execution_ir.json", self.ir)
+                    self.manifest["bandgap_narrowing_default"] = "bennett_wilson"
+                    self.log("PHYSICS", "Bennett–Wilson selected by the SLOT Fermi/PhuMob profile")
                 materials = emit_materials(self.cmd.parent / self.ir["files"]["parameter"]["resolved"],
                     default_par=default_par,
                     constants_profile=constants_profile,
@@ -243,6 +291,8 @@ class DeviceRun:
                     band_edge_sensitive=any(e["attributes"].get("schottky") for e in self.ir["electrodes"]),
                     capture_arithmetic_inputs=self.arithmetic_input is not None,
                     extended80_temperature_literal=self.source_temperature if precision == "extended80" else None)
+                if slot_idvd and precision == "extended80":
+                    materials.report["slot_idvd_population_coordinates"] = True
                 write_materials(self.work, materials)
                 material_report = materials.report
             self.manifest["doping"] = mesh["doping"]["resolution"]
@@ -257,6 +307,11 @@ class DeviceRun:
                     keep_intermediate=self.options.keep_intermediate, allow_lossy=self.options.allow_lossy,
                     defer_current_times=True, pn2d_population=getattr(self.options, "pn2d_population", False)),
                 sidecar=sidecar, slot_context=slot_context)
+            if material_report.get("slot_idvd_population_coordinates"):
+                contacts = self.result.decks[0]["contacts"]
+                audit = _slot_idvd_ohmic_polarity(self.work, contacts)
+                self.manifest["ohmic_contact_doping"] = audit
+                self.log("PHYSICS", f"Node-local Ohmic contact doping counts: {json.dumps(audit)}")
             self._write_plan()
             self.log("INFO", "Multi-stage PLT time resets per stage; sign factor +1 (WP10 pending)")
             if self.interrupted:
@@ -495,12 +550,16 @@ class DeviceRun:
                 required = ["mesh", "doping", "materials", "temperature", "contacts", "sweep"]
                 if solver.get("mobility", {}).get("model") == "ialmob":
                     required.append("ialmob")
+                elif solver.get("extended80_stage_profile") == "slot_population_phumob_fixed_bias_v1":
+                    required.append("phumob")
                 if deck["sweep"].get("initial_state_file") or deck["sweep"].get("write_state_file"):
                     required.append("state_archive")
                 missing = []
                 control = deck.get("decimal_stage_controls")
                 if not control or not all(key in control for key in ("contacts", "sweep", "solver")):
                     missing.append("decimal_stage_controls")
+                elif "phumob" in required and not control["solver"].get("slot_source_coefficients"):
+                    missing.append("slot_source_coefficients")
                 stages.append({"index": index, "profile": solver.get("extended80_stage_profile"), "required_consumers": required,
                                "binary64_consumers": list(required), "missing_inputs": missing})
             self.manifest["arithmetic"]["frontend_input_check"] = {"status": "blocked", "stages": stages}

@@ -4,6 +4,7 @@
 #include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/UnitScaling.h"
 #include "vela/physics/BandToBandTunnelingModel.h"
+#include "vela/physics/CarrierStatistics.h"
 #include <nlohmann/json_fwd.hpp>
 #include <array>
 #include <string>
@@ -191,12 +192,23 @@ public:
         ArithmeticReal donors, ArithmeticReal acceptors,
         const ArithmeticBoltzmannSourceCoefficients& coefficients) const;
 
+    BoltzmannRecombinationLinearization fermiPopulationLinearization(
+        ArithmeticReal n, ArithmeticReal p, ArithmeticReal ni, ArithmeticReal electronDOS,
+        ArithmeticReal holeDOS, ArithmeticReal donors, ArithmeticReal acceptors,
+        const ArithmeticBoltzmannSourceCoefficients& coefficients,
+        CarrierStatisticsModel model = CarrierStatisticsModel::FermiDirac) const;
+
     RecombinationLinearization electronLinearization(
         Real n, Real p, Real ni, Real dopingConcentration = 0.0) const;
     RecombinationLinearization holeLinearization(
         Real n, Real p, Real ni, Real dopingConcentration = 0.0) const;
 
 private:
+    BoltzmannRecombinationLinearization populationLinearization(
+        ArithmeticReal n, ArithmeticReal p, ArithmeticReal ni,
+        ArithmeticReal donors, ArithmeticReal acceptors,
+        const ArithmeticBoltzmannSourceCoefficients& coefficients,
+        ArithmeticReal electronDOS, ArithmeticReal holeDOS, CarrierStatisticsModel model) const;
     Real srhDenominator(Real n, Real p, Real ni,
                         Real dopingConcentration) const;
     Real srhGeneralizedDenominator(

@@ -27,7 +27,7 @@ struct ExtendedPopulationNormalization {
 // and columns in equation coordinates. Inputs remain in TCAD basic units.
 ExtendedPopulationDeviceSystem assembleExtendedPopulationDevice(
     const BasicPoissonAssembler<long double>& poisson, const ExtendedPopulationState& state,
-    const ExtendedBoltzmannMaterials& material, const ExtendedOhmicTargets& contacts,
+    const ExtendedEquilibriumMaterials& material, const ExtendedOhmicTargets& contacts,
     std::span<const Index> drivenContactNodes, const ExtendedIalPopulationContinuity& continuity,
     const ExtendedAveragePoissonGeometry* geometry = nullptr,
     const ExtendedPopulationNormalization* normalization = nullptr);

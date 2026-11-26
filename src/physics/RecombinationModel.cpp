@@ -1,4 +1,5 @@
 #include "vela/physics/RecombinationModel.h"
+#include "vela/physics/CarrierStatistics.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <cmath>
@@ -398,12 +399,33 @@ BoltzmannRecombinationLinearization RecombinationModel::boltzmannPopulationLinea
     ArithmeticReal donors, ArithmeticReal acceptors,
     const ArithmeticBoltzmannSourceCoefficients& coefficients) const
 {
+    return populationLinearization(n, p, ni, donors, acceptors, coefficients, 0, 0,
+                                   CarrierStatisticsModel::Boltzmann);
+}
+
+BoltzmannRecombinationLinearization RecombinationModel::fermiPopulationLinearization(
+    ArithmeticReal n, ArithmeticReal p, ArithmeticReal ni, ArithmeticReal electronDOS,
+    ArithmeticReal holeDOS, ArithmeticReal donors, ArithmeticReal acceptors,
+    const ArithmeticBoltzmannSourceCoefficients& coefficients, CarrierStatisticsModel model) const
+{
+    for (const auto value : {n, p, electronDOS, holeDOS})
+        if (!(value > 0) || !std::isfinite(value))
+            throw std::invalid_argument("Fermi source requires positive finite populations and DOS");
+    return populationLinearization(n, p, ni, donors, acceptors, coefficients, electronDOS, holeDOS, model);
+}
+
+BoltzmannRecombinationLinearization RecombinationModel::populationLinearization(
+    ArithmeticReal n, ArithmeticReal p, ArithmeticReal ni,
+    ArithmeticReal donors, ArithmeticReal acceptors,
+    const ArithmeticBoltzmannSourceCoefficients& coefficients,
+    ArithmeticReal electronDOS, ArithmeticReal holeDOS, CarrierStatisticsModel model) const
+{
     using Scalar = ArithmeticReal;
     for (const auto value : {n,p,ni,donors,acceptors})
         if (!std::isfinite(value) || value < 0)
-            throw std::invalid_argument("Boltzmann source requires finite nonnegative concentrations");
+            throw std::invalid_argument("Population source requires finite nonnegative concentrations");
     if (bandToBandEnabled())
-        throw std::invalid_argument("Boltzmann source applies to SRH and Auger");
+        throw std::invalid_argument("Population source applies to SRH and Auger");
 
     BoltzmannRecombinationLinearization out;
     const auto cap = static_cast<Scalar>(1.0e30L);
@@ -413,6 +435,25 @@ BoltzmannRecombinationLinearization RecombinationModel::boltzmannPopulationLinea
     const auto excess = [&](Scalar electrons, Scalar holes) {
         return std::fma(electrons,holes,-equilibrium)-equilibriumRounding;
     };
+    Scalar electronTrap = ni, holeTrap = ni;
+    Scalar dElectronTrap = 0, dHoleTrap = 0;
+    Scalar fermiExcess = 0, fermiSlopeN = p, fermiSlopeP = n;
+    const bool fermi = electronDOS > 0;
+    if (fermi) {
+        const auto electron = extendedFermiDegeneracy(static_cast<long double>(n) / electronDOS, model);
+        const auto hole = extendedFermiDegeneracy(static_cast<long double>(p) / holeDOS, model);
+        electronTrap *= static_cast<Scalar>(std::exp(-electron.logCorrection));
+        holeTrap *= static_cast<Scalar>(std::exp(-hole.logCorrection));
+        const auto slopeN = static_cast<Scalar>(electron.logSlope / n);
+        const auto slopeP = static_cast<Scalar>(hole.logSlope / p);
+        dElectronTrap = -electronTrap * slopeN;
+        dHoleTrap = -holeTrap * slopeP;
+        const auto equilibriumShift = static_cast<Scalar>(
+            std::expm1(-electron.logCorrection - hole.logCorrection));
+        fermiExcess = excess(n, p) - equilibrium * equilibriumShift;
+        fermiSlopeN += electronTrap * holeTrap * slopeN;
+        fermiSlopeP += electronTrap * holeTrap * slopeP;
+    }
     if (srhEnabled_) {
         const auto& cfg = config_.srhDopingDependence;
         const auto impurities = cfg.concentrationBasis == "net_doping"
@@ -424,22 +465,22 @@ BoltzmannRecombinationLinearization RecombinationModel::boltzmannPopulationLinea
             taun *= std::pow(ratio,Scalar(cfg.electronTemperatureExponent));
             taup *= std::pow(ratio,Scalar(cfg.holeTemperatureExponent));
         }
-        const auto denominator = taup*(n+ni)+taun*(p+ni);
+        const auto denominator = taup*(n+electronTrap)+taun*(p+holeTrap);
         if (std::abs(denominator) >= static_cast<Scalar>(1.0e-100L)) {
-            const auto exact = excess(n,p);
+            const auto exact = fermi ? fermiExcess : excess(n,p);
             const auto clipped = std::clamp(exact,-excessCap,excessCap);
             const auto inv = Scalar(1)/denominator;
             const auto slope = std::abs(exact)<excessCap ? inv : Scalar(0);
             out.srh = clipped*inv;
-            out.dSrhDn = slope*p-out.srh*inv*taup;
-            out.dSrhDp = slope*n-out.srh*inv*taun;
+            out.dSrhDn = slope*fermiSlopeN-out.srh*inv*taup*(1+dElectronTrap);
+            out.dSrhDp = slope*fermiSlopeP-out.srh*inv*taun*(1+dHoleTrap);
         }
     }
     if (augerEnabled_) {
         const bool classical = usesClassicalAugerExcessProduct();
         const auto electrons = classical ? std::min(n,cap) : n;
         const auto holes = classical ? std::min(p,cap) : p;
-        const auto exact = excess(electrons,holes);
+        const auto exact = fermi && !classical ? fermiExcess : excess(electrons,holes);
         if (config_.augerWithGeneration || exact > 0) {
             const auto clipped = std::clamp(exact,-excessCap,excessCap);
             const auto& a=config_.augerDensityDependence;
@@ -450,12 +491,12 @@ BoltzmannRecombinationLinearization RecombinationModel::boltzmannPopulationLinea
             const auto scale = cn.first+cp.first;
             const auto slope = std::abs(exact)<excessCap ? scale : Scalar(0);
             out.auger = scale*clipped;
-            out.dAugerDn = cn.second*clipped + ((!classical || n<cap) ? slope*holes : Scalar(0));
-            out.dAugerDp = cp.second*clipped + ((!classical || p<cap) ? slope*electrons : Scalar(0));
+            out.dAugerDn = cn.second*clipped + ((!classical || n<cap) ? slope*(classical ? holes : fermiSlopeN) : Scalar(0));
+            out.dAugerDp = cp.second*clipped + ((!classical || p<cap) ? slope*(classical ? electrons : fermiSlopeP) : Scalar(0));
         }
     }
     for (const auto value : {out.srh,out.auger,out.dSrhDn,out.dSrhDp,out.dAugerDn,out.dAugerDp})
-        if (!std::isfinite(value)) throw std::runtime_error("Nonfinite Boltzmann source or derivative");
+        if (!std::isfinite(value)) throw std::runtime_error("Nonfinite population source or derivative");
     return out;
 }
 

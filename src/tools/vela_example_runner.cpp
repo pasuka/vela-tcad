@@ -30,6 +30,7 @@
 #include "vela/solver/ExtendedFixedBiasNewton.h"
 #include "vela/solver/PopulationState.h"
 #include "vela/equation/ExtendedAveragePoissonGeometry.h"
+#include "vela/equation/ExtendedPhuMobPopulation.h"
 #include "vela/simulation/DCSweepStepControl.h"
 #include "vela/io/VtuWriter.h"
 #include "vela/simulation/CoupledLoadLine.h"
@@ -81,6 +82,7 @@ void usage(const char* argv0)
 
 constexpr std::string_view extendedSlotStageProfile = "slot_population_bvds_v1";
 constexpr std::string_view extendedSlotFixedBiasProfile = "slot_population_fixed_bias_v1";
+constexpr std::string_view extendedSlotPhuMobProfile = "slot_population_phumob_fixed_bias_v1";
 
 nlohmann::json arithmeticCapabilities()
 {
@@ -96,6 +98,10 @@ nlohmann::json arithmeticCapabilities()
                              "ialmob", "state_archive"}}};
     result["scoped_extended80_profiles"][extendedSlotFixedBiasProfile] =
         result["scoped_extended80_profiles"][extendedSlotStageProfile];
+    result["scoped_extended80_profiles"][extendedSlotPhuMobProfile] = {
+        {"linear_backends", {"sparse_lu"}},
+        {"input_consumers", {"mesh", "doping", "materials", "temperature", "contacts", "sweep",
+                             "phumob", "state_archive"}}};
 #endif
     return result;
 }
@@ -4782,7 +4788,8 @@ int main(int argc, char** argv)
         if (const auto solver = cfg.find("solver"); solver != cfg.end() &&
             solver->value("require_end_to_end_precision", false) &&
             (solver->value("extended80_stage_profile", "") == extendedSlotStageProfile ||
-             solver->value("extended80_stage_profile", "") == extendedSlotFixedBiasProfile)) {
+             solver->value("extended80_stage_profile", "") == extendedSlotFixedBiasProfile ||
+             solver->value("extended80_stage_profile", "") == extendedSlotPhuMobProfile)) {
             auto runtime = vela::RuntimeLogSession::fromConfig(cfg, configFile, "dc_sweep");
             auto result = runExtendedSlotStage(configFile, cfg, true);
             result["config"] = configFile;

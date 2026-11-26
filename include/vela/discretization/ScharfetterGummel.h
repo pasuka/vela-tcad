@@ -3,6 +3,7 @@
 #include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/Types.h"
 #include "vela/numerics/SplitCoordinate.h"
+#include "vela/physics/CarrierStatistics.h"
 
 namespace vela {
 
@@ -76,6 +77,15 @@ SGPopulationEdgeDifferential sgBoltzmannPopulationEdge(
     ArithmeticReal population1, ArithmeticReal ni0, ArithmeticReal ni1,
     ArithmeticReal signedPotentialScale, ArithmeticReal Vt, ArithmeticReal coefficient,
     bool includeNiGradientDrift);
+
+/// Effective-band SG with derivatives taken at fixed values of the other
+/// primary variables. The intrinsic prefactors include the material reference.
+SGPopulationEdgeDifferential sgFermiPopulationEdge(
+    ArithmeticReal psi0, ArithmeticReal psi1, ArithmeticReal population0,
+    ArithmeticReal population1, ArithmeticReal intrinsic0, ArithmeticReal intrinsic1,
+    ArithmeticReal dos0, ArithmeticReal dos1, ArithmeticReal signedPotentialScale,
+    ArithmeticReal Vt, ArithmeticReal coefficient,
+    CarrierStatisticsModel model = CarrierStatisticsModel::FermiDirac);
 
 /// Use precomputed dimensionless drift, including the oriented intrinsic-density
 /// log ratio when enabled. The signed potential correction is still in volts.

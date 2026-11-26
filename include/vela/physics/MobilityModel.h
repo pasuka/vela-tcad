@@ -38,12 +38,13 @@ enum class PhuMobDonorSpecies {
 };
 
 /** Carrier-specific parameters from the Sentaurus T-2022.03 PhuMob model. */
-struct PhuMobCarrierParameters {
-    Real muMax = 0.0; ///< Lattice mobility at 300 K [active mobility units].
-    Real muMin = 0.0; ///< Carrier-scattering mobility floor [active mobility units].
-    Real theta = 0.0; ///< Lattice temperature exponent [-].
-    Real nRef = 1.0;  ///< Reference concentration [active concentration units].
-    Real alpha = 1.0; ///< Impurity-scattering exponent [-].
+template<class Scalar>
+struct BasicPhuMobCarrierParameters {
+    Scalar muMax = 0; ///< Lattice mobility at 300 K [active mobility units].
+    Scalar muMin = 0; ///< Carrier-scattering mobility floor [active mobility units].
+    Scalar theta = 0; ///< Lattice temperature exponent [-].
+    Scalar nRef = 1;  ///< Reference concentration [active concentration units].
+    Scalar alpha = 1; ///< Impurity-scattering exponent [-].
 };
 
 /**
@@ -53,65 +54,80 @@ struct PhuMobCarrierParameters {
  * configuration parser converts them to the active unit system together with
  * the other mobility parameters.
  */
-struct PhuMobParameters {
-    PhuMobCarrierParameters electronArsenic{
-        0.14170, 0.00522, 2.285, 9.68e22, 0.68};
-    PhuMobCarrierParameters electronPhosphorus{
-        0.14140, 0.00685, 2.285, 9.20e22, 0.711};
-    PhuMobCarrierParameters holeBoron{
-        0.04705, 0.00449, 2.247, 2.23e23, 0.719};
+template<class Scalar>
+struct BasicPhuMobParameters {
+    BasicPhuMobCarrierParameters<Scalar> electronArsenic{
+        Scalar(0.14170L), Scalar(0.00522L), Scalar(2.285L), Scalar(9.68e22L), Scalar(0.68L)};
+    BasicPhuMobCarrierParameters<Scalar> electronPhosphorus{
+        Scalar(0.14140L), Scalar(0.00685L), Scalar(2.285L), Scalar(9.20e22L), Scalar(0.711L)};
+    BasicPhuMobCarrierParameters<Scalar> holeBoron{
+        Scalar(0.04705L), Scalar(0.00449L), Scalar(2.247L), Scalar(2.23e23L), Scalar(0.719L)};
 
-    Real donorClusterReference = 4.0e26;   ///< nref_D [active concentration units].
-    Real acceptorClusterReference = 7.2e26; ///< nref_A [active concentration units].
-    Real donorClusterCoefficient = 0.21;   ///< cref_D [-].
-    Real acceptorClusterCoefficient = 0.5; ///< cref_A [-].
-    Real electronMassRatio = 1.0;          ///< m*_e / m0 [-].
-    Real holeMassRatio = 1.258;            ///< m*_h / m0 [-].
-    Real conwellWeisskopfFactor = 2.459;   ///< f_CW [-].
-    Real brooksHerringFactor = 3.828;      ///< f_BH [-].
-    Real electronHoleScatteringFactor = 1.0; ///< f_e [-].
-    Real holeElectronScatteringFactor = 1.0; ///< f_h [-].
+    Scalar donorClusterReference = Scalar(4.0e26L);   ///< nref_D [active concentration units].
+    Scalar acceptorClusterReference = Scalar(7.2e26L); ///< nref_A [active concentration units].
+    Scalar donorClusterCoefficient = Scalar(0.21L);   ///< cref_D [-].
+    Scalar acceptorClusterCoefficient = Scalar(0.5L); ///< cref_A [-].
+    Scalar electronMassRatio = 1;          ///< m*_e / m0 [-].
+    Scalar holeMassRatio = Scalar(1.258L);            ///< m*_h / m0 [-].
+    Scalar conwellWeisskopfFactor = Scalar(2.459L);   ///< f_CW [-].
+    Scalar brooksHerringFactor = Scalar(3.828L);      ///< f_BH [-].
+    Scalar electronHoleScatteringFactor = 1; ///< f_e [-].
+    Scalar holeElectronScatteringFactor = 1; ///< f_h [-].
 
     // Built-in coefficients for Sentaurus Device User Guide equation 282.
-    Real gA = 0.89233;
-    Real gB = 0.41372;
-    Real gC = 0.005978;
-    Real gAlpha = 0.28227;
-    Real gAlphaPrime = 0.72169;
-    Real gBeta = 0.19778;
-    Real gGamma = 1.80618;
+    Scalar gA = Scalar(0.89233L);
+    Scalar gB = Scalar(0.41372L);
+    Scalar gC = Scalar(0.005978L);
+    Scalar gAlpha = Scalar(0.28227L);
+    Scalar gAlphaPrime = Scalar(0.72169L);
+    Scalar gBeta = Scalar(0.19778L);
+    Scalar gGamma = Scalar(1.80618L);
 
     PhuMobDonorSpecies donorSpecies = PhuMobDonorSpecies::Arsenic;
-    Real internalConcentrationToCm3 = 1.0e-6;
-    Real internalMobilityToCm2PerVS = 1.0e4;
+    Scalar internalConcentrationToCm3 = Scalar(1.0e-6L);
+    Scalar internalMobilityToCm2PerVS = Scalar(1.0e4L);
 };
 
-struct PhuMobScalarState {
-    Real donors = 0.0;
-    Real acceptors = 0.0;
-    Real electrons = 0.0;
-    Real holes = 0.0;
-    Real temperature_K = 300.0;
+template<class Scalar>
+struct BasicPhuMobScalarState {
+    Scalar donors = 0;
+    Scalar acceptors = 0;
+    Scalar electrons = 0;
+    Scalar holes = 0;
+    Scalar temperature_K = 300;
 };
 
 /** Component-resolved result of one scalar PhuMob carrier evaluation. */
-struct PhuMobScalarResult {
-    Real mobility = 0.0;
-    Real latticeMobility = 0.0;
-    Real scatteringMobility = 0.0;
-    Real scatteringConcentration = 0.0;          ///< N_i,sc [active concentration units].
-    Real effectiveScatteringConcentration = 0.0; ///< N_i,sc,eff [active concentration units].
-    Real screeningParameter = 0.0;               ///< P_i [-].
-    Real screeningF = 0.0;                       ///< F(P_i) [-].
-    Real screeningG = 0.0;                       ///< G(P_i) after the documented clamp [-].
-    Real screeningGDerivative = 0.0;             ///< dG/dP; zero on the floor branch.
+template<class Scalar>
+struct BasicPhuMobScalarResult {
+    Scalar mobility = 0;
+    Scalar latticeMobility = 0;
+    Scalar scatteringMobility = 0;
+    Scalar scatteringConcentration = 0;          ///< N_i,sc [active concentration units].
+    Scalar effectiveScatteringConcentration = 0; ///< N_i,sc,eff [active concentration units].
+    Scalar screeningParameter = 0;               ///< P_i [-].
+    Scalar screeningF = 0;                       ///< F(P_i) [-].
+    Scalar screeningG = 0;                       ///< G(P_i) after the documented clamp [-].
+    Scalar screeningGDerivative = 0;             ///< dG/dP; zero on the floor branch.
 };
 
 /** Carrier chain terms at fixed impurities and temperature, in active mobility units. */
-struct PhuMobLogDensityDerivatives {
-    Real electrons = 0.0; ///< d(mu)/d(log n), retaining small n contributions.
-    Real holes = 0.0;     ///< d(mu)/d(log p), retaining small p contributions.
+template<class Scalar>
+struct BasicPhuMobLogDensityDerivatives {
+    Scalar electrons = 0; ///< d(mu)/d(log n), retaining small n contributions.
+    Scalar holes = 0;     ///< d(mu)/d(log p), retaining small p contributions.
 };
+
+using PhuMobCarrierParameters = BasicPhuMobCarrierParameters<Real>;
+using PhuMobParameters = BasicPhuMobParameters<Real>;
+using PhuMobScalarState = BasicPhuMobScalarState<Real>;
+using PhuMobScalarResult = BasicPhuMobScalarResult<Real>;
+using PhuMobLogDensityDerivatives = BasicPhuMobLogDensityDerivatives<Real>;
+
+using ExtendedPhuMobParameters = BasicPhuMobParameters<long double>;
+using ExtendedPhuMobScalarState = BasicPhuMobScalarState<long double>;
+using ExtendedPhuMobScalarResult = BasicPhuMobScalarResult<long double>;
+using ExtendedPhuMobLogDensityDerivatives = BasicPhuMobLogDensityDerivatives<long double>;
 
 struct CaugheyThomasParameters {
     Real muMin = 0.0; ///< Low-field mobility floor [m^2/V/s]
@@ -426,5 +442,13 @@ PhuMobLogDensityDerivatives evaluatePhuMobLogDensityDerivatives(
     CarrierType carrier,
     const PhuMobScalarState& state,
     const PhuMobParameters& params = {});
+
+ExtendedPhuMobScalarResult evaluateExtendedPhuMobScalar(
+    CarrierType carrier, const ExtendedPhuMobScalarState& state,
+    const ExtendedPhuMobParameters& params);
+
+ExtendedPhuMobLogDensityDerivatives evaluateExtendedPhuMobLogDensityDerivatives(
+    CarrierType carrier, const ExtendedPhuMobScalarState& state,
+    const ExtendedPhuMobParameters& params);
 
 } // namespace vela

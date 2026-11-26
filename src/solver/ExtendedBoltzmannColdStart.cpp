@@ -10,7 +10,7 @@ namespace vela {
 
 ExtendedOhmicTargets buildExtendedZeroBiasOhmicTargets(
     const DeviceMesh& mesh, const DopingModel& doping,
-    const ExtendedBoltzmannMaterials& materials,
+    const ExtendedEquilibriumMaterials& materials,
     const std::vector<ContactBoundarySpec>& contacts,
     long double thermalVoltage_V, bool dominantSignedContactMean)
 {
@@ -20,6 +20,10 @@ ExtendedOhmicTargets buildExtendedZeroBiasOhmicTargets(
         materials.intrinsicPotential_V.size() != dimension ||
         !std::isfinite(thermalVoltage_V) || thermalVoltage_V <= 0)
         throw std::invalid_argument("Inconsistent extended Ohmic inputs");
+    if (usesFermiDirac(materials.statistics) &&
+        (materials.electronIntrinsic.size() != dimension || materials.holeIntrinsic.size() != dimension ||
+         materials.electronDOS.size() != dimension || materials.holeDOS.size() != dimension))
+        throw std::invalid_argument("Inconsistent extended Fermi Ohmic inputs");
 
     ExtendedOhmicTargets targets{
         std::vector<std::optional<long double>>(count),
@@ -48,8 +52,7 @@ ExtendedOhmicTargets buildExtendedZeroBiasOhmicTargets(
                 (net == 0 || std::signbit(net) != std::signbit(mean)))
                 net = mean;
             const auto target = materials.intrinsic[node] > 0
-                ? extendedBoltzmannOhmicTarget(net, materials.intrinsic[node],
-                    materials.intrinsicPotential_V[node], thermalVoltage_V, 0, thermalVoltage_V, 0)
+                ? extendedEquilibriumOhmicTarget(net, materials, node, thermalVoltage_V)
                 : ExtendedOhmicPopulation{};
             potential = target.potential;
             targets.electrons[node] = target.electrons;
@@ -61,12 +64,15 @@ ExtendedOhmicTargets buildExtendedZeroBiasOhmicTargets(
     return targets;
 }
 
-ExtendedBoltzmannColdStartResult solveExtendedBoltzmannColdStart(
+namespace {
+
+ExtendedEquilibriumColdStartResult equilibrate(
     BasicPoissonAssembler<long double>& poisson, const DopingModel& doping,
-    const ExtendedBoltzmannMaterials& materials, const ExtendedOhmicTargets& targets,
+    const ExtendedEquilibriumMaterials& materials, const ExtendedOhmicTargets& targets,
     long double thermalVoltage_V, long double concentrationScale_m3,
     int maxUpdates, long double absoluteResidualTolerance,
-    const ExtendedAveragePoissonGeometry* geometry)
+    const ExtendedAveragePoissonGeometry* geometry,
+    const ExtendedVector* initialPotential, const ExtendedVector* quasiFermi)
 {
     if constexpr (compiledArithmeticPrecision != ArithmeticPrecision::Extended80) {
         throw std::logic_error("Extended cold start requires an extended80 build");
@@ -80,26 +86,33 @@ ExtendedBoltzmannColdStartResult solveExtendedBoltzmannColdStart(
             !std::isfinite(thermalVoltage_V) || thermalVoltage_V <= 0 ||
             thermalVoltage_V != poisson.potentialScale_V() ||
             !std::isfinite(concentrationScale_m3) || concentrationScale_m3 <= 0)
-            throw std::invalid_argument("Inconsistent extended Poisson cold-start inputs");
+            throw std::invalid_argument("Inconsistent extended Poisson equilibrium inputs");
+        if (initialPotential && (initialPotential->size() != count || quasiFermi->size() != count ||
+                                !initialPotential->allFinite() || !quasiFermi->allFinite()))
+            throw std::invalid_argument("Invalid extended Poisson equilibrium seed");
 
         std::unordered_map<Index, long double> boundary;
         std::vector<int> prescribed;
-        ExtendedVector potential = ExtendedVector::Zero(count);
+        ExtendedVector potential = initialPotential ? *initialPotential : ExtendedVector::Zero(count).eval();
         for (Index node = 0; node < doping.numNodes(); ++node) {
             if (targets.potential[node]) {
                 potential[node] = *targets.potential[node];
                 boundary.emplace(node, potential[node]);
                 prescribed.push_back(static_cast<int>(node));
-            } else if (materials.intrinsic[node] > 0) {
-                potential[node] = extendedBoltzmannOhmicTarget(doping.netDopingForAssembly(node),
-                    materials.intrinsic[node], materials.intrinsicPotential_V[node],
-                    thermalVoltage_V, 0, thermalVoltage_V, 0).potential;
+            } else if (!initialPotential && materials.intrinsic[node] > 0) {
+                potential[node] = extendedEquilibriumOhmicTarget(
+                    doping.netDopingForAssembly(node), materials, node, thermalVoltage_V).potential;
             }
         }
         if (prescribed.empty())
             throw std::invalid_argument("Extended Poisson cold start requires a potential reference");
-        const ExtendedVector qf = ExtendedVector::Zero(count);
+        const ExtendedVector qf = quasiFermi ? *quasiFermi : ExtendedVector::Zero(count).eval();
         const auto assemble = [&](const ExtendedVector& state) {
+            if (usesFermiDirac(materials.statistics))
+                return poisson.linearizeFermiEquilibrium(state, qf, qf,
+                    materials.electronIntrinsic, materials.holeIntrinsic, materials.electronDOS, materials.holeDOS,
+                    thermalVoltage_V, boundary, ArithmeticPoissonAssembler::DirichletCoordinate::SolverPotential,
+                    geometry, materials.statistics);
             return poisson.linearizeBoltzmannEquilibrium(state, qf, qf,
                 materials.electronIntrinsic, materials.holeIntrinsic, thermalVoltage_V, boundary,
                 ArithmeticPoissonAssembler::DirichletCoordinate::SolverPotential, geometry);
@@ -139,6 +152,31 @@ ExtendedBoltzmannColdStartResult solveExtendedBoltzmannColdStart(
         state.coordinates << potential, current.electrons, current.holes;
         return {std::move(state), residual, updates, residual <= absoluteResidualTolerance};
     }
+}
+
+} // namespace
+
+ExtendedEquilibriumColdStartResult solveExtendedEquilibriumColdStart(
+    BasicPoissonAssembler<long double>& poisson, const DopingModel& doping,
+    const ExtendedEquilibriumMaterials& materials, const ExtendedOhmicTargets& targets,
+    long double thermalVoltage_V, long double concentrationScale_m3,
+    int maxUpdates, long double absoluteResidualTolerance,
+    const ExtendedAveragePoissonGeometry* geometry)
+{
+    return equilibrate(poisson, doping, materials, targets, thermalVoltage_V, concentrationScale_m3,
+                       maxUpdates, absoluteResidualTolerance, geometry, nullptr, nullptr);
+}
+
+ExtendedEquilibriumColdStartResult solveExtendedEquilibriumPoissonSeed(
+    BasicPoissonAssembler<long double>& poisson, const DopingModel& doping,
+    const ExtendedEquilibriumMaterials& materials, const ExtendedOhmicTargets& targets,
+    long double thermalVoltage_V, long double concentrationScale_m3,
+    int maxUpdates, long double absoluteResidualTolerance,
+    const ExtendedAveragePoissonGeometry* geometry,
+    const ExtendedVector& initialPotential, const ExtendedVector& quasiFermi)
+{
+    return equilibrate(poisson, doping, materials, targets, thermalVoltage_V, concentrationScale_m3,
+                       maxUpdates, absoluteResidualTolerance, geometry, &initialPotential, &quasiFermi);
 }
 
 } // namespace vela

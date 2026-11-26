@@ -41,6 +41,10 @@
           "intrinsic_carrier_density_cm3": {"type": "number", "minimum": 0.0, "maximum": 1e30},
           "electron_mobility_cm2_per_V_s": {"type": "number", "minimum": 0.0, "maximum": 1e9},
           "hole_mobility_cm2_per_V_s": {"type": "number", "minimum": 0.0, "maximum": 1e9},
+          "decimal_mobility_cm2_per_V_s": {
+            "type": "array", "minItems": 2, "maxItems": 2,
+            "items": {"type": "string", "minLength": 1}
+          },
           "bandgap_eV": {"type": "number", "minimum": 0.0, "maximum": 100.0},
           "electron_affinity_eV": {"type": "number", "minimum": 0.0, "maximum": 100.0},
           "conduction_band_density_of_states_cm3": {"type": "number", "minimum": 0.0, "maximum": 1e30},
@@ -53,7 +57,8 @@
             "properties": {
               "temperature_K": {"type": "string", "minLength": 1},
               "sections": {"type": "object", "required": ["Bandgap", "eDOSMass", "hDOSMass"]},
-              "fold_old_slotboom": {"type": "boolean"}
+              "fold_old_slotboom": {"type": "boolean"},
+              "fold_bennett": {"type": "boolean"}
             }
           },
           "electron_quantum_gamma": {"type": "number", "minimum": 0.0, "maximum": 1e6},

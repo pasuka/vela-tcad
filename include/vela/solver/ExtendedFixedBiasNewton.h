@@ -28,6 +28,14 @@ struct ExtendedRhsGrowthReport {
     std::optional<int> firstExceededUpdate;
 };
 
+struct ExtendedFixedBiasUpdateObservation {
+    int update;
+    bool usedRecoveryJacobian;
+    std::size_t protectedElectrons, protectedHoles;
+    long double alpha, updateError, scaledResidualBefore, scaledResidualAfter;
+    const ExtendedVector& residual;
+};
+
 struct ExtendedFixedBiasNewtonConfig {
     int maxUpdates;
     int maxBacktracks;
@@ -42,6 +50,10 @@ struct ExtendedFixedBiasNewtonConfig {
     std::optional<ExtendedRhsGrowthControl> rhsGrowth = std::nullopt;
     bool refineToLinearGoal = false;
     ExtendedLinearDefectMethod linearDefectMethod = ExtendedLinearDefectMethod::mp100;
+    // Optional fixed-bias linearization for the iteration immediately after
+    // an accepted local_nonpositive rewrite. The original residual is retained.
+    std::function<ExtendedSparseMatrix(const ExtendedPopulationState&)> afterLocalProtectionJacobian = {};
+    std::function<void(const ExtendedPopulationState&, const ExtendedFixedBiasUpdateObservation&)> observeAcceptedUpdate = {};
 };
 
 struct ExtendedFixedBiasNewtonResult {

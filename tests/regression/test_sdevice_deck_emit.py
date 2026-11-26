@@ -20,6 +20,9 @@ from vela_sdevice.deck_emit import (DeckEmitError, EmitOptions, TDR_FIELDS, emit
 from vela_sdevice.materials import (active_models_from_ir, default_models_par_path,
                                    emit_materials, write_materials)
 from vela_sdevice import schema_validator as sv
+from vela_sdevice.orchestrator import (
+    _apply_slot_idvd_bgn_default, _is_slot_idvd_profile, _slot_idvd_ohmic_polarity,
+)
 
 FIXTURES = REPO / "tests/fixtures/sdevice"
 SUPPORTED = [f for f in json.loads((FIXTURES / "fixtures.json").read_text())["fixtures"]
@@ -75,6 +78,104 @@ def emit(ir: dict, **kwargs):
 
 
 class DeckEmitterTests(unittest.TestCase):
+    def test_slot_fermi_default_is_resolved_before_material_projection(self):
+        ir = {"physics": {"effective": [{"key": key} for key in
+              ("Fermi", "Mobility.PhuMob", "Mobility.Enormal", "Mobility.HighFieldSaturation",
+               "Recombination.SRH", "Recombination.Auger", "Recombination.Avalanche")]},
+              "electrodes": [{"name": name} for name in ("source", "gate", "drain", "substrate")]}
+        mesh = {"materials": ["Si", "PolySilicon", "SiO2"]}
+        explicit = deepcopy(ir)
+        explicit["physics"]["effective"].append(
+            {"key": "EffectiveIntrinsicDensity.NoBandGapNarrowing"})
+        self.assertFalse(_apply_slot_idvd_bgn_default(explicit))
+        self.assertFalse(_is_slot_idvd_profile(ir, {"materials": ["Si"]}))
+        self.assertTrue(_is_slot_idvd_profile(ir, mesh))
+        no_fermi_correction = deepcopy(ir)
+        no_fermi_correction["physics"]["effective"].append({"key": "EffectiveIntrinsicDensity.NoFermi"})
+        self.assertTrue(_apply_slot_idvd_bgn_default(no_fermi_correction))
+        self.assertIn("NoFermi", active_models_from_ir(no_fermi_correction))
+        self.assertTrue(_apply_slot_idvd_bgn_default(ir))
+        self.assertIn("BennettWilson", active_models_from_ir(ir))
+        self.assertFalse(_apply_slot_idvd_bgn_default(ir))
+
+    def test_slot_extended80_idvd_uses_concentration_stages(self):
+        ir = parse_cmd_text("""
+File { Grid="mesh.grd" Parameter="device.par" }
+Electrode { { Name="source" Voltage=0 } { Name="drain" Voltage=0 }
+            { Name="gate" Voltage=0 } { Name="substrate" Voltage=0 } }
+Physics {
+    Fermi
+    Mobility(Phumob HighFieldSaturation Enormal(Lombardi))
+    Recombination(SRH(DopingDep) Auger Avalanche(GradQuasiFermi))
+}
+Math { ExtendedPrecision Extrapolate RelErrControl Digits=5 Iterations=25 NotDamped=25 }
+Solve {
+    Coupled(Iterations=100) { Poisson }
+    Coupled { Poisson Electron Hole }
+    Quasistationary(InitialStep=0.001 MinStep=1e-8 MaxStep=0.01 Goal { Name="gate" Voltage=5 }) {
+        Coupled { Poisson Electron Hole }
+    }
+    Save(FilePrefix="gate5")
+    Load(FilePrefix="gate5")
+    Quasistationary(InitialStep=0.0001 MinStep=1e-12 MaxStep=0.02 Goal { Name="drain" Voltage=60 }) {
+        Coupled { Poisson Electron Hole }
+    }
+}
+""", path_name="device_des.cmd")
+        self.assertTrue(ir["verdict"]["accepted"], ir["errors"])
+        mesh = qualification(ir, ("Si", "PolySilicon", "SiO2"))
+        mesh["angles"].update(obtuse_element_count=1, obtuse_fraction=0.5, max_deg=110)
+        mesh["qualification"]["non_obtuse"] = False
+        self.assertTrue(_is_slot_idvd_profile(ir, mesh))
+        self.assertTrue(_apply_slot_idvd_bgn_default(ir))
+        # The stage contract is independent of material-library coverage in this fixture.
+        report = {"schema": "vela.sdevice_materials_report.v1", "temperature_K": 300,
+                  "solver_parameters": [{
+                      "section": "PhuMob", "parameter": "f_CW",
+                      "target": "solver.mobility.phumob.conwell_weisskopf_factor",
+                      "value_par": 2.459, "decimal_par": "2.459000000000000001",
+                  }], "slot_idvd_population_coordinates": True}
+        result = emit(ir, mesh_qualification=mesh, materials_report=report)
+        self.assertEqual(len(result.decks), 4)
+        for deck in result.decks:
+            solver = deck["solver"]
+            self.assertEqual(solver["state_variables"], "potential_density")
+            self.assertEqual(solver["carrier_statistics"]["transport"], "effective_band_sg")
+            self.assertEqual(solver["carrier_statistics"]["model"], "fermi_dirac_joyce_dixon")
+            self.assertEqual(solver["extended80_stage_profile"], "slot_population_phumob_fixed_bias_v1")
+            self.assertEqual(solver["contact_boundary_reconstruction"], "legacy_node_local")
+            self.assertEqual(solver["normalization"]["reference_concentration_cm3"], "auto")
+            self.assertEqual(solver["bandgap_narrowing"],
+                             {"model": "bennett_wilson", "fermi_statistics_correction": True})
+            self.assertEqual(deck["mesh_geometry"]["cell_box_policy"], "average_intersection")
+            self.assertEqual(deck["discretization"]["poisson_charge_volume_policy"], "material_local_box")
+            operands = deck["decimal_stage_controls"]["solver"]["slot_source_coefficients"]
+            self.assertEqual(operands["mobility.phumob.conwell_weisskopf_factor"], "2.459000000000000001")
+        self.assertNotIn("quasi_fermi_update_limit_V", result.decks[1]["solver"])
+        self.assertEqual(result.decks[2]["solver"]["method"], "frozen_state")
+        self.assertEqual(result.decks[2]["sweep"]["contact"], "gate")
+        self.assertEqual(result.decks[2]["decimal_stage_controls"]["sweep"]["start"], "5")
+        self.assertEqual(result.decks[3]["sweep"]["step"], 60)
+        self.assertFalse(result.decks[3]["solver"]["line_search"])
+        self.assertEqual(result.decks[3]["decimal_stage_controls"]["sweep"]["initial_step"], "0.0060")
+        result.decks[2]["solver"]["contact_boundary_reconstruction"] = "dominant_signed_contact_mean"
+        with tempfile.TemporaryDirectory() as directory:
+            self.assert_error("E406", write_stage_plan, Path(directory), result)
+
+    def test_slot_idvd_ohmic_doping_audit_uses_exact_net_signs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path / "mesh.json").write_text(json.dumps({"contacts": [
+                {"name": "source", "node_ids": [0, 1, 2]},
+                {"name": "unused", "node_ids": [3]},
+            ]}), encoding="utf-8")
+            (path / "doping.csv").write_text(
+                "node_id,donors_cm3,acceptors_cm3\n"
+                "0,100000000000000000001,1e20\n1,1e20,100000000000000000001\n2,1e20,1e20\n",
+                encoding="utf-8")
+            self.assertEqual(_slot_idvd_ohmic_polarity(path, [{"name": "source", "type": "ohmic"}]),
+                             {"source": {"positive": 1, "negative": 1, "zero": 1}})
+
     def test_phumob_cmd_and_materials_emit_solver_units(self):
         ir = parse_cmd_text("""
 File { Grid="mesh.grd" Parameter="device.par" }

@@ -125,6 +125,37 @@ def _finite(value: object, label: str) -> float:
     return value if isinstance(value, SourceNumber) else float(value)
 
 
+_SLOT_IDVD_PROFILE = "slot_population_phumob_fixed_bias_v1"
+
+
+def _slot_idvd_coefficients(report, temperature):
+    """Resolve authoritative PAR operands in the units of the emitted deck."""
+    result, auger = {}, {}
+    for row in report["solver_parameters"]:
+        path = v2_key(row["target"])
+        literal = row.get("decimal_par")
+        if literal is None or not path.startswith((
+                "solver.mobility.", "solver.impact_ionization.", "solver.bandgap_narrowing.",
+                "solver.srh_doping_dependence.", "solver.auger_")):
+            continue
+        value = Decimal(literal)
+        if row["section"] == "PhuMob" and row["parameter"] == "alpha1_g_k":
+            path = path.removesuffix(" = -source")
+            value = -value
+        if row["section"] == "Auger" and row["parameter"] in ("A", "B", "C"):
+            auger.setdefault((row["material"], path), {})[row["parameter"]] = value
+            continue
+        result[path.removeprefix("solver.")] = value
+        if row["section"] == "Scharfetter" and row["parameter"] == "taumax":
+            result["tau_n_s" if row["carrier"] == "electron" else "tau_p_s"] = value
+    with localcontext() as context:
+        context.prec = 50
+        ratio = _decimal(temperature) / Decimal(300)
+        for (_, path), parts in auger.items():
+            result[path.removeprefix("solver.")] = parts["A"] + ratio * (parts["B"] + ratio * parts["C"])
+    return {key: str(value) for key, value in result.items()}
+
+
 def _decimal(value: float) -> Decimal:
     if isinstance(value, SourceNumber):
         return Decimal(value.literal)
@@ -314,6 +345,29 @@ def _physics(ir: dict, report: dict, decisions: list) -> dict:
     # schema otherwise enables doping dependence whenever this object exists.
     if "srh_doping_dependence" in solver:
         solver["srh_doping_dependence"].setdefault("enabled", False)
+    if report.get("slot_idvd_population_coordinates"):
+        solver["state_variables"] = "potential_density"
+        solver["coupled_operator"] = "legacy"
+        solver["primary_variable_coordinates"] = "physical"
+        solver["carrier_statistics"].update(model="fermi_dirac_joyce_dixon", transport="effective_band_sg")
+        solver["normalization"] = {"reference_concentration_cm3": "auto"}
+        solver["auger_excess_product"] = "generalized_fermi"
+        solver["recombination_materials"] = ["Si"]
+        solver["recombination_volume_policy"] = "material_local_box"
+        solver["population_stopping_rule"] = "native_approx"
+        solver["population_update"] = {"protection": "local_nonpositive"}
+        solver["contact_preprojection"] = True
+        solver["contact_boundary_reconstruction"] = "legacy_node_local"
+        _decision(decisions, "SLOT IdVd Ohmic contacts", "local signed doping",
+                  "solver.contact_boundary_reconstruction", "legacy_node_local",
+                  "Preserve the local doping polarity on mixed source/body and gate contacts")
+        for key, literal in _slot_idvd_coefficients(report, ir["physics"]["temperature_K"] or 300).items():
+            _set(deck, "solver." + key, SourceNumber(literal))
+        _decision(decisions, "Fermi", True, "solver.carrier_statistics.model",
+                  "fermi_dirac_joyce_dixon", "Use the verified SLOT Fermi approximation")
+        _decision(decisions, "SLOT IdVd", "ExtendedPrecision with Fermi and PhuMob",
+                  "solver.state_variables", "potential_density",
+                  "Use Unit-scaled populations and effective-band SG")
     solver["temperature_K"] = ir["physics"]["temperature_K"] or 300.0
     if report.get("temperature_K") != solver["temperature_K"]:
         raise DeckEmitError("E407", detail="IR and materials temperatures differ")
@@ -428,6 +482,11 @@ def _validate_result(result: StagePlanResult) -> None:
         schema = sv.load_schema(REPO / "configs/schema/vela-simulation.schema.json")
         for stage, deck in zip(result.stage_plan["stages"], result.decks):
             sv.validate(schema, deck)
+            solver = deck["solver"]
+            if (result._context.get("report", {}).get("slot_idvd_population_coordinates") or
+                    solver.get("extended80_stage_profile") == _SLOT_IDVD_PROFILE):
+                if solver.get("contact_boundary_reconstruction") != "legacy_node_local":
+                    raise ValueError(f"SLOT IdVd stage {stage['index']} requires legacy_node_local Ohmic reconstruction")
             def check(node: object, prefix: str = "") -> None:
                 if isinstance(node, dict):
                     for key, value in node.items():
@@ -465,8 +524,10 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
           slot_context: dict | None = None) -> StagePlanResult:
     current_starts = current_starts or {}
     saved_voltages = saved_voltages or {}
-    slot_profile = slot_context.get("stage_profile", "slot_population_bvds_v1") if slot_context else None
-    fixed_slot_bias = slot_profile == "slot_population_fixed_bias_v1"
+    slot_idvd_population = report.get("slot_idvd_population_coordinates", False)
+    slot_profile = (slot_context.get("stage_profile", "slot_population_bvds_v1") if slot_context
+                    else _SLOT_IDVD_PROFILE if slot_idvd_population else None)
+    fixed_slot_bias = slot_profile in ("slot_population_fixed_bias_v1", _SLOT_IDVD_PROFILE)
     if not ir["verdict"]["accepted"]:
         raise DeckEmitError(ir["verdict"]["fatal_ids"][0], detail="rejected execution IR")
     try:
@@ -528,7 +589,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
     for ignored in math_cfg["ignored"]:
         _decision(decisions, ignored["keyword"], ignored["value"], None, None,
                   "Recorded and ignored", ignored["finding_id"])
-    if not options.pn2d_population and not (sidecar or {}).get("bvmethods_operator_profile"):
+    if not slot_idvd_population and not options.pn2d_population and not (sidecar or {}).get("bvmethods_operator_profile"):
         for key in ("line_search_damping", "not_damped"):
             if key in math_cfg:
                 _decision(decisions, key, math_cfg[key], None, None,
@@ -549,6 +610,10 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             "node_doping_file": "doping.csv", "materials_file": "materials.json", "doping": [],
             "mesh_geometry": {"node_volume_policy": "barycentric", "require_non_obtuse": False},
             "solver": solver, **_charges(ir, mesh)}
+    if slot_idvd_population:
+        base["mesh_geometry"].update(cell_box_policy="average_intersection",
+                                     poisson_permittivity_policy="cell_material")
+        base["discretization"] = {"poisson_charge_volume_policy": "material_local_box"}
     if report.get("physical_constants_profile", "codata2018") != "codata2018":
         base["physical_constants_profile"] = report["physical_constants_profile"]
     if (not slot_context and solver.get("arithmetic_precision") == "extended80"
@@ -588,7 +653,8 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 raise DeckEmitError("E407", detail="multiple Save aliases of one stage cannot be emitted")
             previous["output_state"] = state
             decks[-1]["sweep"]["write_state_file"] = state
-            snapshots[prefix] = (state, deepcopy(saved_voltages.get(state, voltages)))
+            snapshots[prefix] = (state, deepcopy(saved_voltages.get(state, voltages)),
+                                 decks[-1]["sweep"]["contact"])
             _decision(decisions, "Save", prefix, "sweep.write_state_file", state, "HDF5 snapshot", "W205")
             continue
         index = len(decks)
@@ -597,10 +663,11 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 raise DeckEmitError("E407", detail="rebase contains an unknown electrode")
             voltages.update({k: _finite(v, k) for k, v in rebases[index].items()})
         input_state = plan["stages"][-1]["output_state"] if decks else None
+        load_contact = None
         if kind == "load":
             prefix = ir["solve"]["statements"][source["statement_index"]]["file_prefix"]
             if prefix in snapshots:
-                input_state, voltages = deepcopy(snapshots[prefix])
+                input_state, voltages, load_contact = deepcopy(snapshots[prefix])
             elif slot_context and prefix in slot_context["load_states"]:
                 input_state = slot_context["load_states"][prefix]
             else:
@@ -608,7 +675,8 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             _decision(decisions, "Load", prefix, "contacts.bias", voltages, "Saved voltages restored", "W208", index)
         start = deepcopy(voltages)
         goal = source.get("goal")
-        contact = goal["contact"] if goal else electrodes[0]["name"]
+        contact = goal["contact"] if goal else (load_contact if slot_idvd_population and load_contact
+                                                else electrodes[0]["name"])
         if contact not in start:
             raise DeckEmitError("E407", detail=f"unknown goal contact {contact}")
         current = bool(goal and "current_A_per_um" in goal)
@@ -646,14 +714,20 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         deck = deepcopy(base)
         deck["output_csv"] = entry["csv"]
         deck["contacts"] = [dict(c, bias=start[c["name"]]) for c in contacts]
-        method = "newton" if slot_context or any(c["type"] == "schottky" for c in contacts) else "gummel_newton"
+        use_newton = slot_context or slot_idvd_population or any(c["type"] == "schottky" for c in contacts)
+        method = "newton" if use_newton else "gummel_newton"
         if kind == "load":
             method = "frozen_state"
         elif source["equations"] == ["Poisson"]:
             method = "poisson_only"
         cmd_iterations = source["iterations"] or math_cfg["iterations"] or 100
         deck["solver"].update(method=method, max_iter=cmd_iterations)
-        if input_state and not slot_context and method in ("gummel_newton", "newton"):
+        if (slot_idvd_population and method == "newton" and
+                math_cfg.get("not_damped", 0) >= cmd_iterations and math_cfg.get("line_search_damping", 1) == 1):
+            deck["solver"]["line_search"] = False
+            _decision(decisions, "NotDamped", math_cfg["not_damped"], "solver.line_search", False,
+                      "Use full coupled Newton updates for this CMD stage", stage=index)
+        if input_state and not slot_context and not slot_idvd_population and method in ("gummel_newton", "newton"):
             # Coupled continuation must preserve the accepted state. A fresh
             # Gummel pass can destroy a good high-injection Newton predictor.
             deck["solver"].update(method="newton", warm_start=True,
@@ -693,7 +767,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             # The preceding nonlinear Poisson solve supplies a converged
             # state. Preserve it for Coupled instead of re-running Gummel.
             deck["solver"].update(method="newton", warm_start=True)
-        if (slot_context and wide_stage_controls and (kind == "initial" or fixed_slot_bias) and method == "newton"
+        if (slot_profile and wide_stage_controls and (kind == "initial" or fixed_slot_bias) and method == "newton"
                 and deck["solver"].get("population_stopping_rule") == "native_approx"):
             if not math_cfg["rel_err_control"]:
                 raise DeckEmitError("E407", detail="SLOT extended80 update stopping requires RelErrControl")
@@ -937,7 +1011,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             if isinstance(command_temperature, SourceNumber) and temperature == command_temperature:
                 temperature = command_temperature
             decimal_solver = {"temperature_K": str(_decimal(temperature))}
-            if slot_context and (kind == "initial" or fixed_slot_bias) and method == "newton":
+            if slot_profile and (kind == "initial" or fixed_slot_bias) and method == "newton":
                 update = deck["solver"].get("population_update_convergence", {})
                 references = {key: str(_decimal(update[key]))
                               for key in ("potential_reference_V", "electron_reference_cm3", "hole_reference_cm3")
@@ -946,6 +1020,9 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                     decimal_solver["population_update_convergence"] = references
             if slot_context and slot_context.get("source_coefficients"):
                 decimal_solver["slot_source_coefficients"] = slot_context["source_coefficients"]
+                deck["solver"]["extended80_stage_profile"] = slot_profile
+            if slot_idvd_population:
+                decimal_solver["slot_source_coefficients"] = _slot_idvd_coefficients(report, temperature)
                 deck["solver"]["extended80_stage_profile"] = slot_profile
             deck["decimal_stage_controls"] = {
                 "contacts": {item["name"]: str(_decimal(item["bias"])) for item in deck["contacts"]},

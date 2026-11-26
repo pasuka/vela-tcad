@@ -2,10 +2,12 @@
 #include "vela/equation/ExtendedAveragePoissonGeometry.h"
 #include "vela/equation/AssemblerUtils.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/physics/CarrierStatistics.h"
 #include <Eigen/Sparse>
 #include <cmath>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 
@@ -221,12 +223,71 @@ BasicPoissonAssembler<Scalar>::linearizeBoltzmannEquilibrium(
     DirichletCoordinate coordinate, const ExtendedAveragePoissonGeometry* geometry)
 {
     const auto count = static_cast<Eigen::Index>(mesh_.numNodes());
-    for (const auto* values : {&potential, &electronQf, &holeQf, &electronIntrinsic, &holeIntrinsic})
+    for (const auto* values : {&electronIntrinsic, &holeIntrinsic})
+        if (values->size() != count || !values->allFinite() || (values->array() < 0).any())
+            throw std::invalid_argument("Invalid Boltzmann Poisson statistics");
+    const auto population = [&](Eigen::Index node, bool hole, Scalar exponent) {
+        if (!std::isfinite(exponent))
+            throw std::domain_error("Nonfinite Poisson equilibrium exponent");
+        const auto maxExponent = Scalar(500);
+        const auto intrinsic = hole ? holeIntrinsic[node] : electronIntrinsic[node];
+        const auto value = intrinsic * std::exp(std::clamp(exponent, -maxExponent, maxExponent));
+        const auto slope = std::abs(exponent) < maxExponent ? value : Scalar(0);
+        return std::pair{value, slope};
+    };
+    return linearizeEquilibrium(potential, electronQf, holeQf, thermalVoltage_V,
+                               dirichlet, coordinate, geometry, population);
+}
+
+template<class Scalar>
+typename BasicPoissonAssembler<Scalar>::EquilibriumLinearization
+BasicPoissonAssembler<Scalar>::linearizeFermiEquilibrium(
+    const Vector& potential, const Vector& electronQf, const Vector& holeQf,
+    const Vector& electronIntrinsic, const Vector& holeIntrinsic,
+    const Vector& electronDOS, const Vector& holeDOS,
+    Scalar thermalVoltage_V, const std::unordered_map<Index, Scalar>& dirichlet,
+    DirichletCoordinate coordinate, const ExtendedAveragePoissonGeometry* geometry,
+    CarrierStatisticsModel model)
+{
+    const auto count = static_cast<Eigen::Index>(mesh_.numNodes());
+    for (const auto* values : {&electronIntrinsic, &holeIntrinsic, &electronDOS, &holeDOS})
+        if (values->size() != count || !values->allFinite() || (values->array() < 0).any())
+            throw std::invalid_argument("Invalid Fermi Poisson statistics");
+    const auto population = [&](Eigen::Index node, bool hole, Scalar exponent) {
+        const auto intrinsic = hole ? holeIntrinsic[node] : electronIntrinsic[node];
+        const auto dos = hole ? holeDOS[node] : electronDOS[node];
+        if (!std::isfinite(exponent) || ((intrinsic == 0) != (dos == 0)))
+            throw std::domain_error("Invalid Fermi Poisson population arguments");
+        if (dos == 0)
+            return std::pair{Scalar(0), Scalar(0)};
+        if constexpr (std::is_same_v<Scalar, long double>) {
+            return extendedFermiPopulation(dos, intrinsic, exponent, model);
+        } else {
+            const auto eta = exponent + std::log(intrinsic / dos);
+            const auto density = scaledFermiDiracHalf(dos, eta, model);
+            const auto slope = eta < -700 ? density : dos * fermiDiracHalfDerivative(eta, model);
+            return std::pair{density, slope};
+        }
+    };
+    return linearizeEquilibrium(potential, electronQf, holeQf, thermalVoltage_V,
+                               dirichlet, coordinate, geometry, population);
+}
+
+template<class Scalar>
+template<class Population>
+typename BasicPoissonAssembler<Scalar>::EquilibriumLinearization
+BasicPoissonAssembler<Scalar>::linearizeEquilibrium(
+    const Vector& potential, const Vector& electronQf, const Vector& holeQf,
+    Scalar thermalVoltage_V, const std::unordered_map<Index, Scalar>& dirichlet,
+    DirichletCoordinate coordinate, const ExtendedAveragePoissonGeometry* geometry,
+    Population population)
+{
+    const auto count = static_cast<Eigen::Index>(mesh_.numNodes());
+    for (const auto* values : {&potential, &electronQf, &holeQf})
         if (values->size() != count || !values->allFinite())
-            throw std::invalid_argument("Invalid Boltzmann Poisson state");
-    if (!(thermalVoltage_V > 0) || !std::isfinite(thermalVoltage_V) ||
-        (electronIntrinsic.array() < 0).any() || (holeIntrinsic.array() < 0).any())
-        throw std::invalid_argument("Invalid Boltzmann Poisson statistics");
+            throw std::invalid_argument("Invalid Poisson equilibrium state");
+    if (!(thermalVoltage_V > 0) || !std::isfinite(thermalVoltage_V))
+        throw std::invalid_argument("Invalid Poisson equilibrium thermal voltage");
     const auto potentialScale = scaling_.enabled ? potentialScale_V_ : Scalar(1);
     const auto energyFactor = potentialScale / thermalVoltage_V;
     const auto charge = mobileChargeScale(geometry);
@@ -240,17 +301,9 @@ BasicPoissonAssembler<Scalar>::linearizeBoltzmannEquilibrium(
         for (typename Matrix::InnerIterator entry(A_, col); entry; ++entry)
             if (entry.row() != col)
                 result.rhs[entry.row()] += entry.value() * (potential[entry.row()] - potential[col]);
-    const auto population = [](Scalar intrinsic, Scalar exponent) {
-        if (!std::isfinite(exponent))
-            throw std::domain_error("Nonfinite Boltzmann Poisson exponent");
-        const auto maxExponent = Scalar(500);
-        const auto value = intrinsic * std::exp(std::clamp(exponent, -maxExponent, maxExponent));
-        const auto slope = std::abs(exponent) < maxExponent ? value : Scalar(0);
-        return std::pair{value, slope};
-    };
     for (Eigen::Index i = 0; i < count; ++i) {
-        const auto [n, dn] = population(electronIntrinsic[i], (potential[i] - electronQf[i]) * energyFactor);
-        const auto [p, dp] = population(holeIntrinsic[i], (holeQf[i] - potential[i]) * energyFactor);
+        const auto [n, dn] = population(i, false, (potential[i] - electronQf[i]) * energyFactor);
+        const auto [p, dp] = population(i, true, (holeQf[i] - potential[i]) * energyFactor);
         const Scalar area = geometry ? static_cast<Scalar>(geometry->chargeVolumes[i]) : chargeVolumes_[i];
         const auto weight = charge * area;
         const auto diagonal = weight * (dn + dp) * energyFactor;
@@ -258,23 +311,23 @@ BasicPoissonAssembler<Scalar>::linearizeBoltzmannEquilibrium(
         result.holes[i] = p;
         result.rhs[i] += weight * (p - n);
         if (!std::isfinite(diagonal))
-            throw std::domain_error("Nonfinite Boltzmann Poisson derivative");
+            throw std::domain_error("Nonfinite Poisson equilibrium derivative");
         result.jacobian.coeffRef(i, i) += diagonal;
     }
     if (!result.electrons.allFinite() || !result.holes.allFinite() || !result.rhs.allFinite())
-        throw std::domain_error("Nonfinite Boltzmann Poisson residual");
+        throw std::domain_error("Nonfinite Poisson equilibrium residual");
     std::unordered_map<Index, Scalar> correction;
     correction.reserve(dirichlet.size());
     for (const auto& [node, value] : dirichlet) {
         if (node >= mesh_.numNodes() || !std::isfinite(value))
-            throw std::invalid_argument("Invalid Boltzmann Poisson Dirichlet value");
+            throw std::invalid_argument("Invalid Poisson equilibrium Dirichlet value");
         const auto target = coordinate == DirichletCoordinate::PhysicalVoltage
             ? value / potentialScale : value;
         correction.emplace(node, target - potential[node]);
     }
     detail::applyDirichletBC(result.jacobian, result.rhs, correction);
     if (!result.rhs.allFinite())
-        throw std::domain_error("Nonfinite constrained Boltzmann Poisson residual");
+        throw std::domain_error("Nonfinite constrained Poisson equilibrium residual");
     return result;
 }
 

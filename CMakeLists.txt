@@ -700,7 +700,8 @@ if(VELA_HAS_EXTENDED80)
         src/solver/ExtendedBoltzmannColdStart.cpp
         src/solver/ExtendedFixedBiasNewton.cpp
         src/equation/ExtendedAveragePoissonGeometry.cpp
-        src/equation/ExtendedPopulationDevice.cpp)
+        src/equation/ExtendedPopulationDevice.cpp
+    src/equation/ExtendedPhuMobPopulation.cpp)
     target_compile_definitions(vela_core_extended80 PUBLIC VELA_ARITHMETIC_EXTENDED80=1)
     add_executable(vela_example_runner_extended80 src/tools/vela_example_runner.cpp)
     target_link_libraries(vela_example_runner_extended80 PRIVATE vela_core_extended80)

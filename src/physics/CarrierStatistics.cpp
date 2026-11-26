@@ -5,6 +5,7 @@
 #include <cmath>
 #include <algorithm>
 #include <limits>
+#include <iterator>
 #include <stdexcept>
 #include <span>
 
@@ -63,6 +64,70 @@ Real evaluateFermiHalf(Real eta)
     }
     if constexpr (Order==2) return (2.*d1+t*c1-c2)*scale*scale;
     if constexpr (Derivative) return (b1 + t*d1 - d2) * scale;
+    return coefficients[0] + t*b1 - b2;
+}
+
+#include "ExtendedFermiHalfCoefficients.inc"
+
+using ExtendedJoyceDixon = experimental::BasicJoyceDixonStatistics<long double>;
+
+template<int Order>
+long double evaluateExtendedFermiHalf(long double eta)
+{
+    constexpr long double sqrtPi = 1.77245385090551602729816748334114518L;
+    constexpr auto infinity = std::numeric_limits<long double>::infinity();
+    if (std::isnan(eta)) return eta;
+    if (eta == -infinity) return 0;
+    if (eta == infinity) return Order == 2 ? 0 : infinity;
+    if (eta < WideFermiBounds[0]) {
+        const auto z = std::exp(eta);
+        if (z < std::numeric_limits<long double>::epsilon() / 2) return z;
+        long double sum = 0;
+        for (int k = 14; k >= 1; --k) {
+            const auto root = std::sqrt(static_cast<long double>(k));
+            const auto coefficient = Order == 2 ? root : Order == 1 ? 1 / root : 1 / (k * root);
+            sum = (k % 2 ? coefficient : -coefficient) + z * sum;
+        }
+        return z * sum;
+    }
+    if (eta >= WideFermiBounds[std::size(WideFermiBounds) - 1]) {
+        const auto reciprocal = 1 / eta;
+        const auto u = reciprocal * reciprocal;
+        long double sum = 0;
+        for (int k = static_cast<int>(std::size(WideFermiSommerfeld)) - 1; k >= 0; --k) {
+            auto term = WideFermiSommerfeld[k];
+            if constexpr (Order >= 1) term *= 1.5L - 2 * k;
+            if constexpr (Order == 2) term *= .5L - 2 * k;
+            sum = sum * u + term;
+        }
+        const auto prefactor = (4 / (3 * sqrtPi)) * std::sqrt(eta);
+        if constexpr (Order == 2) return prefactor * sum / eta;
+        if constexpr (Order == 1) return prefactor * sum;
+        return (prefactor * sum) * eta;
+    }
+    std::size_t segment = 0;
+    while (eta > WideFermiBounds[segment + 1]) ++segment;
+    const auto scale = 2 / (WideFermiBounds[segment + 1] - WideFermiBounds[segment]);
+    const auto t = (eta - WideFermiBounds[segment]) * scale - 1;
+    const auto& coefficients = WideFermiCoefficients[segment];
+    long double b1 = 0, b2 = 0, d1 = 0, d2 = 0, c1 = 0, c2 = 0;
+    for (std::size_t k = std::size(coefficients) - 1; k > 0; --k) {
+        if constexpr (Order == 2) {
+            const auto second = 4*d1 + 2*t*c1 - c2;
+            c2 = c1;
+            c1 = second;
+        }
+        if constexpr (Order >= 1) {
+            const auto derivative = 2*b1 + 2*t*d1 - d2;
+            d2 = d1;
+            d1 = derivative;
+        }
+        const auto b = coefficients[k] + 2*t*b1 - b2;
+        b2 = b1;
+        b1 = b;
+    }
+    if constexpr (Order == 2) return (2*d1 + t*c1 - c2) * scale * scale;
+    if constexpr (Order == 1) return (b1 + t*d1 - d2) * scale;
     return coefficients[0] + t*b1 - b2;
 }
 
@@ -196,6 +261,93 @@ Real inverseFermiDiracHalf(Real value)
         eta = next;
     }
     return eta;
+}
+
+long double extendedFermiDiracHalf(long double eta) { return evaluateExtendedFermiHalf<0>(eta); }
+long double extendedFermiDiracHalfDerivative(long double eta) { return evaluateExtendedFermiHalf<1>(eta); }
+long double extendedFermiDiracHalfSecondDerivative(long double eta) { return evaluateExtendedFermiHalf<2>(eta); }
+
+std::pair<long double, long double> extendedFermiPopulation(
+    long double densityOfStates, long double intrinsic, long double reducedPotential,
+    CarrierStatisticsModel model)
+{
+    const auto ratio = intrinsic / densityOfStates;
+    const auto eta = reducedPotential + (ratio >= std::numeric_limits<long double>::min() && std::isfinite(ratio)
+        ? std::log(ratio) : std::log(intrinsic) - std::log(densityOfStates));
+    static const auto logMin = std::log(std::numeric_limits<long double>::min()) + 8;
+    if (eta < logMin) {
+        const auto value = std::exp(std::log(densityOfStates) + eta);
+        return {value, value};
+    }
+    if (model == CarrierStatisticsModel::FermiDiracJoyceDixon) {
+        const auto law = ExtendedJoyceDixon::evaluate(eta);
+        return {densityOfStates * law.value, densityOfStates * law.first};
+    }
+    return {densityOfStates * extendedFermiDiracHalf(eta),
+            densityOfStates * extendedFermiDiracHalfDerivative(eta)};
+}
+
+long double extendedInverseFermiDiracHalf(long double value)
+{
+    if (value == std::numeric_limits<long double>::infinity()) return value;
+    if (!(value > 0) || !std::isfinite(value))
+        throw std::invalid_argument("extendedInverseFermiDiracHalf: argument must be positive and finite.");
+
+    const auto logarithm = std::log(value);
+    constexpr auto epsilon = std::numeric_limits<long double>::epsilon();
+    if (value < epsilon) return logarithm;
+
+    auto lower = logarithm;
+    // The Maxwell-Boltzmann limit is a lower bound. A Sommerfeld
+    // estimate brackets the upper end even when the ratio is very large.
+    auto estimate = std::pow(value, 2.L / 3) * 1.20899396551235231651L;
+    auto upper = std::max(2.L, 2 * estimate);
+    auto eta = value < .5L ? lower : estimate;
+    for (int iteration = 0; iteration < 100; ++iteration) {
+        const auto residual = extendedFermiDiracHalf(eta) - value;
+        if (std::abs(residual / value) <= 4 * epsilon) return eta;
+        if (residual > 0) upper = eta;
+        else lower = eta;
+        const auto midpoint = lower + (upper - lower) / 2;
+        const auto trial = eta - residual / extendedFermiDiracHalfDerivative(eta);
+        if (trial == eta || midpoint == lower || midpoint == upper)
+            return eta;
+        eta = trial > lower && trial < upper ? trial : midpoint;
+    }
+    throw std::runtime_error("extendedInverseFermiDiracHalf: failed to converge.");
+}
+
+ExtendedFermiDegeneracy extendedFermiDegeneracy(long double densityOverDOS, CarrierStatisticsModel model)
+{
+    if (densityOverDOS == 0) return {};
+    if (model == CarrierStatisticsModel::FermiDiracJoyceDixon) {
+        return {-ExtendedJoyceDixon::primitiveLogGamma(densityOverDOS),
+                -densityOverDOS * ExtendedJoyceDixon::primitiveLogGammaSlope(densityOverDOS)};
+    }
+    const auto eta = extendedInverseFermiDiracHalf(densityOverDOS);
+    if (!std::isfinite(eta))
+        throw std::invalid_argument("Fermi degeneracy correction requires a finite ratio.");
+    if (densityOverDOS < std::numeric_limits<long double>::epsilon()) {
+        const auto dilute = densityOverDOS / (2 * std::sqrt(2.L));
+        return {dilute, dilute};
+    }
+    if (eta >= WideFermiBounds[0]) {
+        const auto slope = extendedFermiDiracHalfDerivative(eta);
+        return {eta - std::log(densityOverDOS), (densityOverDOS - slope) / slope};
+    }
+
+    // F = z(1 + correction) and F' = z(1 + derivativeCorrection).
+    // Work with the two small corrections so the dilute limit does not
+    // subtract nearly equal full logarithms or slopes.
+    const auto z = std::exp(eta);
+    long double correction = 0, derivativeCorrection = 0, difference = 0;
+    for (int k = 14; k >= 2; --k) {
+        const auto coefficient = (k % 2 ? 1.L : -1.L) / (k * std::sqrt(static_cast<long double>(k)));
+        correction = coefficient + z * correction;
+        derivativeCorrection = k * coefficient + z * derivativeCorrection;
+        difference = (1 - k) * coefficient + z * difference;
+    }
+    return {-std::log1p(z * correction), z * difference / (1 + z * derivativeCorrection)};
 }
 
 Real fermiDiracHalf(Real eta, CarrierStatisticsModel model) {
