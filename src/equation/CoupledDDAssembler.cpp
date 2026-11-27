@@ -2044,7 +2044,7 @@ VectorXd CoupledDDAssembler::compensatedPopulationPoissonResidual(
     const CoupledDDBoundaryConditions& bcs) const
 {
     const int count = static_cast<int>(mesh_.numNodes());
-    if (!usesLegacyPopulationState() || !scaling_.enabled ||
+    if (!usesPopulationState() || usesBvMethodsOperator() || !scaling_.enabled ||
         state.size() != 3 * count || potentialLow.size() != count ||
         !state.allFinite() || !potentialLow.allFinite())
         throw std::invalid_argument("Invalid compensated Poisson population state");
@@ -2096,7 +2096,8 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
         mobilityConfig_.model == "masetti" ||
         mobilityConfig_.model == "masetti_field" ||
         (mobilityConfig_.model == "constant" && !impactIonizationEnabled_);
-    if (!usesLegacyPopulationState() || (usesFermiDirac_ && !integralFermi) || !scaling_.enabled ||
+    if (!usesPopulationState() || usesBvMethodsOperator() ||
+        (usesFermiDirac_ && !integralFermi) || !scaling_.enabled ||
         psi.size() != count || n.size() != count || p.size() != count ||
         low.size() != 3 * count || !low.allFinite() ||
         bcs.ohmicBias.size() != bcs.ohmicPopulation.size() ||
@@ -2314,7 +2315,8 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
             const Real mu = compensatedSurfaceMobility
                 ? detail::edgeMobility(edgeCells_, mesh_, doping_, *mobility_, cellMaterials_,
                     id, carrier, field, &mobilityConfig_, &psi, nullptr, &low)
-                : cachedEdgeMobility(id, carrier, field, &psi);
+                : cachedEdgeMobility(id, carrier, field, &psi,
+                    n(i), n(j), p(i), p(j), &n, &p);
             const Real sign = electron ? 1. : -1.;
             const Real coef = mu * Vt_ * factor * edge.coupling / continuityScale;
             if (integralFermi) {
@@ -6881,10 +6883,12 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
         }
         const Real mun = evaluateElectronCarrier ? cachedEdgeMobility(
             e, CarrierType::Electron, electronMobilityField,
-            psiForAvalancheMobility, n_i, n_j, p_i, p_j) : 0.0;
+            psiForAvalancheMobility, n_i, n_j, p_i, p_j,
+            nForAvalancheMobility, pForAvalancheMobility) : 0.0;
         const Real mup = evaluateHoleCarrier ? cachedEdgeMobility(
             e, CarrierType::Hole, holeMobilityField,
-            psiForAvalancheMobility, n_i, n_j, p_i, p_j) : 0.0;
+            psiForAvalancheMobility, n_i, n_j, p_i, p_j,
+            nForAvalancheMobility, pForAvalancheMobility) : 0.0;
         const bool evaluateDirectElectronFlux =
             mun > 0.0 && directEdgeFluxRequired;
         const bool evaluateDirectHoleFlux =
@@ -7115,7 +7119,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
         const bool phuMob = isPhuMobModel(mobilityConfig_);
         Real mun = fixedMobility;
         // Trial fields and populations are needed only if mobility is reevaluated.
-        if (!(fixedMobility >= 0.0) || phuMob) {
+        if (!(fixedMobility >= 0.0) || (phuMob && !elementBoxPhuMob)) {
             const Real dpsi = psi_j - psi_i;
             const Real electricField = std::abs(dpsi / h) * fieldFactor;
             const bool freezePhuMobFieldDerivative =
@@ -7220,7 +7224,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
         const Real dpsi = psi_j - psi_i;
         const bool phuMob = isPhuMobModel(mobilityConfig_);
         Real mup = fixedMobility;
-        if (!(fixedMobility >= 0.0) || phuMob) {
+        if (!(fixedMobility >= 0.0) || (phuMob && !elementBoxPhuMob)) {
             const Real electricField = std::abs(dpsi / h) * fieldFactor;
             const bool freezePhuMobFieldDerivative =
                 phuMob && !mobilityConfig_.jacobianFieldDerivatives;

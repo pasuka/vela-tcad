@@ -606,6 +606,14 @@ Material="Silicon" {
                                          "linear" if extrapolate else "none")
                         self.assertEqual(sweep["vtk_bias_points"], [])
 
+    def test_implicit_coupled_operator_for_density_sidecar_is_explicit_in_decks(self):
+        path = REPO / "reference_tcad/transportmodels_sentaurus2022/ci_u2022_12/pp12_des.cmd"
+        ir = parse_cmd_text(path.read_text(encoding="utf-8"), path_name=path.name)
+        sidecar = json.loads(path.with_suffix(".vela.json").read_text(encoding="utf-8"))
+        for deck in emit(ir, sidecar=sidecar).decks:
+            self.assertEqual(deck["solver"]["coupled_operator"], "legacy")
+            self.assertEqual(deck["solver"]["carrier_statistics"]["model"], "fermi_dirac")
+
     def test_partial_currentplot_interval_adds_only_requested_landings(self):
         ir = deepcopy(self.ir)
         ir["stages"][-1]["outputs"].update(

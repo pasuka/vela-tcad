@@ -1039,8 +1039,6 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                     or population_solver.get("electron_quantum_potential", {}).get("enabled", False)
                     or kind == "load" or current or "external_circuit" in sweep):
                 raise DeckEmitError("E407", detail="PN2D population mode requires a classical two-contact silicon voltage deck")
-            population_solver.setdefault("coupled_operator", "legacy")
-            population_solver.setdefault("carrier_statistics", {"model": "boltzmann"})
             population_solver.update(state_variables="potential_density", quasi_fermi_reference="none",
                                      primary_variable_coordinates="unit", quasi_fermi_update_limit_V=0.0,
                                      continuity_row_scaling={"enabled": False})
@@ -1073,6 +1071,10 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 raise DeckEmitError("E407", detail="PN2D population sweep requires coupled continuity equations")
             _decision(decisions, "PN2D population", True, "solver.primary_variable_coordinates", "unit",
                       "Scale the primary potential and concentrations with the existing Unit references", stage=index)
+        solver = deck["solver"]
+        if solver.get("state_variables") == "potential_density":
+            solver.setdefault("coupled_operator", "legacy")
+            solver.setdefault("carrier_statistics", {"model": "boltzmann"})
         sentaurus_steps = options.pn2d_population or (use_sidecar and sidecar.get("sentaurus_step_control"))
         if sentaurus_steps and entry.get("sweep", {}).get("mode") == "voltage":
             # Use the CMD Goal and requested output biases as the only

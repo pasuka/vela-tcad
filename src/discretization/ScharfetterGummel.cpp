@@ -775,17 +775,15 @@ Real stableGeneralizedFermiDifference(Real rightDensity,
 // preserving the quasi-Fermi driving drop and exact zero at equilibrium.
 Real effectivePotentialFermiFlux(Real left, Real right, Real reducedDrop, Real coef)
 {
-    if (!(left > 0.0) || !(right > 0.0))
-        return 0.0;
     return stableGeneralizedFermiDifference(
-        right, std::log(right) - std::log(left) + reducedDrop, reducedDrop, coef);
+        right, sgEffectiveBandArgument(left, right, reducedDrop), reducedDrop, coef);
 }
 
 vela::ArithmeticReal effectivePotentialFermiFluxExtended(
     Real left, Real right, vela::ArithmeticReal reducedDrop, Real coef)
 {
     if (!(left > 0.0) || !(right > 0.0))
-        return VELA_ARITHMETIC_LITERAL(0.0);
+        return std::numeric_limits<ArithmeticReal>::quiet_NaN();
     const auto argument = std::log(static_cast<vela::ArithmeticReal>(right))
         - std::log(static_cast<vela::ArithmeticReal>(left)) + reducedDrop;
     return detail::sgFactorizedPopulationDifference(

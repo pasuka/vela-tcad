@@ -72,6 +72,10 @@ def run_sdevice(launcher, output, stem, env, report, *, final_only=False):
         write_json(sidecar, config)
     command = [str(launcher), "--physical-constants-profile", "sentaurus_u2022_12",
                "--threads", "1", "--exit-on-failure", "-q"]
+    # These qualified TDX datasets report net and species fields independently.
+    # Keep the original donor/acceptor import used by the published baselines.
+    if report["case"] in {"bjtcurrentbc", "singledevice_idvg_linear"}:
+        command.extend(["--doping-mode", "reported"])
     if final_only:
         command.append("--plot-final-only")
     log_path = output / "sd-sim.log"
