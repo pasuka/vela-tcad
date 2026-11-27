@@ -722,6 +722,13 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             method = "poisson_only"
         cmd_iterations = source["iterations"] or math_cfg["iterations"] or 100
         deck["solver"].update(method=method, max_iter=cmd_iterations)
+        if (slot_idvd_population and kind == "sweep" and method == "newton"
+                and solver["impact_ionization"]["model"] == "none"):
+            deck["solver"]["linear_refinement_iterations"] = 6
+            _decision(decisions, "SLOT IDSAT", "PhuMob without avalanche",
+                      "solver.linear_refinement_iterations", 6,
+                      "Allow extra corrections with the same factors when the linear accuracy gate requires them",
+                      stage=index)
         if (slot_idvd_population and method == "newton" and
                 math_cfg.get("not_damped", 0) >= cmd_iterations and math_cfg.get("line_search_damping", 1) == 1):
             deck["solver"]["line_search"] = False

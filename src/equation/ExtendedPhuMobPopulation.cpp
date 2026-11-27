@@ -180,6 +180,8 @@ ArithmeticPhuMobTriangleResult evaluateArithmeticPhuMobTriangle(
             edge[k] = flux(k, (k + 1) % 3);
             out.edgeFlux[carrier][k] = edge[k] * mean * geometry.edgeCouple[k];
         }
+        if (tangent.avalancheStrength == 0)
+            continue;
         const auto best = geometry.sourceVertex;
         TriangleValues fromSource;
         fromSource[(best + 1) % 3] = edge[best];

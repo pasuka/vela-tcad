@@ -101,13 +101,16 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         return loadNewtonProblem(configFile, physicsDeck, &externalCouples);
     }();
     auto& config = problem.newton;
+    const auto& impact = config.impactIonization;
+    const bool phumobAvalanche = phumob && impact.model == "van_overstraeten";
     const auto& scaling = config.inputScaling;
     const auto& refs = config.unitScalingRefs;
     if (!scaling.isUnitScaling() || !refs.decimalTemperature_K ||
         !deck.contains("decimal_stage_controls") || !problem.fixedCharges.empty() ||
         !problem.sheetCharges.empty() || !parseBoundarySegmentSpecs(deck).empty() ||
         config.mobility.model != (phumob ? "phumob_field_lombardi" : "ialmob") ||
-        config.impactIonization.model != (fixedProfile && !phumob ? "none" : "van_overstraeten") ||
+        (phumob ? !phumobAvalanche && impact.model != "none"
+                : impact.model != (fixedProfile ? "none" : "van_overstraeten")) ||
         config.electronQuantumPotential.enabled || config.splitDDState ||
         config.recombinationVolumePolicy != "material_local_box" ||
         config.carrierRowConvergence.mode == "enforce" ||
@@ -388,7 +391,6 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
         {coefficient("auger_density_dependence.electron.reference_density_m3", auger.electronReferenceDensity),
          coefficient("auger_density_dependence.hole.reference_density_m3", auger.holeReferenceDensity)}};
     out["arithmetic_recombination_coefficients"] = 16;
-    const auto& impact = config.impactIonization;
     if (!fixedProfile) {
     if (impact.parameterSet != "default" || impact.aScale != 1 || impact.bScale != 1)
         throw std::invalid_argument("Extended SLOT requires unmodified explicit Van Overstraeten coefficients");
@@ -423,9 +425,10 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
     std::array<long double, 2> polyMobility{};
     std::vector<unsigned char> omitAvalanche;
     if (phumob) {
-        if (temperature != 300 || impact.drivingForce != "quasi_fermi_gradient" ||
-            impact.generation != "current_density" || impact.parameterSet != "default" ||
-            impact.aScale != 1 || impact.bScale != 1 ||
+        if (temperature != 300 ||
+            (phumobAvalanche && (impact.drivingForce != "quasi_fermi_gradient" ||
+             impact.generation != "current_density" || impact.parameterSet != "default" ||
+             impact.aScale != 1 || impact.bScale != 1)) ||
             config.mobility.highFieldDrivingForce != "quasi_fermi_gradient" ||
             config.recombinationMaterials != std::vector<std::string>{"Si"})
             throw std::invalid_argument("Unsupported SLOT extended80 PhuMob physical settings");
@@ -504,7 +507,8 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
             1e-4L * decimalCompatibilityNumber(mobility.at(1), "PolySilicon hole mobility",
                 poly->at("hole_mobility_cm2_per_V_s").get<double>())};
         out["arithmetic_phumob_cells"] = phumobMesh->cells.size();
-        out["avalanche_roundoff_factor"] = 64;
+        out["avalanche_roundoff_factor"] = phumobAvalanche ? 64 : 0;
+        out["phumob_avalanche_enabled"] = phumobAvalanche;
         out["recover_jacobian_after_local_protection"] = true;
         out["carrier_statistics"] = config.carrierStatistics.model;
     }
@@ -524,7 +528,8 @@ nlohmann::json runExtendedSlotStage(const std::string& configFile, const nlohman
             return assembleExtendedPhuMobPopulationContinuity(*phumobMesh, problem.doping, point, material,
                 phumobCoefficients, polyMobility, vt, temperature, config.mobility.useElectricFieldAtGradQfContacts(true),
                 impact.useElectricFieldAtGradQfContacts(true), sources, sourceCoefficients, port->node_ids, allContacts,
-                mask, ExtendedPhuMobTangentOptions{64.L, recover});
+                mask, ExtendedPhuMobTangentOptions{
+                    phumobAvalanche ? 64.L : 0.L, recover, phumobAvalanche ? 1.L : 0.L});
         }
         return assembleExtendedIalPopulationContinuity(config.mobility, problem.mesh, problem.doping, point,
             material.electronIntrinsic, material.holeIntrinsic, length, unitConcentration_m3, vt, temperature,

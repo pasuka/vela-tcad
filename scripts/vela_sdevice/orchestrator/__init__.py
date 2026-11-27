@@ -34,8 +34,12 @@ from .support import RunError, RunLock, write_json
 
 def _is_slot_idvd_profile(ir, mesh):
     keys = {entry["key"] for entry in ir["physics"]["effective"]}
-    return ({"Fermi", "Mobility.PhuMob", "Mobility.Enormal", "Mobility.HighFieldSaturation",
-             "Recombination.SRH", "Recombination.Auger", "Recombination.Avalanche"} <= keys
+    goals = [stage["goal"] for stage in ir.get("stages", []) if stage.get("goal")]
+    idsat = ([goal["contact"] for goal in goals] == ["drain", "gate"]
+             and all("voltage_V" in goal for goal in goals))
+    return (("Recombination.Avalanche" in keys or idsat)
+            and {"Fermi", "Mobility.PhuMob", "Mobility.Enormal", "Mobility.HighFieldSaturation",
+                 "Recombination.SRH", "Recombination.Auger"} <= keys
             and {"Si", "PolySilicon"} <= set(mesh["materials"])
             and {e["name"] for e in ir["electrodes"]} == {"source", "drain", "gate", "substrate"})
 

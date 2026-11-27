@@ -78,6 +78,21 @@ def emit(ir: dict, **kwargs):
 
 
 class DeckEmitterTests(unittest.TestCase):
+    def test_auger_generation_is_explicit_in_generated_deck(self):
+        path = FIXTURES / "pn2d" / "pn2d_0v_des.cmd"
+        template = """File { Grid="mesh.grd" Parameter="device.par" }
+Electrode { { Name="anode" Voltage=0 } { Name="cathode" Voltage=0 } }
+Physics { Recombination(AUGER) }
+Solve { Coupled { Poisson Electron Hole } }
+"""
+        for spelling, expected in (("Auger", False), ("Auger(WithGeneration)", True)):
+            with self.subTest(spelling=spelling):
+                ir = parse_cmd_text(template.replace("AUGER", spelling), path_name=path.name)
+                self.assertTrue(ir["verdict"]["accepted"], ir["errors"])
+                solver = emit(ir).decks[0]["solver"]
+                self.assertIn("auger", solver["recombination"])
+                self.assertIs(solver["auger_with_generation"], expected)
+
     def test_slot_fermi_default_is_resolved_before_material_projection(self):
         ir = {"physics": {"effective": [{"key": key} for key in
               ("Fermi", "Mobility.PhuMob", "Mobility.Enormal", "Mobility.HighFieldSaturation",
@@ -90,6 +105,15 @@ class DeckEmitterTests(unittest.TestCase):
         self.assertFalse(_apply_slot_idvd_bgn_default(explicit))
         self.assertFalse(_is_slot_idvd_profile(ir, {"materials": ["Si"]}))
         self.assertTrue(_is_slot_idvd_profile(ir, mesh))
+        idsat = deepcopy(ir)
+        idsat["physics"]["effective"] = [
+            model for model in idsat["physics"]["effective"]
+            if model["key"] != "Recombination.Avalanche"]
+        idsat["stages"] = [{"goal": {"contact": contact, "voltage_V": value}}
+                           for contact, value in (("drain", 20), ("gate", 5))]
+        self.assertTrue(_is_slot_idvd_profile(idsat, mesh))
+        idsat["stages"].reverse()
+        self.assertFalse(_is_slot_idvd_profile(idsat, mesh))
         no_fermi_correction = deepcopy(ir)
         no_fermi_correction["physics"]["effective"].append({"key": "EffectiveIntrinsicDensity.NoFermi"})
         self.assertTrue(_apply_slot_idvd_bgn_default(no_fermi_correction))

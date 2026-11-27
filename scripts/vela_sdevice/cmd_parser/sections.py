@@ -250,7 +250,6 @@ _DEFAULT_VELA = {
     "Mobility.ConstantMobility": "solver.mobility.model=constant",
     "Mobility.PhuMob": "solver.mobility.model=phumob",
     "Mobility.Enormal": "solver.mobility.model+=_lombardi",
-    "Recombination.Auger": "solver.recombination+=auger",
     "EffectiveIntrinsicDensity.OldSlotboom": "solver.bandgap_narrowing=old_slotboom",
     "EffectiveIntrinsicDensity.BennettWilson": "solver.bandgap_narrowing=bennett_wilson",
     "EffectiveIntrinsicDensity.NoBandGapNarrowing": "solver.bandgap_narrowing=none",
@@ -410,7 +409,16 @@ def _canonicalise_model(model: dict, scope: PhysicsScope, ctx: ParseContext, lin
                 if ok:
                     _add_effective(scope, "Recombination.SRH", params, vela=vela)
             elif a == "auger":
-                _add_effective(scope, "Recombination.Auger", {}, vela=_DEFAULT_VELA["Recombination.Auger"])
+                with_generation = False
+                for option in sub:
+                    if option["name"].lower() != "withgeneration" or option.get("args"):
+                        ctx.error("E107", _line_of(option, line), section,
+                                  option["name"], text=option["name"])
+                    else:
+                        with_generation = True
+                setting = "true" if with_generation else "false"
+                _add_effective(scope, "Recombination.Auger", {"with_generation": with_generation},
+                               vela=f"solver.recombination+=auger; solver.auger_with_generation={setting}")
             elif a == "avalanche":
                 params = {}
                 unsupported = None

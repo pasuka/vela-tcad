@@ -290,6 +290,21 @@ are supplied separately from the repository. If the IdVd package uses an
 explicit material defaults library, pass its path as
 `VELA_SLOT_LDMOS_IDVD_DEFAULT_PAR`.
 
+IDSAT has a separate switch, `VELA_ENABLE_SLOT_LDMOS_IDSAT_CI`, which also
+defaults to `OFF`. Enable it to register `slot_ldmos_idsat_sdevice` and pass
+the prepared original CMD as `VELA_SLOT_LDMOS_IDSAT_CMD`. If the package
+uses a separate defaults library, set `VELA_SLOT_LDMOS_IDSAT_DEFAULT_PAR`.
+The three other SLOT CMD packages are optional when enabling IDSAT alone.
+
+```bash
+cmake -S . -B build-release \
+  -DVELA_ENABLE_SLOT_LDMOS_IDSAT_CI=ON \
+  -DVELA_SLOT_LDMOS_IDSAT_CMD=/path/to/idsat/IDSAT_des.cmd \
+  -DVELA_SLOT_LDMOS_IDSAT_DEFAULT_PAR=/path/to/idsat/defaults.par
+cmake --build build-release --target sd-sim
+ctest --test-dir build-release -R '^slot_ldmos_idsat_sdevice$' --output-on-failure
+```
+
 Build `sd-sim` and its runtime targets, then run `ctest -L slot-ldmos --output-on-failure`.
 The runner uses the build's `sd-sim` by default. `VELA_SLOT_LDMOS_SD_SIM`
 can explicitly select a separately qualified SLOT-capable runtime with its
@@ -299,5 +314,7 @@ every emitted stage. With `Math { ExtendedPrecision }`, each stage must
 report end-to-end float80 and produce a verified accepted-state archive.
 The tests check the CMD voltage endpoint or the BVDS current stop, as well
 as the current curve, final VTU and run log. IdVd must first complete the
-gate sweep at zero drain bias before sweeping the drain. Each test keeps
+gate sweep at zero drain bias before sweeping the drain. IDSAT checks both
+voltage endpoints and verifies that the drain endpoint at zero gate bias
+is saved and reloaded before sweeping the gate at fixed drain bias. Each test keeps
 its run directory and logs under `slot-ldmos-reports/` in the build tree.

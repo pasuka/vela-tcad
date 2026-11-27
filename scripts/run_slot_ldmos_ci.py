@@ -56,10 +56,10 @@ def qualify(case, cmd):
             item["index"] for item in plan["stages"]]:
         raise ValueError("The stage plan and executed stages differ")
 
-    contact = "gate" if case == "idvg" else "drain"
-    source_goals = {stage["index"]: stage["goal"]["voltage_V"]
+    contacts = ("drain", "gate") if case == "idsat" else ("gate" if case == "idvg" else "drain",)
+    source_goals = {stage["index"]: stage["goal"]
                     for stage in source["stages"]
-                    if stage.get("goal", {}).get("contact") == contact
+                    if stage.get("goal", {}).get("contact") in contacts
                     and "voltage_V" in stage["goal"]}
     sweeps = []
     idvd_gate = None
@@ -92,7 +92,7 @@ def qualify(case, cmd):
                     or not (work / stage["output_state"]).is_file()):
                 raise ValueError(f"Stage {stage['index']} did not produce a verified float80 accepted state")
         sweep = stage.get("sweep", {})
-        if sweep.get("contact") != contact or sweep.get("mode") != "voltage":
+        if sweep.get("contact") not in contacts or sweep.get("mode") != "voltage":
             if not run["goal_reached"]:
                 raise ValueError(f"Preparation stage {stage['index']} did not reach its goal")
             if case == "idvd" and sweep.get("contact") == "gate" and sweep.get("mode") == "voltage":
@@ -109,15 +109,33 @@ def qualify(case, cmd):
         if (case == "bvds") != series_resistor:
             raise ValueError(f"Stage {stage['index']} has the wrong drain circuit for {case}")
         source_goal = source_goals.get(stage["ir_stage_index"])
-        if source_goal is None or finite_number(sweep["stop_V"]) != source_goal:
+        if (source_goal is None or sweep["contact"] != source_goal["contact"]
+                or finite_number(sweep["stop_V"]) != source_goal["voltage_V"]):
             raise ValueError(f"Stage {stage['index']} voltage goal differs from the CMD")
         sweeps.append((stage, run, sweep))
 
     if not sweeps:
-        raise ValueError(f"No {contact} voltage sweep in {cmd.name}")
-    if {stage["ir_stage_index"] for stage, _, _ in sweeps} != source_goals.keys():
-        raise ValueError(f"The executed {contact} voltage sweeps differ from the CMD")
+        raise ValueError(f"No {case} voltage sweep in {cmd.name}")
+    if [stage["ir_stage_index"] for stage, _, _ in sweeps] != list(source_goals):
+        raise ValueError(f"The executed {case} voltage sweeps differ from the CMD")
+    if case == "idsat":
+        if tuple(sweep["contact"] for _, _, sweep in sweeps) != contacts:
+            raise ValueError("IDSAT requires a drain sweep followed by a gate sweep")
+        (drain_stage, drain_run, _), (gate_stage, gate_run, _) = sweeps
+        load = plan["stages"][drain_stage["index"] + 1]
+        drain_bias = drain_run["reached_voltages_V"]["drain"]
+        gate_start = gate_stage["electrode_voltages_start_V"]
+        if (drain_stage["electrode_voltages_start_V"]["drain"] != 0
+                or drain_stage["electrode_voltages_start_V"]["gate"] != 0
+                or drain_run["reached_voltages_V"]["gate"] != 0
+                or load["kind"] != "load" or load["index"] + 1 != gate_stage["index"]
+                or load["input_state"] != drain_stage["output_state"]
+                or gate_stage["input_state"] != load["output_state"]
+                or gate_start["gate"] != 0 or gate_start["drain"] != drain_bias
+                or gate_run["reached_voltages_V"]["drain"] != drain_bias):
+            raise ValueError("IDSAT must save and reload the zero-gate drain endpoint before sweeping the gate")
     for stage, run, sweep in sweeps:
+        contact = sweep["contact"]
         with (work / stage["csv"]).open(newline="", encoding="utf-8") as stream:
             rows = [row for row in csv.DictReader(stream) if row["converged"] == "1"]
         if len(rows) != run["accepted_points"]:
@@ -155,7 +173,7 @@ def qualify(case, cmd):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("case", choices=("bvds", "idvg", "idvd"))
+    parser.add_argument("case", choices=("bvds", "idvg", "idvd", "idsat"))
     parser.add_argument("--cmd", type=Path, required=True)
     parser.add_argument("--launcher", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
