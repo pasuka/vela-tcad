@@ -141,11 +141,12 @@ template<class S, class T> Preparation<S> prepare(const std::array<S,7>& state,
     if (std::isfinite(value(muAcc))) muAcc=muAcc*g;
     const S inverse2=inverse(muInv)+inverse(muAcc);
     const S mu2=value(inverse2)==T(0.L)?inf:inverse(inverse2);
+    const S impurityPower=power(na+nd+S(p.N2),p.lambda);
     return {mu3,mu2,S(p.S)/temperature,exponential(-distance/S(p.lCritC)),
         exponential(-distance/S(p.lCrit)),S(p.muMax)*power(t,-p.theta),
-        S(p.C)*power(na+nd+S(p.N2),p.lambda),power(t,p.k),
+        S(p.C)*impurityPower,power(t,p.k),
         S(p.A)+S(p.alphaSr)*(n+h)/power(na+nd+S(p.N1),p.nu),
-        power(na+nd+S(p.N2),p.lambdaSr)};
+        p.lambdaSr==p.lambda ? impurityPower : power(na+nd+S(p.N2),p.lambdaSr)};
 }
 
 template<class S, class T> std::array<S,6> evaluatePrepared(const Preparation<S>& q,

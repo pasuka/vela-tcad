@@ -470,7 +470,7 @@ public:
         Real anchoredLoadEnvelopeScale =
             std::numeric_limits<Real>::quiet_NaN();
         bool repeatIteration = false;
-        bool omitNext=false;
+        derivative_recovery::PostProtectionRecovery postProtection(system_.postProtectionDerivativeRecovery);
         for (int iter = 0; iter <= config_.maxIterations; iter += repeatIteration ? 0 : 1) {
             const bool observeAccepted = !repeatIteration;
             repeatIteration = false;
@@ -556,7 +556,7 @@ public:
             if (iter == config_.maxIterations)
                 break;
 
-            bool fullDerivative=system_.postProtectionDerivativeRecovery ? !omitNext :
+            bool fullDerivative=system_.postProtectionDerivativeRecovery ? !postProtection.omitForLinearization() :
                 (!system_.automaticDerivativeRecovery || recovery.requestFull(
                     residualConverged && loadAccepted));
             result.trace.back().derivativeMode=system_.automaticDerivativeRecovery
@@ -1026,8 +1026,6 @@ public:
                     }
                 }
                 result.updateError=candidateError;
-                omitNext=system_.postProtectionDerivativeRecovery &&
-                    (result.trace.back().protectedElectrons>0 || result.trace.back().protectedHoles>0);
                 result.state = std::move(fullStep);
                 result.trace.back().acceptedAlpha = 1.0;
                 accepted = true;
@@ -1063,8 +1061,8 @@ public:
             // A rejected candidate must not change the next linearization.
             // Only the accepted trial's actual protected writeback controls it,
             // including when the caller explicitly uses a line search.
-            omitNext=system_.postProtectionDerivativeRecovery &&
-                (result.trace.back().protectedElectrons>0 || result.trace.back().protectedHoles>0);
+            postProtection.acceptWrite(
+                result.trace.back().protectedElectrons > 0 || result.trace.back().protectedHoles > 0);
             if(system_.automaticDerivativeRecovery)recovery.stateAdvanced();
         }
         result.failureReason = "coupled Newton iteration budget exhausted";

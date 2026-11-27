@@ -1023,6 +1023,8 @@ TEST_CASE("Extended SparseLU retains assembled coefficients and direction during
     ExtendedVector rhs(3);
     rhs << 0, low, -low;
     const auto direction = solveExtendedSparseLu(matrix, rhs);
+    matrix.makeCompressed();
+    CHECK(solveExtendedSparseLu(matrix, rhs) == direction);
     CHECK(direction[0] < low);
     CHECK(direction[1] == low);
     CHECK(direction[2] == -low);

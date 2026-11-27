@@ -3,6 +3,7 @@
 #include "vela/simulation/BorderedLoadLineSystem.h"
 #include "vela/simulation/ExtendedBorderedLoadLine.h"
 #include "vela/simulation/LoadLineResidual.h"
+#include "vela/solver/DerivativeRecovery.h"
 #include <cmath>
 #include <stdexcept>
 
@@ -78,8 +79,10 @@ ExtendedFixedBiasNewtonResult solveExtendedPopulationNewton(
             circuit->direction * circuit->resistance_ohm_um, current, state.supplyBias_V).voltage_V : 0.L;
     };
     ExtendedVector rhsGrowthScale;
-    bool useRecoveryJacobian = false;
+    derivative_recovery::PostProtectionRecovery postProtection(
+        config.afterLocalProtectionJacobian || assembleAfterLocalProtection);
     for (int update = 0; update < config.maxUpdates; ++update) {
+        const bool useRecoveryJacobian = postProtection.omitForLinearization();
         if (useRecoveryJacobian && config.afterLocalProtectionJacobian) {
             auto replacement = config.afterLocalProtectionJacobian(result.state);
             if (replacement.rows() != count || replacement.cols() != count)
@@ -143,7 +146,7 @@ ExtendedFixedBiasNewtonResult solveExtendedPopulationNewton(
                     trial.deviceBias_V += protectedTrial.alpha * linear.update[count];
                 const bool protectedWrite = !protectedTrial.protectedElectrons.empty()
                     || !protectedTrial.protectedHoles.empty();
-                const auto& assembleNext = protectedWrite && assembleAfterLocalProtection
+                const auto& assembleNext = assembleAfterLocalProtection && postProtection.omitForCandidate(protectedWrite)
                     ? assembleAfterLocalProtection : assemble;
                 auto next = assembleNext(trial);
                 if (!validFrame(next))
@@ -195,8 +198,7 @@ ExtendedFixedBiasNewtonResult solveExtendedPopulationNewton(
             config.observeAcceptedUpdate(result.state, {result.updates, useRecoveryJacobian,
                 protectedElectrons, protectedHoles, result.acceptedAlpha, result.updateError.rms,
                 residualBefore, result.scaledResidual, frame.device.residual});
-        useRecoveryJacobian = (config.afterLocalProtectionJacobian || assembleAfterLocalProtection)
-            && (protectedElectrons || protectedHoles);
+        postProtection.acceptWrite(protectedElectrons || protectedHoles);
         if (result.updateError.valid && result.updateError.rms < 1 &&
             (!circuit || !circuit->enforceLoadLine ||
              std::abs(loadResidual(result.state, frame.current_A_per_um)) <= circuit->tolerance_V)) {

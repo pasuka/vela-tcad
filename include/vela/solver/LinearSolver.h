@@ -4,7 +4,7 @@
 #include "vela/solver/ConstraintElimination.h"
 
 #include <Eigen/OrderingMethods>
-#include <Eigen/SparseLU>
+#include "vela/solver/SparseLuFactors.h"
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -125,29 +125,6 @@ private:
     using SparseLUOrdering = Eigen::COLAMDOrdering<StorageIndex>;
 #endif
 
-    class SparseLUSolver
-        : public Eigen::SparseLU<SparseMatrixd, SparseLUOrdering> {
-    public:
-        bool analysisIsOk() const noexcept { return this->m_analysisIsOk; }
-        /// Conventional scalar LU work implied by stored factor structure;
-        /// excludes blocked-kernel padding, pivot searches and memory work.
-        double structuralFlops() const {
-            std::vector<double> lower(this->cols(), 0.), upper(this->cols(), 0.);
-            for (Eigen::Index col = 0; col < this->cols(); ++col) {
-                for (typename SparseLUSolver::SCMatrix::InnerIterator it(this->m_Lstore, col); it; ++it) {
-                    if (it.row() > col) ++lower[col];
-                    else if (it.row() < col) ++upper[it.row()];
-                }
-                for (Eigen::Map<SparseMatrixd>::InnerIterator it(this->m_Ustore, col); it; ++it)
-                    if (it.row() < col) ++upper[it.row()];
-            }
-            double flops = 0.;
-            for (Eigen::Index i = 0; i < this->cols(); ++i)
-                flops += lower[i] * (1. + 2. * upper[i]);
-            return flops;
-        }
-    };
-
     bool patternMatches(const SparseMatrixd& A) const;
     void cachePattern(const SparseMatrixd& A);
     void analyzePatternIfNeeded(const SparseMatrixd& A);
@@ -155,7 +132,7 @@ private:
     bool valuesMatchFactorization(const SparseMatrixd& A) const;
     void cacheFactorizationValues(const SparseMatrixd& A);
 
-    SparseLUSolver solver_;
+    detail::SparseLuFactors<Real, SparseLUOrdering> solver_;
     bool hasAnalyzedPattern_ = false;
     Eigen::Index cachedRows_ = 0;
     Eigen::Index cachedCols_ = 0;

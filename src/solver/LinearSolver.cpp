@@ -22,6 +22,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <limits>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -40,23 +41,21 @@ namespace {
 // Iterative refinement changes only the RHS; rebuilding these wide factors
 // on every correction is unnecessary and can dominate a TCAD target.
 class LongDoubleSparseLU final : public detail::DirectBackend {
-    using Matrix=Eigen::SparseMatrix<long double>;
-    using Vector=Eigen::Matrix<long double,Eigen::Dynamic,1>;
-    Eigen::SparseLU<Matrix,Eigen::COLAMDOrdering<int>> solver_;
+    std::optional<ExtendedSparseLu> solver_;
 public:
     void analyze(const SparseMatrixd& a) override {
         if(std::numeric_limits<long double>::digits<=std::numeric_limits<double>::digits)
             throw std::runtime_error("sparselu_long_double requires long double wider than double.");
-        Matrix wide=a.cast<long double>();solver_.analyzePattern(wide);
+        solver_.emplace();
+        solver_->analyzePattern(a.cast<long double>());
     }
     void factor(const SparseMatrixd& a) override {
-        Matrix wide=a.cast<long double>();solver_.factorize(wide);
-        if(solver_.info()!=Eigen::Success)throw std::runtime_error("long double factorisation failed");
+        solver_->factorize(a.cast<long double>());
     }
     VectorXd solve(const VectorXd& b) override {
-        Vector wide=solver_.solve(b.cast<long double>());
+        const ExtendedVector wide = solver_->solve(b.cast<long double>());
         VectorXd result=wide.cast<double>();
-        if(solver_.info()!=Eigen::Success || !wide.allFinite() || !result.allFinite())
+        if(!result.allFinite())
             throw std::runtime_error("long double solve failed or cannot be represented");
         return result;
     }
@@ -292,7 +291,7 @@ VectorXd solveWithAlternateBackend(const std::string& backend,
                 else {LinearSolver reducedSolver(backend=="umfpack_eliminated" ? "umfpack" : "pardiso_mkl");freeX=reducedSolver.solve(reduced,rhs);}
             }
             else {
-                Eigen::SparseLU<SparseMatrixd,Eigen::COLAMDOrdering<int>> lu;
+                detail::SparseLuFactors<Real> lu;
                 lu.compute(reduced);checkSolved(lu.info(),"reduced factorisation");
                 freeX=lu.solve(rhs);checkSolved(lu.info(),"reduced solve");
             }

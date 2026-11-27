@@ -1,4 +1,5 @@
 #include "vela/physics/MobilityModel.h"
+#include "vela/physics/ExtendedPhuMobEvaluation.h"
 #include "vela/physics/SlotIALMobility.h"
 #include "vela/equation/IalTransport.h"
 #include <nlohmann/json.hpp>
@@ -1217,9 +1218,9 @@ BasicPhuMobScalarResult<Scalar> evaluatePhuMobScalarImpl(
 
 template<class Scalar>
 BasicPhuMobLogDensityDerivatives<Scalar> evaluatePhuMobLogDensityDerivativesImpl(
-    CarrierType carrier, const BasicPhuMobScalarState<Scalar>& state, const BasicPhuMobParameters<Scalar>& params)
+    CarrierType carrier, const BasicPhuMobScalarState<Scalar>& state,
+    const BasicPhuMobParameters<Scalar>& params, const BasicPhuMobScalarResult<Scalar>& value)
 {
-    const auto value = evaluatePhuMobScalarImpl(carrier, state, params);
     BasicPhuMobLogDensityDerivatives<Scalar> result;
     if (!std::isfinite(value.screeningParameter) ||
         value.effectiveScatteringConcentration <= 0)
@@ -1289,7 +1290,8 @@ PhuMobScalarResult evaluatePhuMobScalar(
 PhuMobLogDensityDerivatives evaluatePhuMobLogDensityDerivatives(
     CarrierType carrier, const PhuMobScalarState& state, const PhuMobParameters& params)
 {
-    return evaluatePhuMobLogDensityDerivativesImpl(carrier, state, params);
+    return evaluatePhuMobLogDensityDerivativesImpl(carrier, state, params,
+        evaluatePhuMobScalarImpl(carrier, state, params));
 }
 
 ExtendedPhuMobScalarResult evaluateExtendedPhuMobScalar(
@@ -1301,7 +1303,14 @@ ExtendedPhuMobScalarResult evaluateExtendedPhuMobScalar(
 ExtendedPhuMobLogDensityDerivatives evaluateExtendedPhuMobLogDensityDerivatives(
     CarrierType carrier, const ExtendedPhuMobScalarState& state, const ExtendedPhuMobParameters& params)
 {
-    return evaluatePhuMobLogDensityDerivativesImpl(carrier, state, params);
+    return evaluateExtendedPhuMobWithLogDensityDerivatives(carrier, state, params).slopes;
+}
+
+ExtendedPhuMobEvaluation evaluateExtendedPhuMobWithLogDensityDerivatives(
+    CarrierType carrier, const ExtendedPhuMobScalarState& state, const ExtendedPhuMobParameters& params)
+{
+    const auto value = evaluatePhuMobScalarImpl(carrier, state, params);
+    return {value.mobility, evaluatePhuMobLogDensityDerivativesImpl(carrier, state, params, value)};
 }
 
 } // namespace vela

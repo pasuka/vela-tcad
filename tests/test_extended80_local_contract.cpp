@@ -21,6 +21,7 @@
 #include "vela/io/MeshReader.h"
 #include "vela/io/StateIdentity.h"
 #include "vela/physics/IalMobilityJson.h"
+#include "vela/physics/ExtendedPhuMobEvaluation.h"
 #include "vela/physics/MobilityModel.h"
 #include "vela/physics/IalInterfaceGeometry.h"
 #include "vela/physics/RecombinationModel.h"
@@ -416,6 +417,10 @@ TEST_CASE("Wide PhuMob shares the low-field law and resolves both population slo
         const auto legacy = evaluatePhuMobScalar(carrier, {5e23, 3e23, 2.4e23, 7e22, 300.});
         CHECK(std::abs(sample.mobility / legacy.mobility - 1) < 3e-15L);
         const auto slopes = evaluateExtendedPhuMobLogDensityDerivatives(carrier, state, parameters);
+        const auto combined = evaluateExtendedPhuMobWithLogDensityDerivatives(carrier, state, parameters);
+        CHECK(combined.mobility == sample.mobility);
+        CHECK(combined.slopes.electrons == slopes.electrons);
+        CHECK(combined.slopes.holes == slopes.holes);
         constexpr long double increment = 0x1p-16L;
         for (const auto electron : {true, false}) {
             auto high = state, low = state;
@@ -1202,6 +1207,13 @@ TEST_CASE("SLOT IALMob low-field kernel consumes the decimal PAR parameters", "[
     const auto legacyRate = legacy.evaluateWithDerivatives({1e23, 4e21, 2e23, 4e14, 3e6, 2e-9, 300.});
     const auto wide = evaluateExtendedSlotIalMobility(state, standard, true, method);
     CHECK(std::abs(wide.result.mobility_m2_per_Vs / legacyRate.result.mobility_m2_per_Vs - 1.L) < 1e-12L);
+    auto changed = state;
+    changed.temperature_K = 350.L;
+    const auto warm = evaluateExtendedSlotIalMobility(changed, standard, true, method);
+    CHECK(warm.result.mobility_m2_per_Vs != wide.result.mobility_m2_per_Vs);
+    const auto restored = evaluateExtendedSlotIalMobility(state, standard, true, method);
+    CHECK(restored.derivative_SI == wide.derivative_SI);
+    CHECK(restored.temperatureDerivative_m2_per_Vs_K == wide.temperatureDerivative_m2_per_Vs_K);
     constexpr auto delta = 1.L;
     state.normalField_V_per_m += delta;
     const auto plus = evaluateExtendedSlotIalMobility(state, standard, true, method);

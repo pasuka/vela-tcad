@@ -1,6 +1,6 @@
 #include "vela/solver/ExtendedSparseLu.h"
 
-#include <Eigen/SparseLU>
+#include "vela/solver/SparseLuFactors.h"
 #include <cmath>
 #include <limits>
 #include <stdexcept>
@@ -8,14 +8,19 @@
 namespace vela {
 
 struct ExtendedSparseLu::Impl {
-    Eigen::SparseLU<ExtendedSparseMatrix, Eigen::COLAMDOrdering<int>> solver;
+    detail::SparseLuFactors<long double> solver;
 };
 
-ExtendedSparseLu::ExtendedSparseLu(const ExtendedSparseMatrix& matrix)
+ExtendedSparseLu::ExtendedSparseLu()
     : impl_(std::make_unique<Impl>())
 {
     if (std::numeric_limits<long double>::digits <= std::numeric_limits<double>::digits)
         throw std::runtime_error("Extended SparseLU requires long double wider than double");
+}
+
+ExtendedSparseLu::ExtendedSparseLu(const ExtendedSparseMatrix& matrix)
+    : ExtendedSparseLu()
+{
     if (matrix.rows() == 0 || matrix.rows() != matrix.cols())
         throw std::invalid_argument("Invalid extended SparseLU matrix dimensions");
     for (Eigen::Index col = 0; col < matrix.outerSize(); ++col)
@@ -23,15 +28,32 @@ ExtendedSparseLu::ExtendedSparseLu(const ExtendedSparseMatrix& matrix)
             if (!std::isfinite(entry.value()))
                 throw std::invalid_argument("Nonfinite extended SparseLU coefficient");
 
-    ExtendedSparseMatrix compressed = matrix;
-    compressed.makeCompressed();
-    impl_->solver.compute(compressed);
+    if (matrix.isCompressed()) {
+        impl_->solver.compute(matrix);
+    } else {
+        ExtendedSparseMatrix compressed = matrix;
+        compressed.makeCompressed();
+        impl_->solver.compute(compressed);
+    }
     if (impl_->solver.info() != Eigen::Success)
         throw std::runtime_error("Extended SparseLU factorization failed: " +
                                  impl_->solver.lastErrorMessage());
 }
 
 ExtendedSparseLu::~ExtendedSparseLu() = default;
+
+void ExtendedSparseLu::analyzePattern(const ExtendedSparseMatrix& matrix)
+{
+    impl_->solver.analyzePattern(matrix);
+}
+
+void ExtendedSparseLu::factorize(const ExtendedSparseMatrix& matrix)
+{
+    impl_->solver.factorize(matrix);
+    if (impl_->solver.info() != Eigen::Success)
+        throw std::runtime_error("Extended SparseLU factorization failed: " +
+                                 impl_->solver.lastErrorMessage());
+}
 
 ExtendedVector ExtendedSparseLu::solve(const ExtendedVector& rhs) const
 {

@@ -241,8 +241,22 @@ BasicIalMobilityDifferential<long double> evaluateExtendedSlotIalMobility(
         variables[i].derivative[i] = 1.L;
     }
     const auto cutoff = [&] {
-        if (method == IalScreeningMethod::U202212SingleNewton)
-            return ial_detail::u202212ScreeningCutoff(parameters.mass,variables[6]);
+        if (method == IalScreeningMethod::U202212SingleNewton) {
+            struct CachedCutoff {
+                long double mass = 0;
+                long double temperature = 0;
+                Dual80 cutoff{0};
+            };
+            // Bounded per-thread storage for the two supported Si mass families.
+            // Use the full-precision operands as keys, including across decks.
+            static thread_local std::array<CachedCutoff, 2> cache;
+            auto& entry = cache[compatibleMass == 1. ? 0 : 1];
+            if (entry.mass != parameters.mass || entry.temperature != state.temperature_K) {
+                entry = {parameters.mass, state.temperature_K,
+                         ial_detail::u202212ScreeningCutoff(parameters.mass, variables[6])};
+            }
+            return entry.cutoff;
+        }
         const auto minimum = method == IalScreeningMethod::Legacy
             ? legacyScreeningMinimum(parameters.mass,state.temperature_K)
             : candidateScreeningMinimum(parameters.mass,state.temperature_K,method);

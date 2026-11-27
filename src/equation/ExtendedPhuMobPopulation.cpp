@@ -1,4 +1,5 @@
 #include "vela/equation/ExtendedPhuMobPopulation.h"
+#include "vela/physics/ExtendedPhuMobEvaluation.h"
 
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/core/PhysicalConstants.h"
@@ -165,8 +166,8 @@ ArithmeticPhuMobTriangleResult evaluateArithmeticPhuMobTriangle(
             const auto& vertex = state[k];
             const ExtendedPhuMobScalarState local{
                 vertex.donors, vertex.acceptors, vertex.electrons, vertex.holes, temperature};
-            const auto value = evaluateExtendedPhuMobScalar(species, local, coefficients.bulk).mobility;
-            const auto slopes = evaluateExtendedPhuMobLogDensityDerivatives(species, local, coefficients.bulk);
+            const auto [value, slopes] = evaluateExtendedPhuMobWithLogDensityDerivatives(
+                species, local, coefficients.bulk);
             Dual bulk(static_cast<Scalar>(value));
             bulk.derivative[3 * k + 1] = static_cast<Scalar>(slopes.electrons / vertex.electrons);
             bulk.derivative[3 * k + 2] = static_cast<Scalar>(slopes.holes / vertex.holes);

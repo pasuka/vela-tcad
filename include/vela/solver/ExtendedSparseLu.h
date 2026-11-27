@@ -11,8 +11,12 @@ using ExtendedSparseMatrix = Eigen::SparseMatrix<long double>;
 /// Reuse factors when corrections use the same prepared matrix.
 class ExtendedSparseLu {
 public:
+    ExtendedSparseLu();
     explicit ExtendedSparseLu(const ExtendedSparseMatrix& matrix);
     ~ExtendedSparseLu();
+    // The mixed-precision adapter retains the symbolic analysis across refactorings.
+    void analyzePattern(const ExtendedSparseMatrix& matrix);
+    void factorize(const ExtendedSparseMatrix& matrix);
     ExtendedVector solve(const ExtendedVector& rhs) const;
 
 private:

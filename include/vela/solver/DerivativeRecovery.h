@@ -8,6 +8,20 @@
 #include <string>
 
 namespace vela::derivative_recovery {
+// A fresh target starts with the full tangent. Only accepted writes advance it.
+class PostProtectionRecovery {
+public:
+    explicit PostProtectionRecovery(bool enabled) : enabled_(enabled) {}
+
+    bool omitForCandidate(bool protectedWrite) const { return enabled_ && protectedWrite; }
+    void acceptWrite(bool protectedWrite) { omitNext_ = omitForCandidate(protectedWrite); }
+    bool omitForLinearization() const { return omitNext_; }
+
+private:
+    bool enabled_;
+    bool omitNext_ = false;
+};
+
 enum class DerivativeMode { Bootstrap, Trial, Full };
 inline const char* derivativeModeName(DerivativeMode mode) {
     switch(mode) {
