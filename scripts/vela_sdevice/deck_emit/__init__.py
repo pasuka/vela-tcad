@@ -666,6 +666,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                   "Use the validated SLOT mesh, doping, material and IALMob bundle")
     voltages = {e["name"]: e["initial_voltage_V"] for e in electrodes}
     wide_stage_controls = solver.get("arithmetic_precision") == "extended80"
+    slot_load_line = wide_stage_controls and slot_profile == "slot_population_bvds_v1"
     sources = deepcopy(ir["stages"])
     groups = []
     for source in sources:
@@ -824,11 +825,12 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                  "csv_all_contacts": True, "write_state_file": entry["output_state"]}
         if entry["kind"] == "sweep":
             extrapolate = source.get("extrapolate", math_cfg["extrapolate"])
-            predictor = "linear" if extrapolate else "none"
-            sweep["continuation"] = {"predictor": {"mode": predictor}}
-            _decision(decisions, "Extrapolate", extrapolate,
-                      "sweep.continuation.predictor.mode", predictor,
-                      "Use the Quasistationary setting when present, otherwise inherit Math", stage=index)
+            if not slot_load_line:
+                predictor = "linear" if extrapolate else "none"
+                sweep["continuation"] = {"predictor": {"mode": predictor}}
+                _decision(decisions, "Extrapolate", extrapolate,
+                          "sweep.continuation.predictor.mode", predictor,
+                          "Use the Quasistationary setting when present, otherwise inherit Math", stage=index)
         # The coupled outer DG solver can warm-start from nonlinear classical
         # Poisson. This retains the initialization budget of a preceding
         # Poisson/eQuantumPotential statement in an explicitly configured DG run.
@@ -906,8 +908,6 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                     min_step=converted["min_step_V"], max_step=converted["max_step_V"],
                     growth_factor=converted["growth_factor"], shrink_factor=shrink,
                     vtk_bias_points=[_bias(v0, v1, t, wide=wide_checkpoints) for t in entry["required_t"]])
-                if fixed_slot_bias:
-                    sweep["continuation"] = {"predictor": {"mode": "linear" if math_cfg["extrapolate"] else "none"}}
                 _decision(decisions, "Decrement", controls["decrement"], "sweep.shrink_factor",
                           sweep["shrink_factor"], "C4 retains the divisor; runner uses its reciprocal", stage=index)
             else:
@@ -926,6 +926,11 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                     circuit["resistance_ohm_um"] = resistance
                     circuit["max_iterations"] = cmd_iterations
                     circuit.get("coupled_update_convergence", {}).pop("diagnostic_csv", None)
+                    if slot_load_line:
+                        _decision(decisions, "Extrapolate", extrapolate,
+                                  "sweep.external_circuit.coupled_state_predictor",
+                                  circuit.get("coupled_state_predictor"),
+                                  "Use the qualified SLOT load-line predictor", stage=index)
                     sweep["external_circuit"] = circuit
                     if "boundary_control" in reference["sweep"]:
                         sweep["boundary_control"] = deepcopy(reference["sweep"]["boundary_control"])

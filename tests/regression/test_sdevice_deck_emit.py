@@ -951,7 +951,7 @@ Material="Silicon" {
     def test_bound_slot_stage_keeps_population_coordinates_and_native_resistor_budget(self):
         ir = parse_cmd_text('''File { Grid="mesh.grd" Parameter="models.par" }
             Electrode { {Name="left" Voltage=0 Resist=1e12} {Name="right" Voltage=0} }
-            Math { ExtendedPrecision }
+            Math { ExtendedPrecision Extrapolate }
             Solve { Load(FilePrefix="eq")
               Quasistationary(Goal {Name="left" Voltage=0.1})
                 {Coupled(Iterations=17) {Poisson Electron Hole}} }''', path_name="bound.cmd")
@@ -963,7 +963,8 @@ Material="Silicon" {
                      "node_doping_decimal_input": True,
                      "discretization": {"poisson_charge_volume_policy": "material_local_box"},
                      "sweep": {"external_circuit": {"mode": "series_resistor", "solver": "coupled_newton",
-                         "resistance_ohm_um": 1e12, "max_iterations": 99}}}
+                         "resistance_ohm_um": 1e12, "max_iterations": 99,
+                         "coupled_state_predictor": "constant"}}}
         context = {"reference": reference, "load_states": {"eq": "slot_input_00.h5"}}
         result = emit(ir, slot_context=context)
         self.assertEqual(result.decks[0]["sweep"]["initial_state_file"], "slot_input_00.h5")
@@ -975,6 +976,8 @@ Material="Silicon" {
         self.assertTrue(deck["solver"]["require_end_to_end_precision"])
         self.assertTrue(deck["node_doping_decimal_input"])
         self.assertEqual(deck["sweep"]["external_circuit"]["max_iterations"], 17)
+        self.assertEqual(deck["sweep"]["external_circuit"]["coupled_state_predictor"], "constant")
+        self.assertNotIn("continuation", deck["sweep"])
         self.assertNotIn("quasi_fermi_reference", deck["solver"])
 
     def test_slot_extended80_equilibrium_uses_cmd_update_references(self):
