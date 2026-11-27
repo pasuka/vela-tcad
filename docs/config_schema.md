@@ -136,6 +136,10 @@ Explicit element-box transport and the restricted PhuMob candidate:
   The explicit `element_box_masetti` mode uses the same box weights for
   `masetti_field_lombardi` with total impurity, preserving the local field and
   surface model at each sampled vertex.
+- `solver.mobility.prepare_box_masetti_lombardi` (boolean, default `false`)
+  precomputes the fixed vertex mobility coefficients and averaging weights
+  for the `element_box_masetti` solver path. Normal and high fields are
+  evaluated from the current or perturbed state.
 
 The explicit element-box carrier controls currently require coupled Newton.
 Gummel's carrier assembler rejects them. Coupled residuals, analytic Jacobian, conservative
@@ -528,10 +532,18 @@ per-node/per-carrier endpoint-statistics cache within each classical Jacobian
 assembly. Neighboring edges can share identical Fermi trial evaluations. Keys
 compare the exact potential, local/relative QF, reference origin and material
 logarithm; all entries expire at the end of the assembly. Flux formulas and
-finite-difference derivatives are unchanged. The counter
+finite-difference derivatives are unchanged. Effective-potential SG also
+omits auxiliary electron statistics used only by the generalized Einstein
+factor. The counter
 `jacobian.fermi_node_cache_assemblies` confirms execution; existing endpoint hit
 and miss counters include this cache when enabled. It is independent of structure
 reuse and is an experimental option, not the production default.
+
+`solver.reuse_fixed_voltage_bordered_analysis` (boolean, default `false`)
+retains the PARDISO instance during a legacy fixed-voltage population Newton
+solve. The backend checks the reduced sparse pattern exactly and factors
+numeric values for each update. Original-system EFT checks still run on
+each correction.
 - Field names with historical SI suffixes are kept for compatibility. In
   `unit_scaling` mode the numeric interpretation is described explicitly below.
 

@@ -7140,6 +7140,8 @@ TEST_CASE("Fermi endpoint node reuse preserves derivatives across references qua
 {
     const bool localReferences = GENERATE(false, true);
     const bool quantum = GENERATE(false, true);
+    const auto formulation = GENERATE(FermiSgFormulation::GeneralizedEinstein,
+                                      FermiSgFormulation::EffectivePotential);
     const Real thermalVoltage = GENERATE(constants::Vt_300, 1.5 * constants::Vt_300);
     const auto mesh = makePNMesh();
     const auto doping = makePNDoping(mesh);
@@ -7150,10 +7152,12 @@ TEST_CASE("Fermi endpoint node reuse preserves derivatives across references qua
     const int n = static_cast<int>(mesh.numNodes());
     const auto recombination = recombinationModelConfig({"srh", "auger"});
     BandgapNarrowingConfig bgn; bgn.model = "old_slotboom";
+    CarrierStatisticsConfig statistics{"fermi_dirac"};
+    statistics.sgFormulation = formulation;
     CoupledDDAssembler off(mesh, materials, doping, thermalVoltage, mobility,
-        recombination, bgn, {}, {}, {}, {}, {}, CarrierStatisticsConfig{"fermi_dirac"});
+        recombination, bgn, {}, {}, {}, {}, {}, statistics);
     CoupledDDAssembler on(mesh, materials, doping, thermalVoltage, mobility,
-        recombination, bgn, {}, {}, {}, {}, {}, CarrierStatisticsConfig{"fermi_dirac"});
+        recombination, bgn, {}, {}, {}, {}, {}, statistics);
     on.setFermiNodeCache(true);
     for (auto* assembler : {&off, &on}) {
         if (localReferences)

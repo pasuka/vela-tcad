@@ -176,6 +176,7 @@ struct MobilityModelConfig {
     // Automatic sampling evaluates nodal Masetti before averaging.
     // Explicit element-box policies also select the cell and edge quadrature.
     std::string edgeAveraging = "auto";
+    bool prepareBoxMasettiLombardi = false;
     std::string highFieldDrivingForce = "electric_field";
     /// Spatial discretization for a quasi-Fermi-gradient high-field drive.
     /// ``edge_projection`` preserves the historical edge-aligned difference;
@@ -305,6 +306,20 @@ class DopingDependentMobility final : public MobilityModel {
 public:
     explicit DopingDependentMobility(MobilityModelConfig config = {});
 
+    // One isothermal Masetti/Lombardi vertex sample with zero carrier inputs.
+    // The enclosing assembler owns the material, doping, and model identity.
+    struct PreparedMasettiLombardi {
+        Real bulkMobility = 0.0;
+        Real acousticCoefficient = 0.0;
+        Real roughnessExponent = 0.0;
+        bool validSurfaceParameters = false;
+    };
+    PreparedMasettiLombardi prepareMasettiLombardi(
+        const Material& material, Real impurity, CarrierType carrier) const;
+    Real evaluatePreparedMasettiLombardi(
+        const PreparedMasettiLombardi& prepared, CarrierType carrier,
+        Real electricField, Real surfaceNormalField, Real surfaceDistance) const;
+
     Real electronMobility(const Material& material,
                           Real netDoping,
                           Real n,
@@ -363,6 +378,9 @@ private:
                        Real latticeTemperature_K,
                        CarrierType carrier,
                        const LombardiParameters& params) const;
+    Real lombardiMobilityFromField(
+        Real bulkMobility, Real field, Real damping, Real acousticCoefficient,
+        Real exponent, const LombardiParameters& params) const;
 
     enum class BulkLaw { Constant, CaugheyThomas, Masetti, PhuMob };
     enum class SurfaceLaw { None, Generic, Lombardi };

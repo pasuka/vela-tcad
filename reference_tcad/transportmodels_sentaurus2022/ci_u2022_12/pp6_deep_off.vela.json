@@ -6,6 +6,7 @@
     "method": "newton",
     "warm_start": true,
     "line_search": false,
+    "diagnostic_fermi_node_cache": true,
     "state_variables": "potential_quasi_fermi",
     "quasi_fermi_reference": "contact_basin",
     "quasi_fermi_update_limit_V": 0.0,
@@ -19,7 +20,8 @@
     },
     "mobility": {
       "jacobian_field_derivatives": false,
-      "edge_averaging": "element_box_masetti"
+      "edge_averaging": "element_box_masetti",
+      "prepare_box_masetti_lombardi": true
     },
     "carrier_statistics": {
       "sg_formulation": "effective_potential"

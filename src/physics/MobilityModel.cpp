@@ -599,6 +599,74 @@ Real DopingDependentMobility::surfaceLimit(Real bulkMobility,
     return bulkMobility * factor;
 }
 
+namespace {
+bool validLombardiParameters(const LombardiParameters& params, Real temperature)
+{
+    return !(params.B <= 0.0 || params.C < 0.0 || params.N0 <= 0.0 ||
+        params.N1 <= 0.0 || params.N2 < 0.0 || params.delta <= 0.0 ||
+        params.eta <= 0.0 || params.criticalLength <= 0.0 ||
+        params.nu <= 0.0 || params.acousticFactor < 0.0 ||
+        params.roughnessFactor < 0.0 || temperature <= 0.0 ||
+        !std::isfinite(temperature));
+}
+
+Real lombardiDamping(Real distance, Real criticalLength)
+{
+    // A critical length greater than 100 cm disables distance damping.
+    return criticalLength > 1.0 ? 1.0 : std::exp(-distance / criticalLength);
+}
+
+Real lombardiAcousticCoefficient(Real doping, Real temperature, const LombardiParameters& p)
+{
+    return p.C * std::pow(temperature / 300.0, -p.k) *
+        std::pow((doping + p.N2) / p.N0, p.lambda);
+}
+}
+
+DopingDependentMobility::PreparedMasettiLombardi
+DopingDependentMobility::prepareMasettiLombardi(
+    const Material& material, Real impurity, CarrierType carrier) const
+{
+    const bool electron = carrier == CarrierType::Electron;
+    const auto& params = electron ? config_.electronLombardi : config_.holeLombardi;
+    const Real temperature = material.temperature_K.value_or(300.0);
+    PreparedMasettiLombardi out;
+    out.bulkMobility = masetti(impurity, electron ? config_.electronMasetti : config_.holeMasetti);
+    out.validSurfaceParameters = validLombardiParameters(params, temperature);
+    if (out.validSurfaceParameters && out.bulkMobility > 0.0) {
+        const Real doping = std::abs(impurity) * config_.internalConcentrationToM3;
+        out.acousticCoefficient = lombardiAcousticCoefficient(doping, temperature, params);
+        // This vertex-box path passes zero for both carrier populations.
+        out.roughnessExponent = params.A +
+            params.alpha * (0.0 + params.aOther * 0.0) /
+            std::pow(doping + params.N1, params.nu);
+    }
+    return out;
+}
+
+Real DopingDependentMobility::evaluatePreparedMasettiLombardi(
+    const PreparedMasettiLombardi& prepared, CarrierType carrier, Real electricField,
+    Real surfaceNormalField, Real surfaceDistance) const
+{
+    const bool electron = carrier == CarrierType::Electron;
+    Real mobility = prepared.bulkMobility;
+    if (mobility > 0.0 && std::isfinite(surfaceNormalField) && std::isfinite(surfaceDistance)) {
+        if (!prepared.validSurfaceParameters)
+            throw std::invalid_argument("DopingDependentMobility: invalid Enhanced Lombardi parameters.");
+        const auto& params = electron ? config_.electronLombardi : config_.holeLombardi;
+        const Real field = std::abs(surfaceNormalField) * config_.internalFieldToVPerM;
+        if (!(field <= 0.0)) {
+            const Real distance = std::max(0.0, surfaceDistance) * config_.internalLengthToM;
+            const Real damping = lombardiDamping(distance, params.criticalLength);
+            if (!(damping <= std::numeric_limits<Real>::min()))
+                mobility = lombardiMobilityFromField(mobility, field, damping,
+                    prepared.acousticCoefficient, prepared.roughnessExponent, params);
+        }
+    }
+    return fieldMobility_ ? fieldLimit(mobility, electricField,
+        electron ? config_.electronField : config_.holeField) : mobility;
+}
+
 Real DopingDependentMobility::lombardiLimit(
     Real bulkMobility,
     Real netDoping,
@@ -613,12 +681,7 @@ Real DopingDependentMobility::lombardiLimit(
     if (bulkMobility <= 0.0 || !std::isfinite(surfaceNormalField) ||
         !std::isfinite(surfaceDistance))
         return bulkMobility;
-    if (params.B <= 0.0 || params.C < 0.0 || params.N0 <= 0.0 ||
-        params.N1 <= 0.0 || params.N2 < 0.0 || params.delta <= 0.0 ||
-        params.eta <= 0.0 || params.criticalLength <= 0.0 ||
-        params.nu <= 0.0 || params.acousticFactor < 0.0 ||
-        params.roughnessFactor < 0.0 || latticeTemperature_K <= 0.0 ||
-        !std::isfinite(latticeTemperature_K)) {
+    if (!validLombardiParameters(params, latticeTemperature_K)) {
         throw std::invalid_argument(
             "DopingDependentMobility: invalid Enhanced Lombardi parameters.");
     }
@@ -628,10 +691,7 @@ Real DopingDependentMobility::lombardiLimit(
         return bulkMobility;
     const Real distance = std::max<Real>(0.0, surfaceDistance) *
         config_.internalLengthToM;
-    // Sentaurus documents l_crit > 100 cm as the no-distance-damping
-    // sentinel.  Parameters are stored in metres here.
-    const Real damping = params.criticalLength > 1.0
-        ? 1.0 : std::exp(-distance / params.criticalLength);
+    const Real damping = lombardiDamping(distance, params.criticalLength);
     if (damping <= std::numeric_limits<Real>::min())
         return bulkMobility;
 
@@ -641,12 +701,6 @@ Real DopingDependentMobility::lombardiLimit(
         config_.internalConcentrationToM3;
     const Real holeDensity = std::max<Real>(0.0, p) *
         config_.internalConcentrationToM3;
-    const Real temperatureRatio = latticeTemperature_K / 300.0;
-    const Real acousticMobility = params.B / field +
-        params.C * std::pow(temperatureRatio, -params.k) *
-        std::pow((doping + params.N2) / params.N0, params.lambda) /
-        std::cbrt(field);
-
     const Real sameCarrier = carrier == CarrierType::Electron
         ? electronDensity : holeDensity;
     const Real otherCarrier = carrier == CarrierType::Electron
@@ -654,6 +708,15 @@ Real DopingDependentMobility::lombardiLimit(
     const Real exponent = params.A +
         params.alpha * (sameCarrier + params.aOther * otherCarrier) /
         std::pow(doping + params.N1, params.nu);
+    return lombardiMobilityFromField(bulkMobility, field, damping,
+        lombardiAcousticCoefficient(doping, latticeTemperature_K, params), exponent, params);
+}
+
+Real DopingDependentMobility::lombardiMobilityFromField(
+    Real bulkMobility, Real field, Real damping, Real acousticCoefficient,
+    Real exponent, const LombardiParameters& params) const
+{
+    const Real acousticMobility = params.B / field + acousticCoefficient / std::cbrt(field);
     const Real referenceField = 100.0; // 1 V/cm in V/m.
     const Real inverseRoughness =
         std::pow(field / referenceField, exponent) / params.delta +
@@ -708,6 +771,8 @@ MobilityModelConfig mobilityModelConfigFromJson(
     convertMobilityDefaultsToInternal(config, scaling);
     config.model = value.value("model", config.model);
     config.edgeAveraging = value.value("edge_averaging", config.edgeAveraging);
+    config.prepareBoxMasettiLombardi =
+        value.value("prepare_box_masetti_lombardi", config.prepareBoxMasettiLombardi);
     if (config.edgeAveraging != "auto" && config.edgeAveraging != "legacy" &&
         config.edgeAveraging != "element_box" && config.edgeAveraging != "element_box_phumob" &&
         config.edgeAveraging != "element_box_masetti")

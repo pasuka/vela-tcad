@@ -644,9 +644,48 @@ CoupledDDAssembler::CoupledDDAssembler(
     buildNodalCurrentReconstructionKernels();
 }
 
+void CoupledDDAssembler::prepareBoxMasettiCells()
+{
+    if (!mobilityConfig_.prepareBoxMasettiLombardi ||
+        mobilityConfig_.edgeAveraging != "element_box_masetti" ||
+        mobilityConfig_.model != "masetti_field_lombardi" ||
+        mesh_.poissonPermittivityPolicy() != BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial)
+        return;
+    for (Index cellId = 0; cellId < mesh_.numCells(); ++cellId) {
+        const auto& cell = mesh_.getCell(cellId);
+        if (detail::isTransportMaterial(cellMaterials_[cellId]) &&
+            (cell.type != CellType::Tri3 || cell.node_ids.size() != 3))
+            return;
+    }
+    const auto& model = static_cast<const DopingDependentMobility&>(*mobility_);
+    boxMasettiCells_.resize(mesh_.numCells());
+    for (Index cellId = 0; cellId < mesh_.numCells(); ++cellId) {
+        const auto& material = cellMaterials_[cellId];
+        auto& prepared = boxMasettiCells_[cellId];
+        prepared.active = {material.mun > 0.0, material.mup > 0.0};
+        if (!prepared.active[0] && !prepared.active[1])
+            continue;
+        const auto& cell = mesh_.getCell(cellId);
+        prepared.measures = detail::cellBoxNodeMeasures(mesh_, cellId);
+        prepared.surfaceApplies = mobilityConfig_.surface.surfaceRegion.empty() ||
+            mobilityConfig_.surface.surfaceRegion == mesh_.getRegion(cell.region_id).name;
+        for (std::size_t vertex = 0; vertex < cell.node_ids.size(); ++vertex) {
+            const Real impurity = detail::nodeMobilityDopingConcentration(
+                mesh_, doping_, cell.node_ids[vertex], cellId, &mobilityConfig_);
+            if (prepared.active[0])
+                prepared.samples[0][vertex] = model.prepareMasettiLombardi(
+                    material, impurity, CarrierType::Electron);
+            if (prepared.active[1])
+                prepared.samples[1][vertex] = model.prepareMasettiLombardi(
+                    material, impurity, CarrierType::Hole);
+        }
+    }
+}
+
 void CoupledDDAssembler::buildEdgeAssemblyKernels()
 {
     edgeAssemblyKernels_.resize(mesh_.numEdges());
+    prepareBoxMasettiCells();
     const bool cacheMobility = !surfaceMobilityEnabled_ &&
         !isPhuMobModel(mobilityConfig_) && mobilityConfig_.model != "ialmob";
     const bool cacheIntrinsicDrift = bgnEnabled_ && usesLegacyPopulationState();
@@ -752,6 +791,11 @@ void CoupledDDAssembler::buildEdgeAssemblyKernels()
                 kernel.activeTransport = true;
                 if (detail::cellTouchesContact(cell, contactNodes_))
                     kernel.touchesTransportContact = true;
+                if (!boxMasettiCells_.empty()) {
+                    const Real weight = detail::cellBoxEdgeCoefficient(mesh_, cellId, edgeId);
+                    if (weight != 0.0)
+                        kernel.boxMasettiCells.emplace_back(cellId, weight);
+                }
             }
             for (Index node : cell.node_ids)
                 appendStencilNode(node);
@@ -861,6 +905,38 @@ void CoupledDDAssembler::refreshIalMobility(const VectorXd& x) const
     updateIalTransportState(mobilityConfig_,mesh_,doping_,psi,electronDensity(x),holeDensity(x),qn,qp,dn,dp);
 }
 
+Real CoupledDDAssembler::preparedBoxMasettiMobility(
+    Index edgeId, CarrierType carrier, Real drivingField, const VectorXd* psi) const
+{
+    const auto& model = static_cast<const DopingDependentMobility&>(*mobility_);
+    const auto& surface = mobilityConfig_.surface;
+    const std::size_t carrierIndex = carrier == CarrierType::Electron ? 0 : 1;
+    const Real unavailable = std::numeric_limits<Real>::quiet_NaN();
+    Real sum = 0.0;
+    Real weightSum = 0.0;
+    for (const auto& [cellId, weight] : edgeAssemblyKernels_[edgeId].boxMasettiCells) {
+        const auto& prepared = boxMasettiCells_[cellId];
+        if (!prepared.active[carrierIndex])
+            continue;
+        Real normalField = unavailable;
+        if (prepared.surfaceApplies && psi) {
+            normalField = detail::liveSurfaceNormalFieldForCell(mobilityConfig_, mesh_, *psi, cellId);
+            if (!std::isfinite(normalField))
+                normalField = detail::estimateSurfaceNormalField(edgeCells_[edgeId], mesh_, *psi,
+                    edgeId, cellId) * surface.coordinateFieldFactor;
+        }
+        const Real distance = !prepared.surfaceApplies ? unavailable :
+            cellId < surface.cellDistances.size() ? surface.cellDistances[cellId] :
+            detail::estimateSurfaceDistance(mesh_, edgeId, cellId);
+        sum += weight * detail::tri3VertexAverage<Real>(prepared.measures, [&](std::size_t vertex) {
+            return model.evaluatePreparedMasettiLombardi(prepared.samples[carrierIndex][vertex],
+                carrier, drivingField, normalField, distance);
+        });
+        weightSum += weight;
+    }
+    return weightSum > 0.0 ? sum / weightSum : 0.0;
+}
+
 Real CoupledDDAssembler::cachedEdgeMobility(
     Index edgeId,
     CarrierType carrier,
@@ -873,6 +949,8 @@ Real CoupledDDAssembler::cachedEdgeMobility(
     const VectorXd* electrons,
     const VectorXd* holes,const VectorXd* phin,const VectorXd* phip) const
 {
+    if (!boxMasettiCells_.empty())
+        return preparedBoxMasettiMobility(edgeId, carrier, drivingField, psi);
     if (mobilityConfig_.model == "ialmob")
         return ialEdgeMobility(mobilityConfig_,edgeId,carrier);
     if (mobilityConfig_.edgeAveraging=="element_box" || mobilityConfig_.edgeAveraging=="element_box_phumob") {
@@ -6328,6 +6406,11 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
         std::size_t replacement = 0;
     };
     std::array<EndpointCache, 2> electronEndpoints, holeEndpoints;
+    // Effective-potential SG uses the physical populations and the QF drop.
+    // The auxiliary electron Fermi population and eta are only needed for
+    // the generalized Einstein factor.
+    const bool needsElectronEinsteinState = !fermiNodeCacheEnabled_ ||
+        carrierStatistics_.sgFormulation != FermiSgFormulation::EffectivePotential;
     // Lifetime is one Jacobian assembly: no carrier or temperature state is
     // shared across Newton updates. Node, carrier and reference representation
     // are distinct even when their rounded physical QFs happen to agree.
@@ -6464,20 +6547,24 @@ SparseMatrixd CoupledDDAssembler::assembleJacobianImpl(
                 fermiNodeCacheEnabled_ ? idxI : e, psi_i, phin_i, phin_i,
                 electronReferenceI, edgeKernel.electronLogNiNc0, [&] {
                 EndpointState v{};
-                const Real psiRelative = electronPsi_i - electronReferenceI;
-                v.eta = (psiRelative - phin_i) / Vt_ + edgeKernel.electronLogNiNc0;
                 v.density = electronDensityAt(idxI, psi_i - electronReferenceI, phin_i);
-                v.fermiDensity = Nc_[idxI] * fermiDiracHalf(v.eta, carrierStatisticsModel_);
+                if (needsElectronEinsteinState) {
+                    const Real psiRelative = electronPsi_i - electronReferenceI;
+                    v.eta = (psiRelative - phin_i) / Vt_ + edgeKernel.electronLogNiNc0;
+                    v.fermiDensity = Nc_[idxI] * fermiDiracHalf(v.eta, carrierStatisticsModel_);
+                }
                 return v;
             });
             const auto right = endpointState(fermiNodeCacheEnabled_ ? electronNodes[idxJ] : electronEndpoints[1],
                 fermiNodeCacheEnabled_ ? idxJ : e, psi_j, phinJLocal, phin_j,
                 electronReferenceI, edgeKernel.electronLogNiNc1, [&] {
                 EndpointState v{};
-                const Real psiRelative = electronPsi_j - electronReferenceI;
-                v.eta = (psiRelative - phin_j) / Vt_ + edgeKernel.electronLogNiNc1;
                 v.density = electronDensityAt(idxJ, psi_j - electronReferenceJ, phinJLocal);
-                v.fermiDensity = Nc_[idxJ] * fermiDiracHalf(v.eta, carrierStatisticsModel_);
+                if (needsElectronEinsteinState) {
+                    const Real psiRelative = electronPsi_j - electronReferenceI;
+                    v.eta = (psiRelative - phin_j) / Vt_ + edgeKernel.electronLogNiNc1;
+                    v.fermiDensity = Nc_[idxJ] * fermiDiracHalf(v.eta, carrierStatisticsModel_);
+                }
                 return v;
             });
             const Real driftPotential =

@@ -48,6 +48,44 @@ MobilityModelConfig elementLombardiConfig() {
 }
 }
 
+TEST_CASE("Prepared box Masetti preserves the live-field Fermi residual and Jacobian",
+          "[element_box_transport][surface][fermi]")
+{
+    const auto mesh = surfaceMesh();
+    MaterialDatabase db;
+    DopingModel doping(mesh.numNodes());
+    for (Index i = 0; i < mesh.numNodes(); ++i)
+        doping.setNodeDoping(i, 1e23 * (i + 1), 2e22 * (5 - i));
+    const auto legacy = mobilityModelConfigFromJson(nlohmann::json{
+        {"model", "masetti_field_lombardi"}, {"edge_averaging", "element_box_masetti"},
+        {"doping_concentration_basis", "total_impurity"}});
+    auto optimized = legacy;
+    optimized.prepareBoxMasettiLombardi = true;
+    const CarrierStatisticsConfig statistics{"fermi_dirac"};
+    CoupledDDAssembler reference(mesh, db, doping, constants::Vt_300, legacy,
+        recombinationModelConfig({"srh"}), {}, {}, {}, {}, scaling(), {}, statistics);
+    CoupledDDAssembler candidate(mesh, db, doping, constants::Vt_300, optimized,
+        recombinationModelConfig({"srh"}), {}, {}, {}, {}, scaling(), {}, statistics);
+    VectorXd x(15);
+    x << .01, .04, -.1, .02, .2, .003, -.002, -.006, 0., .01, -.002, .01, .008, 0., .002;
+    for (Real shiftedPotential : {-.12, .13}) {
+        x(2) = shiftedPotential;
+        const auto expected = reference.assembleJacobian(x, {});
+        const auto actual = candidate.assembleJacobian(x, {});
+        REQUIRE((reference.residual(x, {}).array() == candidate.residual(x, {}).array()).all());
+        REQUIRE(expected.nonZeros() == actual.nonZeros());
+        for (int i = 0; i < expected.outerSize(); ++i) {
+            SparseMatrixd::InnerIterator lhs(expected, i), rhs(actual, i);
+            for (; lhs && rhs; ++lhs, ++rhs) {
+                REQUIRE(lhs.row() == rhs.row());
+                REQUIRE(lhs.value() == rhs.value());
+            }
+            REQUIRE_FALSE(lhs);
+            REQUIRE_FALSE(rhs);
+        }
+    }
+}
+
 TEST_CASE("Element Lombardi uses the nonunit gradient of true interface distances", "[element_lombardi]") {
     auto mesh=surfaceMesh();MaterialDatabase db;auto cfg=elementLombardiConfig();auto mats=detail::buildCellMaterials(mesh,db,300.);
     VectorXd psi(5);psi<<.01,.04,-.1,.02,.2;

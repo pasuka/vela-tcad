@@ -68,6 +68,7 @@ NewtonResult NewtonSolver::solvePopulation(const DDSolution& initial) const {
     c.dampingFactor=cfg_.dampingFactor;
     c.lineSearchMode=cfg_.lineSearch?"merit":"full_step";
     c.linearSolver="direct_bordered";
+    c.reuseBorderedAnalysis = cfg_.reuseFixedVoltageBorderedAnalysis;
     c.directRefinementSteps=cfg_.linearRefinementIterations;
     c.bvMethodsEftDefect = cfg_.coupledOperator == "bvmethods_tri3_qf" &&
         linear_refinement::useBvMethodsEftDefect();

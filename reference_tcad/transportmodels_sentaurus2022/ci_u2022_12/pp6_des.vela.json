@@ -10,6 +10,8 @@
     "primary_variable_coordinates": "unit",
     "population_stopping_rule": "native_approx",
     "population_linear_defect": "eft",
+    "reuse_fixed_voltage_bordered_analysis": true,
+    "diagnostic_fermi_node_cache": true,
     "population_update": {
       "local_retained_fraction": 0.5
     },
@@ -26,7 +28,8 @@
     },
     "mobility": {
       "jacobian_field_derivatives": false,
-      "edge_averaging": "element_box_masetti"
+      "edge_averaging": "element_box_masetti",
+      "prepare_box_masetti_lombardi": true
     },
     "carrier_statistics": {
       "sg_formulation": "effective_potential"

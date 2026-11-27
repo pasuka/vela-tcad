@@ -650,7 +650,15 @@ private:
         std::array<Point2, maxEdgeAvalancheStencilNodes> vectorGradientSensitivities{};
         std::vector<Real> electronLowFieldMobilities;
         std::vector<Real> holeLowFieldMobilities;
+        std::vector<std::pair<Index, Real>> boxMasettiCells;
     };
+    struct BoxMasettiCell {
+        std::array<Real, 3> measures{};
+        std::array<std::array<DopingDependentMobility::PreparedMasettiLombardi, 3>, 2> samples{};
+        std::array<bool, 2> active{};
+        bool surfaceApplies = false;
+    };
+    std::vector<BoxMasettiCell> boxMasettiCells_;
     struct NodalCurrentReconstructionTerm {
         Index edgeId = 0;
         Point2 tangent = Point2::Zero();
@@ -667,6 +675,9 @@ private:
     };
 
     void buildEdgeAssemblyKernels();
+    void prepareBoxMasettiCells();
+    Real preparedBoxMasettiMobility(Index edgeId, CarrierType carrier,
+                                    Real drivingField, const VectorXd* psi) const;
     void buildNodalCurrentReconstructionKernels();
     Real cachedEdgeMobility(
         Index edgeId,

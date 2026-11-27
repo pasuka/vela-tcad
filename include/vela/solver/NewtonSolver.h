@@ -183,6 +183,7 @@ struct NewtonConfig {
     // Zero preserves the direct-solve path; each correction recomputes F+J dx in MP100.
     int linearRefinementIterations = 0;
     std::string populationLinearDefect = "mp100";
+    bool reuseFixedVoltageBorderedAnalysis = false;
     Real legacyTransportJacobianStep = 1e-6;
     Real legacyAvalancheJacobianStep = 1e-7;
     std::string poissonResidualPrecision = "double"; ///< "double" or opt-in "binary128" packed Boltzmann evaluation.

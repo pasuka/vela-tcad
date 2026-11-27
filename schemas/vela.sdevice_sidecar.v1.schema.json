@@ -61,7 +61,8 @@
           "properties": {
             "edge_averaging": {"enum": ["auto", "legacy", "element_box", "element_box_masetti"]},
             "contact_electric_field_fallback": {"type": "boolean"},
-            "jacobian_field_derivatives": {"type": "boolean"}
+            "jacobian_field_derivatives": {"type": "boolean"},
+            "prepare_box_masetti_lombardi": {"type": "boolean"}
           }
         },
         "carrier_statistics": {

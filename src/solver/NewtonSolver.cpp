@@ -1929,6 +1929,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         cfg.quasiFermiTrustRegionMinMultiplier);
     cfg.linearRefinementIterations = json.value("linear_refinement_iterations", 0);
     cfg.populationLinearDefect = json.value("population_linear_defect", cfg.populationLinearDefect);
+    cfg.reuseFixedVoltageBorderedAnalysis =
+        json.value("reuse_fixed_voltage_bordered_analysis", cfg.reuseFixedVoltageBorderedAnalysis);
     if (json.contains("legacy_edge_jacobian_steps")) {
         const auto& steps = json.at("legacy_edge_jacobian_steps");
         if (!steps.is_object()) throw std::invalid_argument("legacy_edge_jacobian_steps must be an object");
@@ -3747,6 +3749,7 @@ std::shared_ptr<CoupledDDAssembler> NewtonSolver::makeArclengthAssembler() const
         cfg_.electronQuantumPotential.couplingMode == "monolithic_box"
             ? cfg_.electronQuantumPotential : DensityGradientQuantumPotentialConfig{});
     configureAssemblerNumerics(*assembler);
+    assembler->setFermiNodeCache(cfg_.diagnosticFermiNodeCache);
     assembler->setStructureCache(cfg_.sequentialJacobianStructure);
     return assembler;
 }

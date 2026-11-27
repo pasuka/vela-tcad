@@ -84,6 +84,7 @@ struct CoupledLoadLineConfig {
     /// Always perform this many original-system defect corrections, even when
     /// the first factor solve already passes. Zero is the explicit legacy path.
     int minimumOriginalCorrections = 0;
+    bool reuseBorderedAnalysis = false;
     bool bvMethodsEftDefect = false;
     bool eftLinearDefectWithoutMp100 = false;
     DensityUpdateConvergenceConfig updateConvergence;
@@ -436,7 +437,8 @@ public:
         bool omitNext=false;
         std::optional<std::unique_ptr<LinearSolver>> retainedPardiso;
         const char* reuseAnalysis=std::getenv("VELA_BVMETHODS_REUSE_BORDERED_ANALYSIS");
-        if(config_.bvMethodsEftDefect && reuseAnalysis && std::string_view(reuseAnalysis)=="1")
+        if (config_.reuseBorderedAnalysis ||
+            (config_.bvMethodsEftDefect && reuseAnalysis && std::string_view(reuseAnalysis)=="1"))
             retainedPardiso.emplace();
         for (int iter = 0; iter <= config_.maxIterations; iter += repeatIteration ? 0 : 1) {
             repeatIteration = false;

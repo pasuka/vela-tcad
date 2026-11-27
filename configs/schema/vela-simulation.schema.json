@@ -98,7 +98,8 @@
         },
         "mobility": {
           "properties": {
-            "edge_averaging": {"enum": ["auto", "legacy", "element_box", "element_box_phumob", "element_box_masetti"]}
+            "edge_averaging": {"enum": ["auto", "legacy", "element_box", "element_box_phumob", "element_box_masetti"]},
+            "prepare_box_masetti_lombardi": {"type": "boolean"}
           }
         }
       },
