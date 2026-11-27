@@ -112,6 +112,18 @@ def arithmetic_capabilities(runner, cwd):
     return capabilities
 
 
+def record_extended80_capabilities(runner, cwd, audit):
+    audit["capability_check"] = "failed"
+    audit["executable"] = runner[-1]
+    capabilities = arithmetic_capabilities(runner, cwd)
+    audit["reported_capabilities"] = capabilities
+    if (capabilities.get("arithmetic_precision"), capabilities.get("radix"),
+            capabilities.get("significand_bits"), capabilities.get("max_exponent")) != (
+            "extended80", 2, 64, 16384):
+        raise RunError("E202", "Selected runner does not have the requested 80-bit arithmetic format")
+    return capabilities
+
+
 def version_info():
     root = resource_root()
     if (root / "version.json").is_file():
@@ -340,8 +352,9 @@ class DeviceRun:
                 if strict_extended80:
                     self._require_extended80(runner)
                 elif precision == "extended80":
-                    self._extended80_runner_capabilities(runner)
-                    self.manifest["arithmetic"]["capability_check"] = "pn2d_mixed_reference"
+                    audit = self.manifest["arithmetic"]
+                    record_extended80_capabilities(runner, self.work, audit)
+                    audit["capability_check"] = "pn2d_mixed_reference"
                     self.log("INFO", "PN2D population reference uses extended arithmetic with the qualified mixed-precision linear solver and state path")
                 self.publisher = OutputPublisher(self.cmd.parent, self.work, self.result)
                 count = 1 if self.options.initial_only else len(self.result.decks)
@@ -460,21 +473,9 @@ class DeviceRun:
                 pass
         return error.exit_code
 
-    def _extended80_runner_capabilities(self, runner):
-        audit = self.manifest["arithmetic"]
-        audit["capability_check"] = "failed"
-        audit["executable"] = runner[-1]
-        capabilities = arithmetic_capabilities(runner, self.work)
-        audit["reported_capabilities"] = capabilities
-        if (capabilities.get("arithmetic_precision"), capabilities.get("radix"),
-                capabilities.get("significand_bits"), capabilities.get("max_exponent")) != (
-                "extended80", 2, 64, 16384):
-            raise RunError("E202", "Selected runner does not have the requested 80-bit arithmetic format")
-        return capabilities
-
     def _require_extended80(self, runner):
-        capabilities = self._extended80_runner_capabilities(runner)
         audit = self.manifest["arithmetic"]
+        capabilities = record_extended80_capabilities(runner, self.work, audit)
         override = audit["linear_solver_override"]
         coverage = audit["frontend_input_check"]
         backends = capabilities.get("end_to_end_linear_backends")
