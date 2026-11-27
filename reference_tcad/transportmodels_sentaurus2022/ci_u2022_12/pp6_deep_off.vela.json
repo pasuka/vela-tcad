@@ -5,10 +5,13 @@
   "solver": {
     "method": "newton",
     "warm_start": true,
-    "line_search": false,
+    "line_search": true,
     "diagnostic_fermi_node_cache": true,
-    "state_variables": "potential_quasi_fermi",
-    "quasi_fermi_reference": "contact_basin",
+    "state_variables": "potential_density",
+    "primary_variable_coordinates": "unit",
+    "compensated_population_state": true,
+    "population_predictor_low_density_limit_cm3": 1e-50,
+    "quasi_fermi_reference": "none",
     "quasi_fermi_update_limit_V": 0.0,
     "continuity_row_scaling": {
       "enabled": false
@@ -26,7 +29,6 @@
     "carrier_statistics": {
       "sg_formulation": "effective_potential"
     },
-    "abstol": 1e-13,
     "carrier_row_convergence": {
       "mode": "report"
     },

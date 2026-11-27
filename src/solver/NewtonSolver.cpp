@@ -1644,11 +1644,14 @@ void validatePopulationNumerics(const NewtonConfig& c)
     if (c.compensatedPopulationState &&
         (c.stateVariables != "potential_density" || c.coupledOperator != "legacy" ||
          (c.carrierStatistics.model != "boltzmann" &&
-          c.electronQuantumPotential.couplingMode != "monolithic_box") ||
+          c.electronQuantumPotential.couplingMode != "monolithic_box" &&
+          !(c.carrierStatistics.model == "fermi_dirac" &&
+            c.carrierStatistics.sgFormulation == FermiSgFormulation::EffectivePotential &&
+            !c.electronQuantumPotential.enabled && c.impactIonization.model == "none")) ||
          !c.inputScaling.isUnitScaling() || c.primaryVariableCoordinates != "unit" ||
          c.contactBoundaryMinorityElectronRelaxation))
         throw std::invalid_argument(
-            "Compensated population requires legacy Unit density coordinates and no minority-contact relaxation; classical transport requires Boltzmann statistics");
+            "Compensated population requires legacy Unit density coordinates and no minority-contact relaxation; classical transport requires Boltzmann statistics or effective-potential integral Fermi-Dirac without avalanche");
     if (c.electronQuantumPotential.couplingMode == "monolithic_box") {
         const auto& dg = c.electronQuantumPotential;
         if (c.coupledOperator != "legacy" || c.splitDDState ||

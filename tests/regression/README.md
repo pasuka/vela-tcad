@@ -204,6 +204,11 @@ output points. See the
 [TransportModels fixture](../../reference_tcad/transportmodels_sentaurus2022/ci_u2022_12/README.md)
 for the input provenance, step controls and current acceptance criteria.
 
+The DD Id-Vg test `reference_u2022_transportmodels_idvg` is enabled by default
+for fresh `sentaurus_u2022_12` builds with oneMKL PARDISO. Its 21 comparison
+points use unit-scaled electrostatic potential and carrier concentrations,
+with compensated state arithmetic on the three deep-off points.
+
 ### DG reference tests
 
 The CMake options below are off by default for local configurations. The

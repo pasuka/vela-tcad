@@ -22,6 +22,7 @@
 #include "vela/discretization/Tri3Operators.h"
 #include "vela/discretization/Tri3CurrentReconstruction.h"
 #include "vela/mesh/DeviceMesh.h"
+#include "vela/numerics/SplitCoordinate.h"
 #include "vela/material/Material.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
@@ -1574,7 +1575,8 @@ inline Real liveSurfaceNormalFieldForCell(
     const MobilityModelConfig& config,
     const DeviceMesh& mesh,
     const VectorXd& psi,
-    Index cellId)
+    Index cellId,
+    const VectorXd* psiLow = nullptr)
 {
     if (cellId >= config.surface.cellNormalX.size() ||
         cellId >= config.surface.cellNormalY.size() ||
@@ -1595,6 +1597,22 @@ inline Real liveSurfaceNormalFieldForCell(
     const Real det = dx10 * dy20 - dy10 * dx20;
     if (std::abs(det) <= 1.0e-300)
         return std::numeric_limits<Real>::quiet_NaN();
+    if (psiLow) {
+        using numerics::SplitCoordinate;
+        const auto drop = [&](Index to) {
+            const Index from = cell.node_ids[0];
+            return SplitCoordinate::sum(psi[to], -psi[from])
+                .added(SplitCoordinate::sum((*psiLow)[to], -(*psiLow)[from]));
+        };
+        const Real nx = config.surface.cellNormalX[cellId];
+        const Real ny = config.surface.cellNormalY[cellId];
+        const auto alongFirst = SplitCoordinate::sum(dy20 * nx, -dx20 * ny);
+        const auto alongSecond = SplitCoordinate::sum(dx10 * ny, -dy10 * nx);
+        // Round the projected field only after combining the two potential drops.
+        return std::abs(drop(cell.node_ids[1]).multiplied(alongFirst)
+            .added(drop(cell.node_ids[2]).multiplied(alongSecond))
+            .divided(det).scaled(config.surface.coordinateFieldFactor).hi);
+    }
     const Real dv10 = psi(static_cast<int>(cell.node_ids[1])) -
         psi(static_cast<int>(cell.node_ids[0]));
     const Real dv20 = psi(static_cast<int>(cell.node_ids[2])) -
@@ -1896,7 +1914,8 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                          Real                                    electricField,
                          const MobilityModelConfig*              mobilityConfig = nullptr,
                          const VectorXd*                         psi = nullptr,
-                         const EdgeMobilityCarrierState*         carrierState = nullptr)
+                         const EdgeMobilityCarrierState*         carrierState = nullptr,
+                         const VectorXd*                         psiLow = nullptr)
 {
     if (mobilityConfig && (mobilityConfig->edgeAveraging=="element_box" || mobilityConfig->edgeAveraging=="element_box_phumob"))
         return elementBoxEdgeMobility(edgeCells,mesh,doping,mobility,cellMaterials,edgeId,carrier,*mobilityConfig,carrierState,psi);
@@ -1952,7 +1971,7 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
             // cached normal/distance are geometric; caching the field itself
             // would omit Enormal derivatives from the Newton Jacobian.
             surfaceNormalField = liveSurfaceNormalFieldForCell(
-                *mobilityConfig, mesh, *psi, c);
+                *mobilityConfig, mesh, *psi, c, psiLow);
             if (!std::isfinite(surfaceNormalField)) {
                 surfaceNormalField = estimateSurfaceNormalField(
                     cells, mesh, *psi, edgeId, c) *

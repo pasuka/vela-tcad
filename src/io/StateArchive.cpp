@@ -152,8 +152,14 @@ void validateStateArchive(const StateArchive& s) {
             const auto& high = s.fields.at(highs[block]);
             const auto& tail = s.fields.at(tails[block]);
             for (std::size_t i = 0; i < s.nodeCount; ++i)
-                if (high[i]+tail[i] != high[i] || (block && high[i] <= 0.))
+                if (high[i] + tail[i] != high[i] || (block && high[i] == 0. && tail[i] != 0.))
                     bad("invalid compensated population coordinate pair");
+        }
+        for (std::size_t i = 0; i < s.nodeCount; ++i) {
+            const bool noElectrons = s.fields.at(highs[1])[i] == 0.;
+            const bool noHoles = s.fields.at(highs[2])[i] == 0.;
+            if (noElectrons != noHoles)
+                bad("inactive compensated population requires both carriers to be zero");
         }
     }
     if (split) for (std::size_t i = 0; i < s.nodeCount; ++i) {

@@ -307,7 +307,12 @@ Newton numerical and geometry controls added for explicit validation profiles:
   HDF5 checkpoints store the three low components as one bundle. It is
   supported for voltage-controlled sweeps. Terminal totals use the compensated
   transport fluxes. Spatial fields in VTU retain the usual binary64 output
-  representation. In the experimental `monolithic_box` DG solver, the same
+  representation. The classical integral Fermi–Dirac path also supports
+  effective-potential SG with Masetti–Lombardi mobility and no avalanche.
+  It derives the edge driving drop from compensated potential and density,
+  uses the same flux for the continuity rows and terminal integration, and
+  stores zero electron and hole populations at inactive insulator nodes.
+  In the experimental `monolithic_box` DG solver, the same
   switch preserves only the electrostatic potential remainder. Poisson uses
   compensated edge and charge accumulation, and the continuity and DG rows
   include the remainder through the corresponding Jacobian column.

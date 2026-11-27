@@ -142,7 +142,6 @@ NewtonResult NewtonSolver::solveCompensatedPopulation(const DDSolution& initial)
     const int count = mesh_.numNodes();
     if (initial.psi.size() != count || initial.n.size() != count || initial.p.size() != count ||
         !initial.psi.allFinite() || !initial.n.allFinite() || !initial.p.allFinite() ||
-        initial.n.minCoeff() <= 0. || initial.p.minCoeff() <= 0. ||
         (initial.populationLow.size() && initial.populationLow.size() != 3*count))
         throw std::invalid_argument("Invalid compensated population initial state");
 
@@ -165,11 +164,33 @@ NewtonResult NewtonSolver::solveCompensatedPopulation(const DDSolution& initial)
         for (int block = 0; block < 3; ++block)
             prescribed.push_back(block*count+node);
     }
-    for (const auto& [node, condition] : boundary.thermionic) {
-        state[node] = boundary.psi.at(node) * scaling.V0;
+    for (const auto& [node, target] : boundary.psi) {
+        if (boundary.ohmicPopulation.contains(node))
+            continue;
+        state[node] = target * scaling.V0;
         low[node] = 0.;
         prescribed.push_back(node);
     }
+    const auto& intrinsic = assembler->intrinsicDensity();
+    const auto positiveCarriers = [&](const VectorXd& values, const VectorXd& tails) {
+        for (int node = 0; node < count; ++node) {
+            if (intrinsic[node] > 0. &&
+                (!(values[count + node] + tails[count + node] > 0.) ||
+                 !(values[2 * count + node] + tails[2 * count + node] > 0.)))
+                return false;
+        }
+        return true;
+    };
+    for (int node = 0; node < count; ++node) {
+        if (intrinsic[node] > 0.)
+            continue;
+        for (int block = 1; block < 3; ++block) {
+            state[block * count + node] = low[block * count + node] = 0.;
+            prescribed.push_back(block * count + node);
+        }
+    }
+    if (!positiveCarriers(state, low))
+        throw std::invalid_argument("Invalid compensated semiconductor populations");
     if (contacts.empty())
         throw std::invalid_argument("Compensated population Newton requires Ohmic contacts");
 
@@ -242,8 +263,7 @@ NewtonResult NewtonSolver::solveCompensatedPopulation(const DDSolution& initial)
         if (iteration == cfg_.maxIter)
             break;
 
-        // Keep mobility, SRH and avalanche live in the residual. Freeze their
-        // derivatives in this correction, which uses the scaled SG/Poisson stencil.
+        // Evaluate the current transport coefficients before forming the correction.
         SparseMatrixd jacobian;
         physical = evaluate(state,low,&jacobian);
         VectorXd rowMax = VectorXd::Zero(state.size());
@@ -286,7 +306,7 @@ NewtonResult NewtonSolver::solveCompensatedPopulation(const DDSolution& initial)
                 trial[i] = value.high;
                 trialLow[i] = value.low;
             }
-            if (trial.tail(2*count).minCoeff() <= 0.)
+            if (!positiveCarriers(trial, trialLow))
                 continue;
             auto candidate = evaluate(trial,trialLow);
             const Real candidateMerit = merit(candidate);

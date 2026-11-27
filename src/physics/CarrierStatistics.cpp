@@ -43,6 +43,35 @@ Real evaluateFermiHalfPolynomial(Real eta, Real* value = nullptr)
     return coefficients[0] + t*b1 - b2;
 }
 
+numerics::SplitCoordinate evaluateCompensatedFermiHalf(numerics::SplitCoordinate eta)
+{
+    using numerics::SplitCoordinate;
+    if (eta.hi >= FermiBounds[std::size(FermiBounds) - 1]) {
+        const auto u = SplitCoordinate{1., 0.}.divided(eta.hi);
+        const auto u2 = u.multiplied(u);
+        SplitCoordinate series{};
+        for (int k = 6; k >= 0; --k)
+            series = series.multiplied(u2).shifted(FermiSommerfeld[k]);
+        const Real root = std::sqrt(eta.hi);
+        const auto rootPair = SplitCoordinate::sum(
+            root, (std::fma(-root, root, eta.hi) + eta.lo) / (2. * root));
+        return series.multiplied(rootPair).multiplied(eta).scaled(4. / (3. * SqrtPi));
+    }
+    std::size_t segment = 0;
+    while (eta.hi > FermiBounds[segment + 1]) ++segment;
+    const Real scale = 2. / (FermiBounds[segment + 1] - FermiBounds[segment]);
+    const auto t = eta.shifted(-FermiBounds[segment]).scaled(scale).shifted(-1.);
+    const auto twiceT = t.scaled(2.);
+    const auto coefficients = FermiCoefficients[segment];
+    SplitCoordinate b1{}, b2{};
+    for (std::size_t k = coefficients.size() - 1; k > 0; --k) {
+        const auto b = twiceT.multiplied(b1).added(b2.scaled(-1.)).shifted(coefficients[k]);
+        b2 = b1;
+        b1 = b;
+    }
+    return t.multiplied(b1).added(b2.scaled(-1.)).shifted(coefficients[0]);
+}
+
 template<int Order>
 Real evaluateFermiHalf(Real eta)
 {
@@ -211,6 +240,36 @@ IntegralFermiPopulation integralFermiPopulation(Real population, Real dos)
     return {eta, densitySlope, std::log(ratio) - eta,
             1.0 / ratio - 1.0 / derivative};
 }
+numerics::SplitCoordinate compensatedIntegralFermiEta(
+    Real population, Real populationLow, Real dos,
+    numerics::SplitCoordinate logPopulationOverDos)
+{
+    using numerics::SplitCoordinate;
+    constexpr Real diluteBoundary = 0.000335422847973596;
+    const auto ratio = SplitCoordinate{population, populationLow}.divided(dos);
+    if (ratio.hi < diluteBoundary) {
+        // F(eta) = exp(eta) * (1 + z * series(z)), z = exp(eta).
+        // Keep the leading logarithm as a pair and only round the small
+        // degeneracy correction. The dilute fixed point is a contraction.
+        auto eta = logPopulationOverDos;
+        for (int iteration = 0; iteration < 5; ++iteration) {
+            const Real z = std::exp(eta.hi);
+            Real series = 0.;
+            for (int k = 6; k >= 2; --k)
+                series = (k % 2 ? 1. : -1.) / (Real(k) * std::sqrt(Real(k))) + z * series;
+            eta = logPopulationOverDos.shifted(-std::log1p(z * series));
+        }
+        return eta;
+    }
+
+    SplitCoordinate eta{inverseFermiDiracHalf(ratio.hi), 0.};
+    for (int iteration = 0; iteration < 2; ++iteration) {
+        const auto defect = ratio.added(evaluateCompensatedFermiHalf(eta).scaled(-1.));
+        eta = eta.shifted(defect.hi / fermiDiracHalfDerivative(eta.hi));
+    }
+    return eta;
+}
+
 Real fermiDiracHalfDerivative(Real eta, CarrierStatisticsModel model) {
     return model == CarrierStatisticsModel::FermiDiracJoyceDixon
         ? experimental::JoyceDixonStatistics::evaluate(eta).first : fermiDiracHalfDerivative(eta);

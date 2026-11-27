@@ -320,10 +320,10 @@ TEST_CASE("Compensated population HDF5 restart preserves all low components", "[
     solution.n.resize(3);
     solution.p.resize(3);
     solution.psi << 1., -1., 0.5;
-    solution.n << 1e16, 2e16, 3e16;
-    solution.p << 2e16, 3e16, 1e16;
+    solution.n << 1e16, 2e16, 0.;
+    solution.p << 2e16, 3e16, 0.;
     solution.populationLow.resize(9);
-    solution.populationLow << 1e-30, -1e-30, 1e-30, 1e-12, -1e-12, 1e-12, -1e-12, 1e-12, -1e-12;
+    solution.populationLow << 1e-30, -1e-30, 1e-30, 1e-12, -1e-12, 0., -1e-12, 1e-12, 0.;
     const auto path = workspace.root/"compensated.h5";
     vela::writeStateArchive(path,vela::archiveDDSolution(solution,original.metadata));
     auto archive = vela::readStateArchive(path,3,std::string(64,'a'));
@@ -332,6 +332,9 @@ TEST_CASE("Compensated population HDF5 restart preserves all low components", "[
     REQUIRE(restored.n == solution.n);
     REQUIRE(restored.p == solution.p);
     REQUIRE(restored.populationLow == solution.populationLow);
+    auto invalid = archive;
+    invalid.fields.at("population_holes_low_internal")[2] = 1e-12;
+    REQUIRE_THROWS(vela::writeStateArchive(workspace.root/"invalid-compensated.h5", invalid));
     archive.fields.erase("population_holes_low_internal");
     REQUIRE_THROWS(vela::restoreDDSolution(archive));
 }

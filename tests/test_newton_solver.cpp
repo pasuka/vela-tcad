@@ -732,6 +732,48 @@ TEST_CASE("Compensated population Newton retains forward current conservation",
     }
 }
 
+TEST_CASE("Compensated Fermi SG retains a sub-ULP drive at a biased contact",
+          "[newton][population][precision]")
+{
+    const auto mesh = makePNMesh();
+    const MaterialDatabase materials;
+    const auto doping = DopingModel::fromMeshAndRegions(
+        mesh, {{"n_region", 1e23, 0.}, {"p_region", 1e23, 0.}});
+    const int count = static_cast<int>(mesh.numNodes());
+    DDScalingSpec scale;
+    scale.enabled = true;
+    scale.stateVariables = "potential_density";
+    scale.V0 = constants::Vt_300;
+    CarrierStatisticsConfig statistics{"fermi_dirac", FermiSgFormulation::EffectivePotential};
+    CoupledDDAssembler assembler(mesh, materials, doping, constants::Vt_300,
+        mobilityModelConfig("constant"), recombinationModelConfig({"none"}),
+        {}, {}, {}, {}, scale, {}, statistics);
+    const VectorXd psi = VectorXd::Constant(count, 1.1);
+    const VectorXd n = VectorXd::Constant(count, 1e23);
+    const VectorXd p = VectorXd::Constant(count, 1e14);
+    VectorXd tail = VectorXd::Zero(3 * count);
+    tail[0] = 7e-17;
+    REQUIRE(psi[0] + tail[0] == psi[0]);
+
+    SparseMatrixd jacobian;
+    const auto positive = assembler.compensatedPopulationDiagnostics(psi, n, p, tail, {}, false, &jacobian);
+    const auto negative = assembler.compensatedPopulationDiagnostics(psi, n, p, -tail, {}, false);
+    const auto electrons = positive.residual.segment(count, count);
+    const auto holes = positive.residual.tail(count);
+    REQUIRE(electrons[0] < 0.);
+    REQUIRE(holes[0] > 0.);
+    CHECK(std::abs(electrons.sum()) <= 1e-15 * electrons.norm());
+    CHECK(std::abs(holes.sum()) <= 1e-15 * holes.norm());
+    CHECK((electrons + negative.residual.segment(count, count)).norm() <= 1e-13 * electrons.norm());
+    CHECK((holes + negative.residual.tail(count)).norm() <= 1e-13 * holes.norm());
+
+    VectorXd direction = VectorXd::Zero(3 * count);
+    direction[0] = tail[0] / scale.V0;
+    const VectorXd tangent = jacobian * direction;
+    CHECK((tangent.segment(count, count) - electrons).norm() <= 1e-13 * electrons.norm());
+    CHECK((tangent.tail(count) - holes).norm() <= 1e-13 * holes.norm());
+}
+
 TEST_CASE("PN junction concentration Jacobian differentiates fixed-population Poisson and carrier fluxes",
           "[newton][pn2d_population][jacobian]")
 {

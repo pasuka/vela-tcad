@@ -454,13 +454,20 @@ def transportmodels_idvg_samples(launcher, fixture, work, env, report, bias_cont
         raise ValueError("Expected cold equilibrium at Vg=-1 V and Vd=0 V")
 
     coordinates = ({"state_variables": "potential_quasi_fermi", "quasi_fermi_reference": "contact_basin"}
-                   if density_gradient or deep_off else
-                   {"state_variables": "potential_density", "primary_variable_coordinates": "unit"})
+                   if density_gradient else
+                   {"state_variables": "potential_density", "primary_variable_coordinates": "unit",
+                    "quasi_fermi_reference": "none"})
     for index, stage in enumerate(plan):
-        solver = read_json(run / stage["deck"])["solver"]
+        deck = read_json(run / stage["deck"])
+        solver = deck["solver"]
         expected = {**coordinates, "max_iter": 80 if density_gradient else 20, "temperature_K": 300.0}
         if any(solver.get(key) != value for key, value in expected.items()):
             raise ValueError(f"Unexpected TransportModels solver settings in {stage['deck']}")
+        if not density_gradient:
+            if deck.get("format_version") != 2 and deck.get("scaling", {}).get("mode") != "unit_scaling":
+                raise ValueError(f"Expected Unit scaling in {stage['deck']}")
+            if solver.get("compensated_population_state", False) != deep_off:
+                raise ValueError(f"Unexpected TransportModels population precision in {stage['deck']}")
         if density_gradient:
             quantum = solver.get("electron_quantum_potential", {})
             if (not quantum.get("enabled") or not quantum.get("include_insulators")
@@ -541,7 +548,8 @@ def transportmodels_idvg_gates(launcher, fixture, output, env, report, *, densit
                 passed = passed and (ratio is None or ratio >= limits["deep_off_min_id_to_kcl_ratio"])
         comparison.append({
             "bias_V": bias, "regime": regime,
-            "coordinate_mode": "contact_basin" if density_gradient or index < 3 else "population",
+            "coordinate_mode": ("contact_basin" if density_gradient else
+                                "compensated_population" if index < 3 else "population"),
             "vela_A_per_um": measured, "sentaurus_A_per_um": native,
             **({} if density_gradient else {"population_drain_A_per_um": full_current}),
             "relative_error": relative_error, "log_error_dex": log_error, "kcl_residual_A_per_um": kcl,
@@ -710,11 +718,11 @@ def main():
     if args.dg_coupling != "outer" and args.case not in (
             "transportmodels_dg_idvd", "transportmodels_dg_idvg", "singledevice_idvg_linear"):
         parser.error("--dg-coupling=monolithic_box requires a density-gradient case")
-    if args.case == "bjtcurrentbc" and args.linear_solver == "pardiso_mkl" and not (
+    if args.case in ("bjtcurrentbc", "transportmodels_idvg") and args.linear_solver == "pardiso_mkl" and not (
         os.environ.get("VELA_MKL_RT_LIBRARY") or os.environ.get("VELA_MKL_RT_DLL")
     ):
-        print("BJTcurrentBC skipped: set VELA_MKL_RT_LIBRARY to the absolute path of the oneMKL runtime.",
-              flush=True)
+        name = "BJTcurrentBC" if args.case == "bjtcurrentbc" else "TransportModels DD Id-Vg"
+        print(f"{name} skipped: set VELA_MKL_RT_LIBRARY to the absolute path of the oneMKL runtime.", flush=True)
         return 77
     launcher = args.launcher.resolve(strict=True)
     fixture = REFERENCE_ROOT / CASES[args.case] / "ci_u2022_12"

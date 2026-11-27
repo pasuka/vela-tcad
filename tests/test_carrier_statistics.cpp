@@ -37,6 +37,25 @@ TEST_CASE("Integral Fermi population keeps the dilute degeneracy tangent", "[car
     }
 }
 
+TEST_CASE("Compensated integral Fermi inverse retains sub-ULP populations",
+          "[carrier_statistics][precision]")
+{
+    const Real dos = 3e19;
+    const Real ratio = GENERATE(1e-8, 0.08, 1.0, 400.0);
+    const Real density = dos * ratio;
+    const Real tail = std::numeric_limits<Real>::epsilon() * density / 32.;
+    REQUIRE(density + tail == density);
+    const auto logRatio = sgPopulationLogRatioCompensated(density, dos);
+    const auto base = compensatedIntegralFermiEta(density, 0., dos, logRatio);
+    const auto shifted = compensatedIntegralFermiEta(
+        density, tail, dos, logRatio.shifted(std::log1p(tail / density)));
+    const auto delta = shifted.added(base.scaled(-1.));
+    const Real expected = tail / (dos * fermiDiracHalfDerivative(base.hi));
+    CHECK(delta.hi > 0.);
+    CHECK(delta.hi == Approx(expected).epsilon(0.01));
+    CHECK(fermiDiracHalf(base.hi) == Approx(ratio).epsilon(1e-12));
+}
+
 TEST_CASE("Referenced population preserves finite coupled increments before charge formation",
           "[carrier_statistics][referenced_population]")
 {

@@ -79,9 +79,11 @@ sum magnitude of 9.10e-13 A/µm.
 
 ## Id–Vg
 
-Enable `VELA_ENABLE_TRANSPORTMODELS_IDVG_CI=ON` with the same Release,
-physical-constants and oneMKL settings as Id–Vd. The CTest name is
-`reference_u2022_transportmodels_idvg`. It executes the staged
+With the `sentaurus_u2022_12` constants profile and the oneMKL PARDISO backend,
+a fresh CMake configure enables `reference_u2022_transportmodels_idvg` by
+default. For a build directory that cached the old setting, configure once
+with `-DVELA_ENABLE_TRANSPORTMODELS_IDVG_CI=ON`. CTest skips the regression
+when the oneMKL runtime environment variable is unset. The test executes the staged
 `pp6_des.cmd` through `sd-sim` on the same 3,315-node grid and appends the
 same PolySi excerpt to the original `pp6_des.par`.
 
@@ -91,12 +93,12 @@ omits the unused thermal boundaries and output deletion command, and limits
 Plot fields to potential. The run starts at `Vg=-1 V, Vd=0 V`, raises the
 drain to 1.1 V, then sweeps the gate to 2.2 V with the CMD step bounds and
 21 exact CurrentPlot biases. Each sweep consumes the preceding stage state.
-The complete sweep uses potential and carrier concentrations. A short
-independent sweep from the same equilibrium and drain ramp covers the
-first three gate biases through -0.68 V. It uses local contact-basin
-quasi-Fermi references to resolve the leakage currents and preserves the
-original gate sweep's absolute initial and minimum steps and requested
-output locations. The maximum step is capped at the short sweep's span.
+All 21 comparisons use potential and carrier concentrations in Unit
+coordinates. An independent sweep from the same equilibrium and drain ramp
+uses compensated potential and carrier concentrations to resolve the leakage
+currents at the first three gate biases through -0.68 V. It preserves the
+original gate sweep's absolute initial and minimum steps and requested output
+locations. The maximum step is capped at the short sweep's span.
 The deep-off gate uses the directly measured four terminal currents from
 the short sweep. The report also retains the full sweep's drain current at
 these biases.

@@ -715,6 +715,23 @@ TEST_CASE("Material temperature path updates intrinsic density and mobility", "[
     REQUIRE(si400.mun < si300.mun);
 }
 
+TEST_CASE("Lombardi normal field retains sub-ULP potential drops", "[mobility][surface][precision]")
+{
+    const DeviceMesh mesh = makePNMesh();
+    auto config = mobilityModelConfig("masetti_field_lombardi");
+    config.surface.cellNormalX = {1.0, 1.0};
+    config.surface.cellNormalY = {0.0, 0.0};
+    config.surface.coordinateFieldFactor = 1.0;
+
+    const VectorXd potential = VectorXd::Constant(mesh.numNodes(), 1.0);
+    VectorXd tail = VectorXd::Zero(mesh.numNodes());
+    tail[1] = tail[2] = 3e-17;
+    REQUIRE(potential[1] + tail[1] == potential[1]);
+    CHECK(detail::liveSurfaceNormalFieldForCell(config, mesh, potential, 0) == 0.0);
+    CHECK(detail::liveSurfaceNormalFieldForCell(config, mesh, potential, 0, &tail) ==
+          Catch::Approx(3e-11).epsilon(1e-14));
+}
+
 TEST_CASE("surface mobility degradation decreases with vertical field", "[mobility][surface]")
 {
     MaterialDatabase matdb;

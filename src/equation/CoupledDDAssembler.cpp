@@ -1953,41 +1953,94 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
     bool includeImpactIonization, SparseMatrixd* transportJacobian) const
 {
     const int count = static_cast<int>(mesh_.numNodes());
-    const bool supportedMobility = mobilityConfig_.model == "masetti" ||
+    const bool integralFermi = carrierStatisticsModel_ == CarrierStatisticsModel::FermiDirac &&
+        carrierStatistics_.sgFormulation == FermiSgFormulation::EffectivePotential &&
+        !electronQuantumPotentialConfig_.enabled && !impactIonizationEnabled_ &&
+        bcs.thermionic.empty();
+    const bool supportedMobility = (integralFermi && mobilityConfig_.model == "masetti_field_lombardi") ||
+        mobilityConfig_.model == "masetti" ||
         mobilityConfig_.model == "masetti_field" ||
         (mobilityConfig_.model == "constant" && !impactIonizationEnabled_);
-    if (!usesLegacyPopulationState() || usesFermiDirac_ || !scaling_.enabled ||
+    if (!usesLegacyPopulationState() || (usesFermiDirac_ && !integralFermi) || !scaling_.enabled ||
         psi.size() != count || n.size() != count || p.size() != count ||
         low.size() != 3 * count || !low.allFinite() ||
         bcs.ohmicBias.size() != bcs.ohmicPopulation.size() ||
-        bcs.ohmicPopulation.size() + bcs.thermionic.size() != bcs.psi.size() ||
         std::any_of(bcs.psi.begin(), bcs.psi.end(), [&](const auto& entry) {
-            return bcs.ohmicPopulation.contains(entry.first) == bcs.thermionic.contains(entry.first);
+            const bool ohmic = bcs.ohmicPopulation.contains(entry.first);
+            const bool thermionic = bcs.thermionic.contains(entry.first);
+            return (ohmic && thermionic) || (!ohmic && !thermionic && !integralFermi);
         }) ||
         (!bcs.thermionic.empty() && (impactIonizationEnabled_ || mobilityConfig_.model != "constant")) ||
-        (mobilityConfig_.edgeAveraging != "legacy" && mobilityConfig_.edgeAveraging != "auto") ||
+        (mobilityConfig_.edgeAveraging != "legacy" && mobilityConfig_.edgeAveraging != "auto" &&
+         !(integralFermi && mobilityConfig_.edgeAveraging == "element_box_masetti")) ||
         mobilityConfig_.carrierCurrentDiscretization != "scharfetter_gummel_edge" ||
         !supportedMobility ||
         mobilityConfig_.contactElectricFieldFallback ||
         recombination_.augerEnabled() || recombination_.bandToBandEnabled() ||
-        std::any_of(ni_.begin(), ni_.end(), [](Real v) { return v <= 0.; }) ||
+        (!integralFermi && std::any_of(ni_.begin(), ni_.end(), [](Real v) { return v <= 0.; })) ||
         (impactIonizationEnabled_ &&
          (!detail::usesElementEdgeGssLauxAvalancheSource(impactIonizationConfig_) ||
           impactIonizationConfig_.contactElectricFieldFallbackMode != "cell_gradient_magnitude")))
         throw std::invalid_argument("Unsupported compensated population operator configuration");
 
-    const VectorXd en = low.segment(count,count).cwiseQuotient(n);
-    const VectorXd hp = low.tail(count).cwiseQuotient(p);
+    VectorXd en = VectorXd::Zero(count);
+    VectorXd hp = VectorXd::Zero(count);
     const VectorXd electrons = n + low.segment(count,count);
     const VectorXd holes = p + low.tail(count);
-    if (!electrons.allFinite() || !holes.allFinite() ||
-        electrons.minCoeff() <= 0. || holes.minCoeff() <= 0.)
-        throw std::domain_error("Compensated populations must be positive and finite");
+    if (!electrons.allFinite() || !holes.allFinite())
+        throw std::domain_error("Compensated populations must be finite");
+    for (int node = 0; node < count; ++node) {
+        if (ni_[node] <= 0.)
+            continue;
+        if (!(electrons[node] > 0. && holes[node] > 0.))
+            throw std::domain_error("Compensated semiconductor populations must be positive");
+        en[node] = low[count + node] / n[node];
+        hp[node] = low[2 * count + node] / p[node];
+    }
+
+    if (surfaceMobilityEnabled_) {
+        detail::updateSurfaceMobilityCellGeometry(
+            mobilityConfig_, mesh_, edgeCells_, psi,
+            mobilityConfig_.surface.coordinateFieldFactor, &cellMaterials_);
+    }
+
+    using numerics::SplitCoordinate;
+    struct FermiNode {
+        SplitCoordinate statisticalPotential;
+        Real logDensityCorrection = 0.;
+        Real relativeEtaSlope = 0.;
+    };
+    std::vector<FermiNode> electronFermi, holeFermi;
+    if (integralFermi) {
+        const auto prepare = [&](const VectorXd& density, const VectorXd& correction,
+                                 const std::vector<Real>& dos, int offset) {
+            std::vector<FermiNode> statistics(count);
+            for (int node = 0; node < count; ++node) {
+                if (ni_[node] <= 0.)
+                    continue;
+                const Real logCorrection = std::log1p(correction[node]);
+                const auto logRatio = sgPopulationLogRatioCompensated(density[node], dos[node])
+                    .shifted(logCorrection);
+                const auto eta = compensatedIntegralFermiEta(
+                    density[node], low[offset + node], dos[node], logRatio);
+                const auto logIntrinsic = sgPopulationLogRatioCompensated(ni_[node], dos[node]);
+                auto& stats = statistics[node];
+                stats.statisticalPotential = eta.added(logIntrinsic.scaled(-1.)).scaled(Vt_);
+                stats.logDensityCorrection = logCorrection;
+                if (transportJacobian)
+                    stats.relativeEtaSlope = density[node] /
+                        (dos[node] * fermiDiracHalfDerivative(eta.hi));
+            }
+            return statistics;
+        };
+        electronFermi = prepare(n, en, Nc_, count);
+        holeFermi = prepare(p, hp, Nv_, 2 * count);
+    }
 
     constexpr bool binary64 = compiledArithmeticPrecision == ArithmeticPrecision::Double;
     std::vector<ArithmeticReal> electronLogCorrection, holeLogCorrection;
-    if (vectorQfMobilityEnabled_ || qfMobilityEnabled_ ||
-        (includeImpactIonization && impactIonizationEnabled_)) {
+    if (!integralFermi && (vectorQfMobilityEnabled_ || qfMobilityEnabled_ ||
+        (includeImpactIonization && impactIonizationEnabled_))) {
         electronLogCorrection.resize(count);
         holeLogCorrection.resize(count);
         for (int node = 0; node < count; ++node) {
@@ -1998,7 +2051,17 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
     const auto highDrop = [&](Index i, Index j) { return static_cast<vela::ArithmeticReal>(psi[j]) - psi[i]; };
     const auto lowDrop = [&](Index i, Index j) { return static_cast<vela::ArithmeticReal>(low[j]) - low[i]; };
     const auto drop = [&](Index i, Index j) { return highDrop(i,j) + lowDrop(i,j); };
+    const auto fermiQfDrop = [&](bool electron, Index i, Index j) {
+        const auto& statistics = electron ? electronFermi : holeFermi;
+        const Real sign = electron ? -1. : 1.;
+        return SplitCoordinate::sum(psi[j], -psi[i])
+            .added(SplitCoordinate::sum(low[j], -low[i]))
+            .added(statistics[j].statisticalPotential.scaled(sign))
+            .added(statistics[i].statisticalPotential.scaled(-sign));
+    };
     const auto qfDrop = [&](bool electron, Index i, Index j) {
+        if (integralFermi)
+            return static_cast<ArithmeticReal>(fermiQfDrop(electron, i, j).hi);
         const auto& density = electron ? n : p;
         const auto& logCorrection = electron ? electronLogCorrection : holeLogCorrection;
         if constexpr (binary64) {
@@ -2021,6 +2084,8 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
     const bool evaluateAvalanche = includeImpactIonization && impactIonizationEnabled_;
     using CellDrops = std::vector<std::array<Real, 3>>;
     CellDrops electronCellDrops, holeCellDrops;
+    const bool compensatedSurfaceMobility = integralFermi && surfaceMobilityEnabled_ &&
+        mobilityConfig_.edgeAveraging == "element_box_masetti";
     const auto vectorFields = [&](bool electron, CellDrops& cellDrops) {
         // Both high-field mobility and the avalanche source use these same
         // directed, compensated drops from the first vertex of each cell.
@@ -2032,6 +2097,8 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
         gradients.valid.resize(mesh_.numCells());
         for (Index id = 0; id < mesh_.numCells(); ++id) {
             const Cell& cell = mesh_.getCell(id);
+            if (integralFermi && !detail::isTransportMaterial(cellMaterials_[id]))
+                continue;
             bool valid = false;
             const Index anchor = cell.node_ids.front();
             if (evaluateAvalanche && cell.node_ids.size() >= 3)
@@ -2100,7 +2167,8 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
             scatter(i,j,i,g);
             scatter(i,j,j,-g);
         }
-        if (edge.length <= 1e-30 || edge.coupling == 0.)
+        if (edge.length <= 1e-30 || edge.coupling == 0. ||
+            (integralFermi && (!edge.activeTransport || ni_[i] <= 0. || ni_[j] <= 0.)))
             continue;
         const Real factor = fieldFactor / edge.length;
         const auto sg = [&](CarrierType carrier, const VectorXd& density,
@@ -2108,9 +2176,46 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
             const bool electron = carrier == CarrierType::Electron;
             const Real field = vectorQfMobilityEnabled_ ? fields[id] :
                 static_cast<Real>(std::abs(qfMobilityEnabled_ ? qfDrop(electron,i,j) : dpsi)) * factor;
-            const Real mu = cachedEdgeMobility(id,carrier,field,&psi);
+            const Real mu = compensatedSurfaceMobility
+                ? detail::edgeMobility(edgeCells_, mesh_, doping_, *mobility_, cellMaterials_,
+                    id, carrier, field, &mobilityConfig_, &psi, nullptr, &low)
+                : cachedEdgeMobility(id, carrier, field, &psi);
             const Real sign = electron ? 1. : -1.;
             const Real coef = mu * Vt_ * factor * edge.coupling / continuityScale;
+            if (integralFermi) {
+                const auto& statistics = electron ? electronFermi : holeFermi;
+                const Real reducedDrop = fermiQfDrop(electron, i, j).divided(Vt_).scaled(sign).hi;
+                const auto logRatio = sgPopulationLogRatioCompensated(density[j], density[i])
+                    .shifted(statistics[j].logDensityCorrection)
+                    .shifted(-statistics[i].logDensityCorrection);
+                const Real argument = logRatio.shifted(reducedDrop).hi;
+                // Choose the side with a nonpositive expm1 argument so the
+                // stable flux and its tangent also work at large edge drops.
+                const int offset = electron ? count : 2 * count;
+                const bool reverse = reducedDrop > 0.;
+                const Real orientation = reverse ? -1. : 1.;
+                const Index node = reverse ? i : j;
+                const Real amplitude = coef * (density[node] + low[offset + node]);
+                const Real b = bernoulli(orientation * argument);
+                const Real excess = orientation * std::expm1(orientation * reducedDrop);
+                const Real flux = amplitude * b * excess;
+                if (transportJacobian) {
+                    const Real dArgument = orientation * amplitude * bernoulliDerivative(orientation * argument) * excess;
+                    const Real dDrop = amplitude * b * std::exp(orientation * reducedDrop);
+                    const Real dPsi = (dArgument + dDrop) * sign * scaling_.V0 / Vt_;
+                    const Real dLeftLog = density[i] / (density[i] + low[offset + i]);
+                    const Real dRightLog = density[j] / (density[j] + low[offset + j]);
+                    const Real dLeft = statistics[i].relativeEtaSlope;
+                    const Real dRight = -statistics[j].relativeEtaSlope;
+                    scatter(offset+i, offset+j, i, -dPsi);
+                    scatter(offset+i, offset+j, j, dPsi);
+                    scatter(offset+i, offset+j, offset+i,
+                        dDrop * dLeft + dArgument * (dLeft - dLeftLog) + (reverse ? flux * dLeftLog : 0.));
+                    scatter(offset+i, offset+j, offset+j,
+                        dDrop * dRight + dArgument * (dRight + dRightLog) + (reverse ? 0. : flux * dRightLog));
+                }
+                return flux;
+            }
             if (transportJacobian) {
                 const int offset = electron ? count : 2*count;
                 const Real eta = static_cast<Real>(sign*dpsi/Vt_ +
@@ -2201,7 +2306,39 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
         term.electronFlux = static_cast<Real>(electronFlux[i]);
         term.holeFlux = static_cast<Real>(holeFlux[i]);
         term.electronImpact = term.holeImpact = -term.impactCombinedSource;
-        if (recombination_.srhEnabled()) {
+        if (integralFermi && ni_[i] > 0. && recombination_.srhEnabled()) {
+            const Real splitting = holeFermi[i].statisticalPotential
+                .added(electronFermi[i].statisticalPotential).hi;
+            const auto srh = generalizedSrhCarrierState(electrons[i], holes[i], ni_[i], Nc_[i], Nv_[i],
+                splitting, Vt_, carrierStatisticsModel_);
+            const Real doping = recombination_.srhDopingConcentration(doping_.donors(i), doping_.acceptors(i));
+            const Real scale = srhVol_[i] * sourceFactor / continuityScale;
+            term.electronRecombination = term.holeRecombination = scale *
+                recombination_.srhRateGeneralizedFromExcessProduct(srh.excessProduct,
+                    electrons[i], holes[i], ni_[i], ni_[i], srh.electronDegeneracy,
+                    srh.holeDegeneracy, doping);
+            if (transportJacobian) {
+                const auto partial = recombination_.srhRateGeneralizedDerivativesFromExcessProduct(
+                    srh.excessProduct, electrons[i], holes[i], ni_[i], ni_[i],
+                    srh.electronDegeneracy, srh.holeDegeneracy, doping);
+                const Real dnEta = electronFermi[i].relativeEtaSlope;
+                const Real dpEta = holeFermi[i].relativeEtaSlope;
+                const Real dLogGammaN = n[i] / electrons[i] - dnEta;
+                const Real dLogGammaP = p[i] / holes[i] - dpEta;
+                const Real dn = scale * (partial.dRateDn * n[i] +
+                    partial.dRateDElectronDegeneracy * srh.electronDegeneracy * dLogGammaN +
+                    partial.dRateDExcess * generalizedSrhExcessDirectionalDerivative(
+                        srh, dLogGammaN, 0., dnEta));
+                const Real dp = scale * (partial.dRateDp * p[i] +
+                    partial.dRateDHoleDegeneracy * srh.holeDegeneracy * dLogGammaP +
+                    partial.dRateDExcess * generalizedSrhExcessDirectionalDerivative(
+                        srh, 0., dLogGammaP, dpEta));
+                add(count+i, count+i, dn);
+                add(count+i, 2*count+i, dp);
+                add(2*count+i, count+i, dn);
+                add(2*count+i, 2*count+i, dp);
+            }
+        } else if (!integralFermi && recombination_.srhEnabled()) {
             Real excess;
             if constexpr (binary64) {
                 experimental::ExpansionProductSum product;
@@ -2275,14 +2412,22 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
             add(i,count+i,scale*poissonElectronVol_[i]*n[i]);
             add(i,2*count+i,-scale*poissonHoleVol_[i]*p[i]);
         }
+        if (ni_[i] <= 0.) {
+            term.electronContinuityActive = term.holeContinuityActive = false;
+            if (transportJacobian) {
+                add(count+i, count+i, 1.);
+                add(2*count+i, 2*count+i, 1.);
+            }
+        }
         result.residual[count+i] = term.electronResidual;
         result.residual[2*count+i] = term.holeResidual;
     }
     result.constrainedTerms = terms;
     const Real vtScaled = Vt_/scaling_.V0;
-    for (const auto& [i, boundary] : bcs.thermionic) {
-        const auto target = numerics::SplitCoordinate::sum(bcs.psi.at(i) * scaling_.V0, 0.);
-        result.residual[i] = ((psi[i] - target.hi) + (low[i] - target.lo)) / scaling_.V0;
+    for (const auto& [i, target] : bcs.psi) {
+        if (bcs.ohmicPopulation.contains(i))
+            continue;
+        result.residual[i] = ((psi[i] - target * scaling_.V0) + low[i]) / scaling_.V0;
         if (transportJacobian)
             jacobian.emplace_back(i, i, 1.);
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/material/Material.h"
+#include "vela/numerics/SplitCoordinate.h"
 #include <cstdint>
 #include <limits>
 #include <string>
@@ -103,6 +104,11 @@ struct IntegralFermiPopulation {
 
 /// Integral Fermi statistics from a positive physical population and DOS.
 IntegralFermiPopulation integralFermiPopulation(Real population, Real dos);
+
+/// Refine the integral inverse without dropping the population remainder.
+numerics::SplitCoordinate compensatedIntegralFermiEta(
+    Real population, Real populationLow, Real dos,
+    numerics::SplitCoordinate logPopulationOverDos);
 
 /// All four operations resolve the same explicitly selected approximation.
 Real fermiDiracHalf(Real eta, CarrierStatisticsModel model);
