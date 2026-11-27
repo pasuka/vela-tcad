@@ -27,6 +27,8 @@ struct GeometryBuildReport {
     Index degenerateCells = 0;
     Index negativeCotangentCount = 0;
     Index fallbackCount = 0;
+    Index edgeAggregationRepairCount = 0;
+    Index aggregatedNegativeEdgeCount = 0;
     Index clampedCotangentCount = 0;
     Real minAngleDegrees = 0.0;
     Real maxAngleDegrees = 0.0;
@@ -46,7 +48,7 @@ struct GeometryBuildReport {
 class BoxGeometryBuilder {
 public:
     enum class PoissonPermittivityPolicy { LegacyAverage, CellMaterial };
-    enum class CellBoxPolicy { LegacyPositive, DelaunayTransfer };
+    enum class CellBoxPolicy { LegacyPositive, DelaunayTransfer, AverageIntersection };
 
     // Dimensionless d/l, ordered along (0,1), (1,2), (2,0).
     // Node identity guards against accidentally reusing a reordered mesh.
@@ -59,11 +61,17 @@ public:
         MixedVoronoi,
     };
 
+    enum class EdgeCouplingPolicy {
+        LocalPositiveFallback,
+        AssembledDelaunayFallback,
+    };
+
     struct Options {
         bool fallbackNegativeCotangent = true;
         bool warnOnNegativeCotangent = false;
         bool requireNonObtuse = false;
         NodeVolumePolicy nodeVolumePolicy = NodeVolumePolicy::Barycentric;
+        EdgeCouplingPolicy edgeCouplingPolicy = EdgeCouplingPolicy::LocalPositiveFallback;
         PoissonPermittivityPolicy poissonPermittivityPolicy =
             PoissonPermittivityPolicy::LegacyAverage;
         std::vector<PoissonCellEdgeCoefficients> poissonCellEdgeCoefficients;
@@ -71,6 +79,10 @@ public:
     };
 
     static Real triangleArea(const Node& a, const Node& b, const Node& c);
+    /// Exactly the local mixed-Voronoi shares used by buildWithReport.
+    static std::array<Real,3> mixedVoronoiVertexVolumes(const DeviceMesh& mesh,const Cell& cell);
+    /// Signed circumcentric shares; callers must qualify assembled nodal measures.
+    static std::array<Real,3> circumcentricVertexVolumes(const DeviceMesh& mesh,const Cell& cell);
     static void build(DeviceMesh& mesh);
     static void build(DeviceMesh& mesh, const Options& options);
     static GeometryBuildReport buildWithReport(DeviceMesh& mesh);

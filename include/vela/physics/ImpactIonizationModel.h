@@ -1,5 +1,8 @@
 #pragma once
 
+#include "vela/physics/GradQfContactField.h"
+#include <optional>
+
 #include "vela/core/Types.h"
 #include "vela/core/UnitScaling.h"
 #include <memory>
@@ -21,6 +24,15 @@ struct ImpactIonizationModelConfig {
     std::string drivingForceInterpolation = "none";
     std::string quasiFermiGradientDiscretization = "edge_difference"; ///< edge_difference or Genius-style cell_gradient.
     bool contactElectricFieldFallback = false; ///< Experimental: use |grad psi| for alpha in contact-adjacent cells while retaining GradQF in interior cells.
+    // JSON resolves this explicitly. Direct C++ callers can retain their kernel default.
+    std::optional<GradQfContactField> gradQfContactField;
+
+    bool useElectricFieldAtGradQfContacts(bool kernelDefault = false) const {
+        return drivingForce == "quasi_fermi_gradient" &&
+            (gradQfContactField ? *gradQfContactField == GradQfContactField::ElectricField
+                               : kernelDefault || contactElectricFieldFallback);
+    }
+    bool ialmobBoundaryFieldProjection = false; ///< Opt-in: project avalanche GradQF onto the IALMob insulating-boundary tangent.
     std::string contactElectricFieldFallbackScope = "contact_node_cell"; ///< contact_node_cell or contact_boundary_face.
     std::string contactElectricFieldFallbackMode = "cell_gradient_magnitude"; ///< cell_gradient_magnitude, face_normal, one_sided, or distance_weighted_blend.
     Real electronDrivingForceRefDensity = 0.0; ///< RefDens_eGradQuasiFermi_ElectricField_Aval equivalent [1/m^3]

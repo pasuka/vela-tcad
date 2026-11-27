@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <limits>
 #include <string>
+#include <utility>
 
 namespace vela {
 
@@ -19,6 +20,12 @@ struct CarrierStatisticsConfig {
     /// Boltzmann remains the compatibility default.
     std::string model = "boltzmann";
     FermiSgFormulation sgFormulation = FermiSgFormulation::GeneralizedEinstein;
+    /// Independent Fermi edge-flux discretization; population statistics do not change.
+    std::string transport = "generalized_einstein";
+
+    FermiSgFormulation effectiveSgFormulation() const {
+        return transport == "effective_band_sg" ? FermiSgFormulation::EffectivePotential : sgFormulation;
+    }
 };
 
 /**
@@ -90,6 +97,10 @@ constexpr bool usesFermiDirac(CarrierStatisticsModel model) noexcept
  * non-degenerate limit is exp(eta).
  */
 Real fermiDiracHalf(Real eta);
+/// DOS * F_{1/2}(eta), retaining representable populations when F alone underflows.
+/// Uses the same scaled evaluation as electronDensity/holeDensity; no density floor.
+Real scaledFermiDiracHalf(Real densityOfStates, Real eta);
+Real scaledFermiDiracHalf(Real densityOfStates, Real eta, CarrierStatisticsModel model);
 Real fermiDiracHalfDerivative(Real eta);
 /// Second derivative of the same high-accuracy representation.
 Real fermiDiracHalfSecondDerivative(Real eta);
@@ -109,6 +120,22 @@ IntegralFermiPopulation integralFermiPopulation(Real population, Real dos);
 numerics::SplitCoordinate compensatedIntegralFermiEta(
     Real population, Real populationLow, Real dos,
     numerics::SplitCoordinate logPopulationOverDos);
+struct ExtendedFermiDegeneracy {
+    long double logCorrection; ///< eta - log(density / DOS).
+    long double logSlope; ///< Derivative of the correction with respect to log(density).
+};
+ExtendedFermiDegeneracy extendedFermiDegeneracy(long double densityOverDOS,
+    CarrierStatisticsModel model = CarrierStatisticsModel::FermiDirac);
+
+// Defining-integral statistics for the wide population solver.
+long double extendedFermiDiracHalf(long double eta);
+long double extendedFermiDiracHalfDerivative(long double eta);
+long double extendedFermiDiracHalfSecondDerivative(long double eta);
+long double extendedInverseFermiDiracHalf(long double value);
+/// Population and its derivative with respect to the reduced potential.
+std::pair<long double, long double> extendedFermiPopulation(
+    long double densityOfStates, long double intrinsic, long double reducedPotential,
+    CarrierStatisticsModel model = CarrierStatisticsModel::FermiDirac);
 
 /// All four operations resolve the same explicitly selected approximation.
 Real fermiDiracHalf(Real eta, CarrierStatisticsModel model);

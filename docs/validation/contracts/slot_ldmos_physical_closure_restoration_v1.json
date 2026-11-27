@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "id": "slot_ldmos_physical_closure_restoration_v1",
+  "date": "2026-09-05",
+  "scope": "SLOT-LDMOS avalanche-off low-voltage continuation; opt-in profile; not a global solver default",
+  "baseline": {
+    "branch": "codex/slot-ldmos-bvds-next",
+    "merge_commit": "dbe6d3d",
+    "local_main_tip": "8e99e57",
+    "source_state_sha256": "13bba7c57646d25b57eeb3f0fb188c56a950168acc1aa83bbd3dc801001f5edc"
+  },
+  "required_solver_controls": {
+    "quasi_fermi_reference": "contact_basin",
+    "global_continuity_closure": {
+      "linear_system_stabilization": "replace_free_row_sum",
+      "mode": "enforce",
+      "source_floor": 1e-11,
+      "absolute_tolerance": 1e-12,
+      "tolerance": 0.01,
+      "feasibility_restoration": "final_linear_qf_projection",
+      "feasibility_restoration_factor": 1.0,
+      "restoration_jacobian": "stabilized",
+      "restoration_physical_rows_only": true
+    },
+    "quasi_fermi_update_limit_V": 0.1,
+    "quasi_fermi_update_limit_minority_V": 0.05,
+    "quasi_fermi_update_limit_mode": "componentwise_poisson_recorrect",
+    "carrier_diagonal_floor": {
+      "enabled": true,
+      "scale": 10.0,
+      "minority_density_ratio": 1.0
+    },
+    "carrier_regularization_scale": 1e-08,
+    "stall_residual_floor": 1e-08,
+    "carrier_row_convergence": {
+      "mode": "enforce",
+      "eps_row": 0.001,
+      "scale_floor": 1e-30,
+      "min_source_scale_fraction": 0.0,
+      "min_source_scale": 1e-13,
+      "min_newton_max_iter": 2
+    }
+  },
+  "physics": {
+    "mesh_geometry": {
+      "edge_coupling_policy": "assembled_delaunay_fallback",
+      "node_volume_policy": "mixed_voronoi",
+      "require_non_obtuse": false
+    },
+    "mobility": {
+      "doping_concentration_basis": "total_impurity",
+      "high_field_driving_force": "quasi_fermi_gradient",
+      "high_field_gradient_discretization": "transport_cell_vector",
+      "jacobian_field_derivatives": true,
+      "model": "masetti_field"
+    },
+    "recombination": [
+      "srh",
+      "auger"
+    ],
+    "bandgap_narrowing": "old_slotboom",
+    "avalanche": "off",
+    "ialmob": "off",
+    "external_circuit_enabled": false
+  },
+  "input_files": {
+    "mesh_file": {
+      "path": "build\\slot_ldmos_noavalanche_1p25_resume02\\mesh.json",
+      "sha256": "4f6d365a3fb4724ab86dcbea3d584bdec99948c7c9b7ecc5614419ab0aa066f3"
+    },
+    "node_doping_file": {
+      "path": "build\\slot_ldmos_noavalanche_1p25_resume02\\doping.csv",
+      "sha256": "6c397a00bf34b69ce7ceb999f0e465eaa724910db5e3129d92a1b696f2676cc4"
+    },
+    "materials_file": {
+      "path": "build\\slot_ldmos_noavalanche_1p25_resume02\\materials.json",
+      "sha256": "c4c145859c2f146ac25666fb7fb60a81838acbf8c918102bc60dd4e0ab7a8265"
+    }
+  },
+  "protected_configuration_comparison": {
+    "canonical_sha256": "4d4813a02d6947caedb777c7b6fd196248f175b46858a648942fedded12ba417",
+    "excluded_leaf_paths": [
+      ".solver.carrier_row_convergence.min_newton_max_iter",
+      ".solver.global_continuity_closure.restoration_physical_rows_only",
+      ".solver.global_continuity_closure.roundoff_audit",
+      ".solver.handoff.newton_max_iter",
+      ".solver.max_iter",
+      ".solver.quasi_fermi_reference"
+    ],
+    "excluded_output_key_fragments": [
+      "csv",
+      "file",
+      "directory",
+      "prefix"
+    ],
+    "input_files_verified_separately": true,
+    "relative_to": "baseline/config.json in evidence root"
+  },
+  "acceptance": {
+    "new_voltage_requires_real_newton_iterations": true,
+    "converged": true,
+    "carrier_row_violations": 0,
+    "global_closure_satisfied": true,
+    "restartable_saved_state": true,
+    "unambiguous_convergence_reason": true,
+    "unchanged_physics_and_thresholds": true
+  },
+  "qualification_notes": [
+    "The strict 1.25 V carrier-row gate has zero qualified rows under the existing source threshold.",
+    "1186 final-state QF bounds diagnostics remain in existing warn mode. Step caps are unchanged.",
+    "A same-bias reload with zero iterations verifies the saved strict checkpoint; it does not qualify a new voltage."
+  ],
+  "evidence_root": "build/slot_ldmos_e3_20260905",
+  "checkpoint": {
+    "case": "final_strict",
+    "bias_V": 1.25,
+    "real_newton_iterations": 2,
+    "reason": "final_global_continuity_restoration",
+    "current_A_per_um": 6.588995485296432e-16,
+    "electron_closure_mismatch": 2.460123352790215e-19,
+    "hole_closure_mismatch": 2.3598226144186885e-19,
+    "config_sha256": "6ad1d7c9a6add8d9b611720a07212bab0bf8cfa3205ee71f31647bce0e131a8c",
+    "state_sha256": "8de098c8b1416210a0ef05e1e4269104a8f555e48d01ef99e9a308d96818b10a"
+  },
+  "restart": {
+    "case": "final_restart",
+    "current_relative_change": 0.0,
+    "density_max_absolute_change": 0,
+    "state_sha256": "d4871cbdb9df24cbf583d09db7d735fe914dfc5c946d520014c75097add6007c"
+  },
+  "tested_source_sha256": {
+    "src\\solver\\NewtonSolver.cpp": "9696e2f7cf2c1d28aeb58ca27e8a3d8ec76a815b4ae61c1ea0ca8a474a1a93b3",
+    "src\\solver\\GlobalContinuityAudit.cpp": "e873051cff6509b0b62b15c606a8758682b285b42fa30d1dbd8c9cc7c4fb77ec",
+    "src\\equation\\CoupledDDAssembler.cpp": "230af27a96324148ef394a68767c387f90b7191c64d69b387c55d13f41a8cf95",
+    "tests\\test_newton_solver.cpp": "e51a1947c8d1e732a056142251bd442731355b034e68ddb47062b069071d63f3"
+  },
+  "next_voltage_gates_V": [
+    1.5,
+    2.0
+  ]
+}

@@ -127,6 +127,24 @@ DeviceMesh makeRefinementTransitionPatch()
     return mesh;
 }
 
+DeviceMesh makeTwoTriangleDelaunayPatch(Real upperY, Real lowerY)
+{
+    DeviceMesh mesh;
+    Node n0; n0.id = 0; n0.x = 0.0; n0.y = 0.0; mesh.addNode(n0);
+    Node n1; n1.id = 1; n1.x = 1.0; n1.y = 0.0; mesh.addNode(n1);
+    Node n2; n2.id = 2; n2.x = 0.2; n2.y = upperY; mesh.addNode(n2);
+    Node n3; n3.id = 3; n3.x = 0.5; n3.y = lowerY; mesh.addNode(n3);
+
+    Cell c0; c0.id = 0; c0.type = CellType::Tri3; c0.region_id = 0;
+    c0.node_ids = {0, 1, 2}; mesh.addCell(c0);
+    Cell c1; c1.id = 1; c1.type = CellType::Tri3; c1.region_id = 0;
+    c1.node_ids = {1, 0, 3}; mesh.addCell(c1);
+    Region r; r.id = 0; r.name = "body"; r.material = "Si"; r.cell_ids = {0, 1};
+    mesh.addRegion(r);
+    mesh.buildEdges();
+    return mesh;
+}
+
 struct CerrRedirectGuard {
     explicit CerrRedirectGuard(std::ostream& stream, std::streambuf* replacement)
         : stream_(stream), original_(stream.rdbuf(replacement))
@@ -236,6 +254,9 @@ TEST_CASE("ConfigParsing: omitted node volume policy preserves explicit barycent
         nlohmann::json{{"mesh_geometry",
                         {{"node_volume_policy", "mixed_voronoi"},
                          {"require_non_obtuse", true}}}});
+    const auto assembledDelaunay = parseBoxGeometryOptions(
+        nlohmann::json{{"mesh_geometry",
+                        {{"edge_coupling_policy", "assembled_delaunay_fallback"}}}});
     const auto noNegativeFallback = parseBoxGeometryOptions(
         nlohmann::json{{"mesh_geometry",
                         {{"fallback_negative_cotangent", false}}}});
@@ -249,6 +270,10 @@ TEST_CASE("ConfigParsing: omitted node volume policy preserves explicit barycent
     REQUIRE_FALSE(omitted.requireNonObtuse);
     REQUIRE_FALSE(explicitMixed.requireNonObtuse);
     REQUIRE(qualifiedMixed.requireNonObtuse);
+    REQUIRE(omitted.edgeCouplingPolicy ==
+            BoxGeometryBuilder::EdgeCouplingPolicy::LocalPositiveFallback);
+    REQUIRE(assembledDelaunay.edgeCouplingPolicy ==
+            BoxGeometryBuilder::EdgeCouplingPolicy::AssembledDelaunayFallback);
     REQUIRE(omitted.fallbackNegativeCotangent);
     REQUIRE_FALSE(noNegativeFallback.fallbackNegativeCotangent);
     REQUIRE_THROWS_WITH(
@@ -261,9 +286,91 @@ TEST_CASE("ConfigParsing: omitted node volume policy preserves explicit barycent
             nlohmann::json{{"mesh_geometry", {{"require_non_obtuse", "yes"}}}}),
         "ConfigParsing: mesh_geometry.require_non_obtuse must be boolean.");
     REQUIRE_THROWS_WITH(
+        parseBoxGeometryOptions(
+            nlohmann::json{{"mesh_geometry", {{"edge_coupling_policy", "unknown"}}}}),
+        "ConfigParsing: mesh_geometry.edge_coupling_policy must be "
+        "'local_positive_fallback' or 'assembled_delaunay_fallback'.");
+    REQUIRE_THROWS_WITH(
         parseBoxGeometryOptions(nlohmann::json{
             {"mesh_geometry", {{"fallback_negative_cotangent", "yes"}}}}),
         "ConfigParsing: mesh_geometry.fallback_negative_cotangent must be boolean.");
+}
+
+TEST_CASE("BoxGeometryBuilder: assembled Delaunay policy repairs a negative local cotangent",
+          "[box_geometry][delaunay]")
+{
+    DeviceMesh mesh = makeTwoTriangleDelaunayPatch(0.1, -2.0);
+    BoxGeometryBuilder::Options options;
+    options.edgeCouplingPolicy =
+        BoxGeometryBuilder::EdgeCouplingPolicy::AssembledDelaunayFallback;
+    mesh.buildBoxGeometry(options);
+
+    const GeometryBuildReport& report = mesh.lastGeometryBuildReport();
+    REQUIRE(report.negativeCotangentCount == 1);
+    REQUIRE(report.edgeAggregationRepairCount == 1);
+    REQUIRE(report.aggregatedNegativeEdgeCount == 0);
+    REQUIRE(report.fallbackCount == 0);
+    for (const Edge& edge : mesh.edges())
+        REQUIRE(edge.couple >= 0.0);
+}
+
+TEST_CASE("BoxGeometryBuilder: assembled Delaunay policy falls back only on a negative dual face",
+          "[box_geometry][delaunay]")
+{
+    DeviceMesh mesh = makeTwoTriangleDelaunayPatch(0.1, -0.2);
+    BoxGeometryBuilder::Options options;
+    options.edgeCouplingPolicy =
+        BoxGeometryBuilder::EdgeCouplingPolicy::AssembledDelaunayFallback;
+    mesh.buildBoxGeometry(options);
+
+    const GeometryBuildReport& report = mesh.lastGeometryBuildReport();
+    REQUIRE(report.negativeCotangentCount == 2);
+    REQUIRE(report.edgeAggregationRepairCount == 0);
+    REQUIRE(report.aggregatedNegativeEdgeCount == 1);
+    REQUIRE(report.fallbackCount == 1);
+    for (const Edge& edge : mesh.edges())
+        REQUIRE(edge.couple >= 0.0);
+}
+
+
+TEST_CASE("SLOT external transport permits only the controlled live IALMob avalanche source",
+          "[box_geometry][carrier_transport_profile]")
+{
+    ImpactIonizationModelConfig impact;
+    MobilityModelConfig mobility;
+    mobility.model="ialmob";
+    const std::string slot="slot_ldmos_external_averagebox";
+    const std::string templates="templates_ldmos_external_averagebox";
+    CHECK_NOTHROW(validateCarrierTransportCouplePhysics(slot,impact,mobility,false));
+    impact.model="van_overstraeten";
+    impact.currentApproximation="ialmob_element_density_grad_qf";
+    impact.sourceJacobianMode="local_ad";
+    for (const auto& coupling:{"self_consistent","postprocess_only"}) {
+        impact.couplingMode=coupling;
+        CHECK_NOTHROW(validateCarrierTransportCouplePhysics(slot,impact,mobility,false));
+    }
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(slot,impact,mobility,true),std::invalid_argument);
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(templates,impact,mobility,false),std::invalid_argument);
+    auto other=impact;other.currentApproximation="element_edge_sg_gss_laux";
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(slot,other,mobility,false),std::invalid_argument);
+    other=impact;other.sourceJacobianMode="frozen";
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(slot,other,mobility,false),std::invalid_argument);
+    other=impact;other.model="okuto_crowell";
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(slot,other,mobility,false),std::invalid_argument);
+    // The PhuMob element profile uses cell box geometry, not imported edge
+    // couples. Do not silently qualify it as an external AverageBox profile.
+    other=impact;other.currentApproximation="phumob_element_density_grad_qf";
+    auto phumob=mobility;phumob.model="phumob_field_lombardi";
+    phumob.edgeAveraging="element_box_phumob";
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(slot,other,phumob,false),std::invalid_argument);
+    mobility.model="constant";
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(slot,impact,mobility,false),std::invalid_argument);
+    CHECK_NOTHROW(validateCarrierTransportCouplePhysics("mesh_default",impact,mobility,true));
+    impact.model="none";
+    CHECK_NOTHROW(validateCarrierTransportCouplePhysics(templates,impact,mobility,false));
+    mobility.model="masetti_lombardi";
+    REQUIRE(isSurfaceMobilityModel(mobility));
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(templates,impact,mobility,false),std::invalid_argument);
 }
 
 TEST_CASE("External AverageBox carrier profile is explicit and leaves Poisson couples unchanged",
@@ -280,23 +387,32 @@ TEST_CASE("External AverageBox carrier profile is explicit and leaves Poisson co
         output << mesh.getEdge(0).n0 << ',' << mesh.getEdge(0).n1
                << ",2e-7\n";
     }
-    const nlohmann::json cfg{{"mesh_geometry", {
+    nlohmann::json cfg{{"mesh_geometry", {
         {"carrier_transport_couple_profile", "templates_ldmos_external_averagebox"},
         {"external_averagebox_couples_file", path.string()},
         {"external_averagebox_expected_edges", 1},
     }}};
+    std::string profile="templates_ldmos_external_averagebox";
+    SECTION("SLOT transport geometry can be separated from mixed volumes") {
+        profile="slot_ldmos_external_averagebox";
+        cfg["mesh_geometry"]["carrier_transport_couple_profile"]=profile;
+        cfg["mesh_geometry"]["node_volume_policy"]="mixed_voronoi";
+    }
+    SECTION("Templates keeps the existing barycentric contract") {}
+    const auto volumes=detail::computeNodeVolumes(mesh);
     const CarrierTransportCoupleProfileReport report =
         applyCarrierTransportCoupleProfile(
             mesh, cfg, path.parent_path(), UnitScalingConfig{UnitScalingMode::UnitScaling});
     std::filesystem::remove(path);
 
-    REQUIRE(report.profile == "templates_ldmos_external_averagebox");
+    REQUIRE(report.profile == profile);
     REQUIRE(report.records == 1);
     REQUIRE(mesh.getEdge(0).couple == Catch::Approx(original));
     REQUIRE(mesh.getEdge(0).transport_couple == Catch::Approx(0.2));
     REQUIRE(detail::computeEdgeCouplings(mesh).at(0) == Catch::Approx(original));
     REQUIRE(detail::computeTransportEdgeCouplings(mesh).at(0) == Catch::Approx(0.2));
     REQUIRE(mesh.getEdge(1).transport_couple < 0.0);
+    REQUIRE(detail::computeNodeVolumes(mesh)==volumes);
 }
 
 TEST_CASE("External AverageBox fields cannot be silently ignored by the default profile",
@@ -434,6 +550,12 @@ TEST_CASE("BoxGeometryBuilder: near-right cotangents are zero per cell",
         CHECK(report.fallbackCount == 0);
         CHECK(report.clampedCotangentCount == (shift == 0.0 ? 0 : 1));
         CHECK(report.nodeVolumeSum == Catch::Approx(0.5 + 0.75 * (1.0 - shift)).margin(1e-15).epsilon(0));
+        const auto shares = BoxGeometryBuilder::mixedVoronoiVertexVolumes(mesh, mesh.getCell(0));
+        CHECK(shares[0] + shares[1] + shares[2] ==
+              Catch::Approx(0.5).margin(1e-15).epsilon(0));
+        CHECK(shares[0] == Catch::Approx(0.25).margin(tolerance).epsilon(0));
+        CHECK(shares[1] == Catch::Approx(0.125).margin(tolerance).epsilon(0));
+        CHECK(shares[2] == Catch::Approx(0.125).margin(tolerance).epsilon(0));
         CHECK(mesh.poissonCellEdgeCoefficients(0)[1] == 0.0);
 
         const auto& edges = mesh.edges();

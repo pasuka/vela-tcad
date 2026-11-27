@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include "vela/core/ArithmeticPrecision.h"
 
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
@@ -60,6 +61,10 @@ struct ContactBoundarySpec {
     /// Verbatim copy of the spelling found in the deck for diagnostics.
     /// Empty when the legacy untyped form was used.
     std::string rawType;
+
+    // Initial bias supplied by the deck. A continuation caller must pass its
+    // live bias explicitly after changing the applied voltage.
+    std::optional<ArithmeticReal> decimalInitialBias_V;
 };
 
 /// Dirichlet-style boundary state assembled for a single contact node.
@@ -163,6 +168,8 @@ parseBoundarySegmentSpecs(const nlohmann::json& cfg);
 /// parser already enforces this, but the helper is also safe when called on a
 /// hand-constructed spec.
 Real effectivePoissonDirichletPotential(const ContactBoundarySpec& spec);
+ArithmeticReal arithmeticPoissonDirichletPotential(const ContactBoundarySpec& spec,
+                                                    ArithmeticReal appliedBias_V);
 
 // ---------------------------------------------------------------------------
 // Schottky / metal-semiconductor contact prototype helpers

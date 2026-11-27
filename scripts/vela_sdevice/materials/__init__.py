@@ -132,6 +132,7 @@ MATERIAL_SECTIONS = ("Epsilon", "Bandgap", "eDOSMass", "hDOSMass", "ConstantMobi
 #: defaults to fall back on.
 MODEL_SECTIONS = {
     "DopingDependence": "DopingDependence",
+    "PhuMob": "PhuMob",
     "HighFieldSaturation": "HighFieldDependence",
     "SRH": "Scharfetter",
     "Auger": "Auger",
@@ -150,6 +151,14 @@ _SI_FACTORS: Dict[Tuple[str, str], Tuple[str, str, float]] = {
     ("DopingDependence", "Cs"): ("cm^-3", "m^-3", 1.0e6),
     ("DopingDependence", "alpha"): ("1", "1", 1.0),
     ("DopingDependence", "beta"): ("1", "1", 1.0),
+    **{("PhuMob", f"{limit}_{species}"): ("cm^2/(Vs)", "m^2/(V*s)", 1.0e-4)
+       for limit in ("mumin", "mumax") for species in ("As", "P", "B")},
+    **{("PhuMob", name): ("cm^-3", "m^-3", 1.0e6)
+       for name in ("n_ref_As", "n_ref_P", "n_ref_B", "nref_D", "nref_A")},
+    **{("PhuMob", name): ("1", "1", 1.0)
+       for name in ("theta_As", "theta_P", "theta_B", "alpha_As", "alpha_P", "alpha_B",
+                    "cref_D", "cref_A", "me_over_m0", "mh_over_m0", "f_CW", "f_BH",
+                    "f_e", "f_h", "alpha1_g_k")},
     ("HighFieldDependence", "beta0"): ("1", "1", 1.0),
     ("HighFieldDependence", "vsat0"): ("cm/s", "m/s", 1.0e-2),
     ("Scharfetter", "taumin"): ("s", "s", 1.0),
@@ -243,6 +252,8 @@ def varshni_gap(eg0: float, alpha: float, beta: float, tpar: float, temperature_
     defined at ``Tpar`` and ``Eg(0)`` is the zero-temperature gap the electron
     mass law refers to.
     """
+    if alpha == 0.0:
+        return eg0, eg0
     if beta + tpar <= 0.0 or beta + temperature_K <= 0.0:
         raise ValueError("Varshni denominators must be positive")
     eg_zero = eg0 + alpha * tpar * tpar / (beta + tpar)
@@ -399,6 +410,10 @@ _INERT_RULES: Dict[Tuple[str, str], Callable[[Sequence[Any], Dict[str, Any], _Co
     ("Bandgap", "dEgMin"): lambda v, s, c: (
         "smoothing width of the minimum-gap clamp, which is inactive for EgMin = 0"
         if _all(s.get("EgMin", []), 0.0) else None),
+    ("Bandgap", "FermiVelocity"): lambda v, s, c: (
+        "negative sentinel disables the nanotube bandgap input" if _all(v, -1.0) else None),
+    ("Bandgap", "CNTdiameter"): lambda v, s, c: (
+        "negative sentinel disables the nanotube bandgap input" if _all(v, -1.0) else None),
     ("Bandgap", "Bgn2Chi"): lambda v, s, c: (
         "no bandgap-narrowing model is active, so there is no narrowing to partition" if not _bgn_active(c) else
         ("band-edge partition of the narrowing is unobservable without band-edge sensitive contacts "
@@ -450,6 +465,7 @@ class _Param:
     scope_name: Optional[str]
     source: Dict[str, Any]
     formula: Optional[str]
+    raw_lexeme: str
 
     @property
     def key(self) -> Tuple[str, Optional[str]]:
@@ -497,7 +513,7 @@ def _params_of(block: dict, origin: str) -> List[_Param]:
             base_name=item.get("base_name", item["raw_name"]), variant=item.get("variant"),
             values=list(item.get("values") or []), value_kind=item.get("value_kind", ""),
             origin=origin, scope_name=block["scope"].get("name"), source=dict(item.get("source", {})),
-            formula=formula,
+            formula=formula, raw_lexeme=item["raw_lexeme"],
         ))
     return out
 
@@ -531,27 +547,71 @@ def _merge_layers(layers: Sequence[Dict[str, List[_Param]]]) -> Dict[str, Dict[T
     return merged
 
 
+_ARITHMETIC_MATERIAL_SECTIONS = frozenset({"Bandgap", "eDOSMass", "hDOSMass"})
+
+
+def _arithmetic_operand(param: _Param) -> dict:
+    literals = pir.parameter_number_lexemes({"value_kind": param.value_kind, "raw_lexeme": param.raw_lexeme})
+    return {"literals": literals, "origin": param.origin, "source": param.source}
+
+
+def project_material_arithmetic(par_path: Path, material: str, *, fold_old_slotboom: bool,
+                                fold_bennett: bool = False) -> dict:
+    """Read effective band/DOS parameters without interpreting unrelated models."""
+    user = pir.parse_parameter_ir(par_path, sections=_ARITHMETIC_MATERIAL_SECTIONS)
+    default = pir.parse_parameter_ir(default_models_par_path(), sections=_ARITHMETIC_MATERIAL_SECTIONS)
+    names = _sentaurus_names(material)
+    merged = _merge_layers([_collect(user, "material", names, "user_material"),
+                            _collect(user, "global", None, "user_global"),
+                            _collect(default, "material", names, "vela_default")])
+    return {"sections": {name: {p.raw_name: _arithmetic_operand(p) for p in values.values()}
+                          for name, values in merged.items()},
+            "fold_old_slotboom": fold_old_slotboom,
+            **({"fold_bennett": True} if fold_bennett else {})}
+
+
+def bennett_coefficient_literals(par_path: Path, material: str) -> dict:
+    ir = pir.parse_parameter_ir(par_path, sections={"Bennett"})
+    layers = _merge_layers([
+        _collect(ir, "material", _sentaurus_names(material), "user_material"),
+        _collect(ir, "global", None, "user_global"),
+    ])
+    result = {}
+    for param in layers.get("Bennett", {}).values():
+        if param.raw_name in ("Ebgn", "Nref"):
+            literals = _arithmetic_operand(param)["literals"]
+            if len(literals) != 1:
+                raise ValueError(f"{material}.Bennett.{param.raw_name} must be a scalar")
+            result[param.raw_name] = literals[0]
+    return result
+
+
 def _classify(param: _Param, models: Sequence[str]) -> pmap.Classification:
     return pmap.classify(param.section, param.base_name, param.variant, param.formula, models, param.values)
 
 
 def _refine(param: _Param, classification: pmap.Classification, section_values: Dict[str, Any],
-            ctx: _Context) -> Tuple[str, str, Optional[str]]:
+            ctx: _Context, role: Optional[str] = None) -> Tuple[str, str, Optional[str]]:
     """Return ``(status, reason, refinement)`` after the emitter's inert/frozen rules."""
     status, reason = classification.status, classification.reason
-    # A zero Auger enhancement preserves the constant-coefficient model and
-    # keeps the unused N0 out of the generated solver configuration.
-    if param.section == "Auger" and status == pmap.STATUS_EXACT:
-        inert = _INERT_RULES.get((param.section, param.base_name))
-        if inert and (why := inert(param.values, section_values, ctx)):
-            return status, why, "inert"
-    if status in (pmap.STATUS_EXACT, pmap.STATUS_FROZEN, pmap.STATUS_INACTIVE):
+    if status == pmap.STATUS_INACTIVE:
         return status, reason, None
+    if (role == ROLE_DIELECTRIC and param.section == "Bandgap"
+            and param.base_name in ("EgMin", "dEgMin")
+            and _all(section_values.get("alpha", []), 0.0)
+            and _all(section_values.get("alpha2", []), 0.0)
+            and _all(section_values.get("dEgMin", []), 0.0)):
+        minima = _numbers(section_values.get("EgMin", []))
+        bandgaps = _numbers(section_values.get("Eg0", []))
+        if len(minima) == len(bandgaps) == 1 and minima[0] < bandgaps[0]:
+            return pmap.STATUS_EXACT, "Constant dielectric bandgap is above the unsmoothed clamp", "inert"
     rule = _INERT_RULES.get((param.section, param.base_name))
-    if rule is not None:
+    if rule is not None and (param.section == "Auger" or status not in (pmap.STATUS_EXACT, pmap.STATUS_FROZEN)):
         why = rule(param.values, section_values, ctx)
         if why:
             return pmap.STATUS_EXACT, f"{status} in general; inert here: {why}", "inert"
+    if status in (pmap.STATUS_EXACT, pmap.STATUS_FROZEN):
+        return status, reason, None
     frozen = _FROZEN_RULES.get((param.section, param.base_name))
     if frozen is not None and status == pmap.STATUS_APPROXIMATED:
         return pmap.STATUS_FROZEN, frozen, "frozen"
@@ -597,7 +657,9 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
                    allow_lossy: bool = False, band_edge_sensitive: bool = False,
                    default_par: Optional[Path] = None, benchmark: Optional[str] = None,
                    effective_models: Optional[Sequence[dict]] = None,
-                   constants_profile: str = "sentaurus_u2022_12") -> EmitResult:
+                   constants_profile: str = "sentaurus_u2022_12",
+                   capture_arithmetic_inputs: bool = False,
+                   extended80_temperature_literal: Optional[str] = None) -> EmitResult:
     """Emit the C3 material file and the per-parameter report.
 
     ``active_models`` are mapping-matrix model names (see
@@ -683,8 +745,9 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
             "sections": {}, "parameters": [], "derivation": None,
         }
         sections_numeric: Dict[str, Dict[str, Any]] = {}
+        arithmetic_sections = {}
         relevant_sections = set(MATERIAL_SECTIONS)
-        if role != ROLE_DIELECTRIC:
+        if role == ROLE_TRANSPORT:
             for model, section in MODEL_SECTIONS.items():
                 if model in model_set:
                     if section in merged:
@@ -698,7 +761,7 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
             numeric: Dict[str, Any] = {}
             for param in params.values():
                 classification = _classify(param, models)
-                status, reason, refinement = _refine(param, classification, section_values, ctx)
+                status, reason, refinement = _refine(param, classification, section_values, ctx, role)
                 record = {
                     "section": section, "parameter": param.raw_name, "variant": param.variant,
                     "formula": param.formula, "values": param.values, "origin": param.origin,
@@ -726,9 +789,13 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
                     raise MaterialsError("E404", path=path, model=model_name, status=status)
                 if section in relevant_sections:
                     numeric[param.raw_name] = param.values
-                    if classification.entry and classification.entry.target and \
-                            classification.entry.target.startswith("solver.") and \
-                            not (section == "Auger" and refinement == "inert"):
+                    if ((capture_arithmetic_inputs or extended80_temperature_literal is not None)
+                            and section in _ARITHMETIC_MATERIAL_SECTIONS):
+                        operand = _arithmetic_operand(param)
+                        if operand["literals"]:
+                            arithmetic_sections.setdefault(section, {})[param.raw_name] = operand
+                    if refinement != "inert" and classification.entry and classification.entry.target and \
+                            classification.entry.target.startswith("solver."):
                         _route_solver_parameter(report, vela_name, section, param, classification.entry.target,
                                                 status, ctx.temperature_K)
             if section in relevant_sections:
@@ -739,6 +806,23 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
                 }
         entry = _emit_material_entry(vela_name, role, sections_numeric, ctx, model_set, material_report,
                                      par_path, report)
+        if role != ROLE_DIELECTRIC and (capture_arithmetic_inputs or extended80_temperature_literal is not None):
+            arithmetic = {"sections": arithmetic_sections, "fold_old_slotboom": "OldSlotboom" in model_set}
+            if "BennettWilson" in model_set:
+                arithmetic["fold_bennett"] = True
+            if capture_arithmetic_inputs:
+                material_report["arithmetic_input"] = arithmetic
+            if extended80_temperature_literal is not None:
+                entry["decimal_semiconductor"] = {**arithmetic, "temperature_K": extended80_temperature_literal}
+        if extended80_temperature_literal is not None:
+            for section, parameter, field in (("Epsilon", "epsilon", "decimal_eps_r"),
+                                               ("ConstantMobility", "mumax", "decimal_mobility_cm2_per_V_s")):
+                operand = next((p for p in merged.get(section, {}).values()
+                                if p.raw_name == parameter), None)
+                if operand is not None:
+                    literals = _arithmetic_operand(operand)["literals"]
+                    if literals:
+                        entry[field] = literals if field.startswith("decimal_mobility") else literals[0]
         materials_out.append(entry)
         report["materials"].append(material_report)
 
@@ -778,12 +862,14 @@ def _route_solver_parameter(report: dict, material: str, section: str, param: _P
                                  model="Auger", status="invalid_carrier_pair")
     targets = _split_target(target, len(values))
     carriers = ["electron", "hole"] if len(values) == 2 else [None]
-    for value, path, carrier in zip(values, targets, carriers):
+    literals = _arithmetic_operand(param)["literals"]
+    for index, (value, path, carrier) in enumerate(zip(values, targets, carriers)):
         report["solver_parameters"].append({
             "material": material, "section": section, "parameter": param.raw_name, "variant": param.variant,
             "carrier": carrier, "target": path, "value_par": value, "unit_par": unit_par,
             "value_si": value * factor, "unit_si": unit_si, "status": status, "origin": param.origin,
             "source": param.source,
+            **({"decimal_par": literals[index]} if len(literals) == len(values) else {}),
         })
     if section == "Auger":
         _finish_auger(report, material, temperature_K)

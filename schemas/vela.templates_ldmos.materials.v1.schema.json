@@ -35,14 +35,32 @@
           "name": {"type": "string", "minLength": 1},
           "role": {"enum": ["transport_semiconductor", "dielectric", "electrostatic_only_semiconductor_poly"]},
           "eps_r": {"type": "number", "minimum": 1.0, "maximum": 1000.0},
+          "decimal_eps_r": {"type": "string", "minLength": 1},
+          "intrinsic_reference_potential_V": {"type": "number", "minimum": -10.0, "maximum": 10.0},
+          "decimal_intrinsic_reference_potential_V": {"type": "string", "minLength": 1},
           "intrinsic_carrier_density_cm3": {"type": "number", "minimum": 0.0, "maximum": 1e30},
           "electron_mobility_cm2_per_V_s": {"type": "number", "minimum": 0.0, "maximum": 1e9},
           "hole_mobility_cm2_per_V_s": {"type": "number", "minimum": 0.0, "maximum": 1e9},
+          "decimal_mobility_cm2_per_V_s": {
+            "type": "array", "minItems": 2, "maxItems": 2,
+            "items": {"type": "string", "minLength": 1}
+          },
           "bandgap_eV": {"type": "number", "minimum": 0.0, "maximum": 100.0},
           "electron_affinity_eV": {"type": "number", "minimum": 0.0, "maximum": 100.0},
           "conduction_band_density_of_states_cm3": {"type": "number", "minimum": 0.0, "maximum": 1e30},
           "valence_band_density_of_states_cm3": {"type": "number", "minimum": 0.0, "maximum": 1e30},
           "temperature_K": {"type": "number", "minimum": 1.0, "maximum": 1e5},
+          "decimal_semiconductor": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["temperature_K", "sections", "fold_old_slotboom"],
+            "properties": {
+              "temperature_K": {"type": "string", "minLength": 1},
+              "sections": {"type": "object", "required": ["Bandgap", "eDOSMass", "hDOSMass"]},
+              "fold_old_slotboom": {"type": "boolean"},
+              "fold_bennett": {"type": "boolean"}
+            }
+          },
           "electron_quantum_gamma": {"type": "number", "minimum": 0.0, "maximum": 1e6},
           "electron_quantum_affinity_eV": {"type": "number", "minimum": 0.0, "maximum": 100.0},
           "electron_quantum_dos_mass_ratio": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e6},

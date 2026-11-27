@@ -107,7 +107,11 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
             "box_geometry: total_cells=" + std::to_string(report.totalCells) +
             " degenerate_cells=" + std::to_string(report.degenerateCells) +
             " negative_cotangent_count=" + std::to_string(report.negativeCotangentCount) +
-            " fallback_count=" + std::to_string(report.fallbackCount));
+            " fallback_count=" + std::to_string(report.fallbackCount) +
+            " edge_aggregation_repair_count=" +
+                std::to_string(report.edgeAggregationRepairCount) +
+            " aggregated_negative_edge_count=" +
+                std::to_string(report.aggregatedNegativeEdgeCount));
     }
 
     // ------------------------------------------------------------------
@@ -158,6 +162,8 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     // ------------------------------------------------------------------
     // Assemble Poisson equation
     // ------------------------------------------------------------------
+    if (parsePoissonPerCellPermittivity(cfg))
+        throw std::invalid_argument("per_cell Poisson permittivity is a coupled-Newton diagnostic only");
     PoissonScalingSpec poissonScaling;
     poissonScaling.poissonChargeVolumePolicy =
         parsePoissonChargeVolumePolicy(cfg);

@@ -111,6 +111,19 @@ class Pn2dSiliconTest(unittest.TestCase):
     def test_active_models(self) -> None:
         self.assertEqual(["DopingDependence", "OldSlotboom", "SRH"], self.result.report["active_models"])
 
+    def test_extended80_material_deck_carries_active_literals(self) -> None:
+        temperature = "300.00000000000000003"
+        ir = json.loads(IV_IR.read_text(encoding="utf-8"))
+        result = mat.emit_materials(PN2D_PAR, active_models=mat.active_models_from_ir(ir),
+            temperature_K=300, mesh_materials=["Si"],
+            extended80_temperature_literal=temperature)
+        self.assertEqual([], sv.collect_errors(SCHEMA, result.materials))
+        source = _material(result, "Si")["decimal_semiconductor"]
+        self.assertEqual(temperature, source["temperature_K"])
+        self.assertTrue(source["fold_old_slotboom"])
+        self.assertEqual(4.05, float(source["sections"]["Bandgap"]["Chi0"]["literals"][0]))
+        self.assertNotIn("decimal_semiconductor", self.si)
+
     def test_scalars_match_closed_form(self) -> None:
         expected = pn2d_silicon_closed_form(fold_old_slotboom=True)
         self.assertEqual("transport_semiconductor", self.si["role"])
@@ -493,6 +506,13 @@ class FailClosedTest(unittest.TestCase):
             self.assertEqual("solver.auger_density_dependence.hole.reference_density_m3",
                              rows["N0", "hole"]["target"])
             self.assertEqual([], enhanced.report["lossy"])
+            configured = {(r["parameter"], r["carrier"]): r for r in enhanced.report["solver_parameters"]}
+            self.assertEqual(3.46667, configured[("H", "electron")]["value_si"])
+            self.assertEqual(8.25688, configured[("H", "hole")]["value_si"])
+            for carrier in ("electron", "hole"):
+                ref = configured[("N0", carrier)]
+                self.assertEqual(1e24, ref["value_si"])
+                self.assertEqual(f"solver.auger_density_dependence.{carrier}.reference_density_m3", ref["target"])
 
     def test_electrode_work_function(self) -> None:
         text = 'Material = "Gold" {\nBandgap\n{\n  WorkFunction = 5.1  # [eV]\n}\n}\n'

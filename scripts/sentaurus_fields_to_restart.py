@@ -63,6 +63,12 @@ def main() -> int:
         help=("keep the global Sentaurus eQuantumPotential field on nodes "
               "without carrier support (required by include_insulators)"),
     )
+    parser.add_argument(
+        "--allow-missing-electron-quantum-potential",
+        action="store_true",
+        help=("treat an entirely absent eQuantumPotential field as zero; "
+              "use only for classical DD Sentaurus states"),
+    )
     args = parser.parse_args()
 
     manifest = json.loads((args.export_dir / "field_manifest.json").read_text())
@@ -73,6 +79,9 @@ def main() -> int:
         columns[output_name], units[output_name] = merge_field(
             args.export_dir, manifest, sentaurus_name)
     quantum, quantum_unit = merge_field(args.export_dir, manifest, QUANTUM_FIELD)
+    if not quantum and args.allow_missing_electron_quantum_potential:
+        quantum = {node: 0.0 for node in range(node_count)}
+        quantum_unit = "V"
     quantum_available = bool(quantum)
     conduction_band: dict[int, float] = {}
     affinity: dict[int, float] = {}

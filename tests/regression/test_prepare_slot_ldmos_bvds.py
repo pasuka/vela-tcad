@@ -244,6 +244,23 @@ class SlotLdmosPreparationTests(unittest.TestCase):
 
             self.assertNotIn("impact_ionization", avalanche_off["solver"])
             self.assertNotIn("diagnostics", avalanche_off["sweep"])
+            for document in [equilibrium, unit, avalanche_off]:
+                solver = document["solver"]
+                self.assertEqual(
+                    solver["mobility"]["model"],
+                    "masetti_field_lombardi",
+                )
+                self.assertEqual(
+                    solver["mobility"]["surface"]["surface_interface"],
+                    ["Silicon_1", "Oxide_1"],
+                )
+                self.assertEqual(
+                    solver["srh_doping_dependence"]["electron"]
+                        ["reference_doping_m3"],
+                    1.0e16,
+                )
+                self.assertEqual(solver["auger_cn_m6_per_s"], 2.90e-31)
+                self.assertEqual(solver["auger_cp_m6_per_s"], 1.028e-31)
             self.assertEqual(
                 iic["solver"]["impact_ionization"]["coupling_mode"],
                 "postprocess_only",
@@ -311,6 +328,72 @@ class SlotLdmosPreparationTests(unittest.TestCase):
                     60.0,
                     1.0e4,
                 )
+
+    def test_delaunay_profile_is_an_independent_atomic_bundle(self) -> None:
+        bundle = MODULE.PROFILE_BUNDLES["element_edge_sg_gss_laux_delaunay"]
+        self.assertEqual(bundle["mesh_geometry"], {
+            "node_volume_policy": "mixed_voronoi",
+            "require_non_obtuse": False,
+            "edge_coupling_policy": "assembled_delaunay_fallback",
+        })
+        self.assertEqual(
+            bundle["impact_ionization"]["current_approximation"],
+            "element_edge_sg_gss_laux",
+        )
+        self.assertEqual(
+            bundle["impact_ionization"]["source_mapping_mode"],
+            "element_vertex_box_measure",
+        )
+        self.assertEqual(
+            bundle["impact_ionization"]["cell_reconstructed_midpoint_density"],
+            "bernoulli",
+        )
+
+    def test_zero_silicon_doping_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_slot_ldmos_zero_doping_") as tmp:
+            root = Path(tmp)
+            export = self.make_export(root)
+            write_csv(
+                export / "doping.csv",
+                ["node_id", "donors_cm3", "acceptors_cm3"],
+                [[node_id, 0.0, 0.0] for node_id in range(8)],
+            )
+            with self.assertRaisesRegex(
+                    MODULE.PreparationError, "no nonzero nodal doping"):
+                MODULE.prepare(
+                    export,
+                    root / "output",
+                    "legacy_cell_reconstructed",
+                    60.0,
+                    1.0e4,
+                )
+
+    def test_equilibrium_state_enables_stage_zero_newton_restart(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_slot_ldmos_restart_") as tmp:
+            root = Path(tmp)
+            state = root / "equilibrium.csv"
+            state.write_text(
+                "node_id,psi,phin,phip,electrons_m3,holes_m3\n",
+                encoding="utf-8",
+            )
+            output = root / "output"
+            MODULE.prepare(
+                self.make_export(root),
+                output,
+                "legacy_cell_reconstructed",
+                60.0,
+                1.0e4,
+                state,
+            )
+            equilibrium = json.loads(
+                (output / "simulation_00_equilibrium.json").read_text(
+                    encoding="utf-8"))
+            self.assertEqual(
+                equilibrium["sweep"]["initial_state_file"],
+                state.resolve().as_posix(),
+            )
+            self.assertEqual(
+                equilibrium["solver"]["handoff"]["gummel_max_iter"], 0)
 
 
 if __name__ == "__main__":

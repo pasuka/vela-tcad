@@ -87,6 +87,12 @@
       "additionalProperties": false,
       "description": "File{} section after applying the Appendix C (Table 194) naming rule: a base name containing '.' is used literally, otherwise the tool suffix is appended.",
       "properties": {
+        "doping": {
+          "type": "object",
+          "required": ["raw", "resolved", "line"],
+          "additionalProperties": false,
+          "properties": {"raw": {"type": "string"}, "resolved": {"type": "string"}, "line": {"$ref": "#/definitions/line"}}
+        },
         "grid": {
           "oneOf": [
             {"type": "null"},
@@ -301,7 +307,9 @@
       "description": "Math{} with Table 211 defaults filled in. Values are kept in Sentaurus semantics; the deck emitter maps them.",
       "properties": {
         "iterations": {"type": "integer", "minimum": 1, "default": 50},
+        "grad_qf_contact_field": {"enum": ["electric_field", "quasi_fermi_gradient"], "default": "electric_field"},
         "arithmetic_precision": {"enum": ["double", "extended80"], "default": "double"},
+        "compute_doping_concentration": {"type": "boolean"},
         "line_search_damping": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
         "not_damped": {"type": "integer", "minimum": 0},
         "digits": {"type": "number", "default": 5},

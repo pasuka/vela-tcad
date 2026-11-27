@@ -4,6 +4,44 @@
   "additionalProperties": true,
   "properties": {
     "physical_constants_profile": {"enum": ["codata2018", "sentaurus_u2022_12"]},
+    "decimal_stage_controls": {
+      "type": "object",
+      "required": ["contacts", "sweep"],
+      "additionalProperties": false,
+      "properties": {
+        "contacts": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+        "solver": {
+          "type": "object",
+          "required": ["temperature_K"],
+          "additionalProperties": false,
+          "properties": {
+            "temperature_K": {"type": "string", "minLength": 1},
+            "slot_source_coefficients": {
+              "type": "object",
+              "additionalProperties": {"type": "string", "minLength": 1}
+            },
+            "population_update_convergence": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "potential_reference_V": {"type": "string", "minLength": 1},
+                "electron_reference_cm3": {"type": "string", "minLength": 1},
+                "hole_reference_cm3": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        },
+        "sweep": {
+          "type": "object",
+          "required": ["start", "stop", "step", "initial_step", "min_step", "max_step", "growth_factor", "shrink_factor"],
+          "properties": {
+            "bias_points": {"type": "array", "items": {"type": "string", "minLength": 1}},
+            "vtk_bias_points": {"type": "array", "items": {"type": "string", "minLength": 1}}
+          },
+          "additionalProperties": {"type": "string", "minLength": 1}
+        }
+      }
+    },
     "contacts": {
       "items": {
         "additionalProperties": true,
@@ -31,7 +69,10 @@
         "poisson_charge_volume_policy": {
           "enum": [
             "global",
-            "material_local"
+            "material_local",
+            "material_local_mixed_voronoi",
+            "material_local_circumcentric",
+            "material_local_box"
           ]
         }
       },
@@ -47,7 +88,8 @@
         "carrier_transport_couple_profile": {
           "enum": [
             "mesh_default",
-            "templates_ldmos_external_averagebox"
+            "templates_ldmos_external_averagebox",
+            "slot_ldmos_external_averagebox"
           ]
         },
         "external_averagebox_couples_file": {
@@ -81,6 +123,7 @@
       "minLength": 1,
       "type": "string"
     },
+    "node_doping_decimal_input": {"type": "boolean", "default": false},
     "output_csv": {
       "minLength": 1,
       "type": "string"
@@ -104,19 +147,39 @@
         }
       },
       "allOf": [
+        {"anyOf": [{"not": {"required": ["population_writeback"], "properties": {"population_writeback": {"const": "boltzmann_psi_compensated"}}}}, {"required": ["state_variables", "coupled_operator", "carrier_statistics"], "properties": {"state_variables": {"const": "potential_density"}, "coupled_operator": {"const": "legacy"}, "carrier_statistics": {"type": "object", "required": ["model"], "properties": {"model": {"const": "boltzmann"}}}}}]} ,
         {"anyOf": [
           {"not": {"anyOf": [{"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}, {"not": {"required": ["state_variables"]}, "required": ["coupled_operator"], "properties": {"coupled_operator": {"const": "bvmethods_tri3_qf"}}}]}},
           {"anyOf": [
             {"required": ["coupled_operator", "carrier_statistics"], "properties": {
               "coupled_operator": {"const": "bvmethods_tri3_qf"},
               "carrier_statistics": {"type": "object", "properties": {"model": {"enum": ["fermi_dirac_joyce_dixon", "fermi_dirac"]}}, "required": ["model"]}}},
+            {"required": ["extended80_stage_profile", "arithmetic_precision", "require_end_to_end_precision",
+                           "coupled_operator", "carrier_statistics"], "properties": {
+              "extended80_stage_profile": {"const": "slot_population_phumob_fixed_bias_v1"},
+              "arithmetic_precision": {"const": "extended80"},
+              "require_end_to_end_precision": {"const": true},
+              "coupled_operator": {"const": "legacy"},
+              "carrier_statistics": {"type": "object", "properties": {
+                "model": {"const": "fermi_dirac_joyce_dixon"},
+                "transport": {"const": "effective_band_sg"}}, "required": ["model", "transport"]}}},
             {"properties": {
               "coupled_operator": {"const": "legacy"},
               "carrier_statistics": {"type": "object", "properties": {"model": {"enum": ["boltzmann", "fermi_dirac"]}}},
-              "population_derivative_recovery": {"const": "full"},
-              "population_sg_current": {"const": "quasi_fermi"}}}
+              "population_sg_current": {"const": "quasi_fermi"}},
+             "anyOf": [
+               {"properties": {"population_derivative_recovery": {"const": "full"}}},
+               {"required": ["extended80_stage_profile", "arithmetic_precision", "require_end_to_end_precision",
+                             "population_derivative_recovery", "population_update"], "properties": {
+                 "extended80_stage_profile": {"const": "slot_population_bvds_v1"},
+                 "arithmetic_precision": {"const": "extended80"},
+                 "require_end_to_end_precision": {"const": true},
+                 "carrier_statistics": {"properties": {"model": {"const": "boltzmann"}}},
+                 "population_derivative_recovery": {"const": "after_protection"},
+                 "population_update": {"required": ["protection"], "properties": {"protection": {"const": "local_nonpositive"}}}}}
+             ]}
           ], "properties": {
-            "method": {"enum": ["newton", "poisson_only"]},
+            "method": {"enum": ["newton", "poisson_only", "frozen_state"]},
             "quasi_fermi_reference": {"const": "none"}, "split_dd_state": {"const": false},
             "quasi_fermi_update_limit_V": {"const": 0}, "quasi_fermi_update_limit_minority_V": {"const": 0}, "max_update": {"const": 0},
             "quasi_fermi_update_limit_mode": {"const": "componentwise_poisson_recorrect"},
@@ -136,6 +199,10 @@
             "carrier_diagonal_floor": {"anyOf": [{"const": false}, {"type": "object", "properties": {"enabled": {"const": false}}}]},
             "carrier_diagonal_floor_regularization": {"anyOf": [{"const": false}, {"type": "object", "properties": {"enabled": {"const": false}}}]},
             "linear_equilibration": {"properties": {"mode": {"const": "off"}}},
+            "poisson_residual_precision": {"const": "double"},
+            "population_step_control": {"properties": {"mode": {"const": "legacy"}}},
+            "bank_rose": {"anyOf": [{"const": false}, {"type": "object", "properties": {"enabled": {"const": false}}}]},
+            "global_continuity_closure": {"properties": {"linear_system_stabilization": {"const": "off"}, "feasibility_restoration": {"const": "off"}}},
             "jacobian": {"const": "analytic"}
           }}
         ]},
@@ -179,6 +246,7 @@
         ]}
       ],
       "properties": {
+        "grad_qf_contact_field": {"enum": ["electric_field", "quasi_fermi_gradient"], "default": "electric_field"},
         "arithmetic_precision": {"enum": ["double", "extended80"], "default": "double"},
         "bvmethods_numerics": {
           "type": "object", "additionalProperties": false,
@@ -188,6 +256,9 @@
             "avalanche_switch": {"enum": ["smooth", "sharp"]}
           }
         },
+        "extended80_stage_profile": {"enum": ["slot_population_bvds_v1", "slot_population_fixed_bias_v1", "slot_population_phumob_fixed_bias_v1"]},
+        "extended80_linear_defect": {"enum": ["eft", "mp100"], "default": "eft", "description": "Linear defect accumulation for SLOT extended80 BVDS and fixed-bias stages."},
+        "require_end_to_end_precision": {"type": "boolean", "default": false},
         "primary_variable_coordinates": {"enum": ["unit", "physical"], "description": "Population Newton coordinates; default unit for BVMethods population state, physical is the explicit rollback."},
         "compensated_population_state": {"type": "boolean", "default": false},
         "population_stopping_rule": {"enum": ["native_approx", "legacy"], "description": "Population default native_approx is E<1 OR a valid calibrated mapped RHS<1e-5; unsupported mappings never authorize RHS stopping."},
@@ -202,7 +273,9 @@
           }
         },
         "state_variables": {"type": "string", "enum": ["potential_quasi_fermi", "potential_density"], "description": "Nonlinear primary state. Population mode supports the BVMethods operator or legacy Boltzmann and Fermi-Dirac transport."},
+        "contact_preprojection": {"type": "boolean", "default": false, "description": "Project fixed-voltage population Newton trial seeds onto the prescribed contact coordinates."},
         "population_sg_bootstrap_linearization": {"enum": ["unchanged", "floor_adjacent_edges"], "default": "unchanged", "description": "Opt-in approximate-only SG population feedback freezing on carrier edges touching the configured positive density floor; requires potential_density and quasi_fermi SG."},
+        "population_writeback": {"enum": ["independent", "boltzmann_psi_compensated"], "default": "independent"},
         "population_sg_current": {"enum": ["quasi_fermi", "band_population"], "default": "quasi_fermi", "description": "Experimental direct population/ni-band SG arithmetic; band_population requires potential_density."},
         "population_derivative_recovery": {"enum": ["full", "automatic", "after_protection"], "description": "Population only: full, automatic controller, or Full entry with mobility/AV tangents omitted only after protected writeback (after_protection)."},
         "population_update": {"type": "object", "additionalProperties": false, "properties": {"protection": {"enum": ["local_nonpositive", "fraction_to_boundary"]}, "local_retained_fraction": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1}, "fraction_tau": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1}, "minimum_density_cm3": {"type": "number", "minimum": 0}, "minimum_density_m3": {"type": "number", "minimum": 0}}},
@@ -297,6 +370,9 @@
           "additionalProperties": false,
           "properties": {
             "enabled": {
+              "type": "boolean"
+            },
+            "temperature_dependence": {
               "type": "boolean"
             },
             "concentration_basis": {
@@ -571,9 +647,29 @@
                 "diagnostic_csv": {"type": "string"}
               }
             },
+            "coupled_rhs_growth": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["mode", "factor"],
+              "properties": {
+                "mode": {"enum": ["report", "enforce"]},
+                "factor": {"type": "number", "minimum": 1}
+              }
+            },
             "coupled_max_step_retries": {
               "type": "integer",
               "minimum": 0
+            },
+            "coupled_diagnostic_min_updates": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 3
+            },
+            "coupled_extended_precision_fallback": {
+              "type": "boolean"
+            },
+            "coupled_state_predictor": {
+              "enum": ["none", "constant", "tangent"]
             },
             "coupled_step_control": {
               "type": "string",

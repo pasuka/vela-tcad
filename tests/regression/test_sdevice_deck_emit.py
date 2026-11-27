@@ -20,6 +20,9 @@ from vela_sdevice.deck_emit import (DeckEmitError, EmitOptions, TDR_FIELDS, emit
 from vela_sdevice.materials import (active_models_from_ir, default_models_par_path,
                                    emit_materials, write_materials)
 from vela_sdevice import schema_validator as sv
+from vela_sdevice.orchestrator import (
+    _apply_slot_idvd_bgn_default, _is_slot_idvd_profile, _slot_idvd_ohmic_polarity,
+)
 
 FIXTURES = REPO / "tests/fixtures/sdevice"
 SUPPORTED = [f for f in json.loads((FIXTURES / "fixtures.json").read_text())["fixtures"]
@@ -65,8 +68,11 @@ def material_result(ir: dict, materials: tuple = ("Si",), *, constants_profile="
 
 
 def emit(ir: dict, **kwargs):
+    report = kwargs.pop("materials_report", None)
+    if report is None:
+        report = material_result(ir).report
     return emit_stage_plan(ir, mesh_qualification=kwargs.pop("mesh_qualification", qualification(ir)),
-        materials_report=kwargs.pop("materials_report", material_result(ir).report),
+        materials_report=report,
         work_dir="device_vela", cmd_basename=ir["source"]["path"],
         cmd_sha256=ir["source"]["sha256"], options=kwargs.pop("options", EmitOptions(allow_lossy=True)), **kwargs)
 
@@ -106,6 +112,176 @@ class DeckEmitterTests(unittest.TestCase):
                 ir = parse_cmd_text(text.replace("DRIVE", unsupported), path_name="contact.cmd")
                 with self.assertRaisesRegex(DeckEmitError, "requires active high-field GradQF mobility"):
                     emit(ir, sidecar=sidecar)
+    def test_auger_generation_is_explicit_in_generated_deck(self):
+        path = FIXTURES / "pn2d" / "pn2d_0v_des.cmd"
+        template = """File { Grid="mesh.grd" Parameter="device.par" }
+Electrode { { Name="anode" Voltage=0 } { Name="cathode" Voltage=0 } }
+Physics { Recombination(AUGER) }
+Solve { Coupled { Poisson Electron Hole } }
+"""
+        for spelling, expected in (("Auger", False), ("Auger(WithGeneration)", True)):
+            with self.subTest(spelling=spelling):
+                ir = parse_cmd_text(template.replace("AUGER", spelling), path_name=path.name)
+                self.assertTrue(ir["verdict"]["accepted"], ir["errors"])
+                solver = emit(ir).decks[0]["solver"]
+                self.assertIn("auger", solver["recombination"])
+                self.assertIs(solver["auger_with_generation"], expected)
+
+    def test_slot_fermi_default_is_resolved_before_material_projection(self):
+        ir = {"physics": {"effective": [{"key": key} for key in
+              ("Fermi", "Mobility.PhuMob", "Mobility.Enormal", "Mobility.HighFieldSaturation",
+               "Recombination.SRH", "Recombination.Auger", "Recombination.Avalanche")]},
+              "electrodes": [{"name": name} for name in ("source", "gate", "drain", "substrate")]}
+        mesh = {"materials": ["Si", "PolySilicon", "SiO2"]}
+        explicit = deepcopy(ir)
+        explicit["physics"]["effective"].append(
+            {"key": "EffectiveIntrinsicDensity.NoBandGapNarrowing"})
+        self.assertFalse(_apply_slot_idvd_bgn_default(explicit))
+        self.assertFalse(_is_slot_idvd_profile(ir, {"materials": ["Si"]}))
+        self.assertTrue(_is_slot_idvd_profile(ir, mesh))
+        idsat = deepcopy(ir)
+        idsat["physics"]["effective"] = [
+            model for model in idsat["physics"]["effective"]
+            if model["key"] != "Recombination.Avalanche"]
+        idsat["stages"] = [{"goal": {"contact": contact, "voltage_V": value}}
+                           for contact, value in (("drain", 20), ("gate", 5))]
+        self.assertTrue(_is_slot_idvd_profile(idsat, mesh))
+        idsat["stages"].reverse()
+        self.assertFalse(_is_slot_idvd_profile(idsat, mesh))
+        no_fermi_correction = deepcopy(ir)
+        no_fermi_correction["physics"]["effective"].append({"key": "EffectiveIntrinsicDensity.NoFermi"})
+        self.assertTrue(_apply_slot_idvd_bgn_default(no_fermi_correction))
+        self.assertIn("NoFermi", active_models_from_ir(no_fermi_correction))
+        self.assertTrue(_apply_slot_idvd_bgn_default(ir))
+        self.assertIn("BennettWilson", active_models_from_ir(ir))
+        self.assertFalse(_apply_slot_idvd_bgn_default(ir))
+
+    def test_slot_extended80_idvd_uses_concentration_stages(self):
+        ir = parse_cmd_text("""
+File { Grid="mesh.grd" Parameter="device.par" }
+Electrode { { Name="source" Voltage=0 } { Name="drain" Voltage=0 }
+            { Name="gate" Voltage=0 } { Name="substrate" Voltage=0 } }
+Physics {
+    Fermi
+    Mobility(Phumob HighFieldSaturation Enormal(Lombardi))
+    Recombination(SRH(DopingDep) Auger Avalanche(GradQuasiFermi))
+}
+Math { ExtendedPrecision Extrapolate RelErrControl Digits=5 Iterations=25 NotDamped=25 }
+Solve {
+    Coupled(Iterations=100) { Poisson }
+    Coupled { Poisson Electron Hole }
+    Quasistationary(InitialStep=0.001 MinStep=1e-8 MaxStep=0.01 Goal { Name="gate" Voltage=5 }) {
+        Coupled { Poisson Electron Hole }
+    }
+    Save(FilePrefix="gate5")
+    Load(FilePrefix="gate5")
+    Quasistationary(InitialStep=0.0001 MinStep=1e-12 MaxStep=0.02 Goal { Name="drain" Voltage=60 }) {
+        Coupled { Poisson Electron Hole }
+    }
+}
+""", path_name="device_des.cmd")
+        self.assertTrue(ir["verdict"]["accepted"], ir["errors"])
+        mesh = qualification(ir, ("Si", "PolySilicon", "SiO2"))
+        mesh["angles"].update(obtuse_element_count=1, obtuse_fraction=0.5, max_deg=110)
+        mesh["qualification"]["non_obtuse"] = False
+        self.assertTrue(_is_slot_idvd_profile(ir, mesh))
+        self.assertTrue(_apply_slot_idvd_bgn_default(ir))
+        # The stage contract is independent of material-library coverage in this fixture.
+        report = {"schema": "vela.sdevice_materials_report.v1", "temperature_K": 300,
+                  "solver_parameters": [{
+                      "section": "PhuMob", "parameter": "f_CW",
+                      "target": "solver.mobility.phumob.conwell_weisskopf_factor",
+                      "value_par": 2.459, "decimal_par": "2.459000000000000001",
+                  }], "slot_idvd_population_coordinates": True}
+        result = emit(ir, mesh_qualification=mesh, materials_report=report)
+        self.assertEqual(len(result.decks), 4)
+        for deck in result.decks:
+            solver = deck["solver"]
+            self.assertEqual(solver["state_variables"], "potential_density")
+            self.assertEqual(solver["carrier_statistics"]["transport"], "effective_band_sg")
+            self.assertEqual(solver["carrier_statistics"]["model"], "fermi_dirac_joyce_dixon")
+            self.assertEqual(solver["extended80_stage_profile"], "slot_population_phumob_fixed_bias_v1")
+            self.assertEqual(solver["contact_boundary_reconstruction"], "legacy_node_local")
+            self.assertEqual(solver["normalization"]["reference_concentration_cm3"], "auto")
+            self.assertEqual(solver["bandgap_narrowing"],
+                             {"model": "bennett_wilson", "fermi_statistics_correction": True})
+            self.assertEqual(deck["mesh_geometry"]["cell_box_policy"], "average_intersection")
+            self.assertEqual(deck["discretization"]["poisson_charge_volume_policy"], "material_local_box")
+            operands = deck["decimal_stage_controls"]["solver"]["slot_source_coefficients"]
+            self.assertEqual(operands["mobility.phumob.conwell_weisskopf_factor"], "2.459000000000000001")
+        self.assertNotIn("quasi_fermi_update_limit_V", result.decks[1]["solver"])
+        self.assertEqual(result.decks[2]["solver"]["method"], "frozen_state")
+        self.assertEqual(result.decks[2]["sweep"]["contact"], "gate")
+        self.assertEqual(result.decks[2]["decimal_stage_controls"]["sweep"]["start"], "5")
+        self.assertEqual(result.decks[3]["sweep"]["step"], 60)
+        self.assertFalse(result.decks[3]["solver"]["line_search"])
+        self.assertEqual(result.decks[3]["decimal_stage_controls"]["sweep"]["initial_step"], "0.0060")
+        result.decks[2]["solver"]["contact_boundary_reconstruction"] = "dominant_signed_contact_mean"
+        with tempfile.TemporaryDirectory() as directory:
+            self.assert_error("E406", write_stage_plan, Path(directory), result)
+
+    def test_slot_idvd_ohmic_doping_audit_uses_exact_net_signs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path / "mesh.json").write_text(json.dumps({"contacts": [
+                {"name": "source", "node_ids": [0, 1, 2]},
+                {"name": "unused", "node_ids": [3]},
+            ]}), encoding="utf-8")
+            (path / "doping.csv").write_text(
+                "node_id,donors_cm3,acceptors_cm3\n"
+                "0,100000000000000000001,1e20\n1,1e20,100000000000000000001\n2,1e20,1e20\n",
+                encoding="utf-8")
+            self.assertEqual(_slot_idvd_ohmic_polarity(path, [{"name": "source", "type": "ohmic"}]),
+                             {"source": {"positive": 1, "negative": 1, "zero": 1}})
+
+    def test_phumob_cmd_and_materials_emit_solver_units(self):
+        ir = parse_cmd_text("""
+File { Grid="mesh.grd" Parameter="device.par" }
+Electrode { { Name="source" Voltage=0 } { Name="drain" Voltage=0 } }
+Physics (Material="Silicon") {
+    Mobility(Phumob HighFieldSaturation Enormal(Lombardi))
+    Recombination(Auger)
+}
+Math { Iterations=20 }
+Solve { Coupled { Poisson Electron Hole } }
+""", path_name="device_des.cmd")
+        self.assertTrue(ir["verdict"]["accepted"], ir["errors"])
+        self.assertIn("PhuMob", active_models_from_ir(ir))
+        with tempfile.TemporaryDirectory() as directory:
+            par = Path(directory) / "device.par"
+            par.write_text("""
+Material="Silicon" {
+    PhuMob {
+        mumax_As = 1417
+        n_ref_As = 1.0e17
+        alpha1_g_k = -0.007
+        alpha1_g_m = -1.5952
+    }
+    Auger {
+        A = 6.7e-32, 7.2e-32
+        B = 2.45e-31, 4.5e-33
+        C = -2.2e-32, 2.63e-32
+        H = 3.46667, 8.25688
+        N0 = 1e18, 2e18
+    }
+}
+""", encoding="utf-8")
+            report = emit_materials(par, active_models=active_models_from_ir(ir),
+                                    temperature_K=300, mesh_materials=["Si"],
+                                    effective_models=ir["physics"]["effective"]).report
+        solver = emit(ir, materials_report=report).decks[0]["solver"]
+        mobility = solver["mobility"]
+        self.assertEqual("phumob_field_lombardi", mobility["model"])
+        self.assertEqual(1417.0, mobility["phumob"]["electron_arsenic"]["mu_max_cm2_V_s"])
+        self.assertEqual(1.0e17, mobility["phumob"]["electron_arsenic"]["n_ref_cm3"])
+        self.assertEqual(0.007, mobility["phumob"]["g_alpha_prime"])
+        silicon = report["materials"][0]
+        meyer = next(row for row in silicon["parameters"] if row["parameter"] == "alpha1_g_m")
+        self.assertEqual("inactive", meyer["status"])
+        self.assertEqual({
+            "electron": {"enhancement": 3.46667, "reference_density_cm3": 1e18},
+            "hole": {"enhancement": 8.25688, "reference_density_cm3": 2e18},
+        }, solver["auger_density_dependence"])
 
     def test_pn2d_population_uses_original_physics_and_quasistationary_controls(self):
         root = REPO / "reference_tcad/pn2d_sentaurus2018"
@@ -171,6 +347,71 @@ class DeckEmitterTests(unittest.TestCase):
                 self.assertNotIn("continuation", initial)
                 self.assertNotIn("predictor", sweep)
                 self.assertEqual(sweep["continuation"]["predictor"]["mode"], expected)
+    def test_math_grad_qf_contact_field_is_applied_to_each_solve_stage(self):
+        source = FIXTURES / "pn2d_sentaurus2018/pn2d_iv_sdevice.cmd"
+        text = source.read_text(encoding="utf-8").replace("File {", 'File { Parameter="models.par" ', 1)
+        setting = "ComputeGradQuasiFermiAtContacts = UseQuasiFermi"
+        ir = parse_cmd_text(text.replace("Math {", f"Math {{\n{setting}", 1), path_name=source.name)
+        self.assertTrue(ir["verdict"]["accepted"], ir["errors"])
+        self.assertEqual(ir["math"]["grad_qf_contact_field"], "quasi_fermi_gradient")
+        sv.validate(sv.load_schema(REPO / "schemas/vela.sentaurus_execution_ir.v2.schema.json"), ir)
+        self.assertTrue(all(deck["solver"]["grad_qf_contact_field"] == "quasi_fermi_gradient"
+                            for deck in emit(ir).decks))
+        invalid = parse_cmd_text(text.replace("Math {", "Math {\nComputeGradQuasiFermiAtContacts = Invalid", 1),
+                                 path_name=source.name)
+        self.assertFalse(invalid["verdict"]["accepted"])
+
+    def test_extended80_voltage_controls_use_source_operands(self):
+        from decimal import Decimal
+        stop = "1.000000000000000000867361737988403547205962240695953369140625"
+        resistance = "1000000000000.0000001"
+        cmd = f'''File {{ Grid="mesh.grd" Parameter="models.par" }}
+            Electrode {{ {{Name="left" Voltage=1 Resist={resistance}}} {{Name="right" Voltage=0}} }}
+            Physics {{ Temperature=300.000000000000028 }}
+            Math {{ ExtendedPrecision }}
+            Solve {{ Coupled {{Poisson Electron Hole}}
+              Quasistationary(InitialStep=.25 MinStep=.125 MaxStep=.5 Goal {{Name="left" Voltage={stop}}})
+                {{Coupled {{Poisson Electron Hole}}}} }}'''
+        wide = emit(parse_cmd_text(cmd, path_name="control.cmd"))
+        legacy = emit(parse_cmd_text(cmd.replace("ExtendedPrecision", "-ExtendedPrecision"), path_name="control.cmd"))
+        self.assertEqual("sweep", wide.stage_plan["stages"][1]["kind"])
+        self.assertEqual("equilibrium", legacy.stage_plan["stages"][1]["kind"])
+        self.assertNotIn("decimal_stage_controls", legacy.decks[1])
+        source = wide.decks[1]["decimal_stage_controls"]
+        self.assertEqual("1", source["contacts"]["left"])
+        self.assertEqual(stop, source["sweep"]["stop"])
+        self.assertEqual(resistance, source["sweep"]["resistance_ohm_um"])
+        self.assertEqual("300.000000000000028", source["solver"]["temperature_K"])
+        self.assertEqual(2. ** -62, wide.decks[1]["sweep"]["initial_step"])
+        self.assertEqual(Decimal(2. ** -62), Decimal(source["sweep"]["initial_step"]))
+        self.assertNotEqual(Decimal("0.1"), Decimal(rebase_stage(wide, 1, {"left": 0.1})
+            .decks[1]["decimal_stage_controls"]["contacts"]["left"]))
+
+    def test_extended80_time_checkpoints_do_not_deduplicate_in_binary64(self):
+        from decimal import Decimal
+        low = "0.5"
+        high = "0.500000000000000000867361737988403547205962240695953369140625"
+        cmd = f'''File {{ Grid="mesh.grd" Parameter="models.par" }}
+            Electrode {{ {{Name="left" Voltage=0}} {{Name="right" Voltage=0}} }}
+            Math {{ ExtendedPrecision }}
+            Solve {{ Coupled {{Poisson Electron Hole}}
+              Quasistationary(Goal {{Name="left" Voltage=2}})
+              {{ Coupled {{Poisson Electron Hole}}
+                 Plot(FilePrefix="probe" Time=({low}; {high}))
+                 CurrentPlot(Time=(Range=({low} {high}) Intervals=2)) }} }}'''
+        wide = emit(parse_cmd_text(cmd, path_name="checkpoints.cmd"))
+        wide_sweep = wide.decks[1]["decimal_stage_controls"]["sweep"]
+        points = [Decimal(value) for value in wide_sweep["vtk_bias_points"]]
+        self.assertEqual(points[0], 1)
+        self.assertEqual(points[1], Decimal("1.000000000000000000867361737988403547205962240695953369140625"))
+        self.assertEqual(points[2], Decimal("1.00000000000000000173472347597680709441192448139190673828125"))
+        self.assertEqual(wide.decks[1]["sweep"]["vtk_bias_points"], [1.0, 1.0, 1.0])
+        self.assertEqual(wide.decks[0]["decimal_stage_controls"]["sweep"]["bias_points"], ["0"])
+        rebased = rebase_stage(wide, 1, {"left": 1.0}).decks[1]["decimal_stage_controls"]["sweep"]
+        self.assertEqual(Decimal(rebased["vtk_bias_points"][0]), Decimal("1.5"))
+        self.assertLess(Decimal(rebased["vtk_bias_points"][0]), Decimal(rebased["vtk_bias_points"][2]))
+        legacy = emit(parse_cmd_text(cmd.replace("ExtendedPrecision", "-ExtendedPrecision"), path_name="checkpoints.cmd"))
+        self.assertEqual(legacy.decks[1]["sweep"]["vtk_bias_points"], [1.0])
 
     def test_math_extended_precision_is_applied_to_each_solve_stage(self):
         source = FIXTURES / "pn2d_sentaurus2018/pn2d_iv_sdevice.cmd"
@@ -185,12 +426,19 @@ class DeckEmitterTests(unittest.TestCase):
                 sv.validate(sv.load_schema(REPO / "schemas/vela.sentaurus_execution_ir.v2.schema.json"), ir)
                 self.assertFalse(any("extendedprecision" in item["keyword"].lower()
                                      for item in ir["math"]["ignored"]))
-                decks = emit(ir).decks
+                result = emit(ir)
+                decks = result.decks
                 self.assertGreater(len(decks), 1)
                 self.assertTrue(all(deck["solver"].get("arithmetic_precision", "double") == expected
                                     for deck in decks))
+                self.assertTrue(all(deck["solver"].get("require_end_to_end_precision", False)
+                                    == (expected == "extended80") for deck in decks))
+                rebased = rebase_stage(result, 1, result.stage_plan["stages"][0]["electrode_voltages_goal_V"])
+                self.assertEqual([d["solver"].get("require_end_to_end_precision", False) for d in decks],
+                                 [d["solver"].get("require_end_to_end_precision", False) for d in rebased.decks])
         for setting in ("ExtendedPrecision(128)", "ExtendedPrecision(256)", "ExtendedPrecision()",
-                        "-ExtendedPrecision(80)", "ExtendedPrecision=80", "ExtendedPrecision{80}"):
+                        "-ExtendedPrecision(80)", "ExtendedPrecision=80", "ExtendedPrecision{80}",
+                        "ExtendedPrecision -ExtendedPrecision"):
             with self.subTest(setting=setting):
                 ir = parse_cmd_text(text.replace("Math {", f"Math {{\n{setting}", 1),
                                     path_name=source.name)
@@ -319,7 +567,7 @@ class DeckEmitterTests(unittest.TestCase):
         self.assertEqual(sweep["vtk_bias_points"][-1], 10)
         ir["stages"][-1]["goal"]["voltage_V"] = -10
         reverse = emit(ir).decks[-1]["sweep"]
-        self.assertEqual(reverse["step"], -0.25)
+        self.assertEqual(reverse["step"], -10)
         self.assertEqual(reverse["vtk_bias_points"][-1], -10)
         self.assertEqual(reverse["max_step"], 0.25)
 
@@ -341,6 +589,34 @@ class DeckEmitterTests(unittest.TestCase):
                           sidecar={**sidecar, "stage_vtk_bias_points": {"1": [.123]}})
         self.assert_error("E409", emit, self.ir,
                           sidecar={**sidecar, "stage_vtk_bias_points": {"2": [0.]}})
+    def test_quasistationary_max_step_does_not_create_landings(self):
+        for precision in ("double", "extended80"):
+            for extrapolate in (False, True):
+                with self.subTest(precision=precision, extrapolate=extrapolate):
+                    ir = deepcopy(self.ir)
+                    ir["math"].update(arithmetic_precision=precision, extrapolate=extrapolate)
+                    ir["stages"][-1]["outputs"].update(plot_files=[], current_plot_times=None)
+                    for target in (10, -10):
+                        ir["stages"][-1]["goal"]["voltage_V"] = target
+                        sweep = emit(ir).decks[-1]["sweep"]
+                        self.assertEqual(sweep["step"], target)
+                        self.assertEqual(sweep["max_step"], 0.25)
+                        self.assertEqual(sweep["initial_step"], 0.01)
+                        self.assertEqual(sweep["continuation"]["predictor"]["mode"],
+                                         "linear" if extrapolate else "none")
+                        self.assertEqual(sweep["vtk_bias_points"], [])
+
+    def test_partial_currentplot_interval_adds_only_requested_landings(self):
+        ir = deepcopy(self.ir)
+        ir["stages"][-1]["outputs"].update(
+            plot_files=[], current_plot_times={"range": [0.2, 0.8], "intervals": 3})
+        result = emit(ir)
+        sweep = result.decks[-1]["sweep"]
+        self.assertEqual(sweep["step"], 10)
+        self.assertEqual(sweep["max_step"], 0.25)
+        self.assertEqual(len(sweep["vtk_bias_points"]), 4)
+        for actual, expected in zip(sweep["vtk_bias_points"], (2, 4, 6, 8)):
+            self.assertAlmostEqual(actual, expected)
 
     def test_initial_stage_merge_and_state_chain(self):
         result = emit(self.ir)
@@ -573,7 +849,10 @@ class DeckEmitterTests(unittest.TestCase):
     def test_options_default_controls_and_explicit_plot_fields(self):
         ir = deepcopy(self.ir)
         ir["plot"]["explicit"] = True
-        ir["plot"]["fields"] = [{"name": "ElectricField", "data_name": "ElectricField", "component": "vector", "line": 1}]
+        ir["plot"]["fields"] = [
+            {"name": "ElectricField", "data_name": "ElectricField", "component": "vector", "line": 1},
+            {"name": "UnmappedQuantity", "data_name": None, "component": "scalar", "line": 2},
+        ]
         ir["stages"][-1]["t_control"] = dict.fromkeys(
             ("initial_step", "min_step", "max_step", "increment", "decrement")) | {"do_zero": True}
         result = emit(ir, options=EmitOptions(threads=3, exit_on_failure=True,
@@ -656,6 +935,63 @@ class DeckEmitterTests(unittest.TestCase):
         self.assertEqual(rebased.stage_plan["stages"][3]["sweep"]["start_V"], 0)
         ir["solve"]["statements"][3]["file_prefix"] = "absent"
         self.assert_error("E407", emit, ir)
+
+    def test_bound_slot_stage_keeps_population_coordinates_and_native_resistor_budget(self):
+        ir = parse_cmd_text('''File { Grid="mesh.grd" Parameter="models.par" }
+            Electrode { {Name="left" Voltage=0 Resist=1e12} {Name="right" Voltage=0} }
+            Math { ExtendedPrecision }
+            Solve { Load(FilePrefix="eq")
+              Quasistationary(Goal {Name="left" Voltage=0.1})
+                {Coupled(Iterations=17) {Poisson Electron Hole}} }''', path_name="bound.cmd")
+        self.assertTrue(ir["verdict"]["accepted"], ir["errors"])
+        solver = emit(self.ir).decks[0]["solver"]
+        solver["state_variables"] = "potential_density"
+        reference = {"solver": solver,
+                     "scaling": {"mode": "unit_scaling"},
+                     "node_doping_decimal_input": True,
+                     "discretization": {"poisson_charge_volume_policy": "material_local_box"},
+                     "sweep": {"external_circuit": {"mode": "series_resistor", "solver": "coupled_newton",
+                         "resistance_ohm_um": 1e12, "max_iterations": 99}}}
+        context = {"reference": reference, "load_states": {"eq": "slot_input_00.h5"}}
+        result = emit(ir, slot_context=context)
+        self.assertEqual(result.decks[0]["sweep"]["initial_state_file"], "slot_input_00.h5")
+        self.assertEqual(result.decks[0]["solver"]["method"], "frozen_state")
+        deck = result.decks[1]
+        self.assertEqual(deck["discretization"], reference["discretization"])
+        self.assertEqual(deck["solver"]["state_variables"], "potential_density")
+        self.assertEqual(deck["solver"]["arithmetic_precision"], "extended80")
+        self.assertTrue(deck["solver"]["require_end_to_end_precision"])
+        self.assertTrue(deck["node_doping_decimal_input"])
+        self.assertEqual(deck["sweep"]["external_circuit"]["max_iterations"], 17)
+        self.assertNotIn("quasi_fermi_reference", deck["solver"])
+
+    def test_slot_extended80_equilibrium_uses_cmd_update_references(self):
+        cmd = '''File { Grid="mesh.grd" Parameter="models.par" }
+            Electrode { {Name="left" Voltage=0 Resist=1e12} {Name="right" Voltage=0} }
+            Math { ExtendedPrecision RelErrControl Digits=7
+                   ErrRef(Poisson)=0.030000000000000000001 ErrRef(Electron)=1e9 ErrRef(Hole)=2e10 }
+            Solve { Coupled(Iterations=60) {Poisson}
+                    Coupled(Iterations=20) {Poisson Electron Hole}
+                    Quasistationary(Goal {Name="left" Voltage=0.1})
+                      {Coupled(Iterations=17) {Poisson Electron Hole}} }'''
+        solver = emit(self.ir).decks[0]["solver"]
+        solver.update(state_variables="potential_density", population_stopping_rule="native_approx")
+        circuit = {"mode": "series_resistor", "solver": "coupled_newton", "resistance_ohm_um": 1e12}
+        context = {"reference": {"solver": solver, "scaling": {"mode": "unit_scaling"},
+                                 "sweep": {"external_circuit": circuit}}, "load_states": {}}
+        ir = parse_cmd_text(cmd, path_name="equilibrium.cmd")
+        result = emit(ir, slot_context=context)
+        self.assertEqual(result.decks[0]["sweep"]["initialization"],
+                         {"mode": "poisson_block", "poisson_max_iter": 60})
+        self.assertEqual(result.decks[0]["solver"]["population_update_convergence"],
+                         {"digits": 7, "potential_reference_V": 0.03,
+                          "electron_reference_cm3": 1e9, "hole_reference_cm3": 2e10})
+        controls = result.decks[0]["decimal_stage_controls"]["solver"]["population_update_convergence"]
+        self.assertEqual(controls["potential_reference_V"], "0.030000000000000000001")
+        self.assertEqual(result.decks[1]["sweep"]["external_circuit"]["max_iterations"], 17)
+        self.assertEqual(result.decks[1]["sweep"]["initial_state_file"], "stage00_state.h5")
+        ir = parse_cmd_text(cmd.replace(" RelErrControl", " -RelErrControl"), path_name="equilibrium.cmd")
+        self.assert_error("E407", emit, ir, slot_context=context)
 
     def test_fixed_charge_units_and_scopes(self):
         ir = deepcopy(self.ir)

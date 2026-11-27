@@ -34,12 +34,51 @@ inline void validateDensityUpdateConvergence(const DensityUpdateConvergenceConfi
             throw std::invalid_argument("density update convergence references must be positive and finite");
 }
 
-struct DensityUpdateError {
+template<class Scalar>
+struct BasicDensityUpdateError {
     bool valid = false;
-    Real rms = std::numeric_limits<Real>::infinity();
+    Scalar rms = std::numeric_limits<Scalar>::infinity();
     // Poisson, electron, hole, active-contact aliases (not independent DOFs).
     std::array<std::size_t, 4> counts{};
-    std::array<Real, 4> blockRms{};
+    std::array<Scalar, 4> blockRms{};
+};
+
+using DensityUpdateError = BasicDensityUpdateError<Real>;
+
+template<class Scalar, class ReportScalar = Scalar>
+class DensityUpdateAccumulator {
+public:
+    explicit DensityUpdateAccumulator(int digits) : amplification_(std::pow(Scalar{10},digits)) {}
+
+    void add(int block, Scalar state, Scalar direction, Scalar reference) {
+        const Scalar normalized = amplification_ * direction / (std::abs(state) + reference);
+        valid_ = valid_ && std::isfinite(state) && std::isfinite(direction) &&
+                std::isfinite(normalized);
+        squares_[block] += normalized * normalized;
+        ++counts_[block];
+    }
+
+    BasicDensityUpdateError<ReportScalar> finish(bool validState = true) const {
+        BasicDensityUpdateError<ReportScalar> out;
+        out.counts = counts_;
+        Scalar total = 0;
+        std::size_t count = 0;
+        for (std::size_t block = 0; block < counts_.size(); ++block) {
+            total += squares_[block];
+            count += counts_[block];
+            if (counts_[block])
+                out.blockRms[block] = static_cast<ReportScalar>(std::sqrt(squares_[block]/counts_[block]));
+        }
+        if (count)
+            out.rms = static_cast<ReportScalar>(std::sqrt(total/count));
+        out.valid = validState && valid_ && std::isfinite(out.rms);
+        return out;
+    }
+private:
+    Scalar amplification_;
+    std::array<Scalar,4> squares_{};
+    std::array<std::size_t,4> counts_{};
+    bool valid_ = true;
 };
 
 // Raw, uncapped linear tangent in the numerator; the actual accepted state

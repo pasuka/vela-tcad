@@ -143,7 +143,7 @@
     "current_contact": "drain",
     "start": 0.0,
     "stop": 100000.0,
-    "step": 2500.0,
+    "step": 100000.0,
     "initial_step": 0.01,
     "min_step": 1e-05,
     "max_step": 2500.0,

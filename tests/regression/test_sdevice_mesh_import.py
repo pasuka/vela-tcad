@@ -17,6 +17,7 @@ sys.path.insert(0, str(REPO / "scripts"))
 
 from vela_sdevice import schema_validator as sv  # noqa: E402
 from vela_sdevice.mesh_import import MeshImportError, check_electrodes, find_importer, import_grid  # noqa: E402
+from vela_sdevice.mesh_import.doping import DopingPolicy  # noqa: E402
 import run_pn2d_same_mesh_sdevice_vector_export as dfise_writers  # noqa: E402
 
 SCHEMA = sv.load_schema(REPO / "schemas" / "vela.mesh_qualification.v1.schema.json")
@@ -238,6 +239,24 @@ class DfiseImportTest(unittest.TestCase):
         self.assertEqual(result, report["qualification"]["electrodes_checked"])
         self.assertEqual([], sv.collect_errors(SCHEMA, report))
 
+    def test_dfise_decimal_doping_preserves_text_into_production_csv(self) -> None:
+        grd = self.tmp / "decimal.grd"
+        donor = "1.000000000000000000867361737988403547205962240695953369140625"
+        grd.write_text(OBTUSE_GRD.replace(" 1.0 1.0", f" {donor} 1.0", 1), encoding="utf-8")
+        grd.with_suffix(".dat").write_text(OBTUSE_DAT.replace("1e16", donor, 1), encoding="utf-8")
+        report = import_grid(grd, self.tmp / "wide", decimal_doping=True, decimal_coordinates=True)
+        self.assertEqual([], sv.collect_errors(SCHEMA, report))
+        self.assertEqual("decimal", report["doping"]["number_encoding"])
+        self.assertEqual("decimal", report["coordinate_unit"]["number_encoding"])
+        mesh = json.loads((self.tmp / "wide" / "mesh.json").read_text())
+        self.assertTrue(any(donor in node["coordinate_literals"] for node in mesh["nodes"]))
+        with (self.tmp / "wide" / "doping.csv").open(newline="", encoding="utf-8") as file:
+            self.assertEqual(donor, next(csv.DictReader(file))["donors_cm3"])
+        legacy = import_grid(grd, self.tmp / "legacy")
+        self.assertNotIn("number_encoding", legacy["doping"])
+        self.assertNotIn("number_encoding", legacy["coordinate_unit"])
+        self.assertEqual(1., read_doping(self.tmp / "legacy" / "doping.csv")[0][0])
+
     def test_obtuse_two_material_grid_is_reported_not_rejected(self) -> None:
         grd = self.tmp / "obtuse_msh.grd"
         grd.write_text(OBTUSE_GRD, encoding="utf-8")
@@ -259,6 +278,73 @@ class DfiseImportTest(unittest.TestCase):
         self.assertEqual((0.0, 5e15), doping[2])
         mesh = json.loads((self.tmp / "out" / "mesh.json").read_text(encoding="utf-8"))
         self.assertEqual(1, mesh["contacts"][0]["region_id"])
+
+    def test_auto_doping_uses_net_or_total_before_reported_aggregates(self):
+        grd = self.tmp / "compensated.grd"
+        grd.write_text(OBTUSE_GRD)
+        dat = grd.with_suffix(".dat")
+        net = OBTUSE_DAT
+        block = net[net.index("  Dataset ("):net.rindex("}")]
+        aggregate = "".join(block.replace("DopingConcentration", name) for name in
+                            ("DonorConcentration", "AcceptorConcentration"))
+        auto = DopingPolicy.from_inputs("auto", False, [])
+        dat.write_text(net[:net.rindex("}")] + aggregate + "}")
+        out = self.tmp / "split"
+        report = import_grid(grd, out, doping_policy=auto)
+        self.assertEqual(report["doping"]["resolution"]["regions"]["R.Si"]["mode"], "net_split")
+        self.assertEqual(read_doping(out / "doping.csv")[2], (0., 5e15))
+        total = block.replace("DopingConcentration", "TotalConcentration").replace(
+            "1e16\n 1e16\n -5e15", "3e16\n 3e16\n 7e15")
+        dat.write_text(net[:net.rindex("}")] + total + "}")
+        report = import_grid(grd, out, doping_policy=auto)
+        self.assertEqual(report["doping"]["resolution"]["regions"]["R.Si"]["mode"], "net_and_total")
+        self.assertEqual(read_doping(out / "doping.csv")[2], (1e15, 6e15))
+        dat.write_text(net[:net.rindex("}")] + total.replace("7e15", "4e15") + "}")
+        with self.assertRaisesRegex(MeshImportError, "smaller"):
+            import_grid(grd, out, doping_policy=auto)
+
+    def test_auto_doping_respects_species_registry_and_explicit_net_recompute(self):
+        registry = self.tmp / "datexcodes.txt"
+        registry.write_text("""Datasets {
+          XConcentration { doping = donor (
+             active = XActiveConcentration
+             material = Silicon
+          ) }
+          XChemicalConcentration { doping = donor (
+             active = XActiveConcentration
+             material = Silicon
+          ) }
+          YConcentration { doping = acceptor }
+        }""")
+        fields = {"XConcentration": [30.], "XActiveConcentration": [12.],
+                  "YConcentration": [7.], "DopingConcentration": [2.]}
+        auto = DopingPolicy.from_inputs("auto", False, [registry])
+        with self.assertRaisesRegex(ValueError, "inconsistent DopingConcentration"):
+            auto.resolve(fields, [0], "R.Si", "Silicon", 0.)
+        forced = DopingPolicy.from_inputs("auto", True, [registry])
+        self.assertEqual(forced.resolve(fields, [0], "R.Si", "Silicon", 0.),
+                         ([(12., 7.)], "species", ["XActiveConcentration", "YConcentration"]))
+        self.assertEqual(forced.resolve(fields, [0], "R.Poly", "PolySilicon", 0.)[0], [(0., 7.)])
+        fallback = DopingPolicy.from_inputs("auto", False, [])
+        with self.assertRaisesRegex(ValueError, "unclassified concentration"):
+            fallback.resolve(fields, [0], "R.Si", "Silicon", 0.)
+
+    def test_auto_doping_propagates_operand_precision_through_net_subtraction(self):
+        fields = {
+            "ArsenicActiveConcentration": [1.060653112817907e18],
+            "BoronActiveConcentration": [9.999999999999986e17],
+            "DopingConcentration": [6.065311281791048e16],
+            "AbsDopingConcentration": [6.065311281791048e16],
+            "Log10AbsDopingConcentration": [16.782853107],
+        }
+        policy = DopingPolicy.from_inputs("auto", False, [])
+        pairs, mode, _ = policy.resolve(fields, [153], "R.Substrate", "Silicon", 0.)
+        self.assertEqual(pairs, [(fields["ArsenicActiveConcentration"][0],
+                                  fields["BoronActiveConcentration"][0])])
+        self.assertEqual(mode, "species")
+        fields["DopingConcentration"][0] += 1e8
+        with self.assertRaisesRegex(ValueError, "inconsistent DopingConcentration"):
+            policy.resolve(fields, [153], "R.Substrate", "Silicon", 0.)
 
     def test_missing_dat_and_bad_extension(self) -> None:
         grd = write_strip_fixture(self.tmp)

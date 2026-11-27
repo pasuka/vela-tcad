@@ -14,5 +14,6 @@ namespace vela {
  * B(x) > 0 for all finite x.
  */
 double bernoulli(double x);
+double bernoulliDerivative(double x);
 
 } // namespace vela

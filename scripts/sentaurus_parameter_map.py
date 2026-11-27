@@ -346,6 +346,11 @@ def _rows() -> list[MappingEntry]:
                 "coupling are implemented"
             ),
         ))
+    rows.append(MappingEntry(
+        section="PhuMob", parameter="alpha1_g_m",
+        status=STATUS_UNSUPPORTED_FORMULA, requires_model="PhuMobMeyer",
+        note="Meyer coefficient is inactive with the default Klaassen screening function",
+    ))
 
     # HighFieldDependence: Vela has the Caughey-Thomas shape but no
     # temperature laws for beta or vsat, and no Transferred-Electron terms.
@@ -488,16 +493,17 @@ def _rows() -> list[MappingEntry]:
             target="solver.auger_cn_m6_per_s / solver.auger_cp_m6_per_s",
             requires_model="Auger",
             note=(
-                "The A/B/C temperature polynomial collapses to fixed Cn/Cp "
-                "at the frozen temperature"
+                "The A/B/C temperature polynomial collapses to its value at "
+                "the frozen temperature before applying the density enhancement"
             ),
         ))
-    for name, field in (("H", "enhancement"), ("N0", "reference_density_m3")):
+    for name, target in (("H", "enhancement"), ("N0", "reference_density_m3")):
         rows.append(MappingEntry(
             section="Auger", parameter=name,
             status=STATUS_EXACT,
-            target=f"solver.auger_density_dependence.{{carrier}}.{field}",
+            target="solver.auger_density_dependence.{carrier}." + target,
             requires_model="Auger",
+            note="Carrier-specific concentration enhancement 1 + H exp(-c/N0)",
         ))
 
     # -- Bandgap narrowing ----------------------------------------------

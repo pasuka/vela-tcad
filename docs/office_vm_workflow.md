@@ -46,7 +46,10 @@ It does not alter the remote login shell, system profiles or vendor installation
 
 - **Vela**: `~/.local/bin/micromamba`, root `~/micromamba`, environment
   `vela-gcc16`. `Probe` checks the actual compiler and dependency versions.
-  Installing MKL does not itself implement a PARDISO backend in Vela.
+  Installing MKL does not select a solver. The optional Linux PARDISO backend
+  uses `VELA_LINEAR_SOLVER=pardiso_mkl` (or an explicit elimination variant)
+  and an absolute `VELA_MKL_RT_LIBRARY` path. Verify it with the linear-solver
+  tests before a numerical run; no silent fallback is provided.
 - **Sentaurus**: uses privately configured `SentaurusRoot`, inherited license
   variables and optional `~/.config/vela-vm/sentaurus.env` (Bash syntax). No
   micromamba activation. Help output alone does not validate license checkout.

@@ -100,6 +100,9 @@ _RECORD_RE = re.compile(
 # A ``NumericalTable`` written without a left-hand side.
 _BARE_TABLE_RE = re.compile(r"^NumericalTable\s*\(.*\)$",
                             re.DOTALL | re.IGNORECASE)
+_POSITIONAL_VALLEY_RE = re.compile(r"^(?P<base>[eh]Valley)\s*\((?P<values>[^()]*)\)$")
+_HYDROGEN_RECORD_RE = re.compile(r"^(?P<base>HydrogenAtom|HydrogenIon|HydrogenMolecule)\s*(?P<brace>\{)?$")
+_HYDROGEN_SECTIONS = frozenset({"HydrogenDiffusion", "KMCHydrogenParameters"})
 
 
 class ParParseError(ValueError):
@@ -284,14 +287,34 @@ def _join_continuations(lines: Sequence[PhysicalLine]) -> list[PhysicalLine]:
         current = lines[index]
         code, _unit = _strip_comments(current.text)
         depth = _bracket_depth(code)
-        if depth <= 0:
-            joined.append(current)
-            index += 1
-            continue
-
         parts = [current.text]
         end_line = current.line
         cursor = index + 1
+        if code.strip().lower() == "numericaltable":
+            # Older files put the first opening parenthesis on its own line.
+            while cursor < len(lines) and lines[cursor].file == current.file:
+                nxt = lines[cursor]
+                nxt_code, _ = _strip_comments(nxt.text)
+                if not nxt_code.strip():
+                    cursor += 1
+                    continue
+                if nxt_code.lstrip().startswith("("):
+                    parts.append(nxt.text)
+                    depth = _bracket_depth(nxt_code)
+                    end_line = nxt.line
+                    cursor += 1
+                break
+        if depth <= 0:
+            if len(parts) == 1:
+                joined.append(current)
+                index += 1
+            else:
+                text = " ".join(parts)
+                joined.append(PhysicalLine(text, text, current.file, current.line,
+                                           end_line, current.include_stack))
+                index = cursor
+            continue
+
         while cursor < len(lines) and depth > 0:
             nxt = lines[cursor]
             parts.append(nxt.text)
@@ -381,7 +404,7 @@ def _decompose_name(raw_name: str) -> dict[str, Any]:
             "recognised": False}
 
 
-def _classify_value(lexeme: str) -> dict[str, Any]:
+def _classify_value(lexeme: str, *, number=float) -> dict[str, Any]:
     """Classify a right-hand side without converting units.
 
     ``value_kind`` distinguishes the shapes that a downstream emitter must
@@ -401,6 +424,9 @@ def _classify_value(lexeme: str) -> dict[str, Any]:
     the file uses commas for the carrier split.
     """
     text = lexeme.strip()
+    def parse_number(token: str):
+        return number(token) if _NUMBER_RE.fullmatch(token) else None
+
     if not text:
         return {"value_kind": "empty", "values": []}
 
@@ -418,7 +444,7 @@ def _classify_value(lexeme: str) -> dict[str, Any]:
             tokens = row.split()
             if not tokens:
                 continue
-            numbers = [_parse_number(token) for token in tokens]
+            numbers = [parse_number(token) for token in tokens]
             if any(number is None for number in numbers):
                 return {"value_kind": "unrecognised", "values": []}
             rows.append(numbers)
@@ -427,7 +453,7 @@ def _classify_value(lexeme: str) -> dict[str, Any]:
     if "," in text:
         parts = [part.strip() for part in text.split(",")]
         parts = [part for part in parts if part != ""]
-        numbers = [_parse_number(part) for part in parts]
+        numbers = [parse_number(part) for part in parts]
         if all(number is not None for number in numbers):
             kind = "carrier_pair" if len(numbers) == 2 else (
                 "scalar" if len(numbers) == 1 else "number_list")
@@ -438,7 +464,7 @@ def _classify_value(lexeme: str) -> dict[str, Any]:
         return {"value_kind": "mixed_list", "values": [_unquote(p) for p in parts]}
 
     tokens = text.split()
-    numbers = [_parse_number(token) for token in tokens]
+    numbers = [parse_number(token) for token in tokens]
     if all(number is not None for number in numbers):
         if len(numbers) == 1:
             return {"value_kind": "scalar", "values": numbers}
@@ -447,7 +473,7 @@ def _classify_value(lexeme: str) -> dict[str, Any]:
     if len(tokens) == 1 and _is_bare_string(tokens[0]):
         return {"value_kind": "string", "values": [_unquote(tokens[0])]}
 
-    if all(_is_bare_string(token) or _parse_number(token) is not None
+    if all(_is_bare_string(token) or parse_number(token) is not None
            for token in tokens):
         return {"value_kind": "mixed_list",
                 "values": [_unquote(token) for token in tokens]}
@@ -459,6 +485,15 @@ def _is_bare_string(token: str) -> bool:
     if token.startswith('"') and token.endswith('"') and len(token) >= 2:
         return True
     return bool(re.match(r"^[A-Za-z_][A-Za-z0-9_.+-]*$", token))
+
+
+def parameter_number_lexemes(entry: dict[str, Any]) -> list[str]:
+    """Return the scalar operands of a numeric parameter in source order."""
+    kind = entry["value_kind"]
+    if kind not in ("scalar", "carrier_pair", "number_list", "numerical_table"):
+        return []
+    values = _classify_value(entry["raw_lexeme"], number=str)["values"]
+    return [value for row in values for value in row] if kind == "numerical_table" else values
 
 
 def _unquote(token: str) -> str:
@@ -508,7 +543,7 @@ class _Block:
 class _Reader:
     """Walks joined physical lines and builds ordered blocks."""
 
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, sections: frozenset[str] | None = None) -> None:
         self.root = root
         self.blocks: list[_Block] = []
         self.errors: list[dict[str, Any]] = []
@@ -517,6 +552,12 @@ class _Reader:
         self._pending: tuple[str, str | None] | tuple[str, str, str | None] | None = None
         self._pending_kind: str | None = None
         self._pending_line: PhysicalLine | None = None
+        self._sections = sections
+        self._discard_depth = 0
+        self._nested_start: PhysicalLine | None = None
+        self._nested_name = ""
+        self._nested_lines: list[str] = []
+        self._nested_depth = 0
 
     # -- diagnostics -----------------------------------------------------
     def _error(self, line: PhysicalLine, reason: str) -> None:
@@ -545,6 +586,8 @@ class _Reader:
             line=line.line,
             include_stack=line.include_stack,
         )
+        if self._sections is not None and section not in self._sections:
+            self._discard_depth = 1
 
     def _close_block(self, line: PhysicalLine) -> None:
         assert self._block is not None
@@ -561,6 +604,8 @@ class _Reader:
                 continue
             self._read_statement(line, stripped, unit)
 
+        if self._nested_start is not None:
+            self._error(self._nested_start, "nested record is never closed by '}'")
         if self._block is not None:
             self._error(
                 PhysicalLine(self._block.section, self._block.section,
@@ -579,6 +624,20 @@ class _Reader:
 
     def _read_statement(self, line: PhysicalLine, stripped: str,
                         unit: str | None) -> None:
+        if self._discard_depth:
+            # Ignore braces inside quoted text. The outer section still has
+            # to balance, including any nested subsections.
+            structural = re.sub(r'"[^"]*"', "", stripped)
+            self._discard_depth += structural.count("{") - structural.count("}")
+            if self._discard_depth == 0:
+                self._block = None
+            elif self._discard_depth < 0:
+                self._error(line, "unbalanced braces in an unselected section")
+                self._discard_depth = 0
+            return
+        if self._nested_start is not None:
+            self._read_nested_record(line, stripped)
+            return
         # A brace that completes a header seen on the previous line.
         if self._pending_kind is not None:
             if stripped.startswith("{"):
@@ -596,6 +655,15 @@ class _Reader:
         if stripped == "}":
             self._close_scope_or_block(line)
             return
+
+        if self._block is not None and self._block.section in _HYDROGEN_SECTIONS:
+            nested = _HYDROGEN_RECORD_RE.fullmatch(stripped)
+            if nested:
+                self._nested_start = line
+                self._nested_name = nested.group("base")
+                self._nested_lines = [line.raw.strip()]
+                self._nested_depth = int(nested.group("brace") is not None)
+                return
 
         if stripped.startswith("{"):
             remainder = stripped[1:].strip()
@@ -625,6 +693,22 @@ class _Reader:
         if record and self._block is not None:
             self._append_record(line, record, stripped)
             return
+        if self._block is not None and self._block.section == "MultiValley":
+            positional = _POSITIONAL_VALLEY_RE.fullmatch(stripped)
+            if positional:
+                name = positional.group("base")
+                elements = [value.strip() for value in positional.group("values").split(",")]
+                if len(elements) not in (6, 7) or not all(_NUMBER_RE.fullmatch(value) for value in elements):
+                    self._error(line, f"invalid positional {name} record")
+                    return
+                occurrence = sum(item["raw_name"] == name and "indices" in item
+                                 for item in self._block.parameters)
+                entry = self._record_entry(line, name, " ".join(stripped.split()))
+                entry["indices"] = [occurrence]
+                if unit is not None:
+                    entry["raw_unit"] = unit
+                self._block.parameters.append(entry)
+                return
 
         # ``NumericalTable ( ... )`` also appears as a bare statement, without
         # a name and without ``=``, when the enclosing section has exactly one
@@ -707,15 +791,37 @@ class _Reader:
     def _append_record(self, line: PhysicalLine, record: "re.Match[str]",
                        stripped: str) -> None:
         assert self._block is not None
-        self._block.parameters.append({
-            "raw_name": record.group("base"),
-            "base_name": record.group("base"),
-            "raw_lexeme": " ".join(stripped.split()),
+        entry = self._record_entry(line, record.group("base"), " ".join(stripped.split()))
+        entry["variant"] = record.group("label")
+        self._block.parameters.append(entry)
+
+    @staticmethod
+    def _record_entry(line: PhysicalLine, name: str, lexeme: str) -> dict:
+        return {
+            "raw_name": name,
+            "base_name": name,
+            "raw_lexeme": lexeme,
             "value_kind": "record",
             "values": [],
-            "variant": record.group("label"),
             "source": {"file": line.file, "line": line.line},
-        })
+        }
+
+    def _read_nested_record(self, line: PhysicalLine, stripped: str) -> None:
+        assert self._block is not None and self._nested_start is not None
+        if self._nested_depth == 0 and not stripped.startswith("{"):
+            self._error(line, "nested record header is not followed by '{'")
+            self._nested_start = None
+            return
+        self._nested_lines.append(line.raw.strip())
+        structural = re.sub(r'"[^"]*"', "", stripped)
+        self._nested_depth += structural.count("{") - structural.count("}")
+        if self._nested_depth < 0:
+            self._error(line, "unbalanced braces in a nested record")
+            self._nested_start = None
+        elif self._nested_depth == 0:
+            self._block.parameters.append(self._record_entry(
+                self._nested_start, self._nested_name, "\n".join(self._nested_lines)))
+            self._nested_start = None
 
 
 _SCOPE_KINDS = {
@@ -748,24 +854,30 @@ UNSUPPORTED_SECTIONS: dict[str, str] = {
     "ThermalConductivity": "the lattice heat equation is not solved",
     "RefractiveIndex": "optics are not modelled",
     "ComplexRefractiveIndex": "optics are not modelled",
+    "HydrogenDiffusion": "hydrogen transport and reactions are not modelled",
+    "KMCHydrogenParameters": "kinetic Monte Carlo hydrogen transport is not modelled",
+    "MultiValley": "multi-valley transport and valley populations are not modelled",
 }
 
 
 def parse_parameter_ir(path: Path,
-                       root: Path | None = None) -> dict[str, Any]:
+                       root: Path | None = None, *,
+                       sections: frozenset[str] | None = None) -> dict[str, Any]:
     """Parse ``path`` into ``vela.sentaurus_parameter_ir.v1``.
 
     ``root`` bounds ``#include`` resolution and defaults to the directory
     holding ``path``.  Raises :class:`ParParseError` if any statement cannot be
     classified; in that case no IR is returned, because a partially understood
     parameter file is more dangerous than none at all.
+    ``sections`` is a structural projection for independent input audits.
+    Consumers of a complete parameter deck leave it unspecified.
     """
     path = Path(path)
     root = Path(root) if root is not None else path.parent
 
     lines = _read_physical_lines(path, (), (), root)
     joined = _join_continuations(lines)
-    reader = _Reader(root)
+    reader = _Reader(root, sections)
     reader.read(joined)
 
     if reader.errors:

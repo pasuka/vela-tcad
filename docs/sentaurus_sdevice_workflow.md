@@ -306,7 +306,9 @@ runner 以 ASCII 暂存名读写输入与运行日志，编排器在段结束后
 
 ### 2.9 当前支持子集与验收层级
 
-`--check` 通过只表示输入、网格、材料和 stage/deck gates 通过；不求解，也不承诺商业软件的数值等价。
+`--check` 通过表示输入、网格、材料和 stage/deck gates 通过。通用材料入口可用
+`--default-par PAR` 指定经过核对的材料默认库，例如包含原生 PolySi 材料块的 PAR。
+CMD 的 `File{Parameter}` 中的显式系数优先，材料报告记录默认库的文件和哈希。
 
 | 输入 | 当前行为 | 限制/证据 |
 | --- | --- | --- |
@@ -380,6 +382,59 @@ BV 原子配置需同时满足第 2.7 节条件，不能拿本例迭代次数 si
 日志优先级为 CLI `--verbose`（所有段 debug）→ 对应段 sidecar `runtime_log.profile`
 → default。编排器保留 profile 并固定 append 模式；`apply_to` 外的段不继承该覆盖。
 WP12 发现的日志覆盖缺口已修复，并以真实 runner 日志核对 minimal/debug 与 CLI 优先级。
+
+原生 SLOT BVDS 的 `Enormal(IALMob)` 可用专用 `slot_ialmob` sidecar 绑定。
+提供 `reference_deck`（已核对的 Vela SLOT 参考配置）、`dfise_grid` 和
+`parameter_sha256`。原生脚本若从外部 `Load` 开始，再在 `load_states` 中
+将原脚本的前缀映射到同状态的 Vela HDF5 存档。路径相对于 CMD。
+该绑定使用参考配置中的材料、掺杂、离散及单元几何，并核对原生网格拓扑、
+电极、IALMob/HFS 系数和 PAR 哈希。检查记录位于 `slot_ialmob_binding.json`。
+`--check` 可检查生成的各阶段；`ExtendedPrecision` 求解仍受完整精度能力检查。
+`--check-arithmetic-input` 还会调用扩展构建的 C++ 输入审计。报告按来源列出
+TDR 回环数据、实际绑定的网格和掺杂、阶段十进制控制及已接入的材料派生输入。
+该入口止于输入审计。
+
+### 掺杂来源判定
+
+`sd-sim` 默认按区域判定掺杂来源。识别到独立施主或受主物种时，优先读取
+该物种的活性浓度，再考虑化学浓度。没有物种时，由净掺杂和总掺杂重建；
+只提供净掺杂时按符号拆分。在此流程中，通用汇总字段
+`DonorConcentration` 和 `AcceptorConcentration` 不作为独立物种，除非
+生效的字段定义明确将其登记为物种。
+
+用 `--datexcodes FILE` 指定与参考 Sentaurus 运行一致的定义文件，允许多次
+指定并按顺序叠加。CMD 同目录的 `datexcodes.txt` 最后叠加一次。未提供定义
+文件时使用内置的常见硅掺杂物种定义，无法分类的浓度字段会指出对应区域。
+`Math { ComputeDopingConcentration }` 可要求用识别到的物种重算净掺杂。
+当前节点掺杂表由 (N_D,N_A) 表示。物种和保留的净掺杂或总掺杂冲突时，
+预检报告冲突。明确希望沿用旧导入口径时可用 `--doping-mode reported`，
+希望只读净掺杂时可用 `--doping-mode net-only`。显式口径应与参考运行绑定。
+
+HDF5 TDR 通过 `sentaurus_import` 的原始字段清单读取。GRD/DAT 使用
+相同判定。`File{Doping}` 可指向同一个 TDR 或 GRD 及其配套 DAT。
+独立掺杂网格会在预检中报出。逐区域方法、使用的字段和字典哈希写入
+`mesh_qualification.json` 和运行清单。SLOT 的参考掺杂表必须与自动
+判定结果逐节点一致，才能继续使用该绑定表及状态。
+
+采用通用材料发射器时，`ExtendedPrecision` 材料卡的
+`decimal_semiconductor` 保存 CMD 温度以及活跃 PAR 带隙和 Formula 1 DOS
+参数。扩展精度构建在材料读卡时用这些值计算带隙、态密度和本征浓度，
+再写入现有材料字段。DF-ISE 的掺杂文本也会保留到求解阶段读取的
+`doping.csv`。TDR 仍按导入器的原始编码处理。SLOT 专用绑定继续读取
+指定的材料与掺杂文件。绑定硅的温度、带隙、电子亲和势、两种态密度和
+本征浓度与原生 PAR 的 binary64 投影一致时，宽精度阶段在材料卡中加入
+硅的派生输入。其他材料继续使用已绑定值。
+
+对已核对的原生 PolySi 默认参数，可通过 `poly_material_parameters` 指定
+仅含所用材料 Bandgap 和两种 DOS 的参数投影文件及其 SHA256。材料读卡按
+绑定卡的口径使用已折入 OldSlotboom 的带隙和温度修正后的亲和势。
+启用前检查派生量与绑定材料在 4 个 binary64 ULP 内相符。参考势取自绑定材料。
+
+电压阶段还会在 `decimal_stage_controls` 中保存接触电压、绝对扫描步长
+和外电阻的十进制值。显式偏压点及由 `Time` 生成的输出检查点也保留
+十进制值。阶段生成先用原始 CMD 数值计算电压跨度及对应检查点，复读或
+重新绑定时使用实测电压的实际精度。DF-ISE 的原始坐标随网格传至读卡器。
+当前运行时检查点、边界、网格和求解状态结构仍以 binary64 存储。
 
 可单独检查解析器、schema、材料发射器和纯 deck 发射器（Windows）：
 
@@ -580,8 +635,21 @@ schema 之外、golden 夹具所依赖的确定性规则：
    `break_at_ion_integral=null`、`exit_on_failure=false`、`number_of_threads=1`；`ErrRef` 缺省 null。
    省略 `ExtendedPrecision` 或写 `-ExtendedPrecision` 时使用 `double`。
    `ExtendedPrecision` 和 `ExtendedPrecision(80)` 均映射到
-   `solver.arithmetic_precision="extended80"`，由 `sd-sim` 选择对应的求解器。
-   其他位数会在解析时被拒绝。编译器没有 80 位格式时，扩展模式在实际求解前报告缺少求解器。
+   `solver.arithmetic_precision="extended80"` 和
+   `solver.require_end_to_end_precision=true`。运行前，`sd-sim` 核对求解器的
+   实际浮点格式、求解链覆盖和后端能力，并写入 `run_manifest.json`。
+   当前混合精度构建会拒绝此端到端请求。其他位数和互相矛盾的开关会在解析时被拒绝。
+   `--check` 可以检查生成的各阶段配置，求解器能力标为 `not_evaluated`。
+   对启用 `ExtendedPrecision` 的 DF-ISE GRD/DAT 输入，还可通过
+   `sd-sim device.cmd --check-arithmetic-input` 核对原始数值在 C++ 扩展标量中的表示。
+   该检查在工作目录写入输入哈希、字面量、十六进制浮点值，以及热电压和单位换算结果。
+   它在初始求解前结束。
+   HDF5 TDR 输入通过 `sentaurus_import` 导出坐标和掺杂。输入检查按
+   binary64 的往返规则恢复导出值，然后精确升为 80 位，并记录原 TDR 与
+   导出文件的身份。Ogawa 仍需外部转换。
+   原生 SLOT 可用下列命令核对经过验证的 Vela 配置。指定的 DF-ISE 网格
+   应来自同一器件。检查输出包含低场、高场系数映射和几何身份。
+   `sd-sim device.cmd --check-slot-ialmob reference.json --slot-dfise-grid mesh.grd`
    记录并忽略的关键字进入 `math.ignored`（关键字按原拼写）并各发一条 W102。
 8. **Solve 语句与 stage**：`Poisson` 裸语句 → `statements[].kind="poisson"`，stage 视同
    `Coupled{Poisson}`；`Coupled` 无 `Iterations` → `iterations=null`；顶层 `Plot(FilePrefix=)`

@@ -63,6 +63,30 @@ Real sgBoltzmannPopulationContinuityFlux(
     vela::ArithmeticReal signedDpsi, Real Vt, Real coef, bool includeNiGradientDrift,
     Real relativeCorrection0 = 0., Real relativeCorrection1 = 0., vela::ArithmeticReal signedDpsiCorrection = VELA_ARITHMETIC_LITERAL(0.));
 
+// Edge flux with fixed transport coefficient, including derivatives in the
+// direct population coordinates. signedPotentialScale is negative for holes.
+struct SGPopulationEdgeDifferential {
+    ArithmeticReal flux;
+    ArithmeticReal population0;
+    ArithmeticReal population1;
+    ArithmeticReal potential1;
+};
+
+SGPopulationEdgeDifferential sgBoltzmannPopulationEdge(
+    ArithmeticReal psi0, ArithmeticReal psi1, ArithmeticReal population0,
+    ArithmeticReal population1, ArithmeticReal ni0, ArithmeticReal ni1,
+    ArithmeticReal signedPotentialScale, ArithmeticReal Vt, ArithmeticReal coefficient,
+    bool includeNiGradientDrift);
+
+/// Effective-band SG with derivatives taken at fixed values of the other
+/// primary variables. The intrinsic prefactors include the material reference.
+SGPopulationEdgeDifferential sgFermiPopulationEdge(
+    ArithmeticReal psi0, ArithmeticReal psi1, ArithmeticReal population0,
+    ArithmeticReal population1, ArithmeticReal intrinsic0, ArithmeticReal intrinsic1,
+    ArithmeticReal dos0, ArithmeticReal dos1, ArithmeticReal signedPotentialScale,
+    ArithmeticReal Vt, ArithmeticReal coefficient,
+    CarrierStatisticsModel model = CarrierStatisticsModel::FermiDirac);
+
 /// Use precomputed dimensionless drift, including the oriented intrinsic-density
 /// log ratio when enabled. The signed potential correction is still in volts.
 Real sgBoltzmannPopulationContinuityFluxFromDrift(
@@ -75,8 +99,16 @@ Real sgBoltzmannPopulationContinuityFluxFromDrift(
 
 // Stable logarithm of a positive ratio, including neighboring populations.
 vela::ArithmeticReal sgPopulationLogRatio(Real numerator, Real denominator);
+ArithmeticReal arithmeticPopulationLogRatio(ArithmeticReal numerator, ArithmeticReal denominator);
 
 numerics::SplitCoordinate sgPopulationLogRatioCompensated(Real numerator, Real denominator);
+
+/// Form the dimensionless Boltzmann drift from packed potentials. Pass a
+/// negative potential scale for holes. Keep the multiplication tail until the
+/// statistical edge imbalance is assembled.
+numerics::SplitCoordinate sgPopulationEdgeDrift(
+    Real psi0, Real psi1, Real signedPotentialScale, Real Vt,
+    Real ni0, Real ni1, bool includeNiGradientDrift);
 
 /**
  * @brief Balanced electron continuity flux for Boltzmann quasi-Fermi variables.
@@ -310,6 +342,10 @@ Real sgHoleBoltzmannContinuityFlux(Real ni0,
 Real sgGeneralizedEinsteinFactor(
     Real density0, Real density1, Real eta0, Real eta1);
 
+/// Effective-band argument log(c1/c0) + signed QF drop / Vt.
+/// New transport keeps Fermi populations; effectiveBand=false preserves legacy weights.
+/// The effective-band quantum overloads are only used with quantum correction disabled.
+Real sgEffectiveBandArgument(Real density0, Real density1, Real signedQfDropOverVt);
 Real sgElectronFermiDiracContinuityFlux(
     Real n0, Real n1, Real eta0, Real eta1, Real driftPotential,
     Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef,

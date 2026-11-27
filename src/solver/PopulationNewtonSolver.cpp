@@ -21,7 +21,11 @@ NewtonResult NewtonSolver::solvePopulation(const DDSolution& initial) const {
     const auto bias=contactBiases_.find(contact);
     if(bias==contactBiases_.end())throw std::invalid_argument("population Newton requires the reference contact bias");
     auto system=makeArclengthSystem(contact);
-    const auto y=packArclengthState(initial);
+    auto y=packArclengthState(initial);
+    if (cfg_.contactPreprojection && cfg_.maxIter > 0) {
+        const auto assembler = makeArclengthAssembler();
+        assembler->projectPopulationBoundarySeed(y, buildBoundaryConditions(*assembler));
+    }
     const auto initialF=system.residual(y,bias->second);
     const auto blocks=ResidualNorm::computeBlocks(initialF,mesh_.numNodes());
     const ResidualBlockNormValue scales{
@@ -64,6 +68,22 @@ NewtonResult NewtonSolver::solvePopulation(const DDSolution& initial) const {
     };
     c.equationTolerance=cfg_.blockAbsoluteConvergence.mode=="enforce"?1.:
         std::max(cfg_.abstol,cfg_.reltol*first);
+    if(cfg_.maxIter==0) {
+        // Match the ordinary zero-update audit: evaluate the stored state,
+        // without constructing a corrector whose iteration budget is positive.
+        NewtonResult out;out.solution=unpackArclengthState(y);
+        const auto gates=makeArclengthConvergenceEvaluator(contact)(y,bias->second);
+        out.initialResidualNorm=out.finalResidualNorm=first;
+        out.finalBlockNorms=gates.blockNorms;
+        out.finalCarrierRowConvergence=gates.carrierRows;
+        out.finalGlobalContinuityClosure=gates.globalContinuity;
+        out.converged=std::isfinite(first) && first<=c.equationTolerance &&
+            (!system.convergenceSatisfied || system.convergenceSatisfied(y,bias->second));
+        out.solution.converged=out.converged;out.iters=out.solution.iters=0;
+        if(out.converged)out.convergenceReason="initial_residual";
+        else out.failureDiagnostics.failureReason="zero_update_not_qualified";
+        return out;
+    }
     c.loadLineTolerance_V=1e-12;
     c.dampingFactor=cfg_.dampingFactor;
     c.lineSearchMode=cfg_.lineSearch?"merit":"full_step";

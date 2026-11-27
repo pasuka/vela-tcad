@@ -1,6 +1,7 @@
 #include "vela/boundary/BoundaryCondition.h"
 
 #include "vela/core/PhysicalConstants.h"
+#include "vela/core/ArithmeticStageInput.h"
 
 #include <nlohmann/json.hpp>
 
@@ -108,6 +109,8 @@ parseContactBoundarySpecs(const nlohmann::json& cfg)
         ContactBoundarySpec spec;
         spec.name = ct.at("name").get<std::string>();
         spec.bias = ct.at("bias").get<Real>();
+        if (cfg.contains("decimal_stage_controls"))
+            spec.decimalInitialBias_V = stageControl(cfg, "contacts", spec.name, spec.bias);
 
         if (ct.contains("type")) {
             spec.rawType = ct.at("type").get<std::string>();
@@ -236,9 +239,10 @@ parseBoundarySegmentSpecs(const nlohmann::json& cfg)
     return specs;
 }
 
-Real effectivePoissonDirichletPotential(const ContactBoundarySpec& spec)
+namespace {
+template<class Scalar>
+Scalar dirichletPotential(const ContactBoundarySpec& spec, Scalar value)
 {
-    Real value = spec.bias;
     if (spec.flatbandVoltage && spec.workFunction_eV) {
         throw std::runtime_error(
             "effectivePoissonDirichletPotential: contact '" + spec.name +
@@ -249,6 +253,18 @@ Real effectivePoissonDirichletPotential(const ContactBoundarySpec& spec)
     if (spec.workFunction_eV)
         value -= *spec.workFunction_eV; // 1 eV/q == 1 V convention.
     return value;
+}
+} // namespace
+
+Real effectivePoissonDirichletPotential(const ContactBoundarySpec& spec)
+{
+    return dirichletPotential(spec, spec.bias);
+}
+
+ArithmeticReal arithmeticPoissonDirichletPotential(const ContactBoundarySpec& spec,
+                                                    ArithmeticReal appliedBias_V)
+{
+    return dirichletPotential(spec, appliedBias_V);
 }
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,6 @@
 #include "vela/physics/MobilityModel.h"
+#include "vela/physics/ExtendedPhuMobEvaluation.h"
+#include "vela/physics/SlotIALMobility.h"
 #include "vela/equation/IalTransport.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -6,6 +8,9 @@
 #include <limits>
 #include <stdexcept>
 #include <utility>
+#include <array>
+#include <cstdlib>
+#include <string_view>
 
 namespace vela {
 
@@ -344,7 +349,8 @@ Real ConstantMobility::electronMobility(const Material& material,
                                         Real,
                                         Real,
                                         Real,
-                                        Real) const
+                                        Real,
+                                        MobilityDopants) const
 {
     return material.mun;
 }
@@ -355,7 +361,8 @@ Real ConstantMobility::holeMobility(const Material& material,
                                     Real,
                                     Real,
                                     Real,
-                                    Real) const
+                                    Real,
+                                        MobilityDopants) const
 {
     return material.mup;
 }
@@ -376,7 +383,8 @@ Real DopingDependentMobility::electronMobility(const Material& material,
                                                Real p,
                                                Real electricField,
                                                Real surfaceNormalField,
-                                               Real surfaceDistance) const
+                                               Real surfaceDistance,
+                                               MobilityDopants) const
 {
     if (bulkLaw_ == BulkLaw::PhuMob) {
         return electronMobilityWithIonizedImpurities(
@@ -412,7 +420,8 @@ Real DopingDependentMobility::holeMobility(const Material& material,
                                            Real p,
                                            Real electricField,
                                            Real surfaceNormalField,
-                                           Real surfaceDistance) const
+                                           Real surfaceDistance,
+                                               MobilityDopants) const
 {
     if (bulkLaw_ == BulkLaw::PhuMob) {
         return holeMobilityWithIonizedImpurities(
@@ -735,6 +744,7 @@ MobilityModelConfig mobilityModelConfig(std::string modelName)
 {
     MobilityModelConfig config;
     config.model = std::move(modelName);
+    if (isIALMobilityModel(config)) config.dopingConcentrationBasis = "total_impurity";
     validateHighFieldDrivingForce(config.highFieldDrivingForce);
     validateHighFieldGradientDiscretization(
         config.highFieldGradientDiscretization);
@@ -755,6 +765,7 @@ MobilityModelConfig mobilityModelConfigFromJson(
         MobilityModelConfig config;
         convertMobilityDefaultsToInternal(config, scaling);
         config.model = value.get<std::string>();
+        if (isIALMobilityModel(config)) config.dopingConcentrationBasis = "total_impurity";
         validateHighFieldDrivingForce(config.highFieldDrivingForce);
         validateHighFieldGradientDiscretization(
             config.highFieldGradientDiscretization);
@@ -770,9 +781,15 @@ MobilityModelConfig mobilityModelConfigFromJson(
     MobilityModelConfig config;
     convertMobilityDefaultsToInternal(config, scaling);
     config.model = value.value("model", config.model);
+    if (isIALMobilityModel(config)) config.dopingConcentrationBasis = "total_impurity";
     config.edgeAveraging = value.value("edge_averaging", config.edgeAveraging);
     config.prepareBoxMasettiLombardi =
         value.value("prepare_box_masetti_lombardi", config.prepareBoxMasettiLombardi);
+    if (value.contains("constant_materials")) {
+        config.constantMaterials = value.at("constant_materials").get<std::vector<std::string>>();
+        if (config.edgeAveraging != "element_box_phumob")
+            throw std::invalid_argument("constant_materials requires element_box_phumob");
+    }
     if (config.edgeAveraging != "auto" && config.edgeAveraging != "legacy" &&
         config.edgeAveraging != "element_box" && config.edgeAveraging != "element_box_phumob" &&
         config.edgeAveraging != "element_box_masetti")
@@ -805,6 +822,10 @@ MobilityModelConfig mobilityModelConfigFromJson(
         "doping_concentration_basis", config.dopingConcentrationBasis);
     config.jacobianFieldDerivatives = value.value(
         "jacobian_field_derivatives", config.jacobianFieldDerivatives);
+    config.ialmobTransportFeedbackDerivatives=value.value(
+        "ialmob_transport_feedback_derivatives",true);
+    if(!config.ialmobTransportFeedbackDerivatives && config.model!="ialmob")
+        throw std::invalid_argument("ialmob_transport_feedback_derivatives=false requires ialmob");
     validateHighFieldDrivingForce(config.highFieldDrivingForce);
     validateHighFieldGradientDiscretization(
         config.highFieldGradientDiscretization);
@@ -821,6 +842,8 @@ MobilityModelConfig mobilityModelConfigFromJson(
         parsePhuMob(value.at("phumob"), config.phuMob, scaling);
     parseField(value, config.electronField, "electron", scaling);
     parseField(value, config.holeField, "hole", scaling);
+    if (isIALMobilityModel(config) && value.contains("ialmob"))
+        parseIALMobilityParameters(value.at("ialmob"), config.slotIalMobility);
 
     if (value.contains("surface")) {
         const auto& surface = value.at("surface");
@@ -866,8 +889,8 @@ MobilityModelConfig mobilityModelConfigFromJson(
         if (config.carrierCurrentDiscretization != "scharfetter_gummel_edge" ||
             config.highFieldDrivingForce != "quasi_fermi_gradient")
             throw std::invalid_argument("IALMob requires SG edge transport and QF high-field drive");
-        config.ialmob = ialTransportOptionsFromJson(value.at("ialmob"));
-    } else if (value.contains("ialmob")) {
+        config.ialmob = ialTransportOptionsFromJson(value.at("ialmob"), &value, scaling);
+    } else if (value.contains("ialmob") && !isIALMobilityModel(config)) {
         throw std::invalid_argument("ialmob block requires model=ialmob");
     }
     const bool masettiElement = config.model == "masetti_field" && config.edgeAveraging == "element_box";
@@ -904,7 +927,19 @@ bool isSurfaceMobilityModel(const MobilityModelConfig& config)
            config.model == "caughey_thomas_field_surface" ||
            config.model == "masetti_surface" ||
            config.model == "masetti_field_surface" ||
-           isLombardiModel(config.model);
+           isLombardiModel(config.model) || isIALMobilityModel(config);
+}
+
+bool isIALMobilityModel(const MobilityModelConfig& config)
+{
+    return config.model == "slot_ialmob" || config.model == "ialmob_field";
+}
+
+bool mobilityDependsOnCarrierDensity(const MobilityModelConfig& config)
+{
+    return isIALMobilityModel(config) || (isLombardiModel(config.model) &&
+        ((config.electronLombardi.alpha != 0.0 && config.electronLombardi.roughnessFactor != 0.0) ||
+         (config.holeLombardi.alpha != 0.0 && config.holeLombardi.roughnessFactor != 0.0)));
 }
 
 bool isPhuMobModel(const MobilityModelConfig& config)
@@ -941,10 +976,10 @@ bool surfaceMobilityAppliesToRegionPair(const MobilityModelConfig& config,
 namespace {
 class IalCellOnlyMobility final : public MobilityModel {
 public:
-    Real electronMobility(const Material&,Real,Real,Real,Real,Real,Real) const override {
+    Real electronMobility(const Material&,Real,Real,Real,Real,Real,Real,MobilityDopants) const override {
         throw std::logic_error("IALMob requires the live element transport interface");
     }
-    Real holeMobility(const Material&,Real,Real,Real,Real,Real,Real) const override {
+    Real holeMobility(const Material&,Real,Real,Real,Real,Real,Real,MobilityDopants) const override {
         throw std::logic_error("IALMob requires the live element transport interface");
     }
 };
@@ -958,6 +993,7 @@ std::unique_ptr<MobilityModel> makeMobilityModel(const MobilityModelConfig& conf
     }
     if (config.model == "constant")
         return std::make_unique<ConstantMobility>();
+    if (isIALMobilityModel(config)) return std::make_unique<IALMobility>(config);
     if (config.model == "constant_field" ||
         config.model == "constant_lombardi" ||
         config.model == "constant_field_lombardi" ||
@@ -974,26 +1010,28 @@ std::unique_ptr<MobilityModel> makeMobilityModel(const MobilityModelConfig& conf
 
 namespace {
 
-void validatePhuMobCarrier(const PhuMobCarrierParameters& carrier,
+template<class Scalar>
+void validatePhuMobCarrier(const BasicPhuMobCarrierParameters<Scalar>& carrier,
                            const char* name)
 {
     if (!std::isfinite(carrier.muMax) || !std::isfinite(carrier.muMin) ||
         !std::isfinite(carrier.theta) || !std::isfinite(carrier.nRef) ||
         !std::isfinite(carrier.alpha) || carrier.muMax <= carrier.muMin ||
-        carrier.muMin < 0.0 || carrier.theta < 0.0 || carrier.nRef <= 0.0 ||
-        carrier.alpha <= 0.0) {
+        carrier.muMin < 0 || carrier.theta < 0 || carrier.nRef <= 0 ||
+        carrier.alpha <= 0) {
         throw std::invalid_argument(
             std::string("PhuMob: invalid ") + name + " carrier parameters.");
     }
 }
 
-void validatePhuMob(const PhuMobParameters& params,
-                    const PhuMobScalarState& state)
+template<class Scalar>
+void validatePhuMob(const BasicPhuMobParameters<Scalar>& params,
+                    const BasicPhuMobScalarState<Scalar>& state)
 {
     validatePhuMobCarrier(params.electronArsenic, "electron-arsenic");
     validatePhuMobCarrier(params.electronPhosphorus, "electron-phosphorus");
     validatePhuMobCarrier(params.holeBoron, "hole-boron");
-    const Real values[] = {
+    const Scalar values[] = {
         params.donorClusterReference, params.acceptorClusterReference,
         params.donorClusterCoefficient, params.acceptorClusterCoefficient,
         params.electronMassRatio, params.holeMassRatio,
@@ -1003,113 +1041,129 @@ void validatePhuMob(const PhuMobParameters& params,
         params.gAlpha, params.gAlphaPrime, params.gBeta, params.gGamma,
         params.internalConcentrationToCm3, params.internalMobilityToCm2PerVS,
     };
-    for (const Real value : values) {
+    for (const Scalar value : values) {
         if (!std::isfinite(value))
             throw std::invalid_argument("PhuMob: parameters must be finite.");
     }
-    if (params.donorClusterReference <= 0.0 ||
-        params.acceptorClusterReference <= 0.0 ||
-        params.donorClusterCoefficient < 0.0 ||
-        params.acceptorClusterCoefficient < 0.0 ||
-        params.electronMassRatio <= 0.0 || params.holeMassRatio <= 0.0 ||
-        params.conwellWeisskopfFactor <= 0.0 ||
-        params.brooksHerringFactor <= 0.0 ||
-        params.electronHoleScatteringFactor < 0.0 ||
-        params.holeElectronScatteringFactor < 0.0 || params.gA <= 0.0 ||
-        params.gB <= 0.0 || params.gC <= 0.0 || params.gAlpha <= 0.0 ||
-        params.gAlphaPrime <= 0.0 || params.gBeta <= 0.0 ||
-        params.gGamma <= 0.0 || params.internalConcentrationToCm3 <= 0.0 ||
-        params.internalMobilityToCm2PerVS <= 0.0) {
+    if (params.donorClusterReference <= 0 ||
+        params.acceptorClusterReference <= 0 ||
+        params.donorClusterCoefficient < 0 ||
+        params.acceptorClusterCoefficient < 0 ||
+        params.electronMassRatio <= 0 || params.holeMassRatio <= 0 ||
+        params.conwellWeisskopfFactor <= 0 ||
+        params.brooksHerringFactor <= 0 ||
+        params.electronHoleScatteringFactor < 0 ||
+        params.holeElectronScatteringFactor < 0 || params.gA <= 0 ||
+        params.gB <= 0 || params.gC <= 0 || params.gAlpha <= 0 ||
+        params.gAlphaPrime <= 0 || params.gBeta <= 0 ||
+        params.gGamma <= 0 || params.internalConcentrationToCm3 <= 0 ||
+        params.internalMobilityToCm2PerVS <= 0) {
         throw std::invalid_argument("PhuMob: parameters must be physically positive.");
     }
 
-    const Real stateValues[] = {
+    const Scalar stateValues[] = {
         state.donors, state.acceptors, state.electrons, state.holes,
         state.temperature_K,
     };
-    for (const Real value : stateValues) {
+    for (const Scalar value : stateValues) {
         if (!std::isfinite(value))
             throw std::invalid_argument("PhuMob: scalar state must be finite.");
     }
-    if (state.donors < 0.0 || state.acceptors < 0.0 ||
-        state.electrons < 0.0 || state.holes < 0.0 ||
-        state.temperature_K <= 0.0) {
+    if (state.donors < 0 || state.acceptors < 0 ||
+        state.electrons < 0 || state.holes < 0 ||
+        state.temperature_K <= 0) {
         throw std::invalid_argument(
             "PhuMob: concentrations must be nonnegative and temperature positive.");
     }
 }
 
-Real clusteredConcentration(Real concentration, Real reference, Real coefficient)
+template<class Scalar>
+Scalar clusteredConcentration(Scalar concentration, Scalar reference, Scalar coefficient)
 {
-    if (concentration <= 0.0)
-        return 0.0;
-    const Real ratio = concentration / reference;
-    const Real ratioSquared = ratio * ratio;
-    const Real correction = ratioSquared /
-        (1.0 + coefficient * ratioSquared);
-    return concentration * (1.0 + correction);
+    if (concentration <= 0)
+        return 0;
+    const Scalar ratio = concentration / reference;
+    const Scalar ratioSquared = ratio * ratio;
+    const Scalar correction = ratioSquared /
+        (1 + coefficient * ratioSquared);
+    return concentration * (1 + correction);
 }
 
-Real screeningF(Real screening, Real massRatio, Real otherMassRatio)
+template<class Scalar>
+Scalar screeningF(Scalar screening, Scalar massRatio, Scalar otherMassRatio)
 {
     if (!std::isfinite(screening))
-        return 0.7643;
-    const Real power = std::pow(screening, 0.6478);
-    const Real massQuotient = massRatio / otherMassRatio;
-    return (0.7643 * power + 2.2999 + 6.5502 * massQuotient) /
-        (power + 2.3670 - 0.8552 * massQuotient);
+        return Scalar(0.7643L);
+    const Scalar power = std::pow(screening, Scalar(0.6478L));
+    const Scalar massQuotient = massRatio / otherMassRatio;
+    return (Scalar(0.7643L) * power + Scalar(2.2999L) + Scalar(6.5502L) * massQuotient) /
+        (power + Scalar(2.3670L) - Scalar(0.8552L) * massQuotient);
 }
 
-Real rawScreeningG(Real screening, Real massRatio, Real temperature_K,
-                   const PhuMobParameters& params)
+template<class Scalar>
+Scalar rawScreeningG(Scalar screening, Scalar massRatio, Scalar temperature_K,
+                   const BasicPhuMobParameters<Scalar>& params)
 {
     if (!std::isfinite(screening))
-        return 1.0;
-    const Real temperatureRatio = temperature_K / 300.0;
-    const Real firstScale = std::pow(
+        return 1;
+    const Scalar temperatureRatio = temperature_K / 300;
+    const Scalar firstScale = std::pow(
         temperatureRatio / massRatio, params.gAlpha);
-    const Real secondScale = std::pow(
+    const Scalar secondScale = std::pow(
         massRatio / temperatureRatio, params.gAlphaPrime);
-    return 1.0 - params.gA * std::pow(
+    return 1 - params.gA * std::pow(
         params.gB + screening * firstScale, -params.gBeta) +
         params.gC * std::pow(screening * secondScale, -params.gGamma);
 }
 
-bool screeningGDerivativeIsPositive(Real logScreening, Real massRatio,
-                                    Real temperature_K,
-                                    const PhuMobParameters& params)
+template<class Scalar>
+bool screeningGDerivativeIsPositive(Scalar logScreening, Scalar massRatio,
+                                    Scalar temperature_K,
+                                    const BasicPhuMobParameters<Scalar>& params)
 {
-    const Real screening = std::exp(logScreening);
-    const Real temperatureRatio = temperature_K / 300.0;
-    const Real firstScale = std::pow(
+    const Scalar screening = std::exp(logScreening);
+    const Scalar temperatureRatio = temperature_K / 300;
+    const Scalar firstScale = std::pow(
         temperatureRatio / massRatio, params.gAlpha);
-    const Real secondScale = std::pow(
+    const Scalar secondScale = std::pow(
         massRatio / temperatureRatio, params.gAlphaPrime);
-    const Real logPositive = std::log(
+    const Scalar logPositive = std::log(
         params.gA * params.gBeta * firstScale) -
-        (params.gBeta + 1.0) * std::log(
+        (params.gBeta + 1) * std::log(
             params.gB + screening * firstScale);
-    const Real logNegative = std::log(params.gC * params.gGamma) -
+    const Scalar logNegative = std::log(params.gC * params.gGamma) -
         params.gGamma * std::log(secondScale) -
-        (params.gGamma + 1.0) * logScreening;
+        (params.gGamma + 1) * logScreening;
     return logPositive > logNegative;
 }
 
-Real screeningG(Real screening, Real massRatio, Real temperature_K,
-                const PhuMobParameters& params, Real* derivative)
+// The clamp minimum depends on temperature, mass and all seven G constants,
+// never on carrier/dopant populations. Keep exact (not quantized) keys and a
+// bounded thread-local cache: no shared mutation and no stale state across
+// devices or temperature sweeps. The miss path preserves the original search.
+template<class Scalar>
+std::array<Scalar,2> screeningGMinimum(Scalar massRatio, Scalar temperature_K,
+                                   const BasicPhuMobParameters<Scalar>& params)
 {
-    *derivative = 0.0;
-    if (!std::isfinite(screening))
-        return 1.0;
-    const Real logFloor = std::log(std::numeric_limits<Real>::min());
-    Real low = std::max(logFloor, -80.0);
-    Real high = 0.0;
+    using Key=std::array<Scalar,9>;
+    struct Entry { Key key{}; std::array<Scalar,2> value{}; bool valid=false; };
+    static thread_local std::array<Entry,8> cache{};
+    static thread_local std::size_t next=0;
+    // Diagnostic rollback for paired numerical/performance verification.
+    static const bool enabled=[](){const auto* flag=std::getenv("VELA_PHUMOB_G_MINIMUM_CACHE");return !flag || std::string_view(flag)!="0";}();
+    const Key key{massRatio,temperature_K,params.gA,params.gB,params.gC,
+                  params.gAlpha,params.gAlphaPrime,params.gBeta,params.gGamma};
+    if(enabled) for(const auto& entry:cache)
+        if(entry.valid && entry.key==key) return entry.value;
+    const Scalar logFloor = std::log(std::numeric_limits<Scalar>::min());
+    Scalar low = std::max(logFloor, Scalar(-80));
+    Scalar high = 0;
     while (!screeningGDerivativeIsPositive(
-               high, massRatio, temperature_K, params) && high < 80.0) {
-        high += 4.0;
+               high, massRatio, temperature_K, params) && high < 80) {
+        high += 4;
     }
     for (int iteration = 0; iteration < 80; ++iteration) {
-        const Real middle = 0.5 * (low + high);
+        const Scalar middle = Scalar(0.5L) * (low + high);
         if (screeningGDerivativeIsPositive(
                 middle, massRatio, temperature_K, params)) {
             high = middle;
@@ -1117,29 +1171,41 @@ Real screeningG(Real screening, Real massRatio, Real temperature_K,
             low = middle;
         }
     }
-    const Real minimumScreening = std::exp(0.5 * (low + high));
-    const Real minimum = rawScreeningG(
+    const Scalar minimumScreening = std::exp(Scalar(0.5L) * (low + high));
+    const Scalar minimum = rawScreeningG(
         minimumScreening, massRatio, temperature_K, params);
-    const Real minimumFloor = std::abs(minimum);
+    const Scalar minimumFloor = std::abs(minimum);
+    const std::array<Scalar,2> result{minimumScreening,minimumFloor};
+    if(enabled){cache[next]={key,result,true};next=(next+1)%cache.size();}
+    return result;
+}
+
+template<class Scalar>
+Scalar screeningG(Scalar screening, Scalar massRatio, Scalar temperature_K,
+                const BasicPhuMobParameters<Scalar>& params, Scalar* derivative)
+{
+    *derivative = 0;
+    if (!std::isfinite(screening)) return 1;
+    const auto minimum=screeningGMinimum(massRatio,temperature_K,params);
+    const Scalar minimumScreening=minimum[0],minimumFloor=minimum[1];
     if (screening < minimumScreening)
         return minimumFloor;
-    const Real raw = rawScreeningG(screening, massRatio, temperature_K, params);
+    const Scalar raw = rawScreeningG(screening, massRatio, temperature_K, params);
     if (raw > minimumFloor) {
-        const Real firstScale = std::pow(temperature_K / (300.0 * massRatio), params.gAlpha);
-        const Real secondScale = std::pow(300.0 * massRatio / temperature_K, params.gAlphaPrime);
+        const Scalar firstScale = std::pow(temperature_K / (300 * massRatio), params.gAlpha);
+        const Scalar secondScale = std::pow(300 * massRatio / temperature_K, params.gAlphaPrime);
         *derivative = params.gA * params.gBeta * firstScale *
-            std::pow(params.gB + screening * firstScale, -params.gBeta - 1.0) -
+            std::pow(params.gB + screening * firstScale, -params.gBeta - 1) -
             params.gC * params.gGamma * std::pow(screening * secondScale, -params.gGamma) / screening;
     }
     return std::max(raw, minimumFloor);
 }
 
-} // namespace
-
-PhuMobScalarResult evaluatePhuMobScalar(
+template<class Scalar>
+BasicPhuMobScalarResult<Scalar> evaluatePhuMobScalarImpl(
     CarrierType carrier,
-    const PhuMobScalarState& state,
-    const PhuMobParameters& params)
+    const BasicPhuMobScalarState<Scalar>& state,
+    const BasicPhuMobParameters<Scalar>& params)
 {
     validatePhuMob(params, state);
     const auto& carrierParams = carrier == CarrierType::Electron
@@ -1147,64 +1213,64 @@ PhuMobScalarResult evaluatePhuMobScalar(
                ? params.electronArsenic
                : params.electronPhosphorus)
         : params.holeBoron;
-    const Real massRatio = carrier == CarrierType::Electron
+    const Scalar massRatio = carrier == CarrierType::Electron
         ? params.electronMassRatio : params.holeMassRatio;
-    const Real otherMassRatio = carrier == CarrierType::Electron
+    const Scalar otherMassRatio = carrier == CarrierType::Electron
         ? params.holeMassRatio : params.electronMassRatio;
 
-    const Real concentrationScale = params.internalConcentrationToCm3;
-    const Real mobilityScale = params.internalMobilityToCm2PerVS;
-    const Real donors = state.donors * concentrationScale;
-    const Real acceptors = state.acceptors * concentrationScale;
-    const Real electrons = state.electrons * concentrationScale;
-    const Real holes = state.holes * concentrationScale;
-    const Real donorReference = params.donorClusterReference * concentrationScale;
-    const Real acceptorReference =
+    const Scalar concentrationScale = params.internalConcentrationToCm3;
+    const Scalar mobilityScale = params.internalMobilityToCm2PerVS;
+    const Scalar donors = state.donors * concentrationScale;
+    const Scalar acceptors = state.acceptors * concentrationScale;
+    const Scalar electrons = state.electrons * concentrationScale;
+    const Scalar holes = state.holes * concentrationScale;
+    const Scalar donorReference = params.donorClusterReference * concentrationScale;
+    const Scalar acceptorReference =
         params.acceptorClusterReference * concentrationScale;
-    const Real donorCluster = clusteredConcentration(
+    const Scalar donorCluster = clusteredConcentration(
         donors, donorReference, params.donorClusterCoefficient);
-    const Real acceptorCluster = clusteredConcentration(
+    const Scalar acceptorCluster = clusteredConcentration(
         acceptors, acceptorReference, params.acceptorClusterCoefficient);
 
-    const Real muMax = carrierParams.muMax * mobilityScale;
-    const Real muMin = carrierParams.muMin * mobilityScale;
-    const Real nRef = carrierParams.nRef * concentrationScale;
-    const Real temperatureRatio = state.temperature_K / 300.0;
-    const Real latticeMobility = muMax * std::pow(
+    const Scalar muMax = carrierParams.muMax * mobilityScale;
+    const Scalar muMin = carrierParams.muMin * mobilityScale;
+    const Scalar nRef = carrierParams.nRef * concentrationScale;
+    const Scalar temperatureRatio = state.temperature_K / 300;
+    const Scalar latticeMobility = muMax * std::pow(
         temperatureRatio, -carrierParams.theta);
 
-    const Real otherCarrier = carrier == CarrierType::Electron
+    const Scalar otherCarrier = carrier == CarrierType::Electron
         ? holes : electrons;
-    const Real scatteringConcentration =
+    const Scalar scatteringConcentration =
         donorCluster + acceptorCluster + otherCarrier;
 
-    PhuMobScalarResult result;
+    BasicPhuMobScalarResult<Scalar> result;
     result.latticeMobility = latticeMobility / mobilityScale;
     result.scatteringConcentration = scatteringConcentration / concentrationScale;
-    if (scatteringConcentration <= 0.0) {
+    if (scatteringConcentration <= 0) {
         result.mobility = result.latticeMobility;
-        result.scatteringMobility = std::numeric_limits<Real>::infinity();
-        result.effectiveScatteringConcentration = 0.0;
-        result.screeningParameter = std::numeric_limits<Real>::infinity();
-        result.screeningF = 0.7643;
-        result.screeningG = 1.0;
+        result.scatteringMobility = std::numeric_limits<Scalar>::infinity();
+        result.effectiveScatteringConcentration = 0;
+        result.screeningParameter = std::numeric_limits<Scalar>::infinity();
+        result.screeningF = Scalar(0.7643L);
+        result.screeningG = 1;
         return result;
     }
 
-    const Real freeCarriers = electrons + holes;
-    const Real screeningDenominator =
+    const Scalar freeCarriers = electrons + holes;
+    const Scalar screeningDenominator =
         params.conwellWeisskopfFactor *
-            std::pow(scatteringConcentration, 2.0 / 3.0) / 3.97e13 +
+            std::pow(scatteringConcentration, Scalar(2) / 3) / Scalar(3.97e13L) +
         params.brooksHerringFactor * freeCarriers /
-            (1.36e20 * massRatio);
-    const Real screening = screeningDenominator > 0.0
+            (Scalar(1.36e20L) * massRatio);
+    const Scalar screening = screeningDenominator > 0
         ? temperatureRatio * temperatureRatio / screeningDenominator
-        : std::numeric_limits<Real>::infinity();
-    const Real functionF = screeningF(screening, massRatio, otherMassRatio);
-    const Real functionG = screeningG(
+        : std::numeric_limits<Scalar>::infinity();
+    const Scalar functionF = screeningF(screening, massRatio, otherMassRatio);
+    const Scalar functionG = screeningG(
         screening, massRatio, state.temperature_K, params, &result.screeningGDerivative);
 
-    const Real effectiveScatteringConcentration = carrier == CarrierType::Electron
+    const Scalar effectiveScatteringConcentration = carrier == CarrierType::Electron
         ? donorCluster + functionG * acceptorCluster +
             params.electronHoleScatteringFactor * holes / functionF
         : acceptorCluster + functionG * donorCluster +
@@ -1215,87 +1281,122 @@ PhuMobScalarResult evaluatePhuMobScalar(
     result.screeningF = functionF;
     result.screeningG = functionG;
 
-    if (effectiveScatteringConcentration <= 0.0) {
+    if (effectiveScatteringConcentration <= 0) {
         result.mobility = result.latticeMobility;
-        result.scatteringMobility = std::numeric_limits<Real>::infinity();
+        result.scatteringMobility = std::numeric_limits<Scalar>::infinity();
         return result;
     }
 
-    const Real muN = muMax * muMax / (muMax - muMin) *
-        std::pow(temperatureRatio, 3.0 * carrierParams.alpha - 1.5);
-    const Real muC = muMax * muMin / (muMax - muMin) *
-        std::sqrt(1.0 / temperatureRatio);
-    const Real scatteringMobility =
+    const Scalar muN = muMax * muMax / (muMax - muMin) *
+        std::pow(temperatureRatio, 3 * carrierParams.alpha - Scalar(1.5L));
+    const Scalar muC = muMax * muMin / (muMax - muMin) *
+        std::sqrt(1 / temperatureRatio);
+    const Scalar scatteringMobility =
         muN * (scatteringConcentration / effectiveScatteringConcentration) *
             std::pow(nRef / scatteringConcentration, carrierParams.alpha) +
         muC * (freeCarriers / effectiveScatteringConcentration);
-    const Real bulkMobility = 1.0 /
-        (1.0 / latticeMobility + 1.0 / scatteringMobility);
+    const Scalar bulkMobility = 1 /
+        (1 / latticeMobility + 1 / scatteringMobility);
     result.scatteringMobility = scatteringMobility / mobilityScale;
     result.mobility = bulkMobility / mobilityScale;
     return result;
 }
 
-PhuMobLogDensityDerivatives evaluatePhuMobLogDensityDerivatives(
-    CarrierType carrier, const PhuMobScalarState& state, const PhuMobParameters& params)
+template<class Scalar>
+BasicPhuMobLogDensityDerivatives<Scalar> evaluatePhuMobLogDensityDerivativesImpl(
+    CarrierType carrier, const BasicPhuMobScalarState<Scalar>& state,
+    const BasicPhuMobParameters<Scalar>& params, const BasicPhuMobScalarResult<Scalar>& value)
 {
-    const auto value = evaluatePhuMobScalar(carrier, state, params);
-    PhuMobLogDensityDerivatives result;
+    BasicPhuMobLogDensityDerivatives<Scalar> result;
     if (!std::isfinite(value.screeningParameter) ||
-        value.effectiveScatteringConcentration <= 0.0)
+        value.effectiveScatteringConcentration <= 0)
         return result;
     const bool electron = carrier == CarrierType::Electron;
     const auto& cp = electron
         ? (params.donorSpecies == PhuMobDonorSpecies::Arsenic
             ? params.electronArsenic : params.electronPhosphorus)
         : params.holeBoron;
-    const Real mass = electron ? params.electronMassRatio : params.holeMassRatio;
-    const Real otherMass = electron ? params.holeMassRatio : params.electronMassRatio;
-    const Real cs = params.internalConcentrationToCm3;
-    const Real ms = params.internalMobilityToCm2PerVS;
-    const Real n = state.electrons * cs, p = state.holes * cs;
-    const Real nsc = value.scatteringConcentration * cs;
-    const Real neff = value.effectiveScatteringConcentration * cs;
-    const Real P = value.screeningParameter, F = value.screeningF;
-    const Real temperatureRatio = state.temperature_K / 300.0;
-    const Real aa = params.conwellWeisskopfFactor / 3.97e13;
-    const Real bb = params.brooksHerringFactor / (1.36e20 * mass);
-    const Real ratio = mass / otherMass;
-    const Real denominator = std::pow(P, .6478) + 2.3670 - .8552 * ratio;
+    const Scalar mass = electron ? params.electronMassRatio : params.holeMassRatio;
+    const Scalar otherMass = electron ? params.holeMassRatio : params.electronMassRatio;
+    const Scalar cs = params.internalConcentrationToCm3;
+    const Scalar ms = params.internalMobilityToCm2PerVS;
+    const Scalar n = state.electrons * cs, p = state.holes * cs;
+    const Scalar nsc = value.scatteringConcentration * cs;
+    const Scalar neff = value.effectiveScatteringConcentration * cs;
+    const Scalar P = value.screeningParameter, F = value.screeningF;
+    const Scalar temperatureRatio = state.temperature_K / 300;
+    const Scalar aa = params.conwellWeisskopfFactor / Scalar(3.97e13L);
+    const Scalar bb = params.brooksHerringFactor / (Scalar(1.36e20L) * mass);
+    const Scalar ratio = mass / otherMass;
+    const Scalar denominator = std::pow(P, Scalar(.6478L)) + Scalar(2.3670L) - Scalar(.8552L) * ratio;
     // Cancel the common P^0.6478 terms algebraically, not numerically.
-    const Real dFdP = .6478 * std::pow(P, -.3522) *
-        (.7643 * (2.3670 - .8552 * ratio) - 2.2999 - 6.5502 * ratio) /
+    const Scalar dFdP = Scalar(.6478L) * std::pow(P, -Scalar(.3522L)) *
+        (Scalar(.7643L) * (Scalar(2.3670L) - Scalar(.8552L) * ratio) - Scalar(2.2999L) - Scalar(6.5502L) * ratio) /
         (denominator * denominator);
-    const Real oppositeImpurity = electron
+    const Scalar oppositeImpurity = electron
         ? clusteredConcentration(state.acceptors * cs,
               params.acceptorClusterReference * cs, params.acceptorClusterCoefficient)
         : clusteredConcentration(state.donors * cs,
               params.donorClusterReference * cs, params.donorClusterCoefficient);
-    const Real oppositePopulation = electron ? p : n;
-    const Real scatteringFactor = electron ? params.electronHoleScatteringFactor
+    const Scalar oppositePopulation = electron ? p : n;
+    const Scalar scatteringFactor = electron ? params.electronHoleScatteringFactor
                                           : params.holeElectronScatteringFactor;
-    const Real muMax = cp.muMax * ms, muMin = cp.muMin * ms;
-    const Real muN = muMax * muMax / (muMax - muMin) *
-        std::pow(temperatureRatio, 3.0 * cp.alpha - 1.5);
-    const Real muC = muMax * muMin / (muMax - muMin) / std::sqrt(temperatureRatio);
-    const Real first = muN * nsc * std::pow(cp.nRef * cs / nsc, cp.alpha);
-    const Real scattering = value.scatteringMobility * ms;
-    const Real lattice = value.latticeMobility * ms;
-    const Real latticeWeight = lattice / (lattice + scattering);
-    auto partial = [&](Real population, bool opposite) {
-        const Real dnsc = opposite ? population : 0.0;
-        const Real dP = -P * P / (temperatureRatio * temperatureRatio) *
-            (aa * (2.0 / 3.0) * std::pow(nsc, -1.0 / 3.0) * dnsc + bb * population);
-        const Real dneff = (value.screeningGDerivative * oppositeImpurity -
+    const Scalar muMax = cp.muMax * ms, muMin = cp.muMin * ms;
+    const Scalar muN = muMax * muMax / (muMax - muMin) *
+        std::pow(temperatureRatio, 3 * cp.alpha - Scalar(1.5L));
+    const Scalar muC = muMax * muMin / (muMax - muMin) / std::sqrt(temperatureRatio);
+    const Scalar first = muN * nsc * std::pow(cp.nRef * cs / nsc, cp.alpha);
+    const Scalar scattering = value.scatteringMobility * ms;
+    const Scalar lattice = value.latticeMobility * ms;
+    const Scalar latticeWeight = lattice / (lattice + scattering);
+    auto partial = [&](Scalar population, bool opposite) {
+        const Scalar dnsc = opposite ? population : 0;
+        const Scalar dP = -P * P / (temperatureRatio * temperatureRatio) *
+            (aa * (Scalar(2) / 3) * std::pow(nsc, Scalar(-1) / 3) * dnsc + bb * population);
+        const Scalar dneff = (value.screeningGDerivative * oppositeImpurity -
             scatteringFactor * oppositePopulation * dFdP / (F * F)) * dP +
             scatteringFactor * dnsc / F;
-        const Real dscattering = (first * (1.0 - cp.alpha) / nsc * dnsc +
+        const Scalar dscattering = (first * (1 - cp.alpha) / nsc * dnsc +
             muC * population - scattering * dneff) / neff;
         return latticeWeight * latticeWeight * dscattering / ms;
     };
     result.electrons = partial(n, !electron);
     result.holes = partial(p, electron);
     return result;
+}
+
+} // namespace
+
+PhuMobScalarResult evaluatePhuMobScalar(
+    CarrierType carrier, const PhuMobScalarState& state, const PhuMobParameters& params)
+{
+    return evaluatePhuMobScalarImpl(carrier, state, params);
+}
+
+PhuMobLogDensityDerivatives evaluatePhuMobLogDensityDerivatives(
+    CarrierType carrier, const PhuMobScalarState& state, const PhuMobParameters& params)
+{
+    return evaluatePhuMobLogDensityDerivativesImpl(carrier, state, params,
+        evaluatePhuMobScalarImpl(carrier, state, params));
+}
+
+ExtendedPhuMobScalarResult evaluateExtendedPhuMobScalar(
+    CarrierType carrier, const ExtendedPhuMobScalarState& state, const ExtendedPhuMobParameters& params)
+{
+    return evaluatePhuMobScalarImpl(carrier, state, params);
+}
+
+ExtendedPhuMobLogDensityDerivatives evaluateExtendedPhuMobLogDensityDerivatives(
+    CarrierType carrier, const ExtendedPhuMobScalarState& state, const ExtendedPhuMobParameters& params)
+{
+    return evaluateExtendedPhuMobWithLogDensityDerivatives(carrier, state, params).slopes;
+}
+
+ExtendedPhuMobEvaluation evaluateExtendedPhuMobWithLogDensityDerivatives(
+    CarrierType carrier, const ExtendedPhuMobScalarState& state, const ExtendedPhuMobParameters& params)
+{
+    const auto value = evaluatePhuMobScalarImpl(carrier, state, params);
+    return {value.mobility, evaluatePhuMobLogDensityDerivativesImpl(carrier, state, params, value)};
 }
 
 } // namespace vela

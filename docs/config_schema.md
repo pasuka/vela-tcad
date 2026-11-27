@@ -1,5 +1,333 @@
 # Config Schema Reference
 
+## Bounded nonzero-supply circuit diagnostic
+
+`simulation_type: newton_bounded_supply_load_line_iteration_probe` permits one
+bordered device/contact-voltage update, with `abs(supply_voltage_V) <= 0.2` and
+`0 < max_abs_device_voltage_V <= 0.2` (default 0.2 V). All other terminals must
+be at zero and `resistance_ohm_um` must be positive. It exports the physical and
+stabilized systems and reports `Vdevice + R*I - Vsupply`; it never qualifies a
+state or starts a sweep. Its uniform direction cap and merit trial are diagnostic
+controls, not a replacement for the standard Newton update/qualification policy.
+With the default policy the contact voltage remains binary64: a below-ULP voltage correction can round
+away while split node coordinates retain it, causing trial boundary residuals.
+This interface therefore does not yet establish a production circuit continuation
+contract for voltage low parts.
+The opt-in `trial_boundary_policy: rounded_voltage_projection` instead projects
+all prescribed node high/low coordinates to the boundary targets built from the
+actually rounded scalar voltage after each candidate. Its default is
+`linear_direction`, preserving the existing trial. Projection requires split
+state and changes only this diagnostic finite update, not the frozen matrix,
+RHS, raw direction, physical equations, or qualification rules. It is not a
+contact-voltage low-part implementation. `trace_weak_rows: true` adds actual
+flux/source/residual samples for initially failing rows and the unprojected
+linear prediction at every tested alpha. Requested/applied voltage changes,
+boundary residual and full high/low coordinate changes are reported separately;
+the generic probe completion flag never grants device qualification.
+`paired_trial_audit: true` (default false) retains one assembly and one captured
+linear direction, tests both `linear_direction` and `rounded_voltage_projection`
+at all 13 powers-of-two trial scales, and archives all 26 unaccepted candidates.
+Each record includes all-device row qualification, bad-row identities and raw
+reaction electron/hole/total terminal currents. It performs no accepted update.
+The optional constant-material SG directional audit excludes source-bearing and
+IAL/HFS-supported rows; it is not a replacement Jacobian for silicon or a solver
+acceptance criterion.
+
+`trial_boundary_policy: split_contact_voltage` is an independent experimental
+policy for the bounded probe. It retains the voltage increment in a high/low
+pair, constructs boundary targets from both parts, uses the same voltage column,
+and evaluates the load line with high/low voltage arithmetic. It requires split
+state and unrelaxed Dirichlet targets. In paired-audit mode this policy archives
+its own 13 trials instead of the 26-policy comparison. The terminal current is
+still a double-valued production result; split voltage does not imply arbitrary
+precision terminal current. Archives record `contact_biases_low_V` separately.
+This remains a diagnostic circuit interface, not an enabled long-sweep driver.
+`constant_relative_coordinates: true` is an additional default-off diagnostic
+restricted to a split paired audit with zero carrier regularization. It forms
+one common coordinate and relative coordinates for each eligible constant-material
+carrier block. Common columns use stable SG directional derivatives; other
+columns, RHS, constraints and closure-row semantics are retained. Groups touching
+the drain circuit-reaction derivative are rejected. Common and relative increments
+are applied separately to the split state so their sum is not prematurely rounded.
+`coordinate_backend.mtx` is the actual matrix supplied to the direct backend in
+this mode; `backend.mtx` remains the legacy-system comparator. Coordinate-system
+defects and separate increment components are exported. This diagnostic is a
+different linear representation, not part of the same-matrix update-policy pair,
+and still grants no qualification or sweep acceptance.
+The original zero-supply probes retain their zero-supply and 10 mV restrictions.
+Use a new output directory and an external hard deadline. Qualify any resulting
+state separately with the original device gates before using it as a parent.
+
+## Bounded SLOT population memory loop
+
+For explicit three-block `[psi, phin, phip]` comparisons,
+`VELA_LINEAR_SOLVER=pardiso_mkl_eliminated_keep_psi` retains the complete
+potential block, including Dirichlet equations, and eliminates only exact
+carrier diagonal-singleton constraints. The SparseLU counterpart is
+`sparselu_eliminated_keep_psi`. These opt-in backends require equal contiguous
+nodal blocks; divisibility by three is checked, but the caller must ensure
+the semantic layout. They are not appropriate for Poisson-only, interleaved,
+or extended multiphysics systems. Existing full-elimination backends and
+global defaults are unchanged. Affine carrier constraints still correct the
+reduced RHS, and all directions are lifted to the original layout.
+
+`simulation_type: slot_population_memory` is an opt-in, single-target restart
+driver, not a change to default Newton. It keeps the loaded mesh, materials and
+reference/increment state in one process. `state_file` must contain referenced
+Fermi QFs without a packed-low state; carrier regularization and closure-row
+replacement must be off. Use the validated SLOT unit-scaled 300 K configuration.
+The entry rejects an incompatible temperature, scaling, RHS tolerance, line
+search or QF cap instead of silently replacing that policy. Initial boundary
+residuals are always measured; they block only under `primary_with_guards`.
+
+`population_memory` requires `output_directory` (a new directory) and
+`support_file` (JSON arrays `[psi_node_ids, electron_node_ids, hole_node_ids]`).
+The explicit support preserves the existing physical RMS update-error node set;
+it must be bound to the mesh/configuration by the calling workflow. Optional
+`max_updates` is 1–40 (default 40), `soft_seconds` is in (0,1080] (default 1080).
+The soft bound is checked between updates; an external hard deadline is still
+required for unattended runs.
+
+The loop applies the established 0.001 concentration positivity projection,
+relative Fermi inverse and 0.0259 V logarithmic potential damping.
+`population_memory.dilute_log_inverse: true` (default false) selects a stable
+log-Fermi-ratio finite inverse when both initial and target reduced populations
+are at most 1e-12. It retains the production dilute fugacity correction and
+falls back to the original relative inverse outside that domain. This is an
+arithmetic selection boundary, not a density floor. The 1e-7 inverse guard,
+positivity projection, physics and acceptance policy are unchanged. The option
+is independent of the existing small-tangent finite-update arithmetic.
+`population_memory.update_diagnostics: true` (default false) enables the
+production-entry observer: each completed step writes `update_stages_K.csv`,
+`weak_rows_K.csv`, and a `convergence_report` in history. Raw and actual RMS
+use the original support, post-update denominator and 1e5 normalization;
+actual RMS never participates in acceptance. QF requested finite displacement,
+increment-coordinate writeback and physical high-field change are distinct.
+References do not change inside this update; a zero physical-high change does
+not imply zero increment change. The psi block in this CSV uses the same voltage
+columns; density columns are zero/not applicable there. Population deltas and
+denominators use internal concentration, with the conversion in JSON.
+This option also enables the existing projection diagnostics. Weak rows use the
+configured production eligibility gate, separately from the existing all-active
+row count. A disabled gate emits an empty ledger with `enabled=false`, not a
+claim of physical balance. Incident materials include both sides of interfaces.
+External load-line and file-reread checks are marked unevaluated until their
+controller performs them; no successful result is inferred from missing data.
+
+For `newton_solve_from_state` and `newton_zero_update_qualification_probe`,
+top-level `convergence_diagnostics_directory` optionally creates a new directory
+containing `report.json` and `weak_rows.csv`. It separates the solver outcome,
+configured row qualification and closure from externally owned checks. It does
+not assign the population-loop U definition to coupled Newton. The ledger uses
+the actual gate implementation, records absolute current residuals in A/µm and
+retains internal flux/source scales and the effective global qualification
+thresholds. This output does not change acceptance. Existing directories are
+rejected to avoid overwriting evidence.
+The standalone weak-row ledger is a final-state re-evaluation of the returned
+solution; the solver's `finalCarrierRowConvergence` result remains the original
+acceptance decision. Compare them explicitly when auditing restart arithmetic.
+Two independent update diagnostics are default off:
+`population_memory.stable_finite_update` evaluates the nonlinear remainder of
+small, unprojected Fermi density steps separately from their linear QF component,
+avoiding cancellation between the electrostatic step and inverse population
+step. Large, projected or held steps retain the relative inverse. The existing
+population reconstruction guard still applies. This is a local arithmetic
+experiment, not evidence of full-device qualification.
+`population_memory.consistent_psi_writeback` additionally uses the electrostatic
+increment actually stored in binary64 when restoring QF; it requires the first
+option. It does **not** retain sub-ULP electrostatic increments or enable the
+BVDS split runtime for Fermi statistics. Its effect on weak transport must be
+verified separately. Each history entry reports the requested/stored psi
+difference, changed QF-step magnitude and number of stable finite updates.
+`population_memory.acceptance_policy` selects the SLOT-only acceptance:
+
+- `primary_only` (current default for this entry): RHS <= 1e-10 **or** raw
+  physical update RMS < 1 is sufficient for nonlinear convergence. Closure,
+  initial/final boundary residuals, boundary preservation and excluded QF
+  directions are reports, not vetoes. Existing contact update masks are
+  retained; reporting a violation does not change the boundary equations.
+- `primary_with_guards`: reproduce the earlier additional closure/boundary
+  vetoes. Use this explicitly when replaying older configurations.
+
+Both policies retain numerical finiteness, positive-population,
+inverse-mapping and mixed linear-error protections. Row ratios are reported.
+Saved-state RHS is diagnostic, while saved-state residual consistency remains
+mandatory. `qualified` is relative to the selected policy; inspect
+`strict_qualification_satisfied` for the former closure/boundary qualification,
+and `rhs_satisfied` / `raw_update_satisfied` for the stopping branch. These are
+SLOT-specific rules, not a change to default production Newton. The Python
+acceptance helper requires explicit `policy="primary_only"`; its old default
+is preserved for callers outside this entry and frozen historical batches.
+
+Normal updates write small progress records, not matrix/state snapshots.
+Qualification or abnormal exit saves a complete matrix and state; the matrix
+has its own `*_matrix_parent.h5` because it belongs to the state before the
+last update. `validation_snapshots: true` additionally saves each update and
+matrix for paired tests only. This entry does not implement bias adaptation,
+secant prediction or a long scan.
+`validation_snapshot_max_updates` (default 40) limits these additional snapshots.
+`projection_diagnostics: true` writes per-node raw/used population increments,
+projection intersections/streaks, density and QF extrema, original row terms,
+and contact currents. The fixed [-0.5,5.5] V SLOT QF box is explicitly a shadow
+diagnostic, not a physical bound or acceptance gate. PARDISO pivot perturbation
+and refinement counts are retained when available.
+
+`diagnostic_population_active_set: true` is a separate bounded experiment,
+default off. Previously projected free carriers with nonpositive original
+population direction are held using `dQF=dpsi`; a positive original direction
+releases them. A separate modified matrix replaces those carrier rows, while
+the original matrix, RHS and direction remain available. Finite recovery uses
+the applied (log-damped) psi change to preserve held population. This assumes
+the fixed DOS/bandgap of this SLOT configuration. Raw update error continues
+to use the **unconstrained** direction, and original residuals are evaluated.
+Both linear systems must pass the unchanged linear protections. No constrained
+state receives `qualified=true` or becomes a production continuation parent,
+even if `original_policy_satisfied` is reported. Stable held sets, small
+constrained directions and the shadow QF box do not certify original equations.
+
+The separate `population_memory.diagnostic_freeze_transport_qf_mobility: true`
+arm uses the existing diagnostic transport derivative omission for its update
+direction. At every step it also assembles/solves the unmodified system, checks
+bitwise equality of the two residual/RHS vectors, retains the original direction
+for raw U, and checks both linear solves. It cannot be combined with the active
+set flag and never returns a qualified production parent. Density, source and
+Poisson derivative chains and the nonlinear residual model stay enabled. This
+is an opt-in inexact-Newton experiment, not a default physics or Jacobian change.
+`population_memory.diagnostic_stop_on_primary: true` may be combined only with
+this mobility diagnostic. It stops at the first original R/U success and writes
+the diagnostic snapshot with `stop_reason=diagnostic_primary_satisfied`; it still
+returns `qualified=false`. An explicit diagnostic continuation controller must
+check numerical guards and saved-state consistency before using that snapshot.
+The default remains false, retaining bounded tail-update experiments.
+`diagnostic_density_hold` is a separate opt-in object for the mobility
+diagnostic, with `enabled` (default false), positive `threshold_cm3` (default
+1e-6), and `consecutive_nonpositive` (at least 2, default 2). A free carrier
+below that threshold is held only after repeated unconstrained proposals
+would make its population nonpositive. This is a trigger, not a density floor:
+no population is raised to the threshold. The actual diagnostic system is
+resolved with `dQF=dpsi` on held rows; a positive unconstrained population
+direction releases the constraint. Finite recovery uses the applied damped
+psi displacement. Original equations, their residuals and original raw U
+remain measured; held-row residuals and activation/release counts are reported.
+This option cannot be combined with `diagnostic_population_active_set` and
+does not qualify a production parent. A stable held set is not convergence.
+`diagnostic_continue_after_primary` (default false, diagnostic only) permits
+bounded tail updates after R/U passes. `capture_steps` lists update numbers
+at which to retain matrices, pre-update states, actual and unconstrained
+directions, and detailed population/row diagnostics. Actual held systems have
+different rows/RHSs; compare their original physical residuals separately.
+`diagnostic_source_linearization` (integer 0..2, default 0) is available only
+with the shared transport-mobility diagnostic pair and PhuMob element avalanche.
+Mode 0 retains the complete avalanche Jacobian; mode 1 omits only the direct
+QF-field chain of mobility inside the avalanche source (retaining contact
+electric-field, density, alpha and SG-current derivatives); mode 2 lags all
+avalanche derivatives for the actual direction. All modes retain the original
+live source values, physical residual, original matrix/direction and raw U.
+Both linear solves and RHS bitwise identity are checked before an update.
+These are explicit inexact-Newton diagnostic variants, not physics switches or
+production convergence certificates. No production Newton configuration reads
+this option. Temporary density hold may be combined with either variant, but
+held-row residuals must still be reported and release requires an unconstrained
+positive population proposal from that arm's actual diagnostic system.
+Optional `linear_row_refinement_sweeps` (integer 0–4, default 0) tries bounded
+coordinate residual correction on mixed-error failing nonsingleton rows. It
+uses long-double defect accumulation and commits the corrected double direction
+only if all original mixed, block and constraint guards pass; otherwise the
+original direction is retained and the original guard rejects it. No tolerance
+or residual/Jacobian coefficient changes. Both diagnostic directions are checked.
+The independent `linear_factor_refinement_steps` option (0–3, default 0)
+instead solves correction RHSs from long-double defects with the original
+system's retained direct factors. Vendor elimination retains its reduced solver
+and recomputes affine correction RHSs. Failed corrections leave the original
+direction intact for rejection. This option cannot be combined with row
+refinement; it retains the same acceptance guards and checks both systems.
+PhuMob caches the G-clamp minimum by exact temperature, carrier mass ratio and
+all seven G coefficients in a bounded thread-local cache. This quantity does not
+depend on live populations; fluxes, mobility derivatives and residuals are still
+reevaluated. `VELA_PHUMOB_G_MINIMUM_CACHE=0` before process startup selects the
+original search for diagnostic comparison. It does not select another model.
+The SLOT memory loop also saves `linear_quality.profile` and
+`evaluation_profile`, including nested assembly and linear-solver stages;
+parent/child stage times must not be added together as disjoint costs.
+
+`shared_diagnostics` (default false, mobility diagnostic only) shares assembler
+preparation across the original/altered systems, rechecks RHS bitwise equality,
+and evaluates all contact functionals from one raw residual. Original-system U
+semantics remain unchanged. `compact_diagnostics` (default false) retains scalar
+diagnostics each step and detailed CSVs at primary success or bounded end points;
+matrix snapshots store one unchanged operator with `matrix_aliases.json` naming
+its identical physical/regularized views. Exception snapshots retain the state
+and matrix even when no completed-step CSV exists. Per-step `timing` separates
+system evaluation, quality/refinement, carriers, closure, ports and output;
+`wall_s` includes step output and `elapsed_s` includes final snapshots. The
+in-progress JSON can precede its own final write-time measurement; use the
+completed result for timing totals. These options are off by default.
+Use `result.json` and the process exit status as the completion record;
+`progress.json` is an intermediate snapshot. Configuration and update-error
+support are copied into the output directory. Input mesh/material/state hashes
+and the externally enforced hard deadline remain the caller's responsibility.
+
+## Diagnostic linear system snapshots
+
+`simulation_type: newton_load_line_iteration_probe` is a bounded zero-bias
+diagnostic. All configured contacts and `supply_voltage_V` must be zero.
+It adds the actual series-resistor equation using `contact` (default `drain`),
+`resistance_ohm_um` (default `1e12`) and `bordered_linear_backend` (default
+`pardiso_mkl`; also `sparselu` or `umfpack`, with no fallback). It retains every
+potential equation and eliminates carrier constraints by affine substitution,
+including their dependence on the shared contact voltage. It exports physical,
+stabilized, reduced and equilibrated systems to a fresh
+`linear_system_output_dir`, plus the elimination map, direction, trial state and
+summary. Existing regularization and free-row replacement are retained; the
+same row transform is applied to the voltage column. Split state low parts are
+preserved. At most one descending coupled update is retained, with uniform
+direction-preserving QF damping and up to 12 halvings. This is an independent
+diagnostic update policy, not a production sweep or a device qualification.
+Original row/closure results remain reports and `qualified` is always false.
+
+`newton_zero_supply_load_line_iteration_probe` provides the same independent
+single-update diagnostic while retaining a small nonzero internal contact
+voltage from the previous diagnostic state. External supply and all other
+terminal biases must remain zero; both initial and trial internal voltages
+must lie within 10 mV of zero. It is not a nonzero-supply sweep mode. The caller
+must bind the saved state to its actual internal contact voltage.
+
+`newton_zero_update_qualification_probe` runs the original device qualification
+without a Newton update or post-loop feasibility restoration. It retains the
+ordinary initial boundary projection, so the optional `output_state_file` may
+differ from the input at contact nodes; audit that change separately. Device
+convergence does not qualify an external circuit: the saved state remains
+marked diagnostic and unqualified, and its load-line equation needs a separate
+check. Existing residual, row, closure and boundary tolerances are unchanged.
+
+`simulation_type: newton_linear_system_probe` loads `state_file` without
+accepting an update. `linear_system_output_dir` must name a new directory.
+It exports Matrix Market matrices before and after carrier regularization and
+`replace_free_row_sum`, plus residual, solve RHS, raw direction and replacement
+row IDs. Matrix coordinates are internal scaled coordinates; `direction_V`
+uses the reported potential scale. The first matrix includes boundary/gauge
+equations; use `newton_carrier_term_probe` for pre-boundary physical rows.
+This probe rejects row scaling, linear equilibration and iterative refinement
+rather than silently auditing a different solve. Caps, Poisson recorrection,
+feasibility projection and line search are not applied.
+
+`linear_system_output_profile` is `full` by default. Opt-in `solve_only`
+omits `physical.mtx` and `regularized.mtx`; it retains `stabilized.mtx`,
+`vectors.csv`, replacement rows and all actual assembly/solve operations.
+It changes diagnostic output only, not the direction or acceptance criteria.
+Other profile names are rejected.
+
+Only this probe accepts top-level
+`diagnostic_freeze_transport_qf_mobility: true`. It removes the direct QF-gradient
+mobility chain from the element-box PhuMob **transport Jacobian**, preserving
+the residual model, density/Poisson chains and avalanche source derivatives.
+The dedicated `newton_diagnostic_transport_qf_solve` mode applies the same
+diagnostic linearization to a bounded `state_file` restart. It is not a
+production solver option or a qualification waiver. The original
+`mobility.jacobian_field_derivatives` compatibility guards remain in force.
+
+These diagnostics do not implement `float80` solving or low-density driving
+force interpolation. A successful probe does not qualify a device state.
 ## Physical constants profiles
 
 `VELA_PHYSICAL_CONSTANTS_PROFILE` is a CMake build contract:
@@ -103,6 +431,27 @@ documented in workflow section 3.3.
 
 Explicit element-box transport and the restricted PhuMob candidate:
 
+- `mesh_geometry.cell_box_policy: average_intersection` is an opt-in,
+  unweighted 2-D Tri3 AverageBox construction. For each edge endpoint it
+  intersects the perpendicular bisector with the half-planes of that
+  endpoint's mesh neighbors, assigns each face to the incident cell's side
+  of the edge, then averages the endpoint contributions. This is not clipping
+  each local cotangent or clipping faces to the finite triangle. Non-Delaunay
+  faces may vanish; neighboring coefficients and box measures can change.
+  It requires `poisson_permittivity_policy: cell_material`, rejects supplied
+  cell coefficients, degenerate/nonmanifold/overlapping edge fans and non-Tri3
+  cells, and does not implement weighted Voronoi geometry or remeshing.
+  Calculations use long double translated coordinates; stored values remain
+  double. Use explicit `transport_edge_geometry: element_box` for transport.
+  Historical whole-edge coefficients and mesh node volumes remain unchanged.
+- `discretization.poisson_charge_volume_policy: material_local_box` and
+  `solver.recombination_volume_policy: material_local_box` separately select
+  the semiconductor-only sums of `M(T,i)=sum_j(g(T,ij)*length(ij)^2)/4`.
+  They require cell-material geometry. Their assembled transport-node volumes
+  must be positive and finite. These options align charge and SRH/Auger with
+  the selected element box, including non-Delaunay adjustments. They do not
+  silently override any existing volume policy or avalanche support option.
+  Non-Delaunay box volume sums need not equal geometric triangle areas.
 - `mesh_geometry.cell_box_policy`: `legacy_positive` (default) or
   `delaunay_transfer`. The latter requires `poisson_permittivity_policy:
   cell_material` and no supplied `poisson_cell_edge_coefficients`. It computes
@@ -150,6 +499,17 @@ This does not change SRH quadrature or Poisson charge volumes. The existing
 `simulation_type: element_box_probe` with `output_csv` exports per-cell local
 coefficients, node measures in m² and electron/hole mobility in m²/(V s).
 
+`simulation_type: phumob_source_probe` is a read-only, zero-update export for
+the explicit `phumob_element_density_grad_qf` avalanche profile. It requires
+`state_file` and `output_csv` and reads the saved physical fields and carrier
+populations without Newton repacking or contact projection. Each Si cell,
+vertex and carrier receives a row with contact adjacency, electric and QF
+gradient vectors, selected ionization field, alpha, mobility, density, source
+measure, generation rate and integral. Values use the active solver units;
+source measure is coordinate area. Split low components are not evaluated.
+The output reports `qualified: false`; successful export is not device
+convergence or qualification. Unsupported source profiles fail explicitly.
+
 For plain low-field `solver.mobility.model: phumob` with `edge_averaging:
 legacy` and Boltzmann statistics, coupled Newton uses explicit carrier chain
 derivatives of the PhuMob scalar equations. It differentiates the screening
@@ -162,10 +522,14 @@ the residual, mobility values, G-floor rule and numerical acceptance are unchang
 The density-exponent clamp boundary/outside range, Fermi statistics and
 PhuMob field/surface variants retain their existing finite-difference paths.
 The original `element_box` mode still rejects PhuMob. The separate
-`element_box_phumob` candidate requires plain `model: phumob`, nodal
+`element_box_phumob` candidate supports `model: phumob` and the explicit
+element-distance Lombardi/HFS variants described below, nodal
 `total_impurity`, `element_box` transport geometry and `cell_material`
-permittivity geometry. Coupled Newton currently restricts it to Boltzmann
-statistics, disabled avalanche and smooth (unclamped) density exponents.
+permittivity geometry. Coupled Newton supports Boltzmann and Fermi statistics;
+the Boltzmann density exponent must remain smooth (unclamped). Fermi density
+partials include the Fermi-integral response. Avalanche requires the explicit
+Si-only `phumob_element_density_grad_qf` profile below. This does not extend
+the separate split/multiprecision runtime's Boltzmann-only scope.
 It evaluates PhuMob from each vertex's live ND, NA, n and p, averages these
 values using the same box measures above, and assembles every adjacent
 cell vertex's psi, electron and hole columns conservatively. It uses the
@@ -183,6 +547,34 @@ currents and the cell/edge mobility probes consume the same live populations.
 The old endpoint-only `transport_edge_jacobian_probe` rejects this candidate;
 use `newton_jvp_probe` to inspect its full cell stencil. Gummel remains
 unsupported. This candidate does not change any global model default.
+
+For `simulation_type: sg_edge_flux_probe`, the split Boltzmann runtime exports
+carrier-specific population prefactors separately from the legacy common `ni`
+columns. The electron/hole SG weights use those production prefactors. Appended
+`split_sg_reference_decimal_digits=200` identifies a fresh diagnostic evaluation
+of populations and direct Bernoulli products from the full packed high/low state;
+production mobility is held fixed. It is an arithmetic reference, not an
+independent mobility or device-qualification check. Zero denotes unavailable;
+in particular, an edge without transport support has no evaluated SG argument.
+
+Optional `sg_operand_output_json` writes an exact-input sidecar. Optional
+`sg_operand_nodes` is an integer node list selecting incident edges (omitted or
+empty selects all). This sidecar is supported only by the split runtime and
+rejects an empty selection. Primitive JSON numbers represent binary64 inputs:
+a reader must recover the binary64 value before exact higher-precision conversion,
+rather than treating the printed decimal as the original real input. Packed
+high/low coordinates (ordered psi0, psi1, phin0, phin1, phip0, phip1), QF
+references (phin0, phin1, phip0, phip1) and the potential scale are kept separately;
+mobility and 200-digit reference values are decimal strings. Concentrations,
+mobilities and fluxes in this sidecar use internal units, with a concentration
+to-SI factor at the top level; potentials and thermal voltage are in volts.
+`production_transport_active: false` means no SG kernel was evaluated, rather
+than a measured zero argument or a validated zero-current physical solution.
+For split-runtime replay, use the availability-tagged `electron_sg_*`,
+`hole_sg_*` fields and this sidecar. Legacy generic Fermi/edge-observer columns
+that the split exporter does not populate are not authoritative operands;
+a default zero in those columns must not be interpreted as a measured value.
+These optional exports do not change residuals, Jacobians, state or acceptance.
 
 Poisson permittivity assembly can be selected independently of node volumes
 and carrier transport with `mesh_geometry.poisson_permittivity_policy`:
@@ -228,6 +620,18 @@ Newton numerical and geometry controls added for explicit validation profiles:
   evaluation. Residual row units are unchanged. Other legacy contributions can
   use the existing QF-to-population
   Jacobian transform. The BVMethods path retains its 300 K Joyce–Dixon contract.
+  The SLOT adapter stores authoritative n/p and derives QF consumer fields.
+  It retains Ohmic potential/QF constraints expressed through those populations.
+  Quantum, split coordinates, thermionic contacts, BVMethods-only band-population
+  SG/bootstrap, QF closure replacement/restoration and binary128 QF Poisson
+  arithmetic remain unsupported and are rejected. Population protection is
+  selected with `population_update`, not QF `population_step_control`.
+  The QF-only `slot_population_memory` and `evaluateStep` diagnostics reject this
+  mode; use the production `dc_sweep` and population update reports.
+  Integration and actual qualification are recorded in the
+  [SLOT integration report](validation/slot_ldmos_main_density_integration_2026-10-29.md).
+  Classical Masetti and Masetti-field population configurations use the direct
+  PN2D transport columns, while the SLOT adapter retains its QF consumer.
   Packed unknowns are ψ/V0, n and p in internal concentration units. Positive
   semiconductor n/p are authoritative; derived QF fields never overwrite them.
   Population DDSolution retains the original normalized psi separately from QF
@@ -345,6 +749,19 @@ Newton numerical and geometry controls added for explicit validation profiles:
   profile; it does not add a separate material electron-affinity/energy-state
   contract. This option is an arithmetic experiment, not native zero-bias
   operator-equivalence qualification or a new global default.
+- `solver.population_writeback`: `independent` (default) or opt-in
+  `boltzmann_psi_compensated`. Compensation requires the classical `legacy`
+  operator, Boltzmann statistics and `potential_density` coordinates. After the
+  original population protection, let `e` be actual physical ψ change minus
+  the intended `alpha*delta_psi`. Unprojected carrier candidates are evaluated
+  as `(n+alpha*delta_n)*exp(e/Vt)` and `(p+alpha*delta_p)*exp(-e/Vt)` with
+  extended intermediates, then stored in binary64. This preserves the intended
+  finite Boltzmann QF change under fixed statistical prefactors. Contact
+  populations use the same map and remain subject to their original QF
+  boundary equations. Inactive slots and locally projected carriers retain
+  the original policy; positivity, inverse consistency and acceptance checks
+  remain. Zero direction is an exact identity. This is an experimental finite
+  update map, not a change to the residual/Jacobian or a Fermi update formula.
 - `solver.population_sg_bootstrap_linearization`: `unchanged` (default) or
   experimental `floor_adjacent_edges`. Requires BVMethods `potential_density`,
   `quasi_fermi` SG and a positive configured minimum density. Only approximate
@@ -356,6 +773,13 @@ Newton numerical and geometry controls added for explicit validation profiles:
   full-derivative recovery restores all feedback, and an edge above the floor
   also restores it. This does not change the automatic recovery controller or
   guarantee convergence. It has no mutable cross-stage selection history.
+- `solver.mobility.ialmob_transport_feedback_derivatives`: boolean, default
+  `true`. Setting `false` is an opt-in quasi-Newton approximation limited to
+  IALMob: omit its transport mobility feedback terms from the Jacobian.
+  Mobility values, source AD caches, avalanche Jacobian, physical residual,
+  contact current and stopping gates are unchanged. Keep the existing
+  `jacobian_field_derivatives=true` requirement for the IALMob avalanche
+  profile; this option does not bypass it or enable BVMethods-only recovery.
 - `solver.population_update`: population-mode-only object. `protection` is
   `local_nonpositive` (default) or `fraction_to_boundary`. The former changes
   only free nodes with c+αδc≤0 to `local_retained_fraction*c` (default 0.01).
@@ -403,6 +827,18 @@ Newton numerical and geometry controls added for explicit validation profiles:
   mode. Both choices retain the original linear accuracy checks. The explicit
   EFT mode requires round-to-nearest, gradual underflow and strict binary64
   support in the build.
+- `solver.linear_factor_refinement_steps`: integer 0--3, default 0. Opt-in guarded
+  refinement for the ordinary three-block Newton loop, separate from the SLOT
+  population option. Audits the actual regularized/closure-replaced equations
+  with the SLOT mixed, block and singleton-constraint linear guards; failed
+  correction leaves the original direction intact and stops the linear solve.
+  Uses long-double defect accumulation and the selected direct backend. For
+  Woodbury closure replacement, the first correction factors the explicit
+  replaced matrix; subsequent corrections reuse it. This is not reuse of the
+  original unreplaced factors. Requires a separate arm from MP100 refinement,
+  split state, row scaling and equilibration. Emits `VELA_LINEAR_FACTOR_AUDIT`
+  records; does not change nonlinear tolerances, row/closure qualification or
+  circuit validation, and does not refine an augmented external-circuit solve.
 - `solver.legacy_edge_jacobian_steps`: optional object with positive finite
   `transport` (default `1e-6`) and `avalanche` (default `1e-7`). For the legacy
   edge transport and finite-difference edge avalanche source Jacobian, the
@@ -417,17 +853,64 @@ Newton numerical and geometry controls added for explicit validation profiles:
   raw/constrained updates, 100-digit linear defects and per-row backward
   errors, central residual changes and free continuity-row masks. These
   diagnostics do not establish nonlinear or external-load convergence.
-- `solver.arithmetic_precision` selects `double` (default) or `extended80`
-  for intermediate arithmetic. State vectors, sparse matrices and direct
-  linear solver interfaces use binary64 in both modes. For native JSON runs,
-  use `vela_example_runner` for `double` and `vela_example_runner_extended80`
+- `solver.arithmetic_precision` selects `double` (default) or `extended80`.
+  Use `vela_example_runner` for `double` and `vela_example_runner_extended80`
   for `extended80`. The extended runner is built when the compiler provides
   a 64-bit significand and an 80-bit extended exponent range in `long double`.
   For BVMethods Tri3, performance reports expose the effective Canali and
   Lombardi arithmetic width as `bvmethods.tri3.mobility_significand_bits`.
+  Legacy mixed-precision paths still use binary64 state and linear interfaces.
+- `solver.require_end_to_end_precision` defaults to `false` in native JSON.
+  `sd-sim` sets it when a command file requests `ExtendedPrecision`.
+  The bound SLOT LDMOS potential-density BVDS stages are identified by
+  `solver.extended80_stage_profile: "slot_population_bvds_v1"`. The runner uses
+  wide state, SparseLU, original-system refinement, and exact HDF5 state
+  for these stages. The profile covers a zero-bias Poisson/coupled start,
+  constant-seed series-resistor voltage continuation, and accepted-state
+  reload. The profile is emitted by the SLOT binding. The runner checks the
+  stage and its inputs before accepting or reloading a state.
+  Use `--arithmetic-capabilities` to inspect the scope and backends.
+  Strict requests outside validated scope are rejected before acceptance.
+  The `slot_population_phumob_fixed_bias_v1` profile covers the isothermal
+  SLOT IdVd CMD with prescribed voltages, Fermi statistics evaluated with the
+  Joyce–Dixon approximation, PhuMob, Lombardi, high-field saturation, and
+  silicon SRH, Auger and avalanche. It uses the same wide state, solver
+  and archive interfaces for equilibrium, gate prebias, Load, and drain
+  continuation. On the iteration after a local concentration rewrite, the
+  profile freezes the high-field drive tangent and omits avalanche tangents
+  while evaluating all residual terms at the current state. The avalanche
+  current-norm tangent is regularized at the SG cancellation scale.
+  The profile exports a subset of the Plot fields as Float64 display arrays
+  and reports skipped fields. HDF5 remains the authoritative restart state.
+  This profile enables coupled equation normalization when any normalization
+  reference is supplied. For example, set
+  `"scaling": {"mode":"unit_scaling","reference_concentration_cm3":"auto"}`
+  or use `solver.normalization.reference_concentration_cm3` in a v2 deck.
+  The solve uses `psi / V_T`, `n / C0` and `p / C0`. The reference temperature
+  determines `V_T`. The concentration reference `C0` accepts a positive
+  concentration in cm^-3 or `"auto"` (the larger of the maximum absolute net
+  doping and the intrinsic-density fallback). The length and mobility
+  references determine the Poisson and continuity row scales. Output concentrations
+  use cm^-3, and the load line uses volts and A/um. The normalized HDF5 state
+  stores its concentration scale and resumes with matching normalization references.
+  A new normalized run starts from 0 V to produce its own accepted archive.
+  The series-resistor stage accepts
+  `sweep.external_circuit.coupled_rhs_growth`. For example,
+  `{"mode":"report","factor":1e10}` reports RHS growth without affecting the
+  outcome. With `"mode":"enforce"`, a strict exceedance returns
+  `rhs_growth_limit` and the quasistationary controller retries from the last
+  accepted state. Omitting the object disables the check. The factor must be
+  finite and at least one. The norm is the maximum absolute augmented residual,
+  including the load-line equation, with the initial trial's row scales held
+  fixed. It is evaluated after each accepted Newton update and before the update
+  convergence check. A zero initial norm has no growth ratio and does not
+  trigger the guard. Each enabled trial logs the initial and peak norms, peak
+  ratio, and the first update above the limit. This is the Vela norm definition.
 - `solver.poisson_residual_precision`: `double` (default) or `binary128`.
   The latter forms physical potential and Boltzmann charge from the packed
   state and retained quasi-Fermi references in software binary128 arithmetic,
+  using the same separate electron/hole reference prefactors as production
+  (including `intrinsic_reference_potential_V`),
   then assembles the Poisson edge and charge terms before rounding the residual
   to double. State storage, geometry, source volumes and material coefficients
   keep their existing precision. This explicit option currently excludes
@@ -449,11 +932,48 @@ Newton numerical and geometry controls added for explicit validation profiles:
   digits before projecting public values to double. Directional residual
   differences are formed before that projection. The existing analytic double
   Jacobian, linear backend, update caps and acceptance thresholds are retained
-  and require independent qualification. This option supports only 300 K plain
-  `phumob` with `element_box_phumob`, Boltzmann carriers and SRH, without quantum,
-  avalanche, thermionic contacts, feedback substitution or Gummel recovery.
+  and require independent qualification. The PhuMob profile supports 300 K
+  `phumob` with `element_box_phumob`, Boltzmann carriers and SRH. The independent
+  IALMob profile supports classical 300 K edge SG, configured material-local
+  SRH/Auger (including density enhancement and generation clipping), constant
+  non-Si material transport and the explicit `ialmob_element_density_grad_qf`
+  local-AD source contract. It preserves material electron/hole population
+  prefactors separately from the recombination intrinsic density. Local psi,
+  electron-QF and hole-QF differences are formed from high/low coordinates before
+  projection into the existing binary64 IAL mobility/HFS/source kernels; this
+  is not an arbitrary-precision rewrite of those kernels. Poisson, population,
+  SG, recombination and row/port accumulation use wide arithmetic. The existing
+  analytic Jacobian remains double, evaluated with reconstructed populations;
+  local tiny-field derivatives require independent directional checks.
+  Both profiles reject quantum, thermionic contacts, feedback substitution,
+  BTBT and Gummel recovery. Other avalanche profiles remain unsupported.
   Arclength updates are not supported. Geometry and source-volume policies are
   configured separately; this option does not select a geometry bundle.
+- `solver.split_contact_bias_low_V`: optional map of configured contact names to
+  finite low voltage parts in volts; default empty. Requires `split_dd_state`.
+  Each pair must be normalized (`high + low == high` in binary64). Fixed-bias
+  Dirichlet construction uses built-in potential, applied high voltage and low
+  voltage separately. Unknown contacts, Schottky boundaries and relaxed minority
+  boundary targets are rejected. In a bounded circuit probe nonempty low parts
+  require `split_contact_voltage`; its reported low voltage must accompany the
+  archived node state during independent qualification. This does not add split
+  contact-voltage support to arclength or production circuit continuation.
+- `simulation_type: "poisson_arithmetic_model_probe"` with `state_file` and a
+  fresh `output_model_json` exports the actual Boltzmann Poisson edge couplings,
+  material electron/hole reference populations, charge volumes, packed high
+  coordinates and Dirichlet equations. The `vela.poisson-arithmetic-model.v1`
+  node tuple is `(psi,n,p,xpsi,xn,xp,potentialScale,eref,href,niElectron,niHole,vt,
+  doping,voln,volp,vold,q,area,scale,interfaceRhs)`; edge tuples are `(i,j,g)` and
+  Dirichlet tuples `(i,value)` use normalized potential. `zero_low_residual`
+  strings retain the binary128 arithmetic result to 40 significant digits;
+  `zero_low_residual_double` records the actual production binary64 projection,
+  including its Dirichlet subtraction. Do not reconstruct binary64 halfway
+  rounding decisions from the finite decimal strings. This read-only export enables
+  independent fixed-QF hi/lo Poisson diagnostics with IALMob/Auger/avalanche
+  configurations, but does not implement split transport, enable Newton
+  acceptance, or bypass the restrictions of `split_dd_state`. Fermi, quantum
+  and thermionic configurations are rejected. Density conversion to SI is
+  recorded separately as `density_internal_to_m3`.
 - `solver.exact_dirichlet_updates`: boolean, default `false`. After the direct
   solve and optional refinement, set the step of each Dirichlet identity row
   to minus that row's residual. Free-row updates are unchanged before the
@@ -517,6 +1037,21 @@ Scope and conventions:
 - Legacy decks remain supported where noted.
 - Prototype features are marked explicitly.
 
+Frozen candidate conservation diagnostic: `simulation_type:
+"newton_candidate_conservation_probe"` reads `state_file` and writes a JSON
+audit to `output_csv` (the generic runner output-path key). It requires
+`solver.global_continuity_closure.mode: "enforce"` and uses that policy unchanged.
+The saved quasi-Fermi reference/increment coordinates are retained at contacts;
+physical carrier equations are evaluated before Dirichlet replacement. Contact
+sets come from the configured electron/hole boundary conditions. Flux, integrated
+source and mismatch use assembler continuity units; their ratio is dimensionless.
+The process succeeds when the diagnostic executes, even if `satisfied` is false.
+`device_qualified` is always false: this probe neither solves nor certifies the
+full device. The SLOT campaign opt-in `--candidate-conservation-runner PATH`
+records this audit before poly recovery and still requires strict device
+reclosure, all active rows, global closure and load-line confirmation afterwards.
+Its probe executable and protocol are bound into the campaign identity.
+
 Classical DC assembly reuse: `solver.reuse_jacobian_structure`
 (boolean, default `true`) shares an immutable zero-valued sparse pattern, offset
 map and scatter tables between sequential Newton point services on the same
@@ -577,6 +1112,27 @@ each correction.
 | interfaces | array | Optional | Interface sheet/fixed/trap charge definitions; see below. |
 | contacts | array | Yes | Contact bias and type definitions; see below. |
 
+### Isothermal material energy reference
+
+An optional material field `intrinsic_reference_potential_V` defaults to zero.
+At 300 K the coupled/Newton/Gummel transport paths use
+`n = ni * exp((psi - phin - delta)/Vt)` and
+`p = ni * exp((phip - psi + delta)/Vt)` in the Boltzmann case, with the
+corresponding density-of-states prefactors for Fermi statistics. Physical `ni`
+in SRH/Auger is unchanged. Ohmic neutrality uses
+`psi_contact = bias + equilibrium_potential + delta`; quasi-Fermi potentials
+remain physical terminal voltages. The fixed material offset is differentiated
+through carrier density, charge, flux, mobility and recombination.
+
+This option represents a material energy reference, not a fitted contact bias.
+Derive relative offsets from consistent affinity, band gap, density of states
+and a common energy origin; do not infer them from a target current. Nonzero
+offsets require 300 K, reject shared semiconductor nodes with incompatible
+references, and are not supported with quantum correction or Schottky contacts.
+Avalanche with nonzero offsets is restricted to the audited element IALMob
+GSS-Laux configuration where offsets occur only in non-Si materials outside
+its source support. General heterojunction, electrothermal and nonzero-Si
+avalanche-reference extensions require separate work.
 ### Built-in materials
 
 Without `materials_file`, Si/SiO2 use the generated no-BGN **300 K** snapshot
@@ -718,9 +1274,28 @@ of both static preparation identity and exact screening-cache keys. Results reco
 `ialmob_screening_function_evaluations` and `ialmob_screening_fallbacks` in
 `performance`. Candidate function counts cover transformed-equation evaluations;
 they do not count legacy derivative evaluations and must not be compared as
-equivalent work. This option does not change the physical model or acceptance
-gates. Comparison runs must explicitly select `legacy` as their baseline instead
+equivalent work. These four root algorithms do not change the physical model or
+acceptance gates. Comparison runs must explicitly select `legacy` as their baseline instead
 of relying on an omitted option.
+
+The explicit `u2022_12_single_newton` selection is a separate, experimental
+numerical constitutive compatibility policy, **disabled by omission**. It uses
+the version-bound, one-step screening cutoff observed in Sentaurus U-2022.12
+binary64, rather than solving for a stationary minimum. Runtime value identity
+has been checked at 300 K for Si masses 1 and 1.258; the implementation permits
+only those masses and 250--500 K. Other temperatures in that interval are
+internal consistency checks, not a claim of native validation. Unsupported
+inputs fail explicitly; there is no fallback to another cutoff convention.
+Both 3-D Coulomb screening and the 2-D accumulation term use the selected G.
+The reference differentiated kernel includes the moving-cutoff temperature
+chain rule. The generated low-field kernel is not supported with this policy
+and rejects that combination. The splice is continuous in value; because the
+one-step cutoff is not stationary, its two branch slopes need not agree.
+At equality the clamped branch is selected. Check one-sided derivatives rather
+than interpreting a central difference across the splice as a smooth Jacobian.
+This opt-in choice does not change any solver acceptance gate or an existing
+running configuration. Frozen value and derivative evidence is documented in
+[the screening compatibility validation](validation/slot_ldmos_bvds_ial_screening_compatibility_2026-10-17.md).
 
 `diagnostic_ialmob_explicit_high_field` and
 `diagnostic_ialmob_generated_low_field` (both default false) select independent
@@ -749,6 +1324,41 @@ numeric factors; unavailable UMFPACK and failed solves raise errors rather than
 silently changing backends. This override is independent of the electrothermal
 configuration below; it does not select a different physical model.
 
+`VELA_LINEAR_SOLVER=sparselu_long_double` explicitly selects an experimental
+Eigen SparseLU factorisation and solve in `long double`. The assembled matrix
+and RHS remain binary64 and the returned direction is rounded back to binary64;
+this is mixed precision, not extended-precision residual assembly or state
+storage. Platforms where `long double` has no more significand bits than `double`
+are rejected. The backend does not cache factors and does not change the default
+backend preference or nonlinear acceptance criteria.
+
+On Windows and Linux, `VELA_LINEAR_SOLVER=pardiso_mkl` opts into the oneMKL
+PARDISO runtime backend. Set `VELA_MKL_RT_LIBRARY` to an absolute runtime
+library path (`mkl_rt.3.dll` on Windows or `libmkl_rt.so` on Linux).
+The existing `VELA_MKL_RT_DLL` variable remains a fallback when the new variable
+is unset or empty. Dependent runtime libraries must be available to the loader;
+on Windows use the process PATH. Linux links the system dynamic-loader library,
+not MKL itself. No oneMKL library
+is loaded for other backends; this option does not enter the default preference
+list. The interface is LP64, real nonsymmetric binary64, with METIS ordering,
+scaling, matching and up to two iterative-refinement steps. It reuses exact
+patterns and identical factors, and reports errors without backend fallback.
+`VELA_LINEAR_THREADS` controls its thread-local MKL setting. Selection applies
+to shared auxiliary solves as well as the Newton system; assembly, state
+precision, nonlinear updates and acceptance criteria remain unchanged.
+
+`sparselu_eliminated`, `sparselu_eliminated_long_double`, `umfpack_eliminated`
+and `pardiso_mkl_eliminated` are explicit
+experimental shared-solver backends. They eliminate exact numerical diagonal
+singleton rows using their actual diagonal (including regularization), subtract
+the constrained-column contribution from the free RHS, and lift the solution.
+All compute affine RHS correction in long double, then round it to binary64.
+The UMFPACK and PARDISO variants use the corresponding binary64 backend on
+the reduced system and require the same package/runtime as that backend.
+Only the long-double SparseLU variant changes factorization/solve precision. Explicit stored
+zeros do not count as couplings. These backends do not cache factors, change
+assembly or acceptance, or become defaults. The selection applies to all shared
+linear solves, including auxiliary Poisson and Woodbury RHS solves.
 The oneMKL PARDISO adapter is compiled by default on Windows and Linux. Set
 `-DVELA_ENABLE_MKL_PARDISO=OFF` to exclude the adapter, mock runtime libraries
 and dynamic-loader link dependency. Existing CMake caches retain their setting.
@@ -1219,12 +1829,31 @@ edge couple; Poisson geometry and source volumes remain unchanged:
 }
 ```
 
-The CSV header must be exactly `node0,node1,couple_m`; every mesh edge must be
-listed exactly once, including zero-couple records. The profile is qualified
+The CSV header must be exactly `node0,node1,couple_m`; every selected mesh edge
+must be listed exactly once, including selected zero-couple records. The record
+count must equal `external_averagebox_expected_edges`; unlisted edges retain
+their mesh coupling. The profile is qualified
 only for the exact Templates/LDMOS classical G3 diagnostic with impact
 ionization, surface mobility/IALMob, quantum potential, and predictor disabled.
 It requires barycentric node volumes, is not a production/global default, and
 does not inherit the PN2D `element_edge_sg_gss_laux` bundle.
+
+The explicit `slot_ldmos_external_averagebox` diagnostic reads the same CSV
+contract while preserving the selected mesh node volumes (including
+`mixed_voronoi`). This permits a SLOT transport-couple-only comparison and
+surface/element IALMob. Quantum potential remains rejected. Avalanche is allowed
+only with IALMob, `van_overstraeten`,
+`current_approximation: "ialmob_element_density_grad_qf"`, and
+`source_jacobian: "local_ad"`; all existing kernel-specific constraints still
+apply, including explicit observed source geometry and complete mobility
+derivatives. Both `postprocess_only` and `self_consistent` use the same contract
+in probes and DC sweeps. The caller must supply SLOT's own native geometry.
+For a full native transport comparison, use matching native element edge
+coefficients **and** vertex measures in `mobility.ialmob.geometry_file`;
+changing only the edge-couple CSV does not align mobility averaging. The IALMob
+loader checks coefficient sums against the active carrier couples.
+It changes no Poisson couples or source volumes, and makes no curve
+qualification claim. The Templates profile retains its original restrictions.
 
 ## discretization.poisson_charge_volume_policy
 
@@ -1249,6 +1878,54 @@ implementation requires `mesh_geometry.node_volume_policy: "barycentric"`;
 mixed-Voronoi composition is rejected rather than inferred. A mesh containing
 only transport material is returned to the existing node-volume vector so the
 single-material path remains bitwise unchanged.
+
+`material_local_mixed_voronoi` is a separate, explicit policy requiring
+`mesh_geometry.node_volume_policy: "mixed_voronoi"`. It sums the same local
+mixed-Voronoi shares as the mesh builder, restricted to transport cells, for
+Poisson mobile and dopant charge and their derivatives. It preserves
+continuity sources and edge couples. This policy is useful for isolating
+material ownership on SLOT without also changing the geometric volume rule;
+it does not import Sentaurus AverageBox measures.
+
+`material_local_circumcentric` is an opt-in diagnostic that sums signed Tri3
+circumcentric vertex shares over transport materials. It does not replace obtuse
+shares by the mixed-Voronoi half/quarter rule. Every assembled transport-node
+measure must be positive and finite; invalid geometry is rejected, not clipped.
+The policy computes its own charge measures even on an all-semiconductor mesh;
+mesh node volumes, carrier edge couples and avalanche measures remain unchanged.
+It is independent of the dielectric coupling choice and is not a claim of exact
+Sentaurus AverageBox equivalence on non-Delaunay geometry.
+
+`solver.recombination_volume_policy: "material_local_circumcentric"` selects the
+same material-local measure separately for SRH/Auger and their derivatives.
+It does not implicitly follow the Poisson volume policy; select each explicitly
+when conducting a controlled comparison. Existing defaults are unchanged.
+
+## discretization.poisson_permittivity_coupling
+
+`edge_mean` (default) preserves the existing adjacent-cell arithmetic mean
+permittivity times the configured edge couple when the mesh permittivity policy
+is not `cell_material`. With `mesh_geometry.poisson_permittivity_policy:
+"cell_material"`, that default path instead sums each cell's permittivity times
+its configured box edge coefficient, including AverageBox when selected.
+For an independent SLOT cold-state example, see
+`configs/regression/slot_ldmos_idvd_average_box_aligned_control.json`.
+`per_cell` is an opt-in diagnostic
+for the coupled Newton assembler and its probes, including its Poisson-block
+initialization. It requires nondegenerate Tri3 cells and sums signed
+`epsilon_cell * cot(opposite_angle) / 2` contributions. Negative contributions
+are retained; the mesh edge fallback is not applied to this dielectric operator.
+Transport couples, charge volumes and source terms are unchanged. Pure Poisson
+simulation and Gummel/DDAssembler reject the option rather than silently using
+a different operator. This option does not claim equivalence to native AverageBox
+or change the PN2D template contract.
+
+The same conductance is used in the coupled residual, its full Jacobian and
+`newton_poisson_term_probe`. That probe appends `dielectric_operand_sum`, the
+sum of `abs(conductance * potential_scale) * (abs(x_i) + abs(x_j))` in the same
+row normalization as `dielectric_flux`. Use this operand scale, together with
+the absolute charge terms, when checking roundoff in nearly cancelling fluxes;
+the net flux alone does not represent the arithmetic operand magnitudes.
 
 ## Doping, regions, interfaces
 
@@ -1284,6 +1961,14 @@ With `scaling.mode: "unit_scaling"`, the donor and acceptor concentrations in
 the CSV use the same external concentration convention as deck-level doping:
 `cm^-3` and are kept internally as `cm^-3`. In legacy SI mode, the same values are
 read through the legacy concentration path.
+
+`node_doping_decimal_input: true` opts an authoritative decimal CSV into
+extended-precision parsing in the `extended80` runner. The Poisson charge
+assembly subtracts donor and acceptor concentrations before rounding the
+resulting charge contribution. The default remains false. This option is
+for decimal source data. A CSV formatted from binary64 TDR data cannot
+restore digits that were absent from the source. Mobility, band-edge models
+and contact population targets still use the existing concentration view.
 
 ### regions[] entries
 
@@ -1452,6 +2137,7 @@ Commonly used controls:
 - auger_excess_product
 - auger_with_generation
 - auger_density_dependence
+- recombination_materials
 - impact_ionization
 
 Gummel-specific keys:
@@ -1480,7 +2166,9 @@ Newton-specific keys:
 - electron_quantum_potential
 - carrier_regularization_scale
 - line_search
+- bank_rose (explicit alternative to backtracking, default disabled)
 - warm_start
+- contact_preprojection
 - contact_boundary_reconstruction
 - contact_boundary_minority_electron_relaxation
 - contact_boundary_minority_electron_relaxation_bias_threshold_V
@@ -1490,7 +2178,7 @@ Newton-specific keys:
 - diagnostics / diagnostic_history
 - jacobian (`analytic` or `finite_difference`)
 - finite_difference_step
-- quasi_fermi_reference (`none`, `contact_majority`, or `contact_basin`)
+- quasi_fermi_reference (`none`, `contact_majority`, `contact_basin`, or `contact_nearest_state`)
 - carrier_row_convergence
 - continuity_row_scaling
 - linear_equilibration (`off` or `l2_row_column`)
@@ -1512,6 +2200,45 @@ Hybrid Gummel-Newton keys:
 
 Notes:
 - `line_search` and `damping_factor` apply to Newton config.
+- `bank_rose` selects the published Bank--Rose **Algorithm Global** damping
+  recurrence, not a replica of proprietary Sentaurus internals. Use
+  `line_search: false`, `line_search_mode: "merit"`, `damping_factor: 1`, and
+  `stable_merit_comparison: false` with `bank_rose.enabled: true`; conflicting
+  selections are rejected by both JSON parsing and the C++ constructor.
+  Options and defaults are `not_damped: 25`, `omega: 1e-4`, `initial_K: 0`,
+  `seed_K: 1`, `growth: 10`, `decay: 0.1`, `min_damping: 1e-8`,
+  `max_trials: 32`. `not_damped` must be a non-negative integer, `max_trials`
+  an integer in `[1,256]`, omega and decay in `(0,1)`, initial_K non-negative,
+  seed_K positive, growth greater than one and min_damping in `(0,1]`;
+  all real parameters must be finite.
+  For one-based iteration `i <= not_damped`, take one full, finite,
+  carrier-valid trial without requiring norm descent. Afterwards use
+  `alpha = 1/(1 + K*||F||)` and require
+  `||F_trial|| <= (1-omega*alpha)*||F||` with strict norm reduction.
+  Rejecting a trial changes `K=0` to seed_K, otherwise multiplies K by growth;
+  accepting it carries `decay*K` into the next iteration. K has inverse
+  residual-norm units: changing norm scaling changes the meaning of initial_K
+  and seed_K. K resets at each solve, and rejected searches do not commit it.
+  No acceptable trial, nonfinite input, K overflow or the damping floor returns
+  failure without installing a rejected state. A zero norm does not authorize
+  a step or bypass device qualification. `max_trials` includes the first trial.
+  A typed `PopulationDomainError` from trial construction or residual assembly
+  (currently the SG-source finite-positive-population check) rejects that trial
+  as `bank_rose_population_domain`; active damping increases K and retries within
+  the same trial/floor bounds. No density clamp or residual is substituted.
+  Before activation, the single invalid full trial still fails. Invalid parent
+  evaluation and unrelated exceptions propagate normally; they are not retries.
+  The selected block/L2 norm has fixed scales within a solve. Existing direction
+  limits, Poisson recorrection, residual equations, and final qualification
+  gates remain in effect. These constraints mean the paper's smooth exact-Newton
+  convergence theorem is not automatically a guarantee for a device run.
+  Applies to coupled Newton (including DC Newton solves) and its Poisson-only
+  initializer, not the separate coupled-load-line/arclength correctors or
+  Gummel/linear Poisson drivers. With `diagnostics: true`, trial history records
+  `bank_rose_active`, `bank_rose_K`, alpha, norm, target and rejection reason;
+  accepted-iterate progress JSON also includes the Bank--Rose trial history.
+  Source: Bank and Rose, *Global Approximate Newton Methods* (1981), Section 3,
+  [author-hosted paper](https://ccom.ucsd.edu/~reb/m270b/newton.pdf).
 - `electron_quantum_potential` enables the electron density-gradient quantum
   correction. The object accepts `coupling_mode` (`outer`, the default,
   `frozen` for an imported restart potential, or experimental `monolithic_box`
@@ -1661,6 +2388,10 @@ Notes:
   a p+ body pickup to the n+ source. `dominant_signed_contact_mean` is intended
   for isolated compensated/tie-node sign outliers; applying it to a real p+/n+
   terminal replaces the minority segment with the terminal-average polarity.
+  With `quasi_fermi_reference: "contact_basin"`, reference seeds follow the
+  selected boundary doping rule per contact node. Thus a mixed source/body
+  terminal in `legacy_node_local` mode supplies both electron and hole seeds;
+  its mean polarity does not suppress one of the carrier reference basins.
 - `contact_boundary_minority_electron_relaxation` controls whether Newton
   relaxes minority-electron quasi-Fermi pinning on p-side Ohmic contacts at
   higher applied bias. Default is `true` (current behavior).
@@ -1702,6 +2433,19 @@ Notes:
   latter preserves the linearized Newton direction and is intended for strongly
   nonlinear avalanche branch correction; it does not relax convergence or
   forcing tolerances.
+- `poisson_only_quasi_fermi_initialization` controls the carrier state held
+  fixed by `solver.method: "poisson_only"`. `contact_basin` (default) rebuilds
+  the interior electron and hole quasi-Fermi fields from the nearest
+  majority-carrier contact biases, matching the ABA initialization path.
+  `preserve_initial` retains the supplied restart quasi-Fermi fields and only
+  projects explicit contact boundary values. Use the latter when correcting
+  the Poisson discretization of an imported biased TCAD state; it also prevents
+  pure-insulator gauge rows from inheriting a nearby terminal bias.
+  Consistent saved reference/increment pairs retain their small free-node
+  coordinates, including increments below the absolute-QF rounding precision.
+  If an absolute QF was explicitly edited and is inconsistent with its saved
+  pair under the ordinary Newton restart check, the absolute value takes
+  precedence. `contact_basin` continues to reset the QF fields intentionally.
 - The explicit BVMethods CMD sidecar profile defaults both QF cap fields to
   `0`, overriding any implicit cap inherited from warm-start emission. Explicit
   sidecar cap values remain available for comparisons. This profile rule does
@@ -1734,11 +2478,91 @@ Notes:
   without demanding artificial improvement from a carrier block already below
   its hard gate. This changes globalization only; the final Newton convergence
   tolerances are unchanged.
+- `line_search_mode: block_closure_filter` extends that filter with electron
+  and hole global-continuity blocks. A trial may improve either the enabled
+  carrier/device blocks or a global-closure block only while every device and
+  closure block remains inside its configured residual envelope. The closure
+  envelope uses the stricter applicable relative or low-source absolute target;
+  final convergence still requires `global_continuity_closure` itself to pass.
+- `local_update_diagnostics` is an opt-in per-node Newton transformation trace.
+  In addition to raw, capped, applied, and selected node updates, it records
+  aggregate current/raw-predicted/capped-predicted/selected block norms, the
+  number and largest physical magnitude of quasi-Fermi cap changes, and the
+  signed free electron/hole residual sums. This allows a rejected lift to be
+  classified without making those diagnostic quantities part of acceptance.
+- `progress_directory` (default empty) opts the classical Newton solver into
+  diagnostic HDF5/JSON snapshots at the initial state and each accepted update.
+  Use a new absolute directory for every solve. Existing iteration files are
+  never overwritten. JSON retains full double precision, block residuals, row
+  violations, closure ratios, raw/capped direction norms, actual packed update
+  maxima/nodes, cap counts, rounded-away update counts and elapsed wall time.
+  `potential_scale_V` converts packed updates to volts. Snapshot I/O cost is
+  recorded as `newton.progress_snapshot`. These files always carry
+  `qualified: false`; a complete normal
+  Newton result and its original gates are still required. Ignore an incomplete
+  final file after a hard process kill; earlier unique snapshots remain usable.
+- `capture_linear_system` (default false) adds in-memory linear diagnostics to
+  a nonempty `progress_directory`, for classical non-split solves only. Each
+  assembly attempt gets a unique `linear_N` directory with iteration identity,
+  physical/regularized/closure-replaced matrices and packed state, residual,
+  reference volts, linear/raw/processed/selected directions. It does not
+  reassemble the physical Jacobian or change acceptance. `assembled.csv` uses
+  its direction column for the closure-system RHS; other files use it for the
+  named direction (selected: actual accepted delta). `processed` precedes any
+  subsequent line-search restoration; `selected` is written only on acceptance.
+  Matrices use `VELANJ01`, three little-endian uint64 dimensions (rows, columns,
+  nnz), int32 CSC outer/inner indices and binary64 values. CSV uses 17 digits.
+  Partial files after interruption are not complete evidence. Capture adds I/O
+  cost and changes no qualification gate; output paths cannot be reused.
+- `soft_time_limit_seconds` (default zero/off) stops classical Newton with
+  `converged=false`, reason `soft_time_limit`, at an iteration boundary after
+  this wall-clock budget. It does not interrupt an assembly or line search and
+  therefore does not replace the caller's hard child-process timeout. Both new
+  options reject quantum or recursive carrier-row-recovery solves to avoid
+    ambiguous nested budgets/output ownership. They change no convergence gate.
+  - `diagnostic_stop_policy` defaults to `off`. Opt-in `row_trend_v1` is a
+    failure-only stop monitor for classical packed Newton with enforced carrier
+    rows, ordinary residual tolerances and a nonempty `progress_directory`.
+    It does not modify residuals, Jacobians, line search or success gates.
+    Per carrier it records N/E/max, where E is the sum of positive
+    log10(row_ratio/eps_row); it also records the actual primary residual,
+    closure (including absolute branch) and configured contact-QF gate ratios.
+    Beginning at update 12, compare median samples k-5..k-3 with k-2..k.
+    Three consecutive windows with <1% improvement in every row metric and
+    every still-failing global gate stop only if the raw pre-cap direction
+    shrinks <10%, or at least two of the last three alphas are <=1/128.
+    Three consecutive alphas <=1/1024 with <1% improvement at each transition
+    can stop earlier. Reasons are `stagnation_detected`, `tiny_step_stagnation`,
+    or `nonfinite_trend_metric`. Existing success checks take priority.
+    With this policy enabled, reaching `max_iter` returns `iteration_limit`
+    after those checks, without post-budget restoration. Full state and metrics
+    are saved before stopping. This is an empirical diagnostic policy, not a
+    proof of nonexistence or a relaxed acceptance criterion.
+- Diagnostic `newton_block_step_probe` additionally accepts
+  `block_step_damping` in `(0,1]` (default 1) and mode `carrier_local`.
+  That mode requires `local_carrier_nodes`, an array of zero-based
+  `{node_id, carrier: "electron" | "hole"}` records, 1 to 64 distinct active
+  noncontact rows. It solves the restricted QF Jacobian, applies existing caps
+  then damping, and reconstructs densities with the configured assembler,
+  including Fermi statistics. Complementary unknowns are frozen; neighboring
+  residuals are not. The output is an unqualified diagnostic seed, requiring
+  all-row/global audits and full Newton validation. The older `carrier_density`
+  mode retains its Boltzmann restriction and its own backtracking.
+- `return_best_feasible_on_failure` (default `false`) keeps the failure status
+  and diagnostics unchanged but exposes, as the rejected restart state, the
+  lowest-residual accepted iterate that satisfied both enforced local carrier
+  rows and global continuity closure. This is intended for deterministic
+  restart/corrector audits and does not turn a failed solve into convergence.
 - `poisson_line_search_stall_contact_majority_qf_drop_limit_V` is an optional
   non-negative physical-voltage guard for the `poisson_line_search_stall_floor`
   acceptance path. When greater than zero, a Poisson-block line-search stall is
   accepted only if the maximum majority-carrier quasi-Fermi drop across contact-to-interior edges
   is below this value. The default is `5e-11` V; `0` disables this guard.
+  The species is selected from the net doping at each edge's contact endpoint:
+  donors select electrons, acceptors select holes, and zero net doping checks
+  both. A mixed n+/p+ electrode is not classified by its mean doping. Edges
+  between contacts and species with no positive finite transport density are
+  excluded. Referenced QF differences retain their reference/increment split.
 - `block_absolute_convergence` is an optional authoritative per-block Newton
   convergence contract. With `mode: enforce`, scalar `reltol`, `abstol`, and
   numerical-floor acceptance no longer bypass the block contract: the raw
@@ -1772,6 +2596,13 @@ Notes:
   continuity row weighting and equilibration, after mapping the linear solution
   back to the original coordinates. Profiling records this diagnostic's cost
   as `newton.local_update_diagnostics`; it does not change Newton acceptance.
+  The appended coordinate-writeback columns distinguish the selected high
+  coordinate change from the full split high/low change and from the nominal
+  damped step. Rejected split candidates whose low parts were discarded have
+  blank full-change/error fields and `complete_coordinate_change_available=0`.
+  These selected-candidate records must not be interpreted as accepted updates
+  unless `line_search_accepted=1`. BVDS has no concentration finite-step
+  transformation in this path; that stage belongs to `slot_population_memory`.
 - For `simulation_type: newton_jvp_probe`, top-level
   `freeze_transport_mobility: true` holds each edge's mobility at the supplied
   base state for the positive/negative perturbations. This diagnostic requires
@@ -1840,6 +2671,23 @@ Notes:
   use the same rate; the analytic Jacobian includes the coefficient's density
   derivative. Cn0/Cp0 still come from the explicit Auger coefficient fields;
   this option does not imply a temperature-dependent A/B/C polynomial.
+- `recombination_materials` optionally restricts nodal SRH/Auger to a list of
+  exact material names, for example `["Si"]`. Omission or an empty list preserves
+  all-material behavior. Newton, Gummel, source Jacobian audits and isothermal
+  exports use the same mask. Source volumes are independently selected by
+  `recombination_volume_policy`. Unknown/duplicate
+  names and nodes shared by included and excluded semiconductor materials are
+  rejected. Insulator interfaces are allowed. This option does not restrict
+  BTBT or avalanche and does not define an electrothermal material policy.
+- `recombination_volume_policy`: `legacy_node` (default) preserves the existing
+  nodal SRH/Auger measure. `material_local_mixed_voronoi` sums mixed-Voronoi
+  vertex shares from semiconductor Tri3 cells only, excluding dielectric area
+  at shared nodes. `material_local_circumcentric` instead sums signed
+  circumcentric shares and requires positive finite assembled transport-node
+  measures. Residuals, source derivatives, Gummel linearization and
+  continuity diagnostics use the same measure. Transport, Poisson, BTBT and
+  avalanche retain their own measures. This is an explicit isothermal control,
+  not a change to template or C++ defaults.
 - Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
 - With `scaling.mode: "unit_scaling"`, `bandgap_narrowing.reference_doping_m3`
   is read and kept internally as `cm^-3`.
@@ -1917,15 +2765,36 @@ when that closure is selected explicitly.
 
 Supported values are `boltzmann` (the compatibility default),
 `fermi_dirac`, and the explicitly restricted `fermi_dirac_joyce_dixon`.
-The last option requires `solver.coupled_operator: "bvmethods_tri3_qf"`;
-see [the operator contract](bvmethods_operator_contract.md) for its supported
-models, coordinates and diagnostics. `solver.coupled_operator` otherwise
+Joyce–Dixon is supported with `bvmethods_tri3_qf` or with classical `legacy`
+`potential_density` and `solver.carrier_statistics.transport: "effective_band_sg"`.
+See [the BVMethods operator contract](bvmethods_operator_contract.md) for that
+operator's supported models, coordinates and diagnostics. `solver.coupled_operator` otherwise
 defaults to `legacy`. The defining-integral Fermi-Dirac selection is one atomic physics path: carrier
 densities use the normalized complete integral `F_{1/2}`, ideal Ohmic contacts
 solve charge neutrality with the same statistics, continuity edges use the
 generalized Einstein/Scharfetter-Gummel operator, and terminal-current
 post-processing uses that identical edge operator. The density-form Gummel
 solver currently rejects `fermi_dirac` explicitly; use `method: "newton"`.
+
+An independent, opt-in transport discretization is available as
+`"carrier_statistics": {"model":"fermi_dirac", "transport":"effective_band_sg"}`.
+The default `transport: "generalized_einstein"` preserves the existing operator.
+Both choices retain the same defining-integral Fermi populations, contacts and
+BGN; this option changes the edge transport operator, not merely its Jacobian.
+For either carrier let `d = (QF1-QF0)/Vt` for electrons and
+`d = -(QF1-QF0)/Vt` for holes, `a = log(c1/c0)+d`, and
+`K = mobility*Vt*edge_couple/edge_length` including the active unit conversion.
+The effective-band particle continuity flux is `K*c1*B(a)*expm1(d)`.
+It uses thermal SG weights without the generalized Einstein multiplier, cancels
+flat QF exactly, and changes sign on edge reversal. Residuals, transport probes,
+Jacobian evaluation and terminal currents use the selected operator together.
+The Jacobian retains the full population and mobility dependence; existing
+Fermi endpoint partials use centered finite differences, with analytic mobility
+chains and the selected source Jacobian. It is not a wholly symbolic derivative.
+This mode currently supports classical coupled Newton only: Boltzmann statistics,
+quantum correction and `element_qf_gradient` transport are rejected. No material
+constants, avalanche source profile or acceptance tolerances are changed by this
+option. Previously qualified states require requalification under a new operator.
 
 The Fermi integral now uses a high-accuracy piecewise Chebyshev evaluation,
 with analytic derivatives and matched nondegenerate/degenerate expansions.
@@ -1967,13 +2836,44 @@ Supported `model` values:
 - `old_slotboom`
 - `bennett_wilson`
 
-Bennett-Wilson uses total donor plus acceptor concentration. The narrowing
-is zero at or below `Nref` and is `Ebgn * log(Ntotal / Nref)^2` above it.
-The defaults are `Ebgn = 0.00684 eV` and `Nref = 3.162e18 cm^-3`. In
-`sd-sim`, select it explicitly with `EffectiveIntrinsicDensity(BennettWilson)`.
-The `Bennett` block in the PAR supplies optional overrides. The emitted
-format-version 2 deck uses `reference_doping_cm3`, and the material
-`Bandgap.dEg0(Bennett)` offset is folded into the base intrinsic density.
+`bennett_wilson` implements Sentaurus Bennett-Wilson (User Guide, Eq. 165):
+`DeltaEg = coefficient_eV * ln(Ntotal/Nref)^2` for `Ntotal > Nref`, otherwise
+zero. `Ntotal` is donors **plus** acceptors, not net doping or free-carrier
+density. Defaults are `coefficient_eV=0.00684` and `Nref=3.162e18 cm^-3`
+(`3.162e24 m^-3`). Both string and object forms work in Newton and Gummel.
+In an object, `reference_doping_m3` follows the existing unit convention:
+use `3.162e18` with `unit_scaling`, `3.162e24` with `legacy_si`.
+`smoothing` and `offset_eV` must be zero for this model; a material's native
+`Bandgap.dEg0(Bennett)` belongs in its base intrinsic density, not in the
+positive narrowing term. `fermi_statistics_correction` remains false by default.
+The SLOT IDL mapping uses Boltzmann statistics and symmetric band-edge splitting
+(`Bgn2Chi=0.5`); arbitrary material-dependent splitting is not added here.
+
+For a SLOT CMD run with the bound extended80 Boltzmann profile, the
+`sd-sim` default is Bennett–Wilson. The CMD may explicitly select it with
+`EffectiveIntrinsicDensity(BandGapNarrowing(BennettWilson))` or
+`EffectiveIntrinsicDensity(BennettWilson)`. Use
+`EffectiveIntrinsicDensity(NoBandGapNarrowing)` to turn it off and
+`EffectiveIntrinsicDensity(OldSlotboom)` to select OldSlotboom. The selected
+model determines the base material projection and the doping-dependent term.
+The SLOT binding reads `Bennett.Ebgn` and `Bennett.Nref` from the active PAR
+or uses the silicon defaults. It retains the decimal inputs for the 80-bit
+assembly. This profile requires shared Si/PolySilicon coefficients and
+symmetric band-edge splitting.
+
+For the SLOT IdVd Fermi/PhuMob CMD profile, an omitted narrowing model selects
+Bennett–Wilson before material projection. Fermi statistics enables its
+intrinsic-density correction. An explicit `NoFermi` disables that correction
+while keeping Fermi populations. Explicit narrowing selections take precedence.
+With `ExtendedPrecision`, the generated stages request potential–concentration
+coordinates and effective-band SG. Production execution requires a runner that
+advertises end-to-end support for the coupled model.
+
+Other `sd-sim` profiles accept explicit Bennett–Wilson and explicit disabling.
+Handwritten JSON continues to select the model through
+`solver.bandgap_narrowing`. Per-region models and unequal material-dependent
+coefficients require a per-material solver configuration. The extended SLOT
+path supports Boltzmann statistics.
 
 The low-level Slotboom and OldSlotboom prototypes compute the positive
 bandgap-narrowing term from the maximum of the supplied impurity concentration
@@ -2024,8 +2924,7 @@ Newton configs can opt into diagnostic history with either
 
 - `jacobian`: `analytic` or `finite_difference`
 - `finite_difference_step`
-- `quasi_fermi_reference`: `none` (default), `contact_majority`, or
-  `contact_basin`
+- `quasi_fermi_reference`: `none` (default), `contact_majority`, `contact_basin`, or `contact_nearest_state`
 - `residual_norm`: `block` or `l2`
 - `residual_weights`: object with `psi`, `phin`, and `phip`
 - `residual_scales`: object with `psi`, `phin`, and `phip`
@@ -2037,6 +2936,18 @@ hole unknown relative to the most strongly p-type biased contact. Because each
 carrier uses one constant reference, edge differences and the physical model
 are unchanged. This avoids losing sub-femtovolt current-carrying increments
 when an absolute quasi-Fermi potential is tens of volts from zero.
+
+`contact_basin` partitions the transport graph by distance to majority-carrier
+contact seeds. For mixed source/body terminals, seed classification follows
+`contact_boundary_reconstruction`.
+
+`contact_nearest_state` instead chooses, independently for each carrier and
+node, the non-metal terminal voltage closest to the supplied quasi-Fermi state.
+This is an explicit numerical-coordinate option; boundary conditions and
+physical models do not change. References stay fixed during each solve. A
+subsequent warm restart or diagnostic may choose a new partition from its input
+state. Without an input state, initialization falls back to geometric contact
+basins. Saved reference/increment pairs preserve sub-ULP changes when rebasing.
 
 For the explicit `split_dd_state` path, Newton warm starts transform saved QF
 increments into the new contact-reference frame using multiprecision arithmetic
@@ -2055,6 +2966,28 @@ not change which accepted states define the next extrapolation.
 
 The source-aware convergence controls are:
 
+The runner's `carrier_row_convergence` result separates selected continuity rows
+into diagnostic `scale_groups.floor_limited` and `non_floor_limited` groups.
+The former means a positive `scale_floor` is at least as large as
+`max(abs(fluxAbsSum), abs(recombination), abs(impact))`, including equality.
+Each group reports selected row count, violation count, maximum ratio and
+maximum absolute residual in internal equation units. Ignored/inactive rows
+are not included. Violations also expose `physical_scale` (before the floor)
+and `floor_limited`. `floor_absolute_limit = eps_row * scale_floor` states the
+effective absolute residual limit for floor-limited rows. These fields are
+diagnostic only: no row is exempted, no threshold or `satisfied`/`enforced`
+semantics change, and a floor-limited ratio is not a port-current error estimate.
+
+An independent explicit policy `carrier_row_convergence.floor_limited_action`
+can be `enforce` (default, historical behavior) or `report`. With `report`,
+floor-limited violations remain in the output but have `blocks_acceptance:false`;
+`blocking_violation_count` excludes them and `satisfied` means no blocking
+violations remain. Non-floor-limited violations still block when mode is
+`enforce`. Local carrier-row recovery receives blocking rows only. This policy
+does not alter residuals, scales, Newton directions, global closure, boundary or
+numerical-validity gates. It is an acceptance-policy change, not a claim that
+weak-row physical error is bounded. The SLOT validation batch opts in explicitly;
+no general/default template is changed.
 The carrier-row ratio is an additional local balance target, not an
 established Sentaurus-equivalent termination criterion. In the BVmethods
 no-BTBT control, all of the first five native accepted nonzero states exceed the
@@ -2088,7 +3021,11 @@ does not change the production defaults or authorize a global threshold increase
 "global_continuity_closure": {
   "mode": "enforce",
   "tolerance": 0.01,
-  "source_floor": 1e-14
+  "source_floor": 1e-14,
+  "absolute_tolerance": 1e-12,
+  "linear_system_stabilization": "off",
+  "feasibility_restoration": "off",
+  "feasibility_restoration_factor": 1.0
 }
 ```
 
@@ -2107,16 +3044,126 @@ factorization on matrices with large row/column norm spreads. The default is
 
 `global_continuity_closure` independently sums the free-node SRH/avalanche
 source and all contact fluxes for electrons and holes. `report` appends the
-metrics without changing the Newton line search or rejecting a solution;
-`enforce` applies the same check only after the ordinary Newton convergence
-criterion has been met. Each carrier with
-`|integrated source| >= source_floor` must then have relative mismatch no
-greater than `tolerance`. The denominator is the largest of the contact flux
-magnitude, integrated-source magnitude, and `source_floor`.
+metrics without changing the ordinary merit line-search trajectory or
+rejecting a solution; `enforce` preserves that same trajectory and prevents
+final convergence unless each carrier with
+`max(|contact flux|, |integrated source|) >= source_floor` has relative
+mismatch no greater than `tolerance`. Qualifying on both sides prevents a
+large contact-current/small-source state from bypassing the gate.
+The denominator is the largest of the contact-flux magnitude,
+integrated-source magnitude, and `source_floor`. Below that floor the relative
+ratio remains diagnostic and the absolute mismatch must instead be no greater
+than `absolute_tolerance` (default `1e-12`). The IV CSV records each carrier's
+qualification flag, selected `absolute`/`relative` criterion, signed mismatch,
+and relative ratio.
+
+Global closure shapes intermediate line-search acceptance only when
+`line_search_mode: "block_closure_filter"` is selected explicitly. Ordinary
+`merit` and `block_filter` modes use the device residual alone; this keeps the
+conservation identity as a final solution invariant instead of imposing it as
+an implicit continuation-path constraint.
+
+In `block_closure_filter`, the electron and hole closure normalizers are
+frozen from the bias-point restart state, with `source_floor` as their lower
+bound. They are not recomputed from intermediate iterates, so closure ratios
+remain comparable while terminal current is rebalanced.
+
+`linear_system_stabilization: "replace_free_row_sum"` is an opt-in
+finite-precision stabilization. For each carrier it replaces one free-node
+continuity row by the sum of all free-node continuity rows. This is an
+invertible row transformation, so the exact Newton equations are unchanged,
+but the solve must directly resolve the global conservation mode. The
+implementation applies the rank-one/rank-two row replacements through a small
+Woodbury border and reuses the original sparse Jacobian factorization; it does
+not factor a matrix containing dense global rows. It is mutually exclusive
+with `continuity_row_scaling`; the default is `"off"`.
+
+For isolated SLOT comparisons, `scripts/slot_newton_stabilization.py` exposes
+independent `--carrier-regularization on|off` and
+`--closure-replacement on|off` controls. It writes a new configuration and
+refuses to overwrite an existing file. Regularization `on` uses `1e-8` unless
+`--regularization-scale` is supplied; `off` writes zero. Closure replacement
+`off` disables only the linear row transformation, **not** global continuity
+acceptance. Physics, boundary settings, and acceptance gates are preserved.
+For example, from the worktree root:
+
+```powershell
+python -B scripts/slot_newton_stabilization.py input.json comparison.json --carrier-regularization off --closure-replacement off
+```
+
+`feasibility_restoration: "linear_qf_projection"` is a separate opt-in
+globalization aid for componentwise-limited Newton steps. After the normal
+update caps and Poisson recorrection, it forms the two sums of free electron
+and hole Jacobian rows and applies the minimum-norm correction over only the
+unconstrained electron/hole quasi-Fermi unknowns. The projected direction
+satisfies both global continuity rows to first order without moving contact
+Dirichlet unknowns. The normal QF caps are then reapplied without a second
+Poisson recorrection, so the bounded direction is deliberately an inexact
+feasibility restoration; nonlinear trial acceptance remains responsible for deciding
+whether it is useful. Final local/global convergence gates remain unchanged.
+Rank-deficient or non-finite projections are skipped; the default is `"off"`.
+`feasibility_restoration_factor` selects a fraction in `(0, 1]` of the
+projected correction before QF recapping; it defaults to `1`.
+
+`global_continuity_closure.audit_jsonl_file` optionally appends JSON Lines
+records for the selected replacement rows (initial state and every accepted
+Newton iteration), final-restoration triggers, and every nonlinear restoration
+trial, including rejected trials. Records distinguish physical contact/source
+closure from assembled free-row residual sums. They include normalized-row SVD
+conditioning, projection multipliers, predicted and reassembled sums, raw/
+projected/capped/nominal/applied step norms, cap locations, carrier qualification,
+and rejection reasons (`projection_failed`, `nonfinite_residual`, `device_floor`,
+`carrier_rows`, `global_closure`, or `accepted`). Nonfinite JSON numbers are null.
+The ideal alpha lower bound freezes the initial closure mode and assumes an exact
+linear correction; `ideal_linear_infeasible` labels trials without skipping them
+or changing the existing halving schedule. The final corrector uses QF caps only;
+its audit explicitly reports that Poisson recorrection was not applied.
+
+`global_continuity_closure.restoration_jacobian` defaults to `"stabilized"`.
+The opt-in `"physical"` mode excludes both the assembler carrier diagonal floor
+and solver carrier-row regularization from the **final** closure sensitivity.
+The main Newton solve retains both configured stabilizers. With an audit file,
+physical-Jacobian predictions are also recorded for stabilized restoration trials.
+This is an A/B diagnostic option, not a change to default convergence or physics.
+
+`global_continuity_closure.restoration_physical_rows_only` defaults to `false`.
+When enabled, the **final** QF projection excludes inactive carrier gauge rows
+from its constraint sums and excludes their unknowns from its correction.
+Contact Dirichlet rows/unknowns remain excluded. Gauge equations enforce
+auxiliary coordinates in non-transport regions; their residuals must not cancel
+physical contact/source imbalance. The main Newton equations and stabilization
+are unchanged. This can be combined with `quasi_fermi_reference: "contact_basin"`
+to retain small corrections that absolute biased QF coordinates cannot represent.
+
+`global_continuity_closure.roundoff_audit` defaults to `false` and requires
+`audit_jsonl_file` to emit results. It adds expensive, read-only diagnostics at
+the initial state and the first final-restoration trial if finite: fixed-residual
+reductions (ordinary, pairwise, Kahan, Neumaier, long double, magnitude-ordered,
+permuted and Boost quad reference), actual forward/reverse/permuted edge
+assembly with ordinary or compensated per-node accumulation, and bitwise
+repeatability. Records distinguish physical term sums from inactive gauge sums.
+Audit variants never replace the residual used by Newton or its acceptance gates.
+
+`feasibility_restoration: "final_linear_qf_projection"` uses the same
+minimum-norm QF construction only after the accepted device residual is at or
+below `stall_residual_floor`, carrier-row convergence passes, and the enforced
+final closure gate fails. It recomputes the Jacobian at that accepted state,
+applies the configured QF bounds, and backtracks the correction. A trial is
+accepted only if its nonlinear device residual remains below the stall floor
+and both carrier-row and global-closure gates pass. This mode therefore cannot
+turn an unconverged device iterate into an accepted solution and does not
+constrain intermediate Newton steps.
 
 `warm_start: true` preserves supplied quasi-Fermi potentials when continuing
 from a previous solution. The default `false` keeps the conservative
 cold-start behavior.
+
+`contact_preprojection: true` initializes fixed-voltage population Newton
+trials at the prescribed potential and carrier boundary values before the
+first assembly. Only the potential is assigned at a potential-only boundary.
+The default is `false`. Quasi-Fermi voltage-controlled Newton already presets
+its prescribed coordinates. Circuit-controlled ports and zero-update archive
+checks use their respective state and constraints.
 
 ### band_to_band
 
@@ -2358,6 +3405,17 @@ object contains:
 - `effective_electrodes`: explicit mesh contact names whose adjacent cells use
   electric-field fallback. All contact edges are excluded from ordinary
   exterior boundary projection, including contacts absent from this list.
+- `avalanche_geometry_file`: optional absolute path to the controlled
+  `vela.ialmob.observed_avalanche_geometry.v1` source geometry. The header
+  supplies integer `node_count`, `cell_count` and `cells`; optional `scope` is
+  descriptive provenance. Every Si triangle appears exactly once, with
+  `cell_id`, mesh-order `node_ids`, three `coordinates_m` pairs,
+  `mobility_vertex` (local index 0--2), and three `source_measure_m2` shares.
+  Other materials are rejected. Coordinates must match the actual mesh;
+  shares must be finite, nonnegative, have positive sum, and cannot exceed
+  the triangle area (relative export-roundoff allowance `1e-10`). This is
+  independent of the transport geometry and must be regenerated/revalidated
+  after changing the mesh. It is measured geometry, not a carrier-state table.
 - `crystal_x`, `crystal_y`: three-component crystal directions corresponding to
   the two mesh coordinate axes.
 - `electron_parameters_cm`, `hole_parameters_cm`: objects keyed by orientation
@@ -2367,9 +3425,60 @@ object contains:
 - `high_field`: default `true`; `reference_density_m3`: SI m^-3, default `1e18`,
   in both scaling modes. Outer electron/hole field parameters retain the normal
   active-unit interpretation.
+- `constant_material_mobility_cm2_per_Vs`: optional mapping of explicit non-Si
+  material names to positive finite `electron` and `hole` mobilities. For
+  example, `{"PolySilicon":{"electron":1417,"hole":470.5}}` restores constant
+  poly transport alongside Si IALMob. Values always use cm2/(V s), in both
+  scaling modes. Names must exist on the mesh; an edge shared with Si IALMob
+  is rejected. Constant mobility has zero field/density derivatives, while
+  SG flux derivatives remain active. Material `ni`, doping and contacts must
+  also enable transport; this mapping alone does not create carriers.
+  The isolated SLOT poly extension is qualified here only at 300 K without
+  avalanche. Its material energy reference, thermal behavior and avalanche
+  coupling require separate validation. Use `recombination_materials: ["Si"]`
+  for the original SLOT deck's Silicon-only SRH/Auger scope.
 
 The live coupled path supports 300 K, Si/SiO2 Tri3 geometry, Fermi or Boltzmann
-carrier statistics, without quantum potential or avalanche. Material interfaces
+carrier statistics, without quantum potential. Avalanche additionally requires
+Boltzmann statistics, a supported element source and
+`source_jacobian: local_ad`. Its cell SG currents use the live element IALMob;
+all nine potential columns include density, normal-field and HFS feedback.
+The independent source audit recomputes mobility at each perturbed state;
+multiprecision source audits are rejected because the IALMob kernel uses double.
+This implementation does not establish SLOT high-voltage or breakdown qualification.
+The additional controlled source is selected explicitly with
+`impact_ionization.current_approximation: "ialmob_element_density_grad_qf"`.
+It requires the observed avalanche geometry above, `van_overstraeten`,
+`generation: "current_density"`, `driving_force: "quasi_fermi_gradient"`,
+`quasi_fermi_gradient_discretization: "cell_gradient"`,
+`source_mapping_mode: "element_vertex_box_measure"`, and `source_jacobian: "local_ad"`.
+Use fallback scope `contact_node_cell`, fallback mode `cell_gradient_magnitude`,
+and `ialmob_boundary_field_projection: true`. The solver-level
+`grad_qf_contact_field` selects the contact field.
+The IALMob reference density and avalanche interpolation/truncation must be zero;
+complete mobility derivatives are required. The identified HFS parameters are
+electron/hole saturation velocities `1.07e5`/`8.37e4 m/s` and beta `1.109`/`1.213`,
+at 300 K. Source-volume scaling overrides, directional partition, debug raw
+alpha and alternative current-magnitude policies are unsupported.
+The source is restricted to Si and uses extrema-based harmonic carrier density,
+the observed vertex mobility, full contact QF current gradient, and tangential
+non-contact interface gradients. Contact alpha uses the electric field by default. All
+nine local potential derivatives include carrier density and live IALMob/HFS.
+The production mobility retains the mathematical screening minimum; inferred
+native numerical clipping constants are diagnostic evidence only. This source
+does not establish a universal native near-angle selector algorithm or qualify
+an original-model BVDS curve. See the
+[controlled source validation](validation/slot_ldmos_observed_source_integration_2026-09-23.md).
+For a separate boundary-field control, `impact_ionization.ialmob_boundary_field_projection`
+defaults to `false`. When enabled, the canonical element-edge SG/GSS-Laux
+current-density source with quasi-Fermi driving force projects the avalanche
+quasi-Fermi gradient onto the insulating-boundary tangent of prepared element
+IALMob geometry. Bulk cells retain the full gradient; configured contact electric
+fallback retains precedence. Scalar source and local AD use the same projection,
+including its potential derivatives. This option changes the ionization field
+only: SG source currents and IALMob transport remain unchanged. It does not
+implement Sentaurus `AvalDensGradQF` density averaging or establish native parity.
+Material interfaces
 take precedence over ordinary exterior faces at interface terminations;
 multiple nonparallel interfaces of equal priority are rejected. Distance,
 orientation, unnormalized distance gradient, vertex HFS and Measure averaging
@@ -2380,6 +3489,13 @@ weights are evidence dependencies, not regenerated reference solution values.
 This is an explicit experimental profile; consult
 [current LDMOS validation](validation/templates_ldmos_current_status.md) before
 claiming D4 curve qualification.
+
+The isotropic SLOT profile supplies the original unnamed parameter block to
+all three orientation families and explicitly sets `reference_density_m3: 0`.
+Its original deck does not activate low-density HFS interpolation. The D4
+default `1e18 m^-3` must not be transferred to SLOT. The standalone
+`ialmob_element_probe` accepts `reference_density_m3` and `high_field` for the
+same controlled comparison.
 
 `solver.mobility` accepts either the legacy string form or an object. String decks remain compatible:
 
@@ -2448,6 +3564,21 @@ For bulk/prototype field-saturation models, `high_field_driving_force` is `elect
 by default and may be set to `quasi_fermi_gradient` to match Sentaurus
 `HighFieldSaturation`; electrons use `|grad(phin)|` and holes use
 `|grad(phip)|`.
+The solver-level `grad_qf_contact_field` applies to quasi-Fermi-gradient
+driving for both high-field mobility and impact ionization. All JSON decks
+default to `"electric_field"`. With `"quasi_fermi_gradient"` the contact
+stencil uses the quasi-Fermi field. The Sentaurus command frontend emits the
+override for `Math { ComputeGradQuasiFermiAtContacts = UseQuasiFermi }`.
+This setting takes precedence over the legacy per-model
+`contact_electric_field_fallback` booleans in JSON. It selects the driving
+field without replacing the carrier current used to evaluate ionization.
+
+The BVMethods Tri3 and SLOT IALMob element kernels classify a cell as touching
+an electrode when at least one vertex belongs to an applicable contact.
+BVMethods uses mesh contacts and SLOT uses the configured effective electrodes.
+Each cell selects its own field, including cells that share an edge. Legacy
+edge-assembled profiles retain their edge field reconstruction and weighting.
+
 When quasi-Fermi driving is selected, `high_field_gradient_discretization`
 controls how that magnitude is recovered. `edge_projection` (default) uses the
 potential difference projected onto each edge and preserves legacy Vela
@@ -2524,7 +3655,65 @@ trajectory qualifications must be rerun with the corrected core.
 `surface.surface_interface` should identify the semiconductor/insulator pair;
 the normal field is the electric-field projection along that interface normal.
 
-The explicit SimpleMOS element-box candidate adds
+When a Lombardi carrier-dependent roughness exponent is enabled (`alpha != 0`
+with nonzero roughness weight), edge transport evaluates mobility separately
+at the two endpoint carrier densities and averages the two mobilities. The
+edge doping and surface-field conventions stay the same. Residuals, terminal
+currents, and the coupled Jacobian use the same density fields. With
+`jacobian_field_derivatives=true`, local central differences include both
+carrier quasi-Fermi potentials, the endpoint electrostatic potentials, and
+all adjacent-cell field reconstruction dependencies. In particular,
+`transport_cell_vector` freezes only its GradQF drive in the endpoint part;
+it does not freeze the surface field or carrier densities. These are numerical
+derivatives of the implemented flux, not symbolic derivatives of every model.
+The default Lombardi `alpha=0` and bulk Masetti behavior are unchanged.
+
+`slot_ialmob` and `ialmob_field` select the legacy SLOT isotropic IALMob model
+(T-2022.03 equations 290--311). The latter also applies high-field saturation
+to the complete IALMob low-field mobility. These models require separate
+nodal donors and acceptors and `doping_concentration_basis: "total_impurity"`
+(their default). Both carrier densities affect screening and scattering, even
+when `alpha_sr=0`; the full surface/density Jacobian dependency path applies.
+Use `surface.surface_region` and `surface.surface_interface` to identify Si
+and its insulating interface.
+
+The low-field SLOT name was `ialmob` before the September 2026 main integration;
+use `slot_ialmob` to reproduce that endpoint model. The name `ialmob` now refers
+to the element transport profile documented above and requires its own geometry
+and orientation parameter block. Existing SLOT `ialmob_field` inputs retain their
+original meaning. Neither model's validation transfers to the other.
+
+The optional `mobility.ialmob` object contains `electron` and `hole` objects
+whose coefficient names match the unnamed Sentaurus parameter block:
+`mumax`, `mumin`, `theta`, `n_ref`, `alpha`, `ndop_ref`, `nsc_ref`, `S`, `p`,
+`l_crit_c`, `B`, `C`, `lambda`, `k`, `alpha_ph2d_A/D`, `lambda_ph2d_A/D`,
+`delta`, `lambda_sr`, `A`, `alpha_sr`, `nu`, `eta`, `N1`, `N2`,
+`alpha_sr_A/D`, `lambda_sr_A/D`, `l_crit`, `EnormMinimum`, and the
+`D1`, `D2`, `nu0`, `nu1`, `nu2`, `alpha1`, `alpha2` families with `_inv`
+and `_acc` suffixes. Here `A/D` denotes two separate keys.
+Shared keys are `nref_D/A`, `cref_D/A`, `me_over_m0`, `mh_over_m0`,
+`full_phumob` (default true), `clustering_everywhere` (false), and
+`phonon_combination` (0, 1, or 2; default 1). Unknown keys are rejected.
+
+All coefficients inside `ialmob` always retain the source model's **cm-based
+units**, including concentrations in `cm^-3`, lengths in `cm`, mobility in
+`cm^2/(V s)`, and the dimensional fractional-power coefficients. They do not
+change under `scaling` or `format_version: 2`. Runtime state quantities are
+converted separately. Defaults are listed in
+`include/vela/physics/IALMobilityParameters.h`. The implementation excludes
+ThinLayer, stress, AutoOrientation, and low-temperature phonon corrections;
+temperatures below 50 K are rejected. Current high-field parameter alignment
+is validated at 300 K. Model/spatial comparison status is recorded in
+[the IALMob validation report](validation/slot_ldmos_ialmob_alignment_2026-09-07.md).
+
+The element-box mobility supports `solver.mobility.constant_materials`, an
+optional list of material names for `element_box_phumob`. It returns each
+selected material's own electron/hole
+mobility before density, Lombardi and HFS corrections. Unlisted materials keep
+the selected model. The SLOT IdVd package selects only `PolySilicon`; recombination
+material scope is configured independently with `recombination_materials`.
+
+The explicit surface configuration uses
 `model: "phumob_lombardi"`, `edge_averaging: "element_box_phumob"`,
 `doping_concentration_basis: "total_impurity"`, and
 `surface.discretization: "element_distance_gradient"`. It uses true vertex
@@ -2785,6 +3974,19 @@ barycentric rollback. The generator rejects partially mixed profiles. This
 template policy applies to the BV geometry and avalanche settings.
 See the PN2D validation reference for the scope of each template version.
 
+For audited imported meshes that contain obtuse triangles but are Delaunay at
+the assembled interior-edge level, `mesh_geometry.edge_coupling_policy` may be
+set to `assembled_delaunay_fallback`. This sums the two raw cotangent
+contributions before testing their sign, preserving a non-negative assembled
+Voronoi dual face when one local contribution is negative. A genuinely
+negative assembled face uses the existing positive barycentric fallback.
+`local_positive_fallback` remains the parser default and preserves legacy
+behavior. The SLOT-LDMOS preparation tool exposes this only through the
+independent atomic `element_edge_sg_gss_laux_delaunay` profile, which also
+binds mixed-Voronoi node volumes, SG/GSS-Laux current support, element-vertex
+box source mapping, and Bernoulli midpoint density. It does not modify the
+existing non-obtuse profile or any global default.
+
 The Sentaurus BVmethods NMOS boundary-control equivalents are stored as
 separate templates because their sweep voltage has different semantics from a
 plain voltage sweep:
@@ -2850,14 +4052,328 @@ unknown used to reconstruct the material-side quantum correction after a
 restart. Readers remain compatible with the legacy six-column and
 Lambda-only seven-column forms.
 
-Rows must cover every mesh node exactly once by `node_id`. All state values are
-stored in active internal solver units: potentials in V and carrier densities in legacy `m^-3` or `unit_scaling` `cm^-3`.
+Rows must cover every mesh node exactly once by `node_id`. Restart potentials
+are in V and the `electrons_m3`/`holes_m3` fields are always in `m^-3`.
+The reader converts densities to the active internal concentration unit.
 For checkpoint-style BV runs, set `write_state_file` during the first run, then
 resume from the latest converged point with `initial_state_file` plus either a
 new adaptive range or `bias_points` for selected target biases. Sweep CSV files
 are still opened as fresh outputs; use distinct CSV names for resumed segments.
 
 Diagnostics fields:
+
+`simulation_type: "ialmob_point_probe"` evaluates the production IALMob
+formula without a mesh solve. It requires top-level `mobility`, `points_file`
+(a nonempty JSON array), and `output_csv`; `temperature_K` defaults to 300.
+It accepts explicitly SI inputs and rejects a `scaling` block. Each point
+has a unique nonnegative `node_id`, `donors_m3`, `acceptors_m3`,
+`electrons_m3`, `holes_m3`, `interface_distance_m`, and
+`electron_driving_field_V_per_m`, `hole_driving_field_V_per_m`,
+`electron_normal_field_V_per_m`, `hole_normal_field_V_per_m`.
+CSV output contains both carriers' final mobility and scattering components
+in `cm^2/(V s)`, together with screening and interface weights. Infinite
+component mobilities denote a disabled scattering mechanism; the final
+mobility must remain finite. Probe success does not qualify an I-V state.
+The preparation and comparison scripts in `scripts/*slot_ldmos_ialmob_probe.py`
+retain source parameters, field units, node support and averaging limitations.
+
+The read-only `simulation_type: "newton_carrier_term_probe"` accepts a
+`state_file` and `carrier_term_probe: {"solved_equation_terms": true}` to
+export the actual carrier equation terms at a saved state. Its CSV includes
+`electron_continuity_active` and `hole_continuity_active`: exclude rows marked
+zero (contacts and inactive gauges) when assessing local continuity. The
+`electron_density`/`hole_density` columns use active internal concentration
+units. Term/residual columns retain assembly units. A successful probe only
+means the diagnostic completed; it does not qualify the state as converged.
+`scripts/audit_slot_ldmos_local_continuity.py` summarizes all active rows
+without the production source-size filter, including absolute and signed sums
+to expose cancellation. Its relative-error counts are diagnostic and do not
+replace the configured solver gates.
+
+`simulation_type: "newton_block_step_probe"` also accepts an optional
+`output_state_prefix`. It saves each trial as `<prefix>_<block_mode>.h5` and
+returns its `trial_state_file` in the block summary. Saved states include the
+reference/increment coordinates and SI carrier densities. They are diagnostic
+trials and must pass a full coupled validation before use as checkpoints.
+
+The explicit `block_modes: ["carrier_density"]` candidate requires Boltzmann
+statistics, no quantum correction, and already projected carrier contact
+values. It transforms the full carrier Jacobian into density coordinates,
+limits each depletion to 90 percent, then maps the positive candidate back to
+quasi-Fermi coordinates. Backtracking requires a decrease of the carrier
+residual norm with frozen physical row scales. It is a diagnostic candidate
+method, not a convergence criterion or a new default Newton formulation.
+When all 20 density backtracks are rejected, the CLI writes
+`numerical_failure.json` beside the probe configuration and exits with code 3.
+The `vela.block_candidate_failure.v1` report binds the exact configuration,
+state and physical input file hashes, and records the initial merit plus each
+backtrack's alpha, finite flag, trial merit (null when nonfinite), depletion
+clip count and QF cap count. It does not qualify a state. Existing failure
+reports are never overwritten. Input/runtime errors retain their other exit
+semantics. The SLOT load-line adapter treats code 3 as retryable only after
+validating this report and unchanged inputs; missing, stale or inconsistent
+reports remain fatal evidence errors. No QF phase switch is implied by this
+classification; the existing bounded voltage recovery handles the rejection.
+The SLOT load-line controller writes checkpoints by flushing a temporary file
+and atomically replacing the destination. Windows replacement errors 5, 32 and
+33 receive up to six short retries (1.575 seconds total waiting); the previous
+checkpoint is never deleted first. Persistent access errors remain environment
+errors, not numerical rejections. Other write/replace errors propagate without
+retry. Read-only Windows monitors should permit `FILE_SHARE_DELETE` so they do
+not obstruct atomic replacement. Resume still revalidates persisted device and
+circuit evidence before advancement.
+The load-line CLI additionally offers an opt-in state predictor through
+`--state-predictor-max-ratio R`. It extrapolates potential and split quasi-Fermi
+references/increments from two already qualified device states. A sufficiently
+spaced parent is preferred over a nearly coincident load-line correction point;
+the extrapolation ratio is bounded by `R`. Predictions are unqualified initial
+guesses, with parent hashes recorded, and must pass the unchanged full coupled,
+all-active-row, global-closure and circuit-confirmation checks. A numerical
+prediction failure consumes its own attempt and retries the same voltage from
+the original qualified parent before the existing voltage-halving recovery.
+Environment, evidence and total-budget errors do not enter this fallback.
+
+`--adaptive-outer-initial-step H` enables success-based outer stepping for one
+increasing final `--outer-targets` value and an explicit `--initial-outer-bias`.
+`--adaptive-outer-growth` defaults to 1.6 and `--adaptive-outer-max-step` to 0.2 V.
+Only a fully accepted device/circuit point advances the step policy; numerical
+rejections since the last accepted outer point inhibit growth. The existing
+inner and outer halving paths remain active, with inner proposals also bounded
+by the current outer step and `--max-inner-step`. Step state, prediction options
+and the final target are persisted and checked on resume. Both prediction and
+adaptive growth are disabled unless explicitly requested; physical defaults and
+qualification thresholds are unchanged.
+The full SLOT BV campaign (`run_slot_ldmos_bv_campaign.py`) accepts
+`--outer-goal` (physical external voltage, default 200000 V) and `--criterion`
+(absolute drain current in A/um, default 1e-7). It stops at the first qualified
+device/circuit record satisfying either condition and records the stop reason.
+Proposals are clipped to the remaining external voltage; an independently
+reclosed point exceeding the goal by more than the load-line tolerance is
+rejected. These are not internal-voltage targets.
+`--initial-loadline-checkpoint` imports a completed, physically matching scalar
+campaign only after revalidating its device and circuit evidence. The imported
+checkpoint and continuation policy are frozen for resume.
+`--state-predictor-max-ratio` enables same-reference-frame qualified-parent
+prediction in the low-voltage scalar and high-voltage coupled paths. High-voltage
+prediction uses the external-voltage secant ratio; numerical rejection retries
+the original qualified parent, while environment/evidence errors propagate.
+`--adaptive-initial-step`, `--adaptive-growth` (default 1.4) and
+`--low-voltage-max-step` (default 0.1 V) enable success-based growth. At physical
+internal voltage 35 V and above, the existing resistor/current-based step bound
+also applies. Growth follows independent circuit confirmation; recovered scalar
+or high-voltage prediction failures suppress growth. Reference-frame changes
+are independently requalified and never use cross-frame predictor parents.
+The opt-in campaign `--port-step-control` replaces that legacy cap policy with
+three independent limits: `--outer-max-step` (default 0.2 V),
+`--accepted-inner-max-step` (0.2 V), and `--trial-inner-max-step` (0.1 V).
+The last limit controls scalar device trials and, on the coupled branch, the
+internal-voltage update cap; it is not the accepted-state increment limit.
+Without this flag, legacy behavior including the 0.02 V coupled update cap is
+unchanged. These are campaign CLI options, not new physical JSON deck fields.
+The newest three separated qualified points in one reference frame estimate
+dI/dVinner by weighted linear fitting (weights 1,2,3). Negative slopes, spacing
+below 1e-6 V, insufficient history or adjacent slope disagreement above a factor
+of two disable resistor amplification; this is not an NDR continuation method.
+External proposals are bounded by the external cap, estimated internal motion,
+estimated current growth, next-span feedback and the remaining voltage goal.
+The optional `--proposal-max-step` additionally caps each proposed external
+increment, including proposals after success feedback or retry. It defaults to
+unset, must be finite and positive, and is frozen as `proposal_max_step_V` in
+the continuation identity. It does not replace `--outer-max-step`: the latter
+still checks the actual independently reclosed external increment. This permits
+bounded small-step experiments without rejecting a valid strict correction
+merely because it exceeds the smaller proposal cap.
+`--step-current-fraction` (0.25) and `--step-current-floor` (1e-16 A/um) bound
+absolute current change by fraction * max(abs(previous current), floor).
+Actual corrected internal/external/current increments are checked before ledger
+acceptance, in addition to every existing device/circuit qualification gate.
+Port prediction error and all saved nonlinear history rows (including rejected
+trials) plus elapsed time limit growth. `--step-target-iterations` (20) is a
+history-row work target, not a solver iteration limit; `--step-target-seconds`
+(120) is a time target, not a timeout. Recovery suppresses growth and halves the
+next proposal. The feedback factor is limited to [0.5, adaptive-growth].
+Limits and controller source hashes are frozen in the campaign identity;
+`--accept-driver-update` cannot silently migrate a saved run to a new policy.
+Predictions are heuristics, not physical-error bounds or convergence guarantees.
+The optional `--actual-outer-continuation` requires port step control. Below
+38.4 V internal bias it tries at most one extrapolated device state and one
+qualified-parent fallback, then independently confirms the actual supply
+coordinate Vinner+R*Id. It does not claim that the originally proposed supply
+was solved: both coordinates and their difference are retained. All actual
+increment/current limits, goal overshoot guards, device and circuit gates still
+apply. Same-seed failed trials within 1e-9 V are skipped within this campaign.
+`--candidate-max-seconds` bounds the whole candidate call (including nested
+corrections); the global campaign deadline still takes precedence. Optional
+`--corrector-stagnation-passes N` (zero/off or N>=2) stops unsuccessful recovery
+when N full validations reject line-search decrease, all carrier rows and global
+closure pass, and Poisson residuals vary by at most 1e-4 relative. This returns
+failure, never qualification, and leaves solver acceptance thresholds unchanged.
+These options are frozen in the continuation identity; start a new audited run
+when changing them. Old partial ledgers require explicit independent validation
+and a provenance-bearing seed export before reuse.
+`--reference-origin-floor V` optionally keeps the scheduled numerical origin at
+least V after an audited seed-window import. It does not alter physical bias;
+all translated states and circuit proofs must be requalified. The option and
+its value are frozen in identity. It is not available for an unseeded cold run.
+Actual-coordinate candidates also save `qualified_device.json` before outer
+acceptance so that a later rejection does not erase their device proof; such a
+file alone is not an accepted circuit state.
+With `--port-step-control --port-predictor limited_rational`, the baseline is
+a limited three-point endpoint tangent of Vinner(Vouter), not an I(Vinner)
+regression. Up to six qualified, same-frame points supply three causal one-step
+holdouts. A three-point rational candidate is selected only if all holdouts are
+eligible, its median normalized error is below 80% of the baseline (above a
+1e-10 normalized-error tie floor), and its latest error is no worse. Selection
+uses completed steps only. The endpoint slope is limited to [0,min(3*s_last,1)]
+on a nonnegative historical branch. Observed negative internal or current
+increments break the history instead of being clipped. Insufficient history
+uses conservative limits without claiming a measured monotone law.
+The rational form is deltaV=a*H/(1+b*H). It must have finite fit parameters,
+scaled infinity-norm condition estimate <=1e8, denominator >=1e-3 and derivative
+in [0,1] across the fitting and proposed intervals; otherwise the baseline is
+used. Bounded bisection enforces predicted internal/current caps. Existing
+actual-increment, device, all-row and circuit checks remain mandatory. The
+model, eligibility, historical errors and decision are saved in each proposal.
+`--port-predictor legacy` remains the default; predictor identity is frozen
+with the rest of the policy and cannot be changed by ordinary resume.
+The optional `--port-feedback-mode matched_actual_outer` requires
+`--port-step-control --port-predictor limited_rational`. The default
+`proposed_outer` retains the previous feedback calculation. The new mode
+evaluates the already selected frozen model at the strictly accepted actual
+outer voltage, then compares its inner voltage and load-line-derived current
+with the strict result. Normalizers, cost/recovery factors and all final
+qualification/increment gates are unchanged. No new model is selected using
+the accepted point. Saved past samples revalidate the same coefficients and
+the extended domain; insufficient history, an invalid domain or a reference
+frame mismatch falls back to the original error, caps the feedback factor at
+1 and prohibits growth-stage promotion (the growth controller backs off).
+The proposal records resistance and reference origin. Feedback retains the
+original normalized error, proposed/actual supply, supply translation, frozen
+model, checked span, matched predictions and promotion eligibility. Candidate
+current error and conservation remain separate growth-quality checks; candidate
+current never substitutes for strict current. The mode and fallback protocol
+are bound as `continuation_policy.port_feedback`, version
+`matched_actual_outer_v1`. Changing mode requires a new audited run, not an
+in-place resume or `--accept-driver-update` override.
+The optional `--row-quality-repair` requires `--current-growth-control` and is
+off by default. After strict device qualification, it permits at most one
+fixed-potential `carrier_only` correction when the local row ratio exceeds the
+growth-promotion threshold, while candidate error/conservation, resolved
+progress, actual increments and predictor quality permit promotion. Recovered
+or retried candidates are ineligible. This is a growth-quality optimization,
+not a relaxation of the final row or convergence gates.
+The correction must pass full strict device validation at the same inner
+voltage, improve the row ratio and retain the candidate-current quality limit.
+A numerical rejection retains the original qualified device point and blocks
+promotion; budget, input, environment and evidence errors propagate normally.
+Nested multi-pass correction is disabled during this strict revalidation.
+Actual supply voltage and current increment checks, growth metrics and circuit
+confirmation are recomputed for the selected final point. The complete repair
+and revalidation cost, including rejected repairs, enters attempt feedback.
+`quality_repair/summary.json` binds the original state and records eligibility,
+before/after metrics, status and elapsed time. The option is bound in
+`continuation_policy.row_quality_repair` as `one_pass_row_quality_reuse_v2`; changing
+it requires a new audited run rather than ordinary resume.
+The correction helper's completed full Newton validation and final all-active-row
+probe are bound by `SolverBackend.adopt_validation`; a second identical solve
+and probe are not run. Reuse checks the physical/qualification configuration,
+actual bias, input and output files, full-solve lineage and active-row coverage.
+Only iteration budgets and output paths may differ from the base contract.
+The resulting proof records the runner and physical input identity.
+Successful device and circuit-confirmation checks may be memoized in one process
+(at most 128 entries). Every lookup still hashes all bound evidence and physical
+resources. Changed contents, metadata, base configuration or input identity
+invalidate reuse; missing dependencies are rejected. No persistent cache or
+candidate-only success flag can qualify a point. Circuit confirmation remains
+separate from full device qualification.
+
+The default-off `--current-proposal-mode current_target` requires the existing
+current-growth control and a positive qualified parent current. It is intended
+for the near-vertical positive-current branch. Instead of feeding the achieved
+voltage span into the next proposal, it proposes `f * R * abs(I_parent)`, where
+`f` is the current growth stage times its backoff multiplier. Feedback supplies
+only a bounded factor in `[0.5, 1]`. The remaining supply range, explicit retry
+and proposal caps, current-scaled outer cap, and unchanged empirical raw
+candidate-error cap all still limit this proposal. The final current guard
+remains independent (25% in the SLOT experiment); the formula is a constant-inner
+voltage forecast, not a guarantee of achieving that current growth.
+
+This mode does not require a monotone inner-voltage port fit. Secant restart
+history is selected by increasing outer voltage and current within the same
+reference frame; missing history is recorded. The optional
+`--accepted-inner-decrease-max-step` (default `0 V`) permits a bounded decrease
+of accepted inner voltage, in addition to the existing numerical tolerance.
+It must be nonnegative, no larger than the accepted-inner cap, and requires
+`current_target`. External voltage and positive-branch current must still
+increase. These settings are identity-bound as `current_target_fold_v1`,
+`outer_current_v1`, and the nonzero decrease cap; changing them requires a new
+audited run. They do not change device/row/closure/load-line gates, candidate
+promotion metrics, or the requirement for strict device reclosure.
+
+When `coupled_linearization_audit` is enabled and an output state is configured,
+the usual seed diagnostics remain available. Additionally,
+`sweep.external_circuit.coupled_diagnostic_min_updates` (default `0`, range
+`0..3`, no larger than `max_iterations`) can suppress early convergence for a
+bounded diagnostic. It retains the original residual tolerances, update limits
+and line search, and may fail before reaching the requested update count.
+When nonzero, every accepted update is saved beside `write_state_file` as
+`.coupled_update_<outer>_<retry>_<update>.h5`, with diagnostic-only state role.
+Every successfully evaluated line-search trial is also saved as
+`.coupled_trial_<outer>_<retry>_<iteration>_<line_search>.h5`. Its log records
+alpha, in-memory equation norm/index, circuit residual, merit and acceptance.
+Rejected trials retain a diagnostic-only role and are never promoted. Export
+errors propagate rather than being treated as numerical backtracking failures.
+These snapshots grant no device qualification. The default performs no extra
+updates and writes no update or trial snapshots.
+
+When `coupled_linearization_audit` is enabled and an output state is configured,
+the diagnostic runner saves the initial coupled seed separately, logs its
+current and load-line residual, and logs successful as well as failed coupled
+iteration traces. The saved seed is not qualified. The frozen
+`newton_candidate_conservation_probe` additionally accepts
+`candidate_port_diagnostics: true` to report all contact residual-functional
+currents (A/um, signed as in the circuit functional) and frozen residual blocks.
+The contact functional supports split DD states and restores their referenced
+QF and packed low parts before evaluating the unconstrained physical residual.
+These are state diagnostics, not an alternative convergence or acceptance gate.
+
+The continuation driver's `--carrier-corrector-mode carrier_density` uses this
+candidate and retains the full coupled, global closure and all-active-row gates.
+
+The continuation runner's optional `--audit-local-continuity` adds an all-active
+row audit at each accepted candidate, using the deck's `eps_row` and scale floor.
+Failed audits stop advancement; the original solver and closure gates still
+apply. This option requires per-point continuation and cannot be combined with
+`--batch-predictor`. Diagnostic outputs are isolated per attempt. Secant restart
+prediction extrapolates saved QF references and increments separately so tiny
+leakage-current signals survive a moving bias reference.
+`--secant-predictor` applies this prediction to each subsequent point once two
+qualified states are available. `--carrier-corrector-passes N` optionally tries
+up to N fixed-potential carrier Newton steps after a failed coupled attempt.
+These steps use the physical carrier Jacobian without its diagonal floor. The
+result must then pass the full original coupled deck and a fresh all-active row
+audit. The attempt manifest reports coupled Newton iterations and carrier
+correction steps separately; a zero-step validation is not counted as a fresh
+coupled Newton iteration. This correction requires `--audit-local-continuity`.
+If a coupled validation fails and saves a rejected state, the remaining
+correction budget can continue from that state and revalidate again. Each
+validation has an isolated directory, and its Newton iterations are included
+in the attempt total. Only a complete coupled solve followed by the local
+audit advances the accepted state.
+
+The historically named `run_slot_ldmos_noavalanche_continuation.py` preserves
+the base deck's impact-ionization configuration. Enabled self-consistent
+avalanche uses separate `02_delaunay_avalanche_adaptive` paths and
+`adaptive_avalanche_summary.json`; avalanche-off/postprocess-only retains the
+existing no-avalanche names. Summaries record the actual physics branch and
+source configuration. An enabled external circuit is rejected because the
+local audit needs the solved inner voltage, not the outer supply voltage;
+retained circuit settings with `enabled: false` are allowed.
+Known Windows loader errors (missing/incompatible runtime DLLs) stop the
+driver immediately and write `startup_failure.json`. They cannot be repaired
+by voltage bisection. Launch Windows runs with the matching UCRT64 `bin` on
+`PATH`, including when using a frozen copy of the Release executable.
+
 - `diagnostics.transport.enabled`: appends aggregate mobility and high-field
   drive columns to the main sweep CSV.
 - `diagnostics.contact_edge.enabled`: writes a separate contact-edge transport
@@ -3037,7 +4553,13 @@ For deterministic avalanche-source diagnostics,
 Tri3 potential/quasi-Fermi derivatives through the impact coefficient,
 midpoint density, high-field mobility, edge GradQF magnitude, truncated source
 volume, and symmetric source partition. `finite_difference` remains an audit
-oracle. `frozen` keeps the self-consistent avalanche residual but omits only
+oracle. With surface mobility, the cell source uses the complete local
+central-difference path even when `local_ad` is selected, because the current
+AD kernel does not propagate the surface-field mobility response. Trial
+potentials refresh the normal field; trial densities follow the selected
+carrier statistics. Edge sources also include adjacent-vertex electrostatic
+columns and cross-carrier density dependence. `frozen` keeps the
+self-consistent avalanche residual but omits only
 its Jacobian contribution; it is an ablation control and does not match the
 default Sentaurus avalanche-derivative semantics.
 
@@ -3103,6 +4625,24 @@ load-line convergence tolerances. The filter controls are
 applied independently to the device-equation and load-line residual blocks;
 a large load-line residual cannot authorize growth of the device residual.
 
+Coupled circuit and pseudo-arclength restarts use their actual initial contact
+bias and one seed-aware QF reference coordinate system for the device, current,
+and state conversions. When referenced QF coordinates are enabled, packing
+uses the saved reference/increment fields instead of rounded absolute QFs.
+References stay fixed during that continuation context;
+this does not guarantee sub-ULP carrier resolution after a large bias change.
+
+`coupled_positive_density_updates` (default `false`, `coupled_newton` only)
+uses a nonlinear positive-density trial path for classical Boltzmann carriers.
+The full device and current Jacobians are unchanged. The linearized relative
+density step is bounded below by -0.9, then mapped back with `log1p`; configured
+quasi-Fermi caps apply to the mapped components instead of uniformly scaling
+the circuit voltage with the largest raw quasi-Fermi step. This trial path
+retains the original Newton tangent at zero step length. Each trial still
+passes the selected residual line search and final equation/load-line tests.
+Fermi-Dirac statistics and electron quantum potential are rejected. This
+experimental globalization option does not replace carrier-row or global
+current-closure qualification of a simulation checkpoint.
 The opt-in `report_only` mode evaluates the `merit` backtracking sequence
 starting at alpha=1 and records `reported_alpha` (zero if no trial qualifies),
 but applies the full alpha=1 step even when merit increases. It ignores
@@ -3188,6 +4728,30 @@ An explicit sidecar circuit budget takes precedence over both. An existing sidec
 requests inner guards must explicitly select `legacy_inner_guard`. This is a
 compatibility contract for documented stepping, not a promise of identical
 Sentaurus nonlinear trajectories or proprietary solver internals.
+
+For CMD voltage ramps, `MaxStep` caps adaptive trials. The end bias and explicit
+output times define the required landings. A full-range `CurrentPlot` interval
+request also supplies the regular output grid. The `Extrapolate` option controls
+the trial's initial state independently. On the ordinary and SLOT extended80
+prescribed-bias potential/density paths, it selects linear potential and
+logarithmic population extrapolation.
+
+The `slot_population_bvds_v1` extended80 stage accepts
+`solver.population_derivative_recovery: "after_protection"` with
+`solver.population_update.protection: "local_nonpositive"`. Each supply
+trial starts with the full tangent. After a protected write, the next
+linearization omits IALMob transport feedback and avalanche source
+derivatives from the augmented system. Transport, recombination and
+avalanche values still enter the physical residual and the port current
+calculation. An unprotected write restores the full tangent. This profile
+uses `full` when the recovery setting is absent.
+
+SLOT extended80 BVDS and fixed-bias Newton stages use EFT accumulation for
+the physical linear defect and componentwise backward error. The runner
+reports `linear_defect_method`. Set `solver.extended80_linear_defect` to
+`"mp100"` to reproduce the previous accumulation. EFT uses exact dyadic
+arithmetic on rows with unsafe product range or unresolved cancellation.
+The SparseLU factorization and linear accuracy limits are shared by both modes.
 
 For example, to migrate a coupled deck:
 
@@ -3329,6 +4893,17 @@ polishing a device residual that already meets the locator tolerance. If a
 trial leaves that active tolerance, the next iteration restores the device
 right-hand side instead of suppressing the normal correction.
 
+The SLOT campaign driver `scripts/run_slot_ldmos_bv_campaign.py` exposes
+`--candidate-zero-converged-device-rhs` as a default-off candidate-only option.
+In its high-voltage coupled branch (physical internal voltage at least 38.4 V),
+this sets the maximum forcing tolerance to the original `1e-8` and enables
+`zero_converged_residual`, without relaxing the tolerance. It also applies to
+the qualified-parent fallback after a failed predicted candidate. Lower-voltage
+scalar/device continuation, final independent device reclosure, and circuit
+confirmation retain their original settings. This option is bound to the
+campaign continuation identity: changing it requires a fresh output directory
+with a revalidated seed window, not `--accept-driver-update` on the old ledger.
+
 `coupled_linear_solver` accepts `direct_bordered` and
 `direct_bordered_qr`. The QR spelling forces the rank-revealing sparse QR
 backend first and falls back only if that factorization fails; the non-QR
@@ -3339,6 +4914,17 @@ derivative, and the full device JVP error (including the largest-error row).
 It is intended for bounded developer probes because each audited Newton step
 evaluates extra residuals.
 
+`coupled_state_predictor="tangent"` optionally builds a full-state supply
+tangent at the restart/current state using the bordered Jacobian and RHS
+`[0; target_outer-parent_outer]`; the default is `"none"` (existing behavior).
+The parent must satisfy the candidate device tolerance. The whole increment
+is limited, and a bounded merit check falls back to the unchanged parent if
+prediction fails. The predictor runs even for a single direct target. It is
+only an initial guess, not device or load-line qualification. Diagnostics are
+logged as `external_circuit: tangent_predictor`. The SLOT campaign exposes
+`--candidate-state-predictor tangent`, bypasses Python secant extrapolation
+for that candidate and binds `bordered_tangent_v1` into continuation identity.
+Use a fresh evidence directory and revalidated parents when changing this policy.
 The C++ developer API additionally provides
 `CoupledLoadLineConfig::directRefinementSteps` (default `0`, range `0..8`).
 It is not a JSON/frontend option. An explicit direct solver is required when
@@ -3349,6 +4935,51 @@ must reduce the worst componentwise backward error; the result must satisfy
 and nonlinear convergence, line search, physical gates and default profiles
 remain unchanged. This control does not certify the device Jacobian or a BV
 trajectory.
+
+`sweep.external_circuit.coupled_state_predictor: "constant"` explicitly starts
+each coupled target from the last accepted state, suppressing the built-in
+secant extrapolation. The default `"none"` retains the existing secant policy;
+the unrelated top-level sweep predictor does not control this coupled branch.
+`"tangent"` retains its existing guarded prediction and accepted-state fallback.
+When resuming, bind `initial_inner_voltage_V` to the saved device voltage,
+separately from `sweep.start`, which is an outer supply voltage.
+
+`sweep.external_circuit.coupled_preserve_contact_potential` (boolean, default
+`false`) retains the contact potential rows and columns in direct bordered
+`coupled_newton` solves with `solver.state_variables: potential_density`.
+The carrier constraints still undergo exact affine substitution, including
+their coupling to the retained potential and external circuit voltage.
+This option can match a reference solver's system layout in a matrix audit.
+
+For bounded backend diagnostics, set `VELA_PARDISO_INPUT_CAPTURE_DIR` to an
+existing, empty output directory. The MKL adapter records the first four
+solves of dimension at least 30,000 per process before it calls phase 33.
+Each `VELAPD01` file contains the two little-endian 64-bit integers
+`dimension` and `stored_nonzeros`, followed by one-based 32-bit CSR row
+pointers and columns, binary64 coefficients, and the binary64 RHS.
+
+`sweep.external_circuit.coupled_extended_precision_fallback` (boolean, default
+`false`) is an independent direct-bordered recovery option. If the ordinary
+solve and refinement fail the existing original-system linear gates, it tries
+`sparselu_long_double` with up to eight corrections. It requires
+`coupled_linear_solver: "direct_bordered"` and a platform with a wider
+`long double`. Only a direction improving the original-system defect score is
+retained; the `1e-10` componentwise gate and scaled absolute gate are unchanged.
+Assembly, affine constraint substitution, public directions and nonlinear
+states remain binary64. This is not full extended-precision TCAD. Update
+diagnostics record whether recovery was selected and its correction count.
+It adds no new nonlinear stopping rule and changes no default profile.
+The persistent `sparselu_long_double` solver reuses factors for bitwise
+identical matrices with different RHS. Changed values invalidate numeric
+factors; changed sparsity invalidates symbolic analysis. This also applies
+after the common prescribed-row substitution, and does not cache physical
+evaluations or carry factors between different Newton matrices.
+
+For isolated failure investigations, `VELA_BORDERED_FAILURE_DUMP` may name a
+private output directory. A rejected componentwise solve then writes its raw
+augmented matrix, RHS, direction, scales and row defects in a fresh child
+directory. Export is disabled when the variable is unset; it cannot accept a
+failed direction or alter thresholds. Keep generated systems outside Git.
 
 Coupled outer-voltage continuation is controlled by
 `coupled_initial_outer_step_V`, `coupled_min_outer_step_V`,
@@ -3759,6 +5390,34 @@ For off-state high-field diagnostics, set `sweep.mode` to `bv_reverse` and add
 exercised by focused unit tests. This configuration family is an engineering
 prototype and is not a calibrated MOSFET model.
 
+## Experimental P1 convergence shadow capture
+
+`VELA_P1_SHADOW_CAPTURE=1` enables an experimental observer in the classical
+isothermal Newton progress output. It is off by default and does not select a
+new convergence policy or change legacy acceptance. Existing progress output
+must be configured; the observer adds `p1_shadow` to its JSON records.
+
+The capture binds the actual advancement direction, processed update, damping,
+constraint identities and residual to each saved iteration. Its compensated
+linear diagnostics separately identify the pre-closure, post-constraint
+matrix and the returned-coordinate solve equations after configured closure
+replacement or continuity row scaling. Neither claims to capture the internal
+eliminated/equilibrated PARDISO CSR or to certify forward accuracy.
+The observer reuses existing row/closure/branch verdicts where available;
+absent guard results remain `not_evaluated`. Physical residuals are reported
+in C/m (free Poisson rows), A/µm (free continuity rows), and V (constraints).
+Unit-valued reporting references are fixed and independent of the starting
+residual; they are not calibrated device-accuracy tolerances.
+`scripts/analysis/slot_shadow_convergence.py` replays adjacent archived states
+using their exact binary64 reference/high/low/scale composition. New numeric
+metrics are `not_calibrated`; missing inputs are `not_evaluated`. Neither is a
+pass or a failure, and neither controls continuation.
+
+This experiment does not implement `newton.convergence_policy`, calibrate
+physical residual scales, or replace existing guards. See the
+[P1 validation report](validation/slot_ldmos_p1_shadow_convergence_2026-10-20.md)
+for coverage and missing evidence.
+
 ## Independent prescribed-source lattice heat diagnostic
 
 `lattice_heat_probe INPUT.json OUTPUT.json` is a separate diagnostic executable.
@@ -3858,11 +5517,92 @@ Auger are rejected. This option changes SRH residuals, Jacobian entries and
 split-state source evaluation together; mesh volumes, Poisson charge, edge
 transport, BTBT and avalanche measures are unchanged. It is not a global default.
 
+### Explicit PhuMob element avalanche for SLOT IdVd
+
+`solver.impact_ionization.current_approximation: "phumob_element_sg_best_vertex"`
+selects an independent Si-only source profile. It uses the same 300 K PhuMob /
+element Lombardi / full-derivative guards as the density-GradQF profile below;
+it does not change that profile or the transport current discretization.
+For each triangle, the vertex with the largest element box measure is selected
+(ties use the smallest global node ID). Two incident SG edge drops reconstruct
+one current vector. Mobility is evaluated at that vertex, and the constant
+element generation rate is distributed with the existing vertex box measures.
+The effective-band SG formula uses live positive populations and QF differences:
+`a = log(c_j)-log(c_i) + s*(phi_j-phi_i)/Vt`,
+`f = Vt*c_j*B(a)*expm1(s*(phi_j-phi_i)/Vt)`, with `s=+1` for
+electrons and `s=-1` for holes; the physical particle-current drop is `-s*f`.
+The statistical band correction is represented by the population/QF relation,
+not by adding a generalized-Einstein multiplier to this source formula.
+By default, all live-population, mobility, field and source derivatives enter
+local AD. For this SG source profile, explicit `source_jacobian: "frozen"`
+omits the avalanche source tangents while retaining the live avalanche residual
+and the transport derivatives.
+Both the reconstructed source current and the avalanche GradQF force follow
+the element partial-layer projection;
+the existing explicit contact electric-field fallback has precedence.
+Exactly zero current uses the existing zero subgradient of its Euclidean norm;
+this is not a differentiability claim at zero. Modern Vela constants and the
+definition-integral Fermi mapping are retained. Observed agreement with a native
+kernel is a version/state-specific validation, not a general equivalence guarantee.
+See `configs/regression/slot_ldmos_idvd_sg_source_control.json` for the opt-in
+AverageBox configuration; it retains all device acceptance conditions.
+
+`solver.impact_ionization.current_approximation: "phumob_element_density_grad_qf"`
+is an opt-in, Si-only classical Newton profile. It requires `van_overstraeten`,
+`generation: current_density`, `driving_force: quasi_fermi_gradient`,
+`quasi_fermi_gradient_discretization: cell_gradient`,
+`source_mapping_mode: element_vertex_box_measure`, `source_jacobian: local_ad`,
+and the complete `phumob_field_lombardi` element-distance/HFS mobility profile
+with `jacobian_field_derivatives: true`. It supports live Fermi or Boltzmann
+populations at 300 K. RefDens interpolation, quantum corrections, IALMob boundary
+projection, extra source/geometry factors and a constant-mobility override for
+Si are rejected. PolySilicon and insulators contribute no avalanche source.
+
+The source at vertex k of a Si triangle is
+`M_k [alpha_n mu_n n_k |grad(phi_n)| + alpha_p mu_p p_k |grad(phi_p)|]`,
+with explicit internal-to-SI factors. `M_k` is the existing cell box measure.
+The vertex mobility includes PhuMob, Lombardi and the transport HFS field
+stencil; the avalanche driving field is the configured cell quasi-Fermi
+gradient (or the explicitly selected contact electric-field fallback).
+The same local evaluator supplies residuals, source Jacobian, global source
+audit and process-probe records. Local AD propagates the live Fermi density
+response and analytic mobility partials; it does not differentiate through
+finite differences of the complete source.
+
+This profile uses `mesh_default` with `transport_edge_geometry: element_box`
+and cell-material Poisson geometry. Imported external AverageBox edge couples
+are not used by this element transport assembly; the external-profile avalanche
+guard remains in force.
+
+This is an explicit discretization choice, not a claim of numerical identity
+with Sentaurus or completion of the SLOT 0--60 V validation. It does not change
+the PN2D SG/GSS-Laux bundle, historical IALMob BVDS sources, split-state support,
+or any convergence gate. The separate IdVd configurations are
+  `configs/regression/slot_ldmos_idvd_fermi_{control,materials}.json`.
+
+### Opt-in global population step
+
+`solver.population_step_control` defaults to `{"mode":"legacy"}`. An explicit
+`{"mode":"fraction_to_boundary","fraction":0.99}` selects a common positive
+population step bound. The fraction must be finite and strictly between 0 and 1.
+No concentration cutoff is used. Free electron and hole population tangents limit
+one factor for the entire update; constrained and eliminated carrier slots do not
+introduce artificial population bounds. A bordered system scales its contact
+voltage direction by the same factor. Finite population changes are mapped back
+through the configured Boltzmann/Fermi statistics, preserving split-coordinate
+writeback where enabled. Subsequent line search and all existing acceptance,
+finite-value, boundary, inverse-mapping and circuit protections remain active.
+
+The SLOT `slot_population_memory` runner uses the same bound and records
+`global_population_step` per update. This opt-in path replaces its componentwise
+Poisson damping and nonpositive-population projection with a common step. Its
+raw-direction U and existing stop conditions remain unchanged. This option is an
+experimental numerical policy, not a validated replacement for legacy defaults.
 
 ### Opt-in population lower bound and predictor cutoff
 
 For `solver.state_variables: potential_density`, the following controls are
-independent. Population candidate floor defaults to 1e-100 cm^-3; predictor cutoff remains zero. Explicit zero floor restores the disabled-floor policy:
+independent. BVMethods population candidate floor defaults to 1e-100 cm^-3; legacy population mode defaults to no floor; predictor cutoff remains zero. Explicit zero floor restores the disabled-floor policy:
 
 - `solver.population_update.minimum_density_cm3`: finite nonnegative lower
   bound applied after each free-carrier candidate update and its existing

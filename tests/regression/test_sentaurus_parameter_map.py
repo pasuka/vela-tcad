@@ -368,6 +368,11 @@ class KnownOverstatementTest(unittest.TestCase):
                 self.assertEqual(result.status, pmap.STATUS_EXACT)
                 self.assertEqual(result.to_json()["target"], target)
                 pmap.assert_importable([result])
+    def test_auger_density_enhancement_uses_carrier_specific_targets(self):
+        for name, key in (("H", "enhancement"), ("N0", "reference_density_m3")):
+            result = pmap.classify("Auger", name, active_models=["Auger"])
+            self.assertEqual(result.status, pmap.STATUS_EXACT)
+            self.assertEqual(result.entry.target, "solver.auger_density_dependence.{carrier}." + key)
 
     def test_auger_coefficients_are_approximations_not_exact(self):
         for name in ("A", "B", "C"):

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/UnitScaling.h"
 #include "vela/core/Types.h"
 #include "vela/simulation/CurveSweep.h"
@@ -13,6 +14,7 @@
 #include "vela/solver/NewtonSolver.h"
 #include <array>
 #include <cmath>
+#include <filesystem>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -253,6 +255,8 @@ struct ExternalResistorControlConfig {
     bool prescribedCurrent = false;
     std::string solver = "nested_scalar";
     Real resistance_ohm_um = 0.0;
+    /// Authoritative physical resistance for the coupled population residual.
+    std::optional<ArithmeticReal> decimalResistance_ohm_um;
     Real currentDirection = 1.0;
     Real initialInnerVoltage_V = 0.0;
     Real residualTolerance_V = 1.0e-6;
@@ -276,8 +280,12 @@ struct ExternalResistorControlConfig {
     Real coupledOuterShrinkFactor = 0.5;
     int coupledMaxStepRetries = 12;
     bool coupledApplyDeviceUpdateLimit = true;
+    bool coupledPositiveDensityUpdates = false;
     std::string coupledLineSearchMode = "merit";
     std::string coupledLinearSolver = "direct_bordered";
+    bool coupledExtendedPrecisionFallback = false;
+    bool coupledPreserveContactPotential = false;
+    std::string coupledStatePredictor = "none";
     Real coupledFilterGamma = 1.0e-4;
     Real coupledFilterEnvelopeFactor = 2.0;
     bool coupledInexactDeviceForcingEnabled = false;
@@ -285,6 +293,7 @@ struct ExternalResistorControlConfig {
     Real coupledInexactLoadActivationRatio = 10.0;
     bool coupledInexactZeroConvergedResidual = false;
     bool coupledLinearizationAudit = false;
+    int coupledDiagnosticMinUpdates = 0;
     DensityUpdateConvergenceConfig coupledUpdateConvergence;
     bool coupledContinuationEnabled = false;
     bool coupledRetryAcceptedSeed = true;
@@ -313,6 +322,12 @@ struct BoundaryControlPersistenceConfig {
     int preferredMaxEvaluations = 3;
     bool adaptiveDeviceContinuation = false;
     bool adaptiveOuterContinuation = false;
+};
+
+struct ArithmeticSweepVoltageControls {
+    ArithmeticReal start = 0, stop = 0, step = 0, initialStep = 0, minStep = 0, maxStep = 0;
+    ArithmeticReal growthFactor = 1, shrinkFactor = 0.5;
+    std::vector<ArithmeticReal> biasPoints, vtkBiasPoints;
 };
 
 struct DCSweepConfig {
@@ -356,6 +371,9 @@ struct DCSweepConfig {
     std::string initialStateFile;
     std::string writeStateFile;
     bool frozenStateComputeCurrent = false;
+    // Authoritative stage controls. Existing binary64 sweep callers continue
+    // using the compatibility fields above.
+    std::optional<ArithmeticSweepVoltageControls> arithmeticVoltageControls;
     SweepInitializationConfig initialization;
     ExternalResistorControlConfig externalResistor;
     VoltageToCurrentControlConfig voltageToCurrent;
@@ -379,6 +397,10 @@ struct DCSweepConfig {
     SweepContinuationConfig continuation;
     UnitScalingConfig scaling;
 };
+
+/// Inspect the exact voltage controls with the same parser used by a sweep.
+std::optional<ArithmeticSweepVoltageControls> readArithmeticSweepVoltageControls(
+    const nlohmann::json& deck, const std::filesystem::path& deckDirectory = {});
 
 struct DCSweepPoint {
     Real voltage = 0.0;
@@ -411,8 +433,12 @@ struct DCSweepPoint {
     int carrierRowViolations = 0;
     Real carrierRowMaxRatio = 0.0;
     bool globalContinuityClosureSatisfied = true;
+    bool globalElectronContinuityClosureQualified = false;
+    bool globalHoleContinuityClosureQualified = false;
     Real globalElectronContinuityClosureRatio = 0.0;
     Real globalHoleContinuityClosureRatio = 0.0;
+    Real globalElectronContinuityClosureMismatch = 0.0;
+    Real globalHoleContinuityClosureMismatch = 0.0;
     Real globalElectronContactFlux = 0.0;
     Real globalHoleContactFlux = 0.0;
     Real globalElectronIntegratedSource = 0.0;

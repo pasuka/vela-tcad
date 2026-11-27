@@ -1,6 +1,7 @@
 #include "vela/mesh/BoxGeometryBuilder.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/mesh/DelaunayBox.h"
+#include "vela/mesh/AverageBox.h"
 #include "vela/mesh/MeshEntity.h"
 #include <algorithm>
 #include <array>
@@ -10,6 +11,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace vela {
 
@@ -17,6 +19,7 @@ namespace {
 
 constexpr Real kDegenerateTol = 1.0e-30;
 constexpr Real kPi = 3.141592653589793238462643383279502884;
+constexpr Real kDelaunayCotangentTolerance = 1.0e-12;
 
 std::pair<Index, Index> edgeKey(Index a, Index b)
 {
@@ -61,6 +64,20 @@ Real distanceSquared(const Node& a, const Node& b)
     return dx * dx + dy * dy;
 }
 
+std::array<Real, 3> triangleCotangents(const std::array<const Node*, 3>& nodes,
+                                      Index& clampedCount)
+{
+    std::array<Real, 3> cotangents{};
+    for (std::size_t i = 0; i < nodes.size(); ++i) {
+        const Real raw = cotangentAtOppositeVertex(*nodes[(i + 1) % 3],
+                                                  *nodes[(i + 2) % 3], *nodes[i]);
+        cotangents[i] = clampNearRightCotangent(raw);
+        if (raw != cotangents[i])
+            ++clampedCount;
+    }
+    return cotangents;
+}
+
 std::array<Real, 3> mixedVoronoiShares(const std::array<const Node*, 3>& nodes,
                                        const std::array<Real, 3>&       cotangents,
                                        Real                             area,
@@ -101,7 +118,7 @@ void warnNegativeCotangent(Index cellId, Index n0, Index n1, Real cot)
 {
     std::cerr << "Vela warning: negative cotangent contribution " << cot
               << " for edge (" << n0 << ", " << n1 << ") in cell "
-              << cellId << "; using non-negative barycentric box fallback.\n";
+              << cellId << "; applying configured edge coupling policy.\n";
 }
 
 } // namespace
@@ -119,6 +136,41 @@ Real BoxGeometryBuilder::triangleArea(const DeviceMesh& mesh, const Cell& cell)
     return triangleArea(mesh.getNode(cell.node_ids[0]),
                         mesh.getNode(cell.node_ids[1]),
                         mesh.getNode(cell.node_ids[2]));
+}
+
+std::array<Real,3> BoxGeometryBuilder::mixedVoronoiVertexVolumes(const DeviceMesh& mesh,const Cell& cell)
+{
+    if (cell.type!=CellType::Tri3 || cell.node_ids.size()!=3)
+        throw std::invalid_argument("Mixed-Voronoi vertex volumes require Tri3 cells");
+    const auto& a=mesh.getNode(cell.node_ids[0]);
+    const auto& b=mesh.getNode(cell.node_ids[1]);
+    const auto& c=mesh.getNode(cell.node_ids[2]);
+    const Real area=triangleArea(a,b,c);
+    if (area<=kDegenerateTol) return {};
+    const std::array<const Node*, 3> nodes = {&a, &b, &c};
+    Index clampedCount = 0;
+    const auto cotangents = triangleCotangents(nodes, clampedCount);
+    return mixedVoronoiShares(nodes, cotangents, area, clampedCount != 0);
+}
+
+std::array<Real,3> BoxGeometryBuilder::circumcentricVertexVolumes(
+    const DeviceMesh& mesh, const Cell& cell)
+{
+    if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+        throw std::invalid_argument("Circumcentric vertex volumes require Tri3 cells");
+    const auto& a = mesh.getNode(cell.node_ids[0]);
+    const auto& b = mesh.getNode(cell.node_ids[1]);
+    const auto& c = mesh.getNode(cell.node_ids[2]);
+    if (!(triangleArea(a,b,c) > kDegenerateTol))
+        throw std::invalid_argument("Circumcentric vertex volumes require nondegenerate cells");
+    const std::array<const Node*,3> nodes = {&a,&b,&c};
+    std::array<Real,3> shares{};
+    for (int i=0;i<3;++i) {
+        const auto& p=*nodes[i];const auto& q=*nodes[(i+1)%3];const auto& r=*nodes[(i+2)%3];
+        shares[i]=0.125*(distanceSquared(p,r)*cotangentAtOppositeVertex(p,r,q)+
+                          distanceSquared(p,q)*cotangentAtOppositeVertex(p,q,r));
+    }
+    return shares;
 }
 
 void BoxGeometryBuilder::build(DeviceMesh& mesh)
@@ -142,9 +194,11 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
     const bool cellMaterial = options.poissonPermittivityPolicy ==
         PoissonPermittivityPolicy::CellMaterial;
     const bool transfer = options.cellBoxPolicy == CellBoxPolicy::DelaunayTransfer;
-    if (transfer && (!cellMaterial || !supplied.empty()))
-        throw std::invalid_argument("delaunay_transfer requires cell_material and cannot combine with supplied cell coefficients.");
-    const auto generated = transfer ? buildDelaunayCellBox(mesh) : DelaunayBoxResult{};
+    const bool average = options.cellBoxPolicy == CellBoxPolicy::AverageIntersection;
+    if ((transfer || average) && (!cellMaterial || !supplied.empty()))
+        throw std::invalid_argument("Generated cell box requires cell_material and cannot combine with supplied cell coefficients.");
+    const auto generated = average ? buildAverageCellBox(mesh) :
+        transfer ? buildDelaunayCellBox(mesh) : DelaunayBoxResult{};
     if (!supplied.empty() && (!cellMaterial || supplied.size() != mesh.numCells()))
         throw std::invalid_argument("Poisson cell coefficients require cell_material policy and one record per cell.");
     if (cellMaterial) {
@@ -191,6 +245,11 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
     for (Index e = 0; e < mesh.edges_.size(); ++e)
         edgeMap[edgeKey(mesh.edges_[e].n0, mesh.edges_[e].n1)] = e;
 
+    std::vector<Real> assembledRawCouples(mesh.edges_.size(), 0.0);
+    std::vector<Real> assembledCotangents(mesh.edges_.size(), 0.0);
+    std::vector<Real> assembledFallbackCouples(mesh.edges_.size(), 0.0);
+    std::vector<Index> assembledNegativeContributions(mesh.edges_.size(), 0);
+
     bool hasAngle = false;
     for (const auto& cell : mesh.cells_) {
         if (cell.type != CellType::Tri3 || cell.node_ids.size() < 3)
@@ -212,17 +271,10 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
             angleDegreesAt(n2, n0, n1),
         };
         const std::array<const Node*, 3> nodes = {&n0, &n1, &n2};
-        std::array<Real, 3> cotangents{};
-        bool clamped = false;
-        for (int k = 0; k < 3; ++k) {
-            const Real raw = cotangentAtOppositeVertex(*nodes[(k + 1) % 3],
-                                                       *nodes[(k + 2) % 3], *nodes[k]);
-            cotangents[k] = clampNearRightCotangent(raw);
-            if (raw != cotangents[k]) {
-                clamped = true;
-                ++report.clampedCotangentCount;
-            }
-        }
+        Index clampedCount = 0;
+        const auto cotangents = triangleCotangents(nodes, clampedCount);
+        report.clampedCotangentCount += clampedCount;
+        const bool clamped = clampedCount != 0;
         if (options.requireNonObtuse &&
             *std::min_element(cotangents.begin(), cotangents.end()) < 0.0) {
             const Real maxCellAngle = *std::max_element(angles.begin(), angles.end());
@@ -275,22 +327,57 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
                 if (options.warnOnNegativeCotangent)
                     warnNegativeCotangent(cell.id, a, b, cot);
 
-                if (options.fallbackNegativeCotangent) {
+                if (options.edgeCouplingPolicy ==
+                    EdgeCouplingPolicy::LocalPositiveFallback &&
+                    options.fallbackNegativeCotangent) {
                     localCouple = area / (3.0 * edge.length);
                     ++report.fallbackCount;
-                } else {
+                } else if (options.edgeCouplingPolicy ==
+                           EdgeCouplingPolicy::LocalPositiveFallback) {
                     localCouple = 0.0;
                 }
             }
 
-            edge.couple += localCouple;
+            if (options.edgeCouplingPolicy ==
+                EdgeCouplingPolicy::AssembledDelaunayFallback) {
+                assembledRawCouples[it->second] += 0.5 * cot * edge.length;
+                assembledCotangents[it->second] += cot;
+                assembledFallbackCouples[it->second] += area / (3.0 * edge.length);
+                if (cot < 0.0)
+                    ++assembledNegativeContributions[it->second];
+            } else {
+                if (localCouple < 0.0)
+                    localCouple = 0.0;
+                edge.couple += localCouple;
+            }
             if (cellMaterial)
                 poissonCoefficients.at(cell.id)[k] = supplied.empty()
-                    ? localCouple / edge.length : supplied.at(cell.id).coefficients[k];
+                    ? std::max(localCouple, Real{0}) / edge.length : supplied.at(cell.id).coefficients[k];
         }
     }
 
-    if (transfer) poissonCoefficients = generated.coefficients;
+    if (options.edgeCouplingPolicy ==
+        EdgeCouplingPolicy::AssembledDelaunayFallback) {
+        for (Index edgeId = 0; edgeId < mesh.edges_.size(); ++edgeId) {
+            Edge& edge = mesh.edges_[edgeId];
+            if (assembledCotangents[edgeId] >= -kDelaunayCotangentTolerance) {
+                edge.couple = std::max(assembledRawCouples[edgeId], 0.0);
+                if (assembledNegativeContributions[edgeId] > 0)
+                    ++report.edgeAggregationRepairCount;
+                continue;
+            }
+
+            ++report.aggregatedNegativeEdgeCount;
+            if (options.fallbackNegativeCotangent) {
+                edge.couple = assembledFallbackCouples[edgeId];
+                ++report.fallbackCount;
+            } else {
+                edge.couple = 0.0;
+            }
+        }
+    }
+
+    if (transfer || average) poissonCoefficients = generated.coefficients;
     mesh.poissonPermittivityPolicy_ = options.poissonPermittivityPolicy;
     mesh.poissonCellEdgeCoefficients_ = std::move(poissonCoefficients);
     for (const auto& node : mesh.nodes_)

@@ -48,7 +48,7 @@ def _parse_time_spec(tokens: List[Token], ctx: ParseContext) -> Optional[dict]:
             stream.expect_punct("=")
             spec["intervals"] = parse_int(stream.take_value(), "Intervals")
         elif token.kind == "word" and is_number(token.value):
-            values.append(float(token.value))
+            values.append(parse_number(token, "Time"))
         else:
             raise SyntaxIssue(f"unexpected '{token.value}' in Time specification", token.line, token.value)
     if "range" in spec or "intervals" in spec:
@@ -249,7 +249,7 @@ def parse_statements(tokens: List[Token], ctx: ParseContext, nested: bool = Fals
                 if stream.at_punct("("):
                     _, args, _ = stream.take_group()
                 statements.append(_parse_current_plot_statement(head, args, ctx))
-            elif lower == "newcurrentprefix":
+            elif lower in ("newcurrentprefix", "newcurrentfile"):
                 stream.expect_punct("=")
                 value = stream.take_value()
                 statements.append({"kind": "new_current_prefix", "line": head.line, "prefix": value.value})

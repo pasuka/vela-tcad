@@ -21,7 +21,7 @@ from .sections import (PhysicsScope, combine_physics, default_math, parse_curren
                        parse_electrode_block, parse_file_block, parse_math_block, parse_physics_block,
                        parse_plot_block, skeleton_files)
 from .solve import build_analysis, build_stages, parse_solve_block
-from .syntax import ParseContext, SyntaxIssue, group_blocks
+from .syntax import ParseContext, SyntaxIssue, group_blocks, is_number
 
 SCHEMA_ID = "vela.sentaurus_execution_ir.v2"
 SYNTAX_VERSION = "T-2022.03"
@@ -31,17 +31,17 @@ _UNSUPPORTED_SECTIONS = {"thermode", "system", "device", "optics", "transient", 
 __all__ = ["parse_cmd_file", "parse_cmd_text", "SCHEMA_ID", "SYNTAX_VERSION"]
 
 
-def parse_cmd_file(path: Union[str, "os.PathLike[str]"]) -> dict:
+def parse_cmd_file(path: Union[str, "os.PathLike[str]"], *, arithmetic_input: Optional[dict] = None) -> dict:
     path = Path(path)
     data = path.read_bytes()
     try:
         text = decode_bytes(data)
     except UnicodeDecodeError:
         return _undecodable_ir(path.name)
-    return parse_cmd_text(text, path_name=path.name)
+    return parse_cmd_text(text, path_name=path.name, arithmetic_input=arithmetic_input)
 
 
-def parse_cmd_text(text: str, *, path_name: str) -> dict:
+def parse_cmd_text(text: str, *, path_name: str, arithmetic_input: Optional[dict] = None) -> dict:
     source = Source(normalise_text(text), path_name)
     if not source.text.strip():
         return _undecodable_ir(path_name, source)
@@ -61,6 +61,9 @@ def parse_cmd_text(text: str, *, path_name: str) -> dict:
         except LexError as error:
             ctx.error("E104", error.line, None, error.text, detail=error.detail)
             tokens = []
+        if arithmetic_input is not None:
+            arithmetic_input["numbers"] = {f"{token.line}:{token.start}": token.value for token in tokens
+                                           if token.kind == "word" and is_number(token.value)}
         blocks, issue = group_blocks(tokens, source)
         for block in blocks:
             name = block.name.value.lower()
@@ -93,6 +96,10 @@ def parse_cmd_text(text: str, *, path_name: str) -> dict:
     if files is None:
         files = skeleton_files(path_name)
     physics = combine_physics(physics_scopes, ctx)
+    if arithmetic_input is not None:
+        arithmetic_input["temperature_K"] = next(
+            (s.temperature_literal for s in reversed(physics_scopes)
+             if s.scope is None and s.temperature_literal is not None), "300")
     stages = build_stages(statements, files["current"]["resolved"])
     rejected_at_gate1 = bool(source.preprocessor_findings)
     analysis = build_analysis(stages, physics, math, rejected_at_gate1=rejected_at_gate1)

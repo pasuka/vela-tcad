@@ -1,3 +1,4 @@
+#include "vela/equation/LegacyPopulationRuntime.h"
 #include "vela/equation/BvMethodsCoupledRuntime.h"
 #include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/PerformanceProfiler.h"
@@ -623,31 +624,38 @@ std::vector<CoupledDDPoissonTermDiagnostic> BvMethodsCoupledRuntime::populationP
 }
 CoupledDDPhysicalDiagnostics CoupledDDAssembler::bvMethodsPhysicalDiagnostics(
     const VectorXd& x,const CoupledDDBoundaryConditions& b)const {
-    auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods diagnostics requested for legacy operator");
+    auto r=coupledStateRuntime();if(!r)throw std::invalid_argument("BVMethods diagnostics requested for legacy operator");
     return r->physicalDiagnostics(x,b);
 }
-VectorXd CoupledDDAssembler::bvMethodsTransportResidual(const VectorXd& x,BvMethodsTransportPurpose purpose)const {
-    auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods transport requested for legacy operator");return r->transportResidual(x,purpose);
+VectorXd CoupledDDAssembler::bvMethodsTransportResidual(
+    const VectorXd& x, BvMethodsTransportPurpose purpose) const {
+    const auto runtime = std::dynamic_pointer_cast<BvMethodsCoupledRuntime>(coupledStateRuntime());
+    if (!runtime) throw std::invalid_argument("BVMethods transport requested for legacy operator");
+    return runtime->transportResidual(x, purpose);
 }
 SparseMatrixd CoupledDDAssembler::bvMethodsTransportJacobian(const VectorXd& x)const {
-    auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods transport requested for legacy operator");return r->transportJacobian(x);
+    auto r=coupledStateRuntime();if(!r)throw std::invalid_argument("BVMethods transport requested for legacy operator");return r->transportJacobian(x);
 }
 SparseMatrixd CoupledDDAssembler::populationProtectedJacobian(const VectorXd& x,const CoupledDDBoundaryConditions& b,const VectorXd* columns)const {
-    auto r=bvMethodsRuntime();
+    auto r=std::dynamic_pointer_cast<BvMethodsCoupledRuntime>(coupledStateRuntime());
     if(!r||!usesPopulationState())throw std::invalid_argument("Protected tangents require BVMethods population state");
     // Keep the current-state physical operator and statistical edge tangents;
     // only mobility and avalanche derivatives are omitted.
     return r->jacobian(x,b,true,columns,false);
 }
 SparseMatrixd CoupledDDAssembler::populationJacobianInColumns(const VectorXd& x,const CoupledDDBoundaryConditions& b,const VectorXd& columns,bool approximate)const {
-    auto r=bvMethodsRuntime();if(!r||!usesPopulationState())throw std::invalid_argument("Direct population columns require BVMethods population state");return r->jacobian(x,b,approximate,&columns);
+    auto r=std::dynamic_pointer_cast<BvMethodsCoupledRuntime>(coupledStateRuntime());if(!r||!usesPopulationState())throw std::invalid_argument("Direct population columns require BVMethods population state");return r->jacobian(x,b,approximate,&columns);
 }
 SparseMatrixd CoupledDDAssembler::bvMethodsTransportJacobianInColumns(const VectorXd& x,const VectorXd& columns)const {
-    auto r=bvMethodsRuntime();if(!r||!usesPopulationState())throw std::invalid_argument("Direct population transport columns require BVMethods population state");return r->transportJacobian(x,&columns);
+    auto r=std::dynamic_pointer_cast<BvMethodsCoupledRuntime>(coupledStateRuntime());if(!r||!usesPopulationState())throw std::invalid_argument("Direct population transport columns require BVMethods population state");return r->transportJacobian(x,&columns);
 }
-std::shared_ptr<BvMethodsCoupledRuntime> CoupledDDAssembler::bvMethodsRuntime()const {
-    if(scaling_.coupledOperator=="legacy")return {};
+std::shared_ptr<CoupledStateRuntime> CoupledDDAssembler::coupledStateRuntime()const {
+    if(scaling_.coupledOperator=="legacy") {
+        if(!usesPopulationState() || usesLegacyPopulationState())return {};
+        if(!coupledStateRuntime_)coupledStateRuntime_=std::make_shared<LegacyPopulationRuntime>(*this);
+        return coupledStateRuntime_;
+    }
     if(scaling_.coupledOperator!="bvmethods_tri3_qf")throw std::invalid_argument("Unknown coupled operator");
-    if(!bvMethodsRuntime_)bvMethodsRuntime_=std::make_shared<BvMethodsCoupledRuntime>(*this);return bvMethodsRuntime_;
+    if(!coupledStateRuntime_)coupledStateRuntime_=std::make_shared<BvMethodsCoupledRuntime>(*this);return coupledStateRuntime_;
 }
 }

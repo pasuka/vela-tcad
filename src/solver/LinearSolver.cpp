@@ -1,4 +1,5 @@
 #include "vela/solver/LinearSolver.h"
+#include "vela/solver/ExtendedSparseLu.h"
 #include "DirectBackend.h"
 #include "LinearCapture.h"
 #if defined(VELA_HAS_UMFPACK)
@@ -21,6 +22,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <limits>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -34,6 +36,30 @@ extern "C" int openblas_get_num_threads();
 namespace vela {
 
 namespace {
+
+// Use the same exact structure/value cache as other persistent direct solvers.
+// Iterative refinement changes only the RHS; rebuilding these wide factors
+// on every correction is unnecessary and can dominate a TCAD target.
+class LongDoubleSparseLU final : public detail::DirectBackend {
+    std::optional<ExtendedSparseLu> solver_;
+public:
+    void analyze(const SparseMatrixd& a) override {
+        if(std::numeric_limits<long double>::digits<=std::numeric_limits<double>::digits)
+            throw std::runtime_error("sparselu_long_double requires long double wider than double.");
+        solver_.emplace();
+        solver_->analyzePattern(a.cast<long double>());
+    }
+    void factor(const SparseMatrixd& a) override {
+        solver_->factorize(a.cast<long double>());
+    }
+    VectorXd solve(const VectorXd& b) override {
+        const ExtendedVector wide = solver_->solve(b.cast<long double>());
+        VectorXd result=wide.cast<double>();
+        if(!result.allFinite())
+            throw std::runtime_error("long double solve failed or cannot be represented");
+        return result;
+    }
+};
 
 bool sparseAllFinite(const SparseMatrixd& matrix) {
     // Uncompressed Eigen matrices can contain unused capacity between columns.
@@ -197,7 +223,7 @@ std::string sparseMatrixDiagnostics(const SparseMatrixd& A, const VectorXd& b)
 }
 VectorXd solveWithAlternateBackend(const std::string& backend,
                                    const SparseMatrixd& A,
-                                   const VectorXd& b)
+                                   const VectorXd& b,LinearSolver* retainedReduced=nullptr)
 {
     auto checkSolved = [&backend](Eigen::ComputationInfo info, const char* phase) {
         if (info != Eigen::Success)
@@ -205,6 +231,85 @@ VectorXd solveWithAlternateBackend(const std::string& backend,
                 "LinearSolver[" + backend + "]: " + phase + " failed.");
     };
 
+    const bool keepPsi = backend == "pardiso_mkl_eliminated_keep_psi" ||
+                         backend == "sparselu_eliminated_keep_psi";
+    if (backend == "sparselu_eliminated" || backend == "sparselu_eliminated_long_double" ||
+        backend == "umfpack_eliminated" || backend == "pardiso_mkl_eliminated" || keepPsi) {
+        // Eliminate only exact numerical diagonal-singleton equations. Keep
+        // their actual (possibly regularized) diagonal and affine increment.
+        const int n = static_cast<int>(A.rows());
+        // Explicitly opted-in three equal nodal blocks: [psi, phin, phip].
+        // Keep the complete psi block, including its affine Dirichlet rows.
+        // This is not valid for interleaved or additional-equation layouts.
+        if (keepPsi && (n == 0 || n % 3 != 0))
+            throw std::invalid_argument("keep_psi elimination requires three equal nodal blocks");
+        const int retainedPrefix = keepPsi ? n / 3 : 0;
+        std::vector<int> count(n, 0), map(n, -1);
+        VectorXd diagonal = A.diagonal();
+        for (int j=0;j<A.outerSize();++j)
+            for (SparseMatrixd::InnerIterator it(A,j);it;++it) {
+                if (!std::isfinite(it.value())) throw std::runtime_error("elimination: nonfinite matrix");
+                if (it.value()!=0.) ++count[it.row()];
+            }
+        if (!b.allFinite()) throw std::runtime_error("elimination: nonfinite RHS");
+        std::vector<long double> fixed(n, 0.L), corrected(n, 0.L);
+        int nf=0;
+        for (int i=0;i<n;++i) {
+            if (i>=retainedPrefix && count[i]==1 && diagonal[i]!=0.) fixed[i]=static_cast<long double>(b[i])/diagonal[i];
+            else map[i]=nf++;
+            corrected[i]=b[i];
+        }
+        std::vector<Eigen::Triplet<double>> entries;
+        entries.reserve(A.nonZeros());
+        for (int j=0;j<A.outerSize();++j)
+            for (SparseMatrixd::InnerIterator it(A,j);it;++it) {
+                const int i=static_cast<int>(it.row());
+                if (map[i]<0 || it.value()==0.) continue;
+                if (map[j]<0) corrected[i]-=static_cast<long double>(it.value())*fixed[j];
+                else entries.emplace_back(map[i],map[j],it.value());
+            }
+        VectorXd x(n), rhs(nf);
+        for (int i=0;i<n;++i) {
+            if(map[i]<0) x[i]=static_cast<double>(fixed[i]);
+            else rhs[map[i]]=static_cast<double>(corrected[i]);
+        }
+        if (!rhs.allFinite()) throw std::runtime_error("elimination: nonfinite corrected RHS");
+        observePerformanceValue("linear.eliminated_dofs",n-nf);
+        observePerformanceValue("linear.reduced_dimension",nf);
+        observePerformanceValue("linear.retained_prefix",retainedPrefix);
+        if(nf) {
+            SparseMatrixd reduced(nf,nf); reduced.setFromTriplets(entries.begin(),entries.end());
+            reduced.makeCompressed();
+            VectorXd freeX;
+            if(backend=="sparselu_eliminated_long_double")
+                freeX=solveWithAlternateBackend("sparselu_long_double",reduced,rhs);
+            else if(backend=="umfpack_eliminated" || backend=="pardiso_mkl_eliminated" ||
+                    backend=="pardiso_mkl_eliminated_keep_psi") {
+                // Explicit backend selection avoids changing the caller's environment.
+                // Reuse the same affine reduction and lift for both vendor solvers.
+                if(retainedReduced)freeX=retainedReduced->solve(reduced,rhs);
+                else {LinearSolver reducedSolver(backend=="umfpack_eliminated" ? "umfpack" : "pardiso_mkl");freeX=reducedSolver.solve(reduced,rhs);}
+            }
+            else {
+                detail::SparseLuFactors<Real> lu;
+                lu.compute(reduced);checkSolved(lu.info(),"reduced factorisation");
+                freeX=lu.solve(rhs);checkSolved(lu.info(),"reduced solve");
+            }
+            for(int i=0;i<n;++i) if(map[i]>=0) x[i]=freeX[map[i]];
+        }
+        if(!x.allFinite()) throw std::runtime_error("elimination: nonfinite solution");
+        return x;
+    }
+    if (backend == "sparselu_long_double") {
+        if (std::numeric_limits<long double>::digits <= std::numeric_limits<double>::digits)
+            throw std::runtime_error("sparselu_long_double requires long double wider than double.");
+        const VectorXd x = solveExtendedSparseLu(A.cast<long double>(), b.cast<long double>()).cast<double>();
+        if (!x.allFinite())
+            throw std::runtime_error("sparselu_long_double produced an unrepresentable solution.");
+        // Assembly and the public state remain binary64. No claim of a full
+        // extended-precision nonlinear solve is made by this explicit backend.
+        return x;
+    }
     if (backend == "sparseqr") {
         Eigen::SparseQR<SparseMatrixd, Eigen::COLAMDOrdering<SparseMatrixd::StorageIndex>> qr;
         qr.compute(A);
@@ -300,7 +405,7 @@ LinearSolver::LinearSolver(const std::string& backend)
         else if (*flag && std::strcmp(flag, "1") != 0)
             throw std::invalid_argument("VELA_LINEAR_FACTOR_STATISTICS must be 0 or 1");
     }
-    if (backend_ == "pardiso_mkl" || backend_ == "sparselu_metis" || backend_ == "mumps" || backend_ == "mumps_metis" || backend_ == "superlu_mt" || backend_ == "superlu_mt_metis" || backend_ == "strumpack") createDirectBackend();
+    if (backend_ == "sparselu_long_double" || backend_ == "pardiso_mkl" || backend_ == "sparselu_metis" || backend_ == "mumps" || backend_ == "mumps_metis" || backend_ == "superlu_mt" || backend_ == "superlu_mt_metis" || backend_ == "strumpack") createDirectBackend();
     if (backend_ == "umfpack" || backend_ == "umfpack_metis") {
 #if defined(VELA_HAS_UMFPACK)
         umfpack_ = std::make_unique<UmfPackState>();
@@ -315,7 +420,8 @@ LinearSolver::LinearSolver(const std::string& backend)
 LinearSolver::~LinearSolver() = default;
 
 void LinearSolver::createDirectBackend() {
-    if (backend_ == "pardiso_mkl") {
+    if (backend_ == "sparselu_long_double") direct_=std::make_unique<LongDoubleSparseLU>();
+    else if (backend_ == "pardiso_mkl") {
 #ifdef VELA_HAS_MKL_PARDISO
         direct_ = detail::makeMklPardiso();
 #else
@@ -558,6 +664,16 @@ VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b)
         throw std::invalid_argument("LinearSolver: invalid system dimensions");
     if (!b.allFinite() || !sparseAllFinite(A))
         return solveUnreduced(A,b);
+    // Named legacy elimination backends own their affine reduction, including
+    // the three-block keep-psi contract. Do not eliminate psi a first time in
+    // the new generic front end or reduce a second time in the vendor solver.
+    if (backend_.find("_eliminated") != std::string::npos) {
+        lastReducedDimension_ = A.rows();
+        const bool keepPsi = backend_.find("_keep_psi") != std::string::npos;
+        for (int row : diagonalConstraintRows(A))
+            if (!keepPsi || row >= A.rows()/3) --lastReducedDimension_;
+        return solveUnreduced(A,b);
+    }
     lastReducedDimension_ = A.rows();
     if (!eliminateConstraints_)
         return solveUnreduced(A, b);
@@ -591,7 +707,15 @@ VectorXd LinearSolver::solveReduced(const SparseMatrixd& A, const VectorXd& b,
     observePerformanceValue("linear.reduced_rows",static_cast<double>(reduced.matrix.rows()));
     VectorXd direction;
     try {
-        if (reduced.matrix.rows()) direction=solveUnreduced(reduced.matrix,reduced.rhs);
+        if (reduced.matrix.rows()) {
+            if (backend_.find("_eliminated") != std::string::npos) {
+                const std::string base = backend_.substr(0,backend_.find("_eliminated")) +
+                    (backend_.find("long_double") != std::string::npos ? "_long_double" : "");
+                if (!eliminatedDirect_) eliminatedDirect_=std::make_unique<LinearSolver>(base);
+                eliminatedDirect_->setConstraintElimination(false);
+                direction=eliminatedDirect_->solve(reduced.matrix,reduced.rhs);
+            } else direction=solveUnreduced(reduced.matrix,reduced.rhs);
+        }
     } catch (const std::exception& error) {
         throw std::runtime_error(std::string(error.what())+"; original system"+sparseMatrixDiagnostics(A,b));
     }
@@ -627,9 +751,14 @@ VectorXd LinearSolver::solveUnreduced(const SparseMatrixd& A, const VectorXd& b)
     };
     if (backend_ == "umfpack" || backend_ == "umfpack_metis")
         return finish(solveUmfPack(*matrix, b));
-    if (backend_ == "pardiso_mkl" || backend_ == "sparselu_metis" || backend_ == "mumps" || backend_ == "mumps_metis" || backend_ == "superlu_mt" || backend_ == "superlu_mt_metis" || backend_ == "strumpack") return finish(solveDirect(*matrix,b));
-    if (backend_ != "sparselu")
-        return finish(solveWithAlternateBackend(backend_, *matrix, b));
+    if (backend_ == "sparselu_long_double" || backend_ == "pardiso_mkl" || backend_ == "sparselu_metis" || backend_ == "mumps" || backend_ == "mumps_metis" || backend_ == "superlu_mt" || backend_ == "superlu_mt_metis" || backend_ == "strumpack") return finish(solveDirect(*matrix,b));
+    if (backend_ != "sparselu") {
+        if(backend_=="umfpack_eliminated" || backend_=="pardiso_mkl_eliminated" || backend_=="pardiso_mkl_eliminated_keep_psi"){
+            if(!eliminatedDirect_)eliminatedDirect_=std::make_unique<LinearSolver>(backend_=="umfpack_eliminated"?"umfpack":"pardiso_mkl");
+            eliminatedDirect_->setConstraintElimination(false);
+        }
+        return finish(solveWithAlternateBackend(backend_, *matrix, b,eliminatedDirect_.get()));
+    }
 
     // A repeated solve with the same matrix (Newton line searches, feedback
     // state substitution) currently refactorises identical values.  Reusing the
@@ -703,12 +832,14 @@ VectorXd LinearSolver::solveUnreduced(const SparseMatrixd& A, const VectorXd& b)
 
 void LinearSolver::clearNumericCache()
 {
+    if(eliminatedDirect_)eliminatedDirect_->clearNumericCache();
     cachedValues_.clear();
     hasFactorization_ = false;
 }
 
 void LinearSolver::clearPatternCache()
 {
+    eliminatedDirect_.reset();
     direct_.reset();
     hasAnalyzedPattern_ = false;
     cachedRows_ = 0;

@@ -5,12 +5,55 @@
 #include "vela/equation/ExtendedPoissonResidual.h"
 #include "vela/numerics/SplitCoordinate.h"
 #include "vela/solver/NewtonSolver.h"
+#include "vela/solver/UpdateDiagnostics.h"
 #include <boost/multiprecision/cpp_int.hpp>
 #include <cmath>
 #include <limits>
 #include <nlohmann/json.hpp>
 
 using namespace vela::linear_refinement;
+
+TEST_CASE("Update observer retains reference increment motion hidden in physical high", "[update_diagnostics]") {
+    using vela::update_diagnostics::coordinateChange;
+    const double ref=5.,tiny=1.42e-29;
+    REQUIRE(ref+tiny==ref);
+    REQUIRE(coordinateChange(ref,0.,ref,tiny)==static_cast<long double>(tiny));
+    // Merely repartitioning a reference is not a physical update.
+    REQUIRE(coordinateChange(1.,.25,1.25,0.)==0.);
+}
+TEST_CASE("Actual update diagnostics cannot replace the raw stopping predicate", "[update_diagnostics]") {
+    vela::update_diagnostics::Rms a;
+    a.add(2e-5,0.,1.,7);
+    REQUIRE(a.json()["raw_rms"].get<double>()==2.);
+    REQUIRE(a.json()["actual_rms"].get<double>()==0.);
+    const auto stop=vela::update_diagnostics::stopLayers(1.,2.,false);
+    REQUIRE_FALSE(stop["raw_U_satisfied"].get<bool>());
+    REQUIRE_FALSE(stop["rhs_satisfied"].get<bool>());
+    REQUIRE_FALSE(stop["actual_U_used_for_acceptance"].get<bool>());
+    REQUIRE_FALSE(vela::update_diagnostics::stopLayers(1.,std::numeric_limits<double>::quiet_NaN(),false)["raw_U_satisfied"].get<bool>());
+}
+TEST_CASE("Weak row ledger preserves enforced floor and ignored qualification", "[update_diagnostics]") {
+    using namespace vela;
+    std::vector<CoupledDDCarrierTermDiagnostic> rows(3);
+    for(int i=0;i<3;++i){rows[i].nodeId=i;rows[i].electronContinuityActive=true;rows[i].holeContinuityActive=false;}
+    rows[0].electronDensity_m3=10.; rows[0].electronResidual=2e-33;
+    rows[0].electronFluxAbsSum=2e-33;
+    rows[1].electronDensity_m3=0.;rows[1].electronResidual=1e-10;
+    rows[2].electronDensity_m3=10.;rows[2].electronResidual=2e-10;rows[2].electronFluxAbsSum=1e-9;
+    NewtonCarrierRowConvergenceConfig c;c.mode="enforce";c.minCarrierDensity_m3=1.;c.scaleFloor=1e-30;c.floorLimitedAction="report";
+    const auto before=evaluateCarrierRowConvergence(rows,c);
+    std::vector<NewtonCarrierRowConvergenceViolation> ledger;
+    const auto after=evaluateCarrierRowConvergence(rows,c,&ledger);
+    REQUIRE(before.satisfied==after.satisfied);
+    REQUIRE(before.blockingViolationCount==after.blockingViolationCount);
+    REQUIRE(before.maxRatio==after.maxRatio);
+    REQUIRE(ledger.size()==3);
+    REQUIRE(ledger[0].qualified);REQUIRE(ledger[0].floorLimited);REQUIRE_FALSE(ledger[0].blocksAcceptance);
+    REQUIRE_FALSE(ledger[1].qualified);REQUIRE_FALSE(ledger[1].blocksAcceptance);
+    REQUIRE(ledger[2].blocksAcceptance);
+    REQUIRE(after.blockingViolationCount==1);
+    c.mode="off";evaluateCarrierRowConvergence(rows,c,&ledger);REQUIRE(ledger.empty());
+}
 
 TEST_CASE("Exact defect conversion preserves binary64 rounding without promotion", "[linear_refinement][precision_contract]") {
     using namespace vela::exact_binary64;
@@ -41,7 +84,7 @@ TEST_CASE("Split coordinates accumulate reversible updates below one ULP") {
 TEST_CASE("Extended Poisson consumes split potential in flux and Boltzmann charge") {
     namespace pp=vela::poisson_precision;
     using vela::numerics::SplitCoordinate;
-    pp::Node n{}; n.xpsi=1.;n.potentialScale=1.;n.vt=1.;n.ni=1.;
+    pp::Node n{}; n.xpsi=1.;n.potentialScale=1.;n.vt=1.;n.niElectron=n.niHole=1.;
     n.q=1.;n.area=1.;n.scale=1.;n.voln=1.;n.volp=1.;
     auto other=n;other.xpsi=0.;std::vector<pp::Node> nodes{n,other};
     std::vector<pp::Edge> edges{{0,1,2.}};
@@ -222,7 +265,7 @@ TEST_CASE("Extended Poisson preserves the charge response of a tiny referenced i
     namespace pp=vela::poisson_precision;
     pp::Node node{};
     node.psi=1.;node.n=1.;node.p=1.;node.xpsi=10.;node.potentialScale=.1;
-    node.eref=1.;node.href=1.;node.ni=1.;node.vt=1.;
+    node.eref=1.;node.href=1.;node.niElectron=node.niHole=1.;node.vt=1.;
     node.voln=1.;node.volp=1.;node.q=1.;node.area=1.;node.scale=1.;
     const auto before=pp::evaluate({node},{},true)[0];
     const auto legacy=pp::evaluate({node},{},false)[0];
@@ -245,6 +288,25 @@ TEST_CASE("Extended Poisson retains signed edge geometry and pair conservation")
     REQUIRE(residual[0]==5.);
     REQUIRE(residual[1]==-5.);
     REQUIRE(residual[0]+residual[1]==0.);
+}
+
+TEST_CASE("Extended Poisson uses distinct carrier prefactors with gauge invariant charge") {
+    namespace pp=vela::poisson_precision;
+    pp::Node node{};
+    node.potentialScale=1.;node.vt=.25;node.xpsi=.5;
+    node.eref=.25;node.href=.75;node.xn=.125;node.xp=-.125;
+    node.niElectron=2.;node.niHole=8.;
+    node.q=node.area=node.scale=node.voln=node.volp=1.;
+    const auto base=pp::evaluate({node},{},true)[0];
+    REQUIRE(abs(base+6*exp(pp::Q(.5)))<pp::Q("1e-30"));
+    // A common potential shift must not change populations, even with unequal prefactors.
+    node.xpsi+=32.;node.eref+=32.;node.href+=32.;
+    REQUIRE(pp::evaluate({node},{},true)[0]==base);
+    // Supplied-population mode must use its input, not reconstruct it from either prefactor.
+    node.n=3.;node.p=7.;
+    REQUIRE(pp::evaluate({node},{},false)[0]==-4);
+    node.niElectron=node.niHole=0.;
+    REQUIRE(pp::evaluate({node},{},true)[0]==0);
 }
 
 TEST_CASE("Numerical precision options are explicit and reject unsupported combinations") {

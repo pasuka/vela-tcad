@@ -40,20 +40,9 @@ Real SlotboomBandgapNarrowing::deltaEg(Real impurityConcentration, Real n, Real 
                                    config_.coefficient, config_.smoothing, config_.offset);
 }
 
-namespace {
-
 /// Sentaurus Bennett-Wilson: Eref * log(Ntotal/Nref)^2 above Nref, zero below.
 /// Ntotal is donors + acceptors in the active concentration unit, not net
 /// doping or injected carriers. Material dEg0 belongs in the base ni, not here.
-class BennettWilsonBandgapNarrowing final : public BandgapNarrowing {
-public:
-    explicit BennettWilsonBandgapNarrowing(BandgapNarrowingConfig config);
-    Real deltaEg(Real impurityConcentration, Real n, Real p) const override;
-
-private:
-    BandgapNarrowingConfig config_;
-};
-
 BennettWilsonBandgapNarrowing::BennettWilsonBandgapNarrowing(BandgapNarrowingConfig config)
     : config_(std::move(config))
 {
@@ -74,8 +63,6 @@ Real BennettWilsonBandgapNarrowing::deltaEg(Real impurityConcentration, Real, Re
     return detail::bennettWilsonNarrowing(
         impurityConcentration, config_.referenceDoping, config_.coefficient);
 }
-
-} // namespace
 
 Real effectiveIntrinsicDensity(Real ni, Real thermalVoltage, Real deltaEg)
 {

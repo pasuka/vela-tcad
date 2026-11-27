@@ -9,6 +9,7 @@
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/MobilityModel.h"
+#include "vela/physics/SlotIALMobility.h"
 #include "vela/solver/GummelSolver.h"
 
 #include <cmath>
@@ -16,6 +17,127 @@
 #include <vector>
 
 using namespace vela;
+
+TEST_CASE("IALMob retains compensation and both carrier screening responses", "[mobility][ialmob]")
+{
+    const Material silicon = MaterialDatabase{}.getMaterial("Si");
+    const auto config = mobilityModelConfig("slot_ialmob");
+    const IALMobility model(config);
+    const Real noInterface = std::numeric_limits<Real>::quiet_NaN();
+    const auto donorOnly = model.components(silicon, CarrierType::Electron,
+        {1e23, 0}, 1e23, 1e20, noInterface, noInterface);
+    const auto compensated = model.components(silicon, CarrierType::Electron,
+        {5e22, 5e22}, 1e23, 1e20, noInterface, noInterface);
+    CHECK(std::abs(donorOnly.lowField / compensated.lowField - 1.0) > 1e-3);
+    const auto injected = model.components(silicon, CarrierType::Electron,
+        {1e23, 0}, 1e23, 1e24, noInterface, noInterface);
+    CHECK(injected.lowField < donorOnly.lowField);
+    CHECK(injected.screening < donorOnly.screening);
+    const auto intrinsic = model.components(silicon, CarrierType::Electron,
+        {0, 0}, 0, 0, noInterface, noInterface);
+    CHECK(intrinsic.lowField == Catch::Approx(config.slotIalMobility.electron.mumax).epsilon(1e-12));
+    CHECK_THROWS(model.electronMobility(silicon, 1e23, 1e23, 1e20));
+    CHECK_THROWS(model.components(silicon, CarrierType::Electron, {-1, 0}, 1, 1, 0, 0));
+}
+
+TEST_CASE("IALMob obeys carrier exchange and interface limits", "[mobility][ialmob][surface]")
+{
+    const Material silicon = MaterialDatabase{}.getMaterial("Si");
+    auto config = mobilityModelConfig("slot_ialmob");
+    config.slotIalMobility.hole = config.slotIalMobility.electron;
+    config.slotIalMobility.mh_over_m0 = config.slotIalMobility.me_over_m0;
+    config.slotIalMobility.nref_A = config.slotIalMobility.nref_D;
+    config.slotIalMobility.cref_A = config.slotIalMobility.cref_D;
+    config.slotIalMobility.electron.l_crit = config.slotIalMobility.hole.l_crit = 1e-6;
+    config.slotIalMobility.electron.l_crit_c = config.slotIalMobility.hole.l_crit_c = 1e-6;
+    const IALMobility model(config);
+    for (Real field : {0.0, 1e6, 1e8}) {
+        const auto electron = model.components(silicon, CarrierType::Electron,
+            {3e23, 8e22}, 2e23, 1e24, field, 0);
+        const auto hole = model.components(silicon, CarrierType::Hole,
+            {8e22, 3e23}, 1e24, 2e23, field, 0);
+        CHECK(electron.lowField == Catch::Approx(hole.lowField).epsilon(1e-12));
+        CHECK(electron.coulomb3D == Catch::Approx(hole.coulomb3D).epsilon(1e-12));
+        CHECK(electron.coulomb2D == Catch::Approx(hole.coulomb2D).epsilon(1e-12));
+    }
+    const Real noInterface = std::numeric_limits<Real>::quiet_NaN();
+    const auto bulk = model.components(silicon, CarrierType::Electron,
+        {3e23, 8e22}, 2e23, 1e24, noInterface, noInterface);
+    const auto distant = model.components(silicon, CarrierType::Electron,
+        {3e23, 8e22}, 2e23, 1e24, 1e8, 1e-6);
+    CHECK(distant.lowField == Catch::Approx(bulk.lowField).epsilon(1e-12));
+    CHECK(distant.interfaceDamping < 1e-40);
+}
+
+TEST_CASE("IALMob source parameters and complete mobility preserve unit scaling", "[mobility][ialmob][units]")
+{
+    const nlohmann::json input = {
+        {"model", "ialmob_field"},
+        {"ialmob", {{"electron", {{"mumax", 1417.0}, {"mumin", 56.0},
+            {"C", 4.84e4}, {"alpha_sr", 5e-22}, {"lambda", 0.0},
+            {"lambda_sr", 0.0}, {"l_crit", 1e-6}, {"l_crit_c", 1e-6}}}}}};
+    const auto si = mobilityModelConfigFromJson(input);
+    const auto tcad = mobilityModelConfigFromJson(input, UnitScalingConfig{UnitScalingMode::UnitScaling});
+    REQUIRE(si.slotIalMobility.electron.C == tcad.slotIalMobility.electron.C);
+    REQUIRE(si.slotIalMobility.electron.alpha_sr == tcad.slotIalMobility.electron.alpha_sr);
+    const Material material = MaterialDatabase{}.getMaterial("Si");
+    const auto units = PhysicalUnitSystem::tcadInternal();
+    const auto siModel = makeMobilityModel(si), tcadModel = makeMobilityModel(tcad);
+    const Real first = siModel->electronMobility(material, 0, 3e24, 4e23, 1e6, 2e7, 2e-9, {2e23, 8e22});
+    const Real second = tcadModel->electronMobility(material, 0,
+        units.m3ToInternalConcentration(3e24), units.m3ToInternalConcentration(4e23),
+        units.vPerMToInternalElectricField(1e6), units.vPerMToInternalElectricField(2e7),
+        units.metersToInternalLength(2e-9),
+        {units.m3ToInternalConcentration(2e23), units.m3ToInternalConcentration(8e22)});
+    CHECK(first == Catch::Approx(units.internalMobilityToM2PerVS(second)).epsilon(1e-12));
+    const Real highDrive = 1e12;
+    const Real saturated = siModel->electronMobility(material, 0, 3e24, 4e23,
+        highDrive, 2e7, 2e-9, {2e23, 8e22});
+    CHECK(saturated * highDrive == Catch::Approx(si.electronField.saturationVelocity).epsilon(1e-4));
+    CHECK_THROWS(mobilityModelConfigFromJson(nlohmann::json{
+        {"model", "slot_ialmob"}, {"ialmob", {{"auto_orientation", true}}}}));
+    CHECK_THROWS(mobilityModelConfigFromJson(nlohmann::json{
+        {"model", "slot_ialmob"}, {"ialmob", {{"electron", {{"misspelled_coefficient", 1.0}}}}}}));
+}
+
+TEST_CASE("IALMob normal follows true distance around an interface endpoint",
+          "[mobility][ialmob][surface][geometry]")
+{
+    constexpr Real length = 1e-8;
+    DeviceMesh mesh;
+    const std::array<Point2, 4> points{Point2{0, 0}, Point2{1, 0},
+        Point2{-3, 3}, Point2{0, -1}};
+    for (Index i = 0; i < points.size(); ++i) {
+        Node node; node.id = i; node.x = length * points[i].x(); node.y = length * points[i].y();
+        mesh.addNode(node);
+    }
+    Cell si; si.id = 0; si.type = CellType::Tri3; si.region_id = 0; si.node_ids = {0, 1, 2}; mesh.addCell(si);
+    Cell ox; ox.id = 1; ox.type = CellType::Tri3; ox.region_id = 1; ox.node_ids = {1, 0, 3}; mesh.addCell(ox);
+    Region silicon; silicon.id = 0; silicon.name = "Silicon_1"; silicon.material = "Si"; silicon.cell_ids = {0}; mesh.addRegion(silicon);
+    Region oxide; oxide.id = 1; oxide.name = "Oxide_1"; oxide.material = "SiO2"; oxide.cell_ids = {1}; mesh.addRegion(oxide);
+    mesh.buildEdges();
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    VectorXd psi(4);
+    for (Index i = 0; i < mesh.numNodes(); ++i) psi(i) = mesh.getNode(i).x * 1e7;
+    auto config = mobilityModelConfig("slot_ialmob");
+    config.surface.surfaceInterface = {"Silicon_1", "Oxide_1"};
+    // Silicon centroid is (-2/3, 1)*length, nearest to the endpoint (0, 0).
+    const auto [field, distance] = detail::nearestSurfaceFieldAndDistanceForCell(
+        mesh, edgeCells, psi, 0, config, 1.0);
+    CHECK(distance == Catch::Approx(length * std::sqrt(13.0) / 3.0).epsilon(1e-12));
+    CHECK(field == Catch::Approx(1e7 * 2.0 / std::sqrt(13.0)).epsilon(1e-12));
+    detail::updateSurfaceMobilityCellGeometry(config, mesh, edgeCells, psi, 1.0);
+    CHECK(config.surface.cellNormalFields[0] == Catch::Approx(field).epsilon(1e-12));
+    CHECK(config.surface.cellDistances[0] == Catch::Approx(distance).epsilon(1e-12));
+    for (Index i = 0; i < mesh.numNodes(); ++i) psi(i) = mesh.getNode(i).y * 1e7;
+    detail::updateSurfaceMobilityCellGeometry(config, mesh, edgeCells, psi, 1.0);
+    CHECK(config.surface.cellNormalFields[0] == Catch::Approx(1e7 * 3.0 / std::sqrt(13.0)).epsilon(1e-12));
+    auto legacy = mobilityModelConfig("masetti_lombardi");
+    legacy.surface.surfaceInterface = config.surface.surfaceInterface;
+    for (Index i = 0; i < mesh.numNodes(); ++i) psi(i) = mesh.getNode(i).x * 1e7;
+    detail::updateSurfaceMobilityCellGeometry(legacy, mesh, edgeCells, psi, 1.0);
+    CHECK(legacy.surface.cellNormalFields[0] == 0.0);
+}
 
 static DeviceMesh makePNMesh()
 {

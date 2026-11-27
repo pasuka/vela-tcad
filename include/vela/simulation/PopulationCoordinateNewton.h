@@ -13,11 +13,16 @@ public:
         CoupledLoadLineNewton::CurrentFunctional current,CoupledLoadLineConfig config,
         ArclengthScalarFunctional port={},DensityUpdateErrorEvaluator metric={},
         PrimaryVariableScales references={},bool unit=false,bool approximateNativeStop=false,
-        ApproximateNativeRhsScales mapping={})
+        ApproximateNativeRhsScales mapping={},
+        std::optional<ArithmeticReal> decimalResistance_ohm_um=std::nullopt)
         :system_(std::move(system)),port_(std::move(port)),config_(std::move(config)),
          metric_(std::move(metric)),references_(std::move(references)),unit_(unit),
-         approximateNativeStop_(approximateNativeStop),mapping_(mapping)
+         approximateNativeStop_(approximateNativeStop),mapping_(mapping),
+         decimalResistance_ohm_um_(decimalResistance_ohm_um)
     {
+        if (decimalResistance_ohm_um_ &&
+            (!std::isfinite(*decimalResistance_ohm_um_) || *decimalResistance_ohm_um_ <= 0))
+            throw std::invalid_argument("Decimal load-line resistance must be finite and positive");
         if(!port_.value)port_.value=std::move(current);
         if(unit_ && (!system_.makeTrial || !system_.columnScales || !system_.prescribedRows ||
                      config_.linearSolver!="direct_bordered"))
@@ -34,8 +39,22 @@ public:
             .secantPredict(previous,current,target,resistance);
     }
 
+    CoupledLoadLineNewton::TangentPrediction tangentPredict(const ArclengthState& parent,
+        Real target,Real resistance) const {
+        return CoupledLoadLineNewton(system_,port_.value,config_,port_,metric_)
+            .tangentPredict(parent,target,resistance);
+    }
+
     CoupledLoadLineResult solve(const ArclengthState& initial,Real target,Real resistance,
-        const derivative_recovery::DerivativeSwitch* history=nullptr) const {
+        const std::function<void(int,const ArclengthState&)>& accepted,
+        const std::function<void(const CoupledLoadLineTrial&,const ArclengthState&)>& trial = {}) const {
+        return solve(initial,target,resistance,nullptr,accepted,trial);
+    }
+
+    CoupledLoadLineResult solve(const ArclengthState& initial,Real target,Real resistance,
+        const derivative_recovery::DerivativeSwitch* history=nullptr,
+        const std::function<void(int,const ArclengthState&)>& accepted={},
+        const std::function<void(const CoupledLoadLineTrial&,const ArclengthState&)>& trial={}) const {
         auto references=references_;
         if(!unit_)references={VectorXd::Ones(initial.x.size()),1.,1.};
         references.validate(initial.x.size());
@@ -45,6 +64,9 @@ public:
         auto config=config_;
         config.loadLineTolerance_V/=references.voltage;
         config.maxVoltageUpdate_V/=references.voltage;
+        if (decimalResistance_ohm_um_)
+            config.decimalResistance = *decimalResistance_ohm_um_ *
+                static_cast<ArithmeticReal>(references.current) / static_cast<ArithmeticReal>(references.voltage);
 
         // Only the latest physical state is cached. A new target owns a fresh
         // cache, preventing stale accepted-state histories from authorizing stop.
@@ -56,7 +78,7 @@ public:
             if(!same) {
                 loadState=state;
                 load=LoadLineResidual::evaluate(config_.voltageCoefficient,state.lambda,
-                    resistance,port_.value(state.x,state.lambda),target);
+                    resistance,port_.value(state.x,state.lambda),target,decimalResistance_ohm_um_);
                 loadValid=true;
             }
             return load;
@@ -170,9 +192,18 @@ public:
             return std::string(update?(residual?"native_approx_both":"native_approx_update"):
                 (residual?"native_approx_mapped_rhs":""));
         };
+        std::function<void(int,const ArclengthState&)> acceptedPhysical;
+        if(accepted)acceptedPhysical=[&](int iteration,const ArclengthState& state) {
+            accepted(iteration,coordinates.physical(state));
+        };
+        std::function<void(const CoupledLoadLineTrial&,const ArclengthState&)> trialPhysical;
+        if(trial)trialPhysical=[&](const CoupledLoadLineTrial& info,const ArclengthState& state) {
+            auto physicalInfo=info;physicalInfo.loadResidual_V*=references.voltage;
+            trial(physicalInfo,coordinates.physical(state));
+        };
         auto result=CoupledLoadLineNewton(device,port.value,config,port,metric,std::move(hooks)).solve(
             unit_?coordinates.scaled(initial):initial,target/references.voltage,
-            resistance*references.current/references.voltage,history);
+            resistance*references.current/references.voltage,history,acceptedPhysical,trialPhysical);
         if(unit_)result=coordinates.physical(std::move(result));
         result.loadLineResidual_V=physicalLoad(result.state).voltage_V;
         return result;
@@ -190,9 +221,12 @@ private:
         for(int k=0;k<J.outerSize();++k)for(SparseMatrixd::InnerIterator t(J,k);t;++t)entries.emplace_back(t.row(),t.col(),t.value());
         for(int i=0;i<n;++i) {
             if(f[i])entries.emplace_back(i,n,f[i]);
-            if(port.stateDerivative[i])entries.emplace_back(n,i,R*port.stateDerivative[i]);
+            if (port.stateDerivative[i])
+                entries.emplace_back(n,i,LoadLineResidual::currentDerivative(
+                    R,port.stateDerivative[i],decimalResistance_ohm_um_));
         }
-        entries.emplace_back(n,n,config_.voltageCoefficient+R*port.parameterDerivative);
+        entries.emplace_back(n,n,LoadLineResidual::voltageDerivative(
+            config_.voltageCoefficient,R,port.parameterDerivative,decimalResistance_ohm_um_));
         SparseMatrixd A(n+1,n+1);A.setFromTriplets(entries.begin(),entries.end());return A;
     }
     static VectorXd auditRows(const SparseMatrixd& A,const VectorXd& b,const VectorXd& columns) {
@@ -211,6 +245,7 @@ private:
     PrimaryVariableScales references_;
     bool unit_,approximateNativeStop_;
     ApproximateNativeRhsScales mapping_;
+    std::optional<ArithmeticReal> decimalResistance_ohm_um_;
 };
 
 } // namespace vela

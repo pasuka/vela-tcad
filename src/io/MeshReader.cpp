@@ -1,4 +1,5 @@
 #include "vela/io/MeshReader.h"
+#include "vela/core/ArithmeticDecimal.h"
 #include <algorithm>
 #include <nlohmann/json.hpp>
 #include <fstream>
@@ -135,9 +136,28 @@ DeviceMesh JsonMeshReader::read(const std::string& filename, UnitScalingConfig s
         for (const auto& jn : j.at("nodes")) {
             Node n;
             n.id = jn.at("id").get<Index>();
-            n.x  = scaling.lengthToInternal(jn.at("x").get<Real>());
-            n.y  = scaling.lengthToInternal(jn.at("y").get<Real>());
-            mesh.addNode(n);
+            const auto literals = jn.find("coordinate_literals");
+            if (literals == jn.end()) {
+                n.x = scaling.lengthToInternal(jn.at("x").get<Real>());
+                n.y = scaling.lengthToInternal(jn.at("y").get<Real>());
+                mesh.addNode(n);
+                continue;
+            }
+            const auto coordinate = [&](const char* key, std::size_t component) {
+                const Real compatibility = jn.at(key).get<Real>();
+                if constexpr (compiledArithmeticPrecision != ArithmeticPrecision::Extended80)
+                    throw std::invalid_argument("coordinate_literals requires an extended80 build");
+                if (!literals->is_array() || literals->size() != 2)
+                    throw std::invalid_argument("coordinate_literals requires two decimal operands");
+                const auto literal = literals->at(component).get<std::string>();
+                if (parseArithmeticDecimal<double>(literal) != compatibility)
+                    throw std::invalid_argument("coordinate_literals differs from the compatibility coordinate");
+                return parseArithmeticDecimal(literal) * scaling.lengthToInternal(1.0);
+            };
+            const DeviceMesh::ArithmeticPoint coordinates{coordinate("x", 0), coordinate("y", 1)};
+            n.x = static_cast<Real>(coordinates[0]);
+            n.y = static_cast<Real>(coordinates[1]);
+            mesh.addNode(n, coordinates);
         }
 
         // ------------------------------------------------------------------

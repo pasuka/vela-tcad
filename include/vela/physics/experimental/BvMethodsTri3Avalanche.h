@@ -86,7 +86,7 @@ inline AvJet avSgFlux(const AvJet& coefficient,const AvJet& from,const AvJet& to
                      const AvJet& delta,const AvJet& argument)
 {
     return detail::sgBalancedEdgeFlux(coefficient, from, to, delta,
-        delta.value, argument, avBernoulli, detail::dualExpm1);
+        delta.value, argument, avBernoulli, [](const AvJet& x) { return detail::dualExpm1(x); });
 }
 
 struct AvCoefficient {

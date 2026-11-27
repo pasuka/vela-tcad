@@ -1,4 +1,6 @@
 #include "vela/io/StateArchive.h"
+#include "vela/io/ExtendedPopulationArchive.h"
+#include "vela/core/Extended80Encoding.h"
 #include <highfive/highfive.hpp>
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <algorithm>
@@ -8,6 +10,7 @@
 #include <limits>
 #include <set>
 #include <stdexcept>
+#include <type_traits>
 #ifdef _WIN32
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -54,6 +57,36 @@ std::string textAttribute(const HighFive::File& file, const char* name) {
     if (a.getSpace().getElementCount() != 1) bad(std::string("non-scalar attribute ") + name);
     return a.read<std::string>();
 }
+template<class Write, class Verify = std::nullptr_t>
+void writeCheckpoint(const std::filesystem::path& path, Write write, Verify verify = nullptr) {
+    if (!path.parent_path().empty()) std::filesystem::create_directories(path.parent_path());
+    static std::atomic<std::uint64_t> sequence{0};
+    auto temporary = path;
+    temporary += ".tmp." + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()) +
+                 "." + std::to_string(sequence.fetch_add(1));
+    if constexpr (!std::is_same_v<Verify, std::nullptr_t>)
+        temporary += ".h5";
+    try {
+        {
+            HighFive::File f(temporary.string(), HighFive::File::Create | HighFive::File::Excl);
+            write(f);
+            f.flush();
+        }
+        if constexpr (!std::is_same_v<Verify, std::nullptr_t>)
+            verify(temporary);
+#ifdef _WIN32
+        if (!MoveFileExW(temporary.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+            bad("cannot replace checkpoint, Windows error " + std::to_string(GetLastError()));
+#else
+        std::filesystem::rename(temporary, path);
+#endif
+    } catch (...) {
+        std::error_code ignored;
+        std::filesystem::remove(temporary, ignored);
+        throw;
+    }
+}
+
 } // namespace
 
 void validateStateArchive(const StateArchive& s) {
@@ -197,39 +230,20 @@ void validateStateArchive(const StateArchive& s) {
 void writeStateArchive(const std::filesystem::path& path, const StateArchive& state) {
     checkPath(path);
     validateStateArchive(state);
-    if (!path.parent_path().empty()) std::filesystem::create_directories(path.parent_path());
-    static std::atomic<std::uint64_t> sequence{0};
-    auto temporary = path;
-    temporary += ".tmp." + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()) +
-                 "." + std::to_string(sequence.fetch_add(1));
-    try {
-        {
-            HighFive::File f(temporary.string(), HighFive::File::Create | HighFive::File::Excl);
-            f.createAttribute("schema", std::string(schema));
-            f.createAttribute("node_count", state.nodeCount);
-            f.createAttribute("metadata_json", state.metadata.dump());
-            auto group = f.createGroup("fields");
-            for (const auto& [name, values] : state.fields) {
-                HighFive::AtomicType<double> diskType;
-                if (H5Tset_order(diskType.getId(), H5T_ORDER_LE) < 0 ||
-                    H5Tequal(diskType.getId(), H5T_IEEE_F64LE) <= 0) bad("binary64 representation unavailable");
-                auto d = group.createDataSet(name, HighFive::DataSpace({values.size()}), diskType);
-                d.createAttribute("unit", units.at(name));
-                d.write_raw(values.data());
-            }
-            f.flush();
+    writeCheckpoint(path, [&](HighFive::File& f) {
+        f.createAttribute("schema", std::string(schema));
+        f.createAttribute("node_count", state.nodeCount);
+        f.createAttribute("metadata_json", state.metadata.dump());
+        auto group = f.createGroup("fields");
+        for (const auto& [name, values] : state.fields) {
+            HighFive::AtomicType<double> diskType;
+            if (H5Tset_order(diskType.getId(), H5T_ORDER_LE) < 0 ||
+                H5Tequal(diskType.getId(), H5T_IEEE_F64LE) <= 0) bad("binary64 representation unavailable");
+            auto d = group.createDataSet(name, HighFive::DataSpace({values.size()}), diskType);
+            d.createAttribute("unit", units.at(name));
+            d.write_raw(values.data());
         }
-#ifdef _WIN32
-        if (!MoveFileExW(temporary.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
-            bad("cannot replace checkpoint, Windows error " + std::to_string(GetLastError()));
-#else
-        std::filesystem::rename(temporary, path);
-#endif
-    } catch (...) {
-        std::error_code ignored;
-        std::filesystem::remove(temporary, ignored);
-        throw;
-    }
+    });
 }
 
 StateArchive readStateArchive(const std::filesystem::path& path, std::uint64_t expected,
@@ -268,4 +282,130 @@ StateArchive readStateArchive(const std::filesystem::path& path, std::uint64_t e
     validateStateArchive(s);
     return s;
 }
+namespace {
+
+constexpr const char* extendedSchema = "vela.population-state/extended80/1";
+constexpr std::uint64_t maxExtendedNodes = (maxBytes / 16 - 6) / 3;
+
+const char* extendedRole(ExtendedPopulationArchiveRole role) {
+    switch (role) {
+    case ExtendedPopulationArchiveRole::Accepted: return "accepted";
+    case ExtendedPopulationArchiveRole::Diagnostic: return "diagnostic";
+    }
+    bad("invalid extended80 state role");
+}
+
+void requireExtendedIdentity(const ExtendedPopulationArchiveIdentity& identity) {
+    if (!hashValid(identity.meshSha256) || !hashValid(identity.inputSha256))
+        bad("mesh and solver input identities are required");
+}
+
+void validateExtendedState(const ExtendedPopulationState& state) {
+    const auto count = state.coordinates.size();
+    if (count <= 0 || count % 3 != 0 || static_cast<std::uint64_t>(count / 3) > maxExtendedNodes)
+        bad("invalid extended80 population dimensions");
+    if (!state.coordinates.allFinite() || (state.coordinates.tail(2 * (count / 3)).array() < 0).any() ||
+        !std::isfinite(state.potentialScale_V) || state.potentialScale_V <= 0 ||
+        !std::isfinite(state.concentrationScale_m3) || state.concentrationScale_m3 <= 0 ||
+        !std::isfinite(state.potentialOrigin_V) || !std::isfinite(state.deviceBias_V) ||
+        !std::isfinite(state.supplyBias_V) || !std::isfinite(state.drainCurrent_A_per_um))
+        bad("invalid extended80 population values or scale");
+}
+
+std::vector<std::uint64_t> extendedStateWords(const ExtendedPopulationState& state)
+{
+    const auto size = static_cast<std::size_t>(state.coordinates.size());
+    std::vector<std::uint64_t> words;
+    words.reserve(2 * (size + 6));
+    const auto append = [&](long double value) {
+        const auto pair = encodeExtended80(value);
+        words.insert(words.end(), pair.begin(), pair.end());
+    };
+    for (const auto value : {state.potentialScale_V, state.potentialOrigin_V, state.concentrationScale_m3,
+                            state.deviceBias_V, state.supplyBias_V, state.drainCurrent_A_per_um})
+        append(value);
+    for (Eigen::Index i = 0; i < state.coordinates.size(); ++i) append(state.coordinates[i]);
+    return words;
+}
+
+} // namespace
+
+void writeExtendedPopulationArchive(const std::filesystem::path& path,
+                                    const ExtendedPopulationState& state,
+                                    const ExtendedPopulationArchiveIdentity& identity) {
+    requireExtended80Format();
+    checkPath(path);
+    validateExtendedState(state);
+    requireExtendedIdentity(identity);
+    const auto size = static_cast<std::size_t>(state.coordinates.size());
+    const auto words = extendedStateWords(state);
+    const auto write = [&](HighFive::File& file) {
+        file.createAttribute("schema", std::string(extendedSchema));
+        file.createAttribute("mesh_sha256", identity.meshSha256);
+        file.createAttribute("input_sha256", identity.inputSha256);
+        file.createAttribute("role", std::string(extendedRole(identity.role)));
+        HighFive::AtomicType<std::uint64_t> diskType;
+        if (H5Tset_order(diskType.getId(), H5T_ORDER_LE) < 0 ||
+            H5Tequal(diskType.getId(), H5T_STD_U64LE) <= 0)
+            bad("uint64 representation unavailable");
+        HighFive::DataSetCreateProps properties;
+        properties.add(HighFive::Chunking(std::min(size + 6, std::size_t{1024}), std::size_t{2}));
+        if (H5Pset_fletcher32(properties.getId()) < 0)
+            bad("cannot enable extended80 state checksum");
+        auto data = file.createDataSet("state_words", HighFive::DataSpace({size + 6, 2}),
+                                       diskType, properties);
+        data.write_raw(words.data());
+    };
+    if (identity.role == ExtendedPopulationArchiveRole::Accepted) {
+        writeCheckpoint(path, write, [&](const std::filesystem::path& pending) {
+            const auto recovered = readExtendedPopulationArchive(pending, size / 3, identity);
+            if (extendedStateWords(recovered) != words)
+                bad("accepted extended80 state failed exact readback");
+        });
+    } else {
+        writeCheckpoint(path, write);
+    }
+}
+
+ExtendedPopulationState readExtendedPopulationArchive(const std::filesystem::path& path,
+                                                      std::uint64_t expectedNodes,
+                                                      const ExtendedPopulationArchiveIdentity& expectedIdentity) {
+    requireExtended80Format();
+    checkPath(path);
+    requireExtendedIdentity(expectedIdentity);
+    if (!expectedNodes || expectedNodes > maxExtendedNodes) bad("invalid expected node count");
+    if (std::filesystem::file_size(path) > maxBytes + maxBytes / 16)
+        bad("file exceeds size limit");
+    HighFive::File file(path.string(), HighFive::File::ReadOnly);
+    if (textAttribute(file, "schema") != extendedSchema) bad("unsupported extended80 population schema");
+    if (textAttribute(file, "mesh_sha256") != expectedIdentity.meshSha256) bad("mesh identity mismatch");
+    if (textAttribute(file, "input_sha256") != expectedIdentity.inputSha256) bad("solver input identity mismatch");
+    if (textAttribute(file, "role") != extendedRole(expectedIdentity.role)) bad("state role mismatch");
+    auto data = file.getDataSet("state_words");
+    const auto count = static_cast<std::size_t>(3 * expectedNodes);
+    if (data.getDimensions() != std::vector<std::size_t>{count + 6, 2} ||
+        H5Tequal(data.getDataType().getId(), H5T_STD_U64LE) <= 0)
+        bad("extended80 population type or dimensions mismatch");
+    std::vector<std::uint64_t> words(2 * (count + 6));
+    data.read_raw(words.data());
+    std::size_t i = 0;
+    const auto next = [&]() {
+        const auto value = decodeExtended80({words.at(i), words.at(i + 1)});
+        i += 2;
+        return value;
+    };
+    ExtendedPopulationState state;
+    state.potentialScale_V = next();
+    state.potentialOrigin_V = next();
+    state.concentrationScale_m3 = next();
+    state.deviceBias_V = next();
+    state.supplyBias_V = next();
+    state.drainCurrent_A_per_um = next();
+    state.coordinates.resize(count);
+    for (Eigen::Index k = 0; k < state.coordinates.size(); ++k)
+        state.coordinates[k] = next();
+    validateExtendedState(state);
+    return state;
+}
+
 } // namespace vela

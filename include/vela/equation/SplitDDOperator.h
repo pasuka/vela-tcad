@@ -5,6 +5,7 @@
 #include <map>
 #include <array>
 #include <cmath>
+#include <functional>
 
 namespace vela::split_dd {
 inline Wide fieldSquareRoot(const Wide& squaredField)
@@ -77,6 +78,7 @@ struct PhuMob {
 struct Evaluation {
     std::vector<Wide> psi,phin,phip,n,p,mun,mup,srh,residual,electronFlux,holeFlux;
     std::vector<Wide> edgeMun,edgeMup;
+    std::vector<Wide> impactElectron,impactHole;
     std::map<std::string,Wide> currents;
 };
 class Operator {
@@ -84,9 +86,11 @@ class Operator {
     PhuMob mobility_;
     std::array<LombardiParameters,2> surfaceParameters_;
     std::array<FieldMobilityParameters,2> hfsParameters_;
+    std::function<void(Evaluation&)> localPhysics_;
     static Wide bernoulli(Wide x) {return x==0?Wide(1):x/expm1(x);}
 public:
-    explicit Operator(nlohmann::json data):data_(std::move(data)),mobility_(data_.at("phumob")) {
+    explicit Operator(nlohmann::json data,std::function<void(Evaluation&)> localPhysics = {})
+        :data_(std::move(data)),mobility_(data_.at("phumob")),localPhysics_(std::move(localPhysics)) {
         if(data_.at("schema")!="vela.split-dd-operator.v1" || data_.at("temperature_K")!=300.0)
             throw std::invalid_argument("Split operator requires its qualified 300 K schema");
         if(data_.contains("hfs"))for(int b=0;b<2;++b){hfsParameters_[b].saturationVelocity=data_["hfs"]["parameters"][b][0];hfsParameters_[b].beta=data_["hfs"]["parameters"][b][1];}
@@ -108,7 +112,7 @@ public:
                state.reference(2,i)!=data_["nodes"][i][8].get<double>())
                 throw std::invalid_argument("Split operator QF reference mismatch");
         Evaluation o;
-        for(auto* v:{&o.psi,&o.phin,&o.phip,&o.n,&o.p,&o.mun,&o.mup,&o.srh})v->resize(N);
+        for(auto* v:{&o.psi,&o.phin,&o.phip,&o.n,&o.p,&o.mun,&o.mup,&o.srh,&o.impactElectron,&o.impactHole})v->resize(N);
         o.residual.resize(3*N);std::vector<bool> conducting(N,false);
         for(std::size_t i=0;i<N;++i) {
             o.psi[i]=state.potential(0,i);o.phin[i]=state.potential(1,i);o.phip[i]=state.potential(2,i);
@@ -116,14 +120,41 @@ public:
             if(ni<=0)continue;
             Wide zn=(o.psi[i]-o.phin[i])/vt,zp=(o.phip[i]-o.psi[i])/vt;
             if(abs(zn)>=500 || abs(zp)>=500)throw std::invalid_argument("Split operator clipping branch is unqualified");
-            o.n[i]=ni*exp(zn);o.p[i]=ni*exp(zp);
+            Wide niN=data_.contains("population_prefactors")?Wide(data_["population_prefactors"][i][0].get<double>()):ni;
+            Wide niP=data_.contains("population_prefactors")?Wide(data_["population_prefactors"][i][1].get<double>()):ni;
+            o.n[i]=niN*exp(zn);o.p[i]=niP*exp(zp);
             const auto& material=data_["node_physics"][i];
-            o.mun[i]=mobility_.mobility(0,Wide(material[0].get<double>()),Wide(material[1].get<double>()),o.n[i],o.p[i]);
-            o.mup[i]=mobility_.mobility(1,Wide(material[0].get<double>()),Wide(material[1].get<double>()),o.n[i],o.p[i]);
+            if(!localPhysics_) {
+                o.mun[i]=mobility_.mobility(0,Wide(material[0].get<double>()),Wide(material[1].get<double>()),o.n[i],o.p[i]);
+                o.mup[i]=mobility_.mobility(1,Wide(material[0].get<double>()),Wide(material[1].get<double>()),o.n[i],o.p[i]);
+            }
             Wide numerator=ni*ni*expm1((o.phip[i]-o.phin[i])/vt);
             o.srh[i]=numerator/(Wide(material[3].get<double>())*(o.n[i]+ni)+Wide(material[2].get<double>())*(o.p[i]+ni));
+            if(data_.contains("recombination")) {
+                const auto& rc=data_["recombination"];
+                if(!rc["srh"].get<bool>() || !material[5].get<bool>())o.srh[i]=0;
+                if(rc["auger"].get<bool>() && material[5].get<bool>()) {
+                    Wide excess=rc["classical"].get<bool>()?Wide(o.n[i]*o.p[i]-ni*ni):numerator;
+                    if(!rc["generation"].get<bool>() && excess<0)excess=0;
+                    const auto coefficient=[&](const char* key,const Wide& density) {
+                        const auto& c=rc[key];Wide v=c[0].get<double>();
+                        if(rc["density_dependence"].get<bool>())v*=1+Wide(c[1].get<double>())*exp(-density/Wide(c[2].get<double>()));
+                        return v;
+                    };
+                    o.srh[i]+=(coefficient("electron",o.n[i])*o.n[i]+coefficient("hole",o.p[i])*o.p[i])*excess;
+                }
+            }
             Wide source=o.srh[i]*Wide(material[4].get<double>());
             o.residual[N+i]+=source;o.residual[2*N+i]+=source;
+        }
+        // Form local field differences before projecting into the established
+        // binary64 IAL kernels; never round large absolute potentials first.
+        if(localPhysics_) {
+            localPhysics_(o);
+            for(std::size_t i=0;i<N;++i) {
+                Wide impact=o.impactElectron[i]+o.impactHole[i];
+                o.residual[N+i]-=impact;o.residual[2*N+i]-=impact;
+            }
         }
         for(const auto& e:data_["poisson_edges"]) {
             int i=e[0],j=e[1];Wide f=Wide(e[2].get<double>())*(o.psi[i]-o.psi[j]);
@@ -163,23 +194,27 @@ public:
                 cellMun.push_back(mu[0]);cellMup.push_back(mu[1]);
             }
         }
+        std::size_t ordinal=0;
         for(const auto& e:data_["transport_edges"]) {
             int i=e["i"],j=e["j"];Wide en=0,hp=0,mn=0,mp=0;
             if(!e["weights"].empty()) {
 
-        if(data_.contains("enormal"))for(const auto& w:e["cell_weights"]) {int k=w[0];mn+=Wide(w[1].get<double>())*cellMun[k];mp+=Wide(w[1].get<double>())*cellMup[k];}
+        if(localPhysics_){mn=o.edgeMun.at(ordinal);mp=o.edgeMup.at(ordinal);}
+        else if(data_.contains("enormal"))for(const auto& w:e["cell_weights"]) {int k=w[0];mn+=Wide(w[1].get<double>())*cellMun[k];mp+=Wide(w[1].get<double>())*cellMup[k];}
                 else for(const auto& w:e["weights"]) {int k=w[0];mn+=Wide(w[1].get<double>())*o.mun[k];mp+=Wide(w[1].get<double>())*o.mup[k];}
-                Wide vt=data_["nodes"][i][10].get<double>(),ni0=data_["nodes"][i][9].get<double>(),ni1=data_["nodes"][j][9].get<double>();
+                Wide vt=data_["nodes"][i][10].get<double>(),ni0=data_.contains("population_prefactors")?Wide(data_["population_prefactors"][i][0].get<double>()):Wide(data_["nodes"][i][9].get<double>()),ni1=data_.contains("population_prefactors")?Wide(data_["population_prefactors"][j][0].get<double>()):Wide(data_["nodes"][j][9].get<double>());
                 Wide eta=(o.psi[j]-o.psi[i])/vt+log(ni1/ni0);
                 Wide geo=e["coefficient"].get<double>();
                 en=mn*geo*bernoulli(eta)*o.n[j]*expm1((o.phin[j]-o.phin[i])/vt);
                 // Hole ni-gradient sign is opposite to the electron drift term.
-                Wide etaH=(o.psi[j]-o.psi[i])/vt+log(ni0/ni1);
+                Wide hp0=data_.contains("population_prefactors")?Wide(data_["population_prefactors"][i][1].get<double>()):ni0,hp1=data_.contains("population_prefactors")?Wide(data_["population_prefactors"][j][1].get<double>()):ni1;
+                Wide etaH=(o.psi[j]-o.psi[i])/vt+log(hp0/hp1);
                 hp=mp*geo*bernoulli(-etaH)*o.p[j]*expm1((o.phip[i]-o.phip[j])/vt);
                 conducting[i]=conducting[j]=true;
             }
             o.electronFlux.push_back(en);o.holeFlux.push_back(hp);
-            o.edgeMun.push_back(mn);o.edgeMup.push_back(mp);
+            if(!localPhysics_){o.edgeMun.push_back(mn);o.edgeMup.push_back(mp);}
+            ++ordinal;
             o.residual[N+i]+=en;o.residual[N+j]-=en;
             o.residual[2*N+i]+=hp;o.residual[2*N+j]-=hp;
             // ContactCurrent defines total = electronCurrent - holeCurrent,

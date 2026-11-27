@@ -9,9 +9,14 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include "vela/equation/IalTransport.h"
+#include "vela/equation/BVProcessProbe.h"
 #include "vela/equation/CoupledDDAssembler.h"
+#include "vela/equation/SplitDDRuntime.h"
+#include "vela/equation/AssemblerUtils.h"
+#include "vela/equation/DDAssembler.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/solver/GummelSolver.h"
+#include "vela/solver/NewtonSolver.h"
 #include "vela/core/PhysicalConstants.h"
 #include <nlohmann/json.hpp>
 #include <filesystem>
@@ -178,23 +183,373 @@ struct Fixture {
 };
 }
 
-TEST_CASE("Shared IALMob JSON applies default and explicit screening methods to both carriers", "[ialmob][screening_default][config]") {
-    using nlohmann::json;
-    json options={{"geometry_file",(std::filesystem::temp_directory_path()/"screening_geometry.json").string()},
-        {"effective_electrodes",{"gate"}},{"crystal_x",{1,0,0}},{"crystal_y",{0,1,0}},
-        {"electron_parameters_cm",{{"100",json::object()}}},{"hole_parameters_cm",{{"100",json::object()}}}};
-    const auto check=[&](IalScreeningMethod expected){
-        const auto config=mobilityModelConfigFromJson({{"model","ialmob"},
-            {"high_field_driving_force","quasi_fermi_gradient"},{"ialmob",options}});
-        REQUIRE(config.ialmob);
-        CHECK(config.ialmob->electrons.at(100).screeningMethod()==expected);
-        CHECK(config.ialmob->holes.at(100).screeningMethod()==expected);
+TEST_CASE("IALMob VTU export uses the live element mobility", "[ialmob][transport][vtu]")
+{
+    Fixture fixture;
+    DDSolution state;
+    state.psi = VectorXd::LinSpaced(6, .42, .48);
+    state.phin = VectorXd::LinSpaced(6, .01, .03);
+    state.phip = VectorXd::LinSpaced(6, .02, .04);
+    state.n = VectorXd::Constant(6, 1e20);
+    state.p = VectorXd::Constant(6, 2e20);
+    const auto path = fixture.path.string() + ".vtu";
+    struct Cleanup {
+        std::filesystem::path path;
+        ~Cleanup() { std::error_code ec; std::filesystem::remove(path, ec); }
+    } cleanup{path};
+    DDSolutionVtkOptions options;
+    options.format = "vtu";
+    options.fields = {"eMobility", "hMobility"};
+    options.binary = false;
+    writeDDSolutionVTK(path, fixture.mesh, fixture.materials, fixture.doping,
+        state, fixture.mobility, {}, {}, {}, 300., {}, {}, nullptr, false, &options);
+
+    const auto prepared = ContactCurrent(fixture.mesh, fixture.materials, fixture.doping,
+        fixture.mobility).prepareMobility(state);
+    const auto& cells = prepared.ialmobState->cells;
+    REQUIRE(cells.size() == 2);
+    std::ifstream output(path);
+    REQUIRE(output.good());
+    const std::string text{std::istreambuf_iterator<char>(output), {}};
+    const auto check = [&](const std::string& field, Real expectedAtNodeZero) {
+        const auto fieldPosition = text.find("Name=\"" + field + '"');
+        REQUIRE(fieldPosition != std::string::npos);
+        const auto start = text.find('>', fieldPosition);
+        REQUIRE(start != std::string::npos);
+        std::istringstream data(text.substr(start + 1));
+        std::array<Real, 6> mobility;
+        for (auto& value : mobility)
+            REQUIRE(static_cast<bool>(data >> value));
+        CHECK(mobility[0] == Catch::Approx(expectedAtNodeZero).epsilon(1e-8));
+        CHECK(mobility[4] == 0.);
+        CHECK(mobility[5] == 0.);
     };
-    check(IalScreeningMethod::Halley);
-    options["screening_method"]="legacy";check(IalScreeningMethod::Legacy);
-    options["screening_method"]="halley";check(IalScreeningMethod::Halley);
-    options["screening_method"]="invalid";
-    CHECK_THROWS_AS(ialTransportOptionsFromJson(options),std::invalid_argument);
+    check("eMobility", 5e3 * (cells[0].electron.value + cells[1].electron.value));
+    check("hMobility", 5e3 * (cells[0].hole.value + cells[1].hole.value));
+}
+
+TEST_CASE("IALMob population coordinates preserve oxide masks and local physical derivatives", "[ialmob][legacy_population]") {
+    for(bool tcad:{false,true}) {
+        Fixture f(tcad);const Real vt=constants::Vt_300;
+        auto rec=recombinationModelConfig({"srh","auger"});rec.activeMaterials={"Si"};
+        const auto bgn=bandgapNarrowingConfig("old_slotboom");
+        DDScalingSpec p;p.stateVariables="potential_density";
+        CoupledDDAssembler qa(f.mesh,f.materials,f.doping,vt,f.mobility,rec,bgn);
+        CoupledDDAssembler pa(f.mesh,f.materials,f.doping,vt,f.mobility,rec,bgn,{},{},{},p);
+        CoupledDDState s;s.psi=VectorXd::LinSpaced(6,.02,.04);
+        s.phin=VectorXd::Zero(6);s.phip=VectorXd::Zero(6);
+        for(int i=0;i<4;++i){s.phin[i]=.001*i;s.phip[i]=-.002*i;}
+        const auto x=qa.pack(s);const auto n=qa.electronDensity(x),holes=qa.holeDensity(x);
+        const auto y=pa.packPopulation(s.psi,n,holes);
+        const auto a=qa.residual(x,{}),b=pa.residual(y,{});
+        for(int block=0;block<3;++block) {
+            const double denom=std::max(1e-30,a.segment(6*block,6).cwiseAbs().maxCoeff());
+            CHECK((a-b).segment(6*block,6).cwiseAbs().maxCoeff()/denom<2e-10);
+        }
+        REQUIRE(y[6+4]==0.);REQUIRE(y[12+5]==0.);
+        auto bad=y;bad[10]=1.;CHECK_THROWS(pa.residual(bad,{}));
+        VectorXd d=VectorXd::Zero(18);d.head(6)=VectorXd::LinSpaced(6,-.002,.003);
+        d.segment(6,6)=.01*n;d.tail(6)=-.02*holes;
+        const auto j=pa.assembleJacobian(y,{});const VectorXd action=j*d;
+        for(double h:{1e-3,1e-4}) {
+            const VectorXd fd=(pa.residual((y+h*d).eval(),{})-pa.residual((y-h*d).eval(),{}))/(2*h);
+            for(int block=0;block<3;++block) {
+                const double denom=std::max(1e-30,action.segment(6*block,6).cwiseAbs().maxCoeff());
+                CHECK((fd-action).segment(6*block,6).cwiseAbs().maxCoeff()/denom<3e-4);
+            }
+        }
+    }
+}
+
+TEST_CASE("IALMob transport feedback approximation retains the physical residual",
+          "[ialmob][legacy_population][frozen_feedback]") {
+    Fixture f(false);
+    auto frozen=f.mobility;frozen.ialmobTransportFeedbackDerivatives=false;
+    auto rc=recombinationModelConfig({"srh","auger"});rc.activeMaterials={"Si"};
+    auto bgn=bandgapNarrowingConfig("old_slotboom");
+    DDScalingSpec scaling;scaling.stateVariables="potential_density";
+    CoupledDDAssembler full(f.mesh,f.materials,f.doping,constants::Vt_300,f.mobility,rc,bgn,{},{},{},scaling);
+    CoupledDDAssembler approximate(f.mesh,f.materials,f.doping,constants::Vt_300,frozen,rc,bgn,{},{},{},scaling);
+    CoupledDDState s;s.psi=VectorXd::LinSpaced(6,.02,.04);
+    s.phin=VectorXd::Zero(6);s.phip=VectorXd::Zero(6);
+    for(int i=0;i<4;++i){s.phin[i]=.001*i;s.phip[i]=-.002*i;}
+    CoupledDDAssembler qf(f.mesh,f.materials,f.doping,constants::Vt_300,f.mobility,rc,bgn);
+    const auto x=qf.pack(s);
+    const auto y=full.packPopulation(s.psi,qf.electronDensity(x),qf.holeDensity(x));
+    const VectorXd r=full.residual(y,{}),a=approximate.residual(y,{});
+    REQUIRE((r.array()==a.array()).all());
+    const SparseMatrixd j=full.assembleJacobian(y,{}),k=approximate.assembleJacobian(y,{});
+    REQUIRE((j-k).norm()>0.);
+    REQUIRE((j-k).topRows(6).norm()==0.);
+    REQUIRE((full.residual(y,{}).array()==r.array()).all());
+    REQUIRE((approximate.residual(y,{}).array()==r.array()).all());
+}
+
+TEST_CASE("IALMob population flux retains a packed edge drop below the physical voltage spacing",
+          "[ialmob][legacy_population][sg_edge_precision]") {
+    Fixture f;
+    const Real vt = constants::Vt_300;
+    DDScalingSpec scaling;
+    scaling.enabled = true;
+    scaling.V0 = vt;
+    scaling.stateVariables = "potential_density";
+    CoupledDDAssembler assembler(f.mesh, f.materials, f.doping, vt, f.mobility,
+        recombinationModelConfig({"none"}), {}, {}, {}, {}, scaling);
+
+    Real left = 26.;
+    Real right = std::nextafter(left, 27.);
+    for (int k = 0; k < 32 && left * vt != right * vt; ++k) {
+        left = right;
+        right = std::nextafter(left, 27.);
+    }
+    REQUIRE(left < right);
+    REQUIRE(left * vt == right * vt);
+
+    VectorXd x = VectorXd::Zero(18);
+    x.head(6).setConstant(left);
+    x[1] = x[2] = right;
+    x.segment(6, 4).setConstant(1.e20);
+    x.segment(12, 4).setConstant(1.e10);
+    const auto fields = assembler.populationPhysicalFields(x);
+    DDSolution solution;
+    solution.stateVariables = scaling.stateVariables;
+    solution.populationPsi = x.head(6);
+    solution.populationPotentialScale_V = vt;
+    solution.psi = fields.psi_V;
+    solution.phin = fields.phin_V;
+    solution.phip = fields.phip_V;
+    solution.n = fields.n;
+    solution.p = fields.p;
+    REQUIRE(solution.hasConsistentPopulationPotential());
+
+    ContactCurrent current(f.mesh, f.materials, f.doping, f.mobility, 300., scaling);
+    const auto edges = current.computeDetailed(solution, "left");
+    const auto reaction = current.computeFromResidual(assembler, x, "left");
+    REQUIRE(edges.totals.electronCurrent < 0.);
+    CHECK(edges.totals.electronCurrent == Catch::Approx(reaction.electronCurrent).epsilon(2.e-12));
+    CHECK(edges.totals.holeCurrent == Catch::Approx(reaction.holeCurrent).epsilon(2.e-12));
+    for (const auto& edge : edges.edges) {
+        const Real drop = x[edge.node1] - x[edge.node0];
+        if (drop == 0. || edge.mun <= 0.) continue;
+        // Equal endpoint populations give B(-eta) - B(eta) = eta.
+        const Real expected = edge.mun * vt / edge.edgeLength_m * solution.n[edge.node0] * drop;
+        CHECK(edge.electronContinuityFlux == Catch::Approx(expected).epsilon(2.e-12));
+    }
+}
+
+TEST_CASE("IALMob keeps isolated poly transport constant and scopes recombination",
+          "[ialmob][material_scope][jacobian]")
+{
+    for (bool tcad:{false,true}) {
+      for (Real intrinsicOffset:{0.,0.00793}) {
+        Fixture f(tcad);
+        const Real length=tcad?.1:1e-7;
+        for (Index i=6;i<9;++i) {Node n;n.id=i;n.x=3*length+(i==7?length:0);n.y=i==8?length:0;f.mesh.addNode(n);}
+        Cell c;c.id=4;c.region_id=2;c.node_ids={6,7,8};f.mesh.addCell(c);
+        Region region;region.id=2;region.name="poly";region.material="PolySilicon";region.cell_ids={4};f.mesh.addRegion(region);
+        f.mesh.buildEdges();
+        auto geometry=nlohmann::json::parse(std::ifstream(f.path));
+        geometry["node_count"]=9;geometry["cell_count"]=5;
+        std::ofstream(f.path)<<geometry.dump();
+        std::map<std::pair<Index,Index>,Real> weights;
+        for(const auto& row:geometry["cells"]) {
+            const auto nodes=row["node_ids"].get<std::array<Index,3>>();
+            const auto values=row["edge_coefficients"].get<std::array<Real,3>>();
+            for(int k=0;k<3;++k) weights[std::minmax(nodes[k],nodes[(k+1)%3])]+=values[k];
+        }
+        for(const auto& edge:f.mesh.edges()) f.mesh.setTransportCouple(edge.id,
+            (edge.n0>=6?.5:weights[std::minmax(edge.n0,edge.n1)])*edge.length);
+        auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
+        options->constantMaterialMobility["PolySilicon"]={1417.,470.5};f.mobility.ialmob=options;
+        Material poly=f.materials.getMaterial("Si");poly.name="PolySilicon";
+        poly.intrinsic_reference_potential_V=intrinsicOffset;
+        poly.mun=1417e-4/f.mobility.internalMobilityToM2PerVS;
+        poly.mup=470.5e-4/f.mobility.internalMobilityToM2PerVS;
+        f.materials.addMaterial(poly);
+        f.doping=DopingModel::fromMeshAndRegions(f.mesh,{{"silicon",tcad?2e17:2e23,0.},{"poly",tcad?1e18:1e24,0.}});
+        const Real vt=constants::kb*300./constants::q;
+        RecombinationModelConfig selected;selected.mechanisms={"srh","auger"};selected.activeMaterials={"Si"};
+        RecombinationModelConfig off=selected;off.mechanisms.clear();
+        CoupledDDAssembler on(f.mesh,f.materials,f.doping,vt,f.mobility,selected);
+        CoupledDDAssembler zero(f.mesh,f.materials,f.doping,vt,f.mobility,off);
+        CoupledDDState state;state.psi=VectorXd::Constant(9,.3);state.phin=VectorXd::Zero(9);state.phip=VectorXd::Constant(9,.02);
+        state.phin[7]=.003;
+        for(int i=6;i<9;++i) state.psi[i]+=intrinsicOffset;
+        auto x=on.pack(state);CoupledDDBoundaryConditions bc;
+        CHECK(on.electronDensity(x)[7]==Catch::Approx(poly.ni*std::exp((.3-.003)/vt)));
+        CHECK(on.holeDensity(x)[7]==Catch::Approx(poly.ni*std::exp((.02-.3)/vt)));
+        auto r=on.residual(x,bc),r0=zero.residual(x,bc);
+        REQUIRE(r.segment(9+6,3).norm()>0.);
+        CHECK(r.segment(9+6,3)==r0.segment(9+6,3));
+        CHECK(r.segment(18+6,3)==r0.segment(18+6,3));
+        CHECK((r-r0).segment(9,4).norm()>0.);
+        const auto jac=on.assembleJacobian(x,bc);
+        for (int col:{6,7,8,15,16,17,24,25,26}) {
+            auto plus=x,minus=x;plus[col]+=1e-6;minus[col]-=1e-6;
+            const VectorXd fd=(on.residual(plus,bc)-on.residual(minus,bc))/(2e-6);
+            const VectorXd analytic=jac.col(col);
+            CHECK((fd-analytic).norm()/std::max(analytic.norm(),1e-30)<2e-6);
+        }
+        prepareIalTransportGeometry(f.mobility,f.mesh);
+        const auto n=on.electronDensity(x),p=on.holeDensity(x);
+        DDAssembler ddOn(f.mesh,f.materials,f.doping,vt,f.mobility,selected);
+        DDAssembler ddOff(f.mesh,f.materials,f.doping,vt,f.mobility,off);
+        for (bool electron:{false,true}) {
+            if (electron) {ddOn.assembleElectronContinuity(state.psi,n,p);ddOff.assembleElectronContinuity(state.psi,n,p);}
+            else {ddOn.assembleHoleContinuity(state.psi,n,p);ddOff.assembleHoleContinuity(state.psi,n,p);}
+            for(int i=6;i<9;++i) {
+                CHECK(ddOn.rhs()[i]==ddOff.rhs()[i]);
+                CHECK(ddOn.matrix().coeff(i,i)==ddOff.matrix().coeff(i,i));
+            }
+        }
+        updateIalTransportState(f.mobility,f.mesh,f.doping,state.psi,n,p,state.phin,state.phip);
+        for (const auto& edge:f.mesh.edges()) if(edge.n0>=6) {
+            CHECK(ialEdgeMobility(f.mobility,edge.id,CarrierType::Electron)==Catch::Approx(poly.mun));
+            CHECK(ialEdgeMobility(f.mobility,edge.id,CarrierType::Hole,true)==Catch::Approx(poly.mup));
+        }
+        // Restoring PolySilicon carriers and its energy reference must not
+        // extend the Si-only element avalanche support into the isolated gate.
+        auto impact=impactIonizationModelConfig("van_overstraeten",
+            UnitScalingConfig{tcad?UnitScalingMode::UnitScaling:UnitScalingMode::LegacySI});
+        impact.drivingForce="quasi_fermi_gradient";impact.generation="current_density";
+        impact.currentApproximation="element_edge_sg_gss_laux";
+        impact.sourceMappingMode="element_vertex_box_measure";
+        impact.quasiFermiGradientDiscretization="cell_gradient";
+        impact.sourceJacobianMode="local_ad";
+        impact.bScale=.0001;impact.aScale=.01;
+        DDScalingSpec avScaling;
+        if(tcad) {
+            avScaling.enabled=true;avScaling.V0=vt;avScaling.C0=1e17;
+            avScaling.D0=1000.*vt;avScaling.mu0=1000.;avScaling.L0=.1;
+            avScaling.permittivityReference_F_per_m=constants::eps0*11.7;
+            avScaling.unitSystem=PhysicalUnitSystem::tcadInternal();
+            avScaling.chargeAreaFactor=avScaling.unitSystem.chargeAreaFactor();
+            avScaling.chargeLineFactor=avScaling.unitSystem.chargeLineFactor();
+            avScaling.fieldFromCoordinateDeltaFactor=avScaling.unitSystem.fieldFromCoordinateDeltaFactor();
+            avScaling.currentDensityLineIntegralFactor=avScaling.unitSystem.currentDensityAM2PerInternal()*avScaling.unitSystem.lengthMPerInternal();
+        }
+        CoupledDDAssembler avalanche(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},avScaling);
+        auto driven=state;
+        for(int i=0;i<4;++i) {
+            driven.psi[i]=.48+.012*i;
+            driven.phin[i]=.003*i;
+            driven.phip[i]=.96-.002*i;
+        }
+        if(tcad) {driven.psi/=vt;driven.phin/=vt;driven.phip/=vt;}
+        const auto drivenX=avalanche.pack(driven);
+        const auto avSource=avalanche.impactIonizationSourceResidual(drivenX,bc);
+        const auto avJac=avalanche.impactIonizationSourceJacobian(drivenX,bc);
+        CAPTURE(tcad,intrinsicOffset);
+        REQUIRE(avSource.segment(9,4).norm()>0.);
+        for(int node=6;node<9;++node) {
+            for(int block=0;block<3;++block) {
+                const int row=block*9+node;
+                CHECK(avSource[row]==0.);
+                CHECK(VectorXd(avJac.row(row)).norm()==0.);
+                CHECK(VectorXd(avJac.col(row)).norm()==0.);
+                auto plus=drivenX,minus=drivenX;
+                plus[row]+=1e-6;minus[row]-=1e-6;
+                const VectorXd fd=(avalanche.impactIonizationSourceResidual(plus,bc)
+                    -avalanche.impactIonizationSourceResidual(minus,bc))/(2e-6);
+                CHECK(fd.norm()==0.);
+            }
+        }
+        const auto mats=detail::buildCellMaterials(f.mesh,f.materials,300.);
+        CHECK_THROWS(detail::recombinationNodeMask(f.mesh,mats,{"Missing"}));
+        CHECK_THROWS(detail::recombinationNodeMask(f.mesh,mats,{"Si","Si"}));
+        CHECK_THROWS(detail::recombinationNodeMask(f.mesh,mats,{""}));
+      }
+    }
+}
+
+TEST_CASE("Material source scope parses in Newton and Gummel", "[material_scope][config]") {
+    const nlohmann::json input={{"recombination_materials",{"Si"}}};
+    CHECK(newtonConfigFromJson(input).recombinationMaterials==std::vector<std::string>{"Si"});
+    CHECK(gummelConfigFromJson(input).recombinationMaterials==std::vector<std::string>{"Si"});
+    CHECK(newtonConfigFromJson(nlohmann::json::object()).recombinationMaterials.empty());
+    CHECK_THROWS(newtonConfigFromJson({{"recombination_materials",12}}));
+    const nlohmann::json local={{"recombination_volume_policy","material_local_mixed_voronoi"}};
+    CHECK(newtonConfigFromJson(local).recombinationVolumePolicy=="material_local_mixed_voronoi");
+    CHECK(gummelConfigFromJson(local).recombinationVolumePolicy=="material_local_mixed_voronoi");
+    CHECK_THROWS(newtonConfigFromJson({{"recombination_volume_policy","typo"}}));
+    CHECK_THROWS(gummelConfigFromJson({{"recombination_volume_policy","typo"}}));
+}
+
+TEST_CASE("Material-local SRH volume excludes dielectric area and differentiates the same source",
+          "[material_scope][source_volume][jacobian]") {
+    for(bool tcad:{false,true}) {
+        Fixture f(tcad);
+        RecombinationModelConfig legacy;legacy.activeMaterials={"Si"};
+        legacy.taun=legacy.taup=1e-15; // Resolve source differences above transport roundoff.
+        auto local=legacy;local.volumePolicy="material_local_mixed_voronoi";
+        auto off=legacy;off.mechanisms.clear();
+        const Real vt=constants::kb*300./constants::q;
+        CoupledDDAssembler a(f.mesh,f.materials,f.doping,vt,f.mobility,legacy);
+        CoupledDDAssembler b(f.mesh,f.materials,f.doping,vt,f.mobility,local);
+        CoupledDDAssembler z(f.mesh,f.materials,f.doping,vt,f.mobility,off);
+        CoupledDDState state;state.psi=VectorXd::Constant(6,.05);
+        state.phin=VectorXd::Zero(6);state.phip=VectorXd::Constant(6,.02);
+        const auto x=a.pack(state);CoupledDDBoundaryConditions bc;
+        const auto ra=a.residual(x,bc),rb=b.residual(x,bc),rz=z.residual(x,bc);
+        const auto materials=detail::buildCellMaterials(f.mesh,f.materials,300.);
+        const auto all=detail::recombinationNodeVolumes(f.mesh,materials,"legacy_node");
+        const auto si=detail::recombinationNodeVolumes(f.mesh,materials,local.volumePolicy);
+        CHECK(rb.head(6)==ra.head(6)); // Charge measure is independent.
+        const Real length=tcad?.1:1e-7;
+        CHECK(std::accumulate(si.begin(),si.end(),0.)==Catch::Approx(length*length));
+        REQUIRE(si[2]<all[2]);REQUIRE(si[3]<all[3]);
+        for(int i=0;i<4;++i)for(int offset:{6,12})
+            CHECK((rb-rz)[offset+i]==Catch::Approx((ra-rz)[offset+i]*si[i]/all[i]).epsilon(1e-9));
+        const auto jac=b.assembleJacobian(x,bc);
+        for(int col:{2,3,8,9,14,15}) {
+            auto plus=x,minus=x;plus[col]+=1e-6;minus[col]-=1e-6;
+            const VectorXd fd=(b.residual(plus,bc)-b.residual(minus,bc))/(2e-6);
+            const VectorXd analytic=jac.col(col);
+            CHECK((fd-analytic).norm()/std::max(analytic.norm(),1e-30)<2e-6);
+        }
+        const auto n=a.electronDensity(x),p=a.holeDensity(x);
+        DDAssembler da(f.mesh,f.materials,f.doping,vt,f.mobility,legacy);
+        DDAssembler db(f.mesh,f.materials,f.doping,vt,f.mobility,local);
+        DDAssembler dz(f.mesh,f.materials,f.doping,vt,f.mobility,off);
+        for(bool electron:{false,true}) {
+            for(auto* dd:{&da,&db,&dz}) {
+                if(electron)dd->assembleElectronContinuity(state.psi,n,p);
+                else dd->assembleHoleContinuity(state.psi,n,p);
+            }
+            for(int i=0;i<4;++i) {
+                CHECK((db.rhs()-dz.rhs())[i]==Catch::Approx((da.rhs()-dz.rhs())[i]*si[i]/all[i]).epsilon(1e-9));
+                CHECK(db.matrix().coeff(i,i)-dz.matrix().coeff(i,i)==Catch::Approx(
+                    (da.matrix().coeff(i,i)-dz.matrix().coeff(i,i))*si[i]/all[i]).epsilon(1e-9));
+            }
+        }
+    }
+}
+
+TEST_CASE("Material reference keeps Ohmic neutrality and physical quasi-Fermi bias",
+          "[material_reference][newton][gummel]") {
+    DeviceMesh mesh;
+    for(Index i=0;i<3;++i){Node n;n.id=i;n.x=i==1?1e-7:0.;n.y=i==2?1e-7:0.;mesh.addNode(n);}
+    Cell cell;cell.id=0;cell.region_id=0;cell.node_ids={0,1,2};mesh.addCell(cell);
+    Region region;region.id=0;region.name="body";region.material="Si";region.cell_ids={0};mesh.addRegion(region);
+    Contact contact;contact.id=0;contact.name="terminal";contact.node_ids={0,1,2};mesh.addContact(contact);mesh.buildEdges();
+    MaterialDatabase db;Material si=db.getMaterial("Si");si.intrinsic_reference_potential_V=.00793;db.addMaterial(si);
+    const auto doping=DopingModel::fromMeshAndRegions(mesh,{{"body",1e23,0.}});
+    const Real vt=constants::kb*300/constants::q;
+    const auto equilibrium=equilibriumCarrierState(1e23,si.ni,*si.Nc_m3,*si.Nv_m3,vt,CarrierStatisticsConfig{});
+    const std::unordered_map<std::string,Real> biases{{"terminal",.2}};
+    NewtonConfig config;config.recombination.clear();
+    const auto result=NewtonSolver(mesh,db,doping,biases,config).solve();
+    REQUIRE(result.converged);
+    GummelConfig gcfg;gcfg.recombination.clear();
+    const auto gummel=runGummel(mesh,db,doping,biases,gcfg);
+    REQUIRE(gummel.converged);
+    for(const auto* sol:{&result.solution,&gummel})for(int i=0;i<3;++i){
+        CHECK(sol->psi[i]==Catch::Approx(.2+equilibrium.potential+.00793));
+        CHECK(sol->n[i]==Catch::Approx(equilibrium.n));
+        CHECK(sol->p[i]==Catch::Approx(equilibrium.p));
+        CHECK(sol->phin[i]==Catch::Approx(.2));CHECK(sol->phip[i]==Catch::Approx(.2));
+    }
+    CHECK_THROWS(detail::buildNodeIntrinsicReference(mesh,db,350.));
 }
 
 TEST_CASE("IALMob Fermi Auger enhancement has a consistent coupled source Jacobian",
@@ -301,6 +656,169 @@ TEST_CASE("IALMob full residual Jacobian and terminal currents share live mobili
     }
 }
 
+}
+
+TEST_CASE("IALMob avalanche differentiates live element mobility in every potential column",
+          "[ialmob][impact][element_edge_gss_laux][jacobian]")
+{
+    const Real vt=constants::kb*300./constants::q;
+    for (bool tcad:{false,true}) for (Real referenceDensity:{0.,1e18})
+    for (bool boundaryProjection:{false,true}) {
+        Fixture f(tcad);
+        auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
+        options->element.referenceDensity_m3=referenceDensity;f.mobility.ialmob=options;
+        DDScalingSpec scaling;
+        if (tcad) {
+            scaling.enabled=true;scaling.V0=vt;scaling.C0=1e17;scaling.D0=1000.*vt;
+            scaling.mu0=1000.;scaling.L0=.1;scaling.permittivityReference_F_per_m=constants::eps0*11.7;
+            scaling.unitSystem=PhysicalUnitSystem::tcadInternal();
+            scaling.chargeAreaFactor=scaling.unitSystem.chargeAreaFactor();
+            scaling.chargeLineFactor=scaling.unitSystem.chargeLineFactor();
+            scaling.fieldFromCoordinateDeltaFactor=scaling.unitSystem.fieldFromCoordinateDeltaFactor();
+            scaling.currentDensityLineIntegralFactor=scaling.unitSystem.currentDensityAM2PerInternal()*scaling.unitSystem.lengthMPerInternal();
+        }
+        auto impact=impactIonizationModelConfig("van_overstraeten",
+            UnitScalingConfig{tcad?UnitScalingMode::UnitScaling:UnitScalingMode::LegacySI});
+        impact.drivingForce="quasi_fermi_gradient";impact.generation="current_density";
+        impact.currentApproximation="element_edge_sg_gss_laux";
+        impact.sourceMappingMode="element_vertex_box_measure";
+        impact.quasiFermiGradientDiscretization="cell_gradient";impact.sourceJacobianMode="local_ad";
+        // Manufactured field scale makes avalanche resolvable on the small
+        // fixture. This changes no production coefficient or acceptance gate.
+        impact.bScale=.001;impact.aScale=.01;
+        impact.ialmobBoundaryFieldProjection=boundaryProjection;
+        RecombinationModelConfig off;off.mechanisms.clear();
+        CoupledDDAssembler assembler(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
+        const Real scale=tcad?vt:1.;
+        CoupledDDState state;state.psi=VectorXd(6);state.phin=VectorXd(6);state.phip=VectorXd(6);
+        for(int i=0;i<6;++i){state.psi[i]=(.48+.012*i)/scale;state.phin[i]=.003*i/scale;state.phip[i]=(.96-.002*i)/scale;}
+        const auto x=assembler.pack(state);CoupledDDBoundaryConditions bc;
+        // Branch diagnostics can be the first consumer, before any live cache.
+        CHECK_FALSE(assembler.impactIonizationActiveBranchFingerprint(x).empty());
+        // Call the source API before a full residual: geometry must be prepared.
+        const auto source=assembler.impactIonizationSourceJacobian(x,bc);
+        REQUIRE(source.norm()>0.);
+        const auto sourceFd=assembler.impactIonizationSourceFiniteDifferenceJacobian(x,bc,2e-7);
+        CHECK((source-sourceFd).norm()/source.norm()<3e-6);
+        const auto full=assembler.assembleJacobian(x,bc);
+        for(int k=0;k<x.size();++k) {
+            auto plus=x,minus=x;const Real h=2e-7/scale;plus[k]+=h;minus[k]-=h;
+            const VectorXd fd=(assembler.residual(plus,bc)-assembler.residual(minus,bc))/(2*h);
+            const VectorXd sf=(assembler.impactIonizationSourceResidual(plus,bc)-assembler.impactIonizationSourceResidual(minus,bc))/(2*h);
+            CAPTURE(tcad,referenceDensity,boundaryProjection,k);
+            const VectorXd sc=source.col(k);
+            CHECK((sc-sf).norm()/std::max({sc.norm(),sf.norm(),1e-30})<3e-5);
+            for(int block=0;block<3;++block) {
+                const VectorXd a=VectorXd(full.col(k)).segment(block*6,6),b=fd.segment(block*6,6);
+                CHECK((a-b).norm()/std::max({a.norm(),b.norm(),1e-30})<3e-5);
+            }
+        }
+        bc.phin[0]=state.phin[0];bc.phip[0]=state.phip[0];
+        const auto constrained=assembler.impactIonizationSourceJacobian(x,bc);
+        for(int k=0;k<18;++k){CHECK(constrained.coeff(6,k)==0.);CHECK(constrained.coeff(12,k)==0.);}
+        // Oxide nodes have no generation even when interface nodes have carriers.
+        const auto residual=assembler.impactIonizationSourceResidual(x,bc);
+        for(int i:{4,5,10,11,16,17}) CHECK(residual[i]==0.);
+        CHECK_THROWS_AS(assembler.impactIonizationSourceBranchResolvedFiniteDifferenceJacobian(x,bc,1e-7),std::invalid_argument);
+        CarrierStatisticsConfig fermi;fermi.model="fermi_dirac";
+        CoupledDDAssembler unsupported(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling,{},fermi);
+        CHECK_THROWS_AS(unsupported.residual(x,bc),std::invalid_argument);
+        impact.sourceJacobianMode="frozen";
+        CoupledDDAssembler frozen(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
+        CHECK_THROWS_AS(frozen.residual(x,bc),std::invalid_argument);
+    }
+}
+
+TEST_CASE("IALMob avalanche boundary projection removes normal field without changing current",
+          "[ialmob][impact][element_edge_gss_laux]")
+{
+    Fixture f;
+    prepareIalTransportGeometry(f.mobility,f.mesh);
+    const auto cellEdges=detail::buildCellEdgeMap(detail::buildEdgeCellMap(f.mesh),f.mesh);
+    const auto materials=detail::buildCellMaterials(f.mesh,f.materials,300.);
+    const auto mobility=makeMobilityModel(f.mobility);
+    auto impact=impactIonizationModelConfig("van_overstraeten");
+    impact.drivingForce="quasi_fermi_gradient";impact.generation="current_density";
+    impact.currentApproximation="element_edge_sg_gss_laux";
+    impact.sourceMappingMode="element_vertex_box_measure";
+    impact.quasiFermiGradientDiscretization="cell_gradient";
+    impact.bScale=.001;
+    const auto model=makeImpactIonizationModel(impact);
+    const Real vt=constants::kb*300./constants::q;
+    VectorXd psi=VectorXd::Constant(6,.48),fn(6),fp=VectorXd::Constant(6,.96),n(6),p(6);
+    std::vector<Real> ni(6,1e16);
+    for(int i=0;i<6;++i) fn[i]=f.mesh.getNode(i).y*3e5;
+    const auto record=[&]() {
+        for(int i=0;i<6;++i) {
+            n[i]=ni[i]*std::exp((psi[i]-fn[i])/vt);
+            p[i]=ni[i]*std::exp((fp[i]-psi[i])/vt);
+        }
+        return detail::elementEdgeGssLauxAvalancheSourceRecordForCell(
+            impact,*model,f.mobility,*mobility,cellEdges.at(1),f.mesh,f.doping,
+            materials,1,psi,fn,fp,n,p,ni,vt);
+    };
+    const auto original=record();
+    REQUIRE(original.electronAlpha>0.);
+    impact.ialmobBoundaryFieldProjection=true;
+    const auto projected=record();
+    CHECK(projected.electronImpactField==0.);
+    CHECK(projected.electronAlpha==0.);
+    CHECK((projected.electronCurrentVector-original.electronCurrentVector).norm()==0.);
+    for(int i=0;i<6;++i) fn[i]+=f.mesh.getNode(i).x*2e5;
+    CHECK(record().electronImpactField==Catch::Approx(2e5));
+    impact.contactElectricFieldFallback=true;
+    const auto contact=record();
+    CHECK(contact.electronImpactField==0.);
+    impact.gradQfContactField=GradQfContactField::QuasiFermiGradient;
+    const auto explicitQf=record();
+    CHECK(explicitQf.electronImpactField==Catch::Approx(2e5));
+    CHECK((explicitQf.electronCurrentVector-contact.electronCurrentVector).norm()==0.);
+}
+
+TEST_CASE("Avalanche boundary projection is opt in and parsed by both solvers", "[ialmob][impact][config]")
+{
+    CHECK_FALSE(newtonConfigFromJson(nlohmann::json::object()).impactIonization.ialmobBoundaryFieldProjection);
+    CHECK_FALSE(gummelConfigFromJson(nlohmann::json::object()).impactIonization.ialmobBoundaryFieldProjection);
+    const nlohmann::json cfg={{"impact_ionization",{{"model","van_overstraeten"},
+        {"current_approximation","element_edge_sg_gss_laux"},
+        {"generation","current_density"},{"driving_force","quasi_fermi_gradient"},
+        {"source_mapping_mode","element_vertex_box_measure"},
+        {"quasi_fermi_gradient_discretization","cell_gradient"},
+        {"ialmob_boundary_field_projection",true}}}};
+    CHECK(newtonConfigFromJson(cfg).impactIonization.ialmobBoundaryFieldProjection);
+    CHECK(gummelConfigFromJson(cfg).impactIonization.ialmobBoundaryFieldProjection);
+    auto impact=impactIonizationModelConfig("van_overstraeten");
+    impact.ialmobBoundaryFieldProjection=true;
+    CHECK_THROWS_AS(detail::validateImpactIonizationDrivingForce(impact,"test"),std::invalid_argument);
+}
+
+TEST_CASE("GradQF contact field has the same JSON policy for Newton and Gummel", "[ialmob][contact_field]") {
+    const nlohmann::json input={
+        {"mobility",{{"high_field_driving_force","quasi_fermi_gradient"},
+                     {"contact_electric_field_fallback",false}}},
+        {"impact_ionization",{{"driving_force","quasi_fermi_gradient"},
+                              {"contact_electric_field_fallback",false}}}};
+    const auto check=[](const auto& config,bool expected) {
+        CHECK(config.mobility.useElectricFieldAtGradQfContacts()==expected);
+        CHECK(config.impactIonization.useElectricFieldAtGradQfContacts()==expected);
+    };
+    check(newtonConfigFromJson(input),true);
+    check(gummelConfigFromJson(input),true);
+    auto explicitQf=input;
+    explicitQf["grad_qf_contact_field"]="quasi_fermi_gradient";
+    explicitQf["mobility"]["contact_electric_field_fallback"]=true;
+    explicitQf["impact_ionization"]["contact_electric_field_fallback"]=true;
+    check(newtonConfigFromJson(explicitQf),false);
+    check(gummelConfigFromJson(explicitQf),false);
+    const auto defaultPolicy=newtonConfigFromJson(input);
+    auto otherPolicy=defaultPolicy;
+    otherPolicy.mobility.gradQfContactField=GradQfContactField::QuasiFermiGradient;
+    otherPolicy.impactIonization.gradQfContactField=GradQfContactField::QuasiFermiGradient;
+    CHECK(bvProcessConfigurationFingerprint(defaultPolicy.mobility,defaultPolicy.impactIonization)!=
+          bvProcessConfigurationFingerprint(otherPolicy.mobility,otherPolicy.impactIonization));
+    explicitQf["grad_qf_contact_field"]="unknown";
+    CHECK_THROWS_AS(newtonConfigFromJson(explicitQf),std::invalid_argument);
+    CHECK_THROWS_AS(gummelConfigFromJson(explicitQf),std::invalid_argument);
 }
 
 TEST_CASE("IALMob transport rejects geometry coupling mismatch", "[ialmob][transport]")
@@ -415,6 +933,7 @@ TEST_CASE("Four-equation operator couples live IALMob current and conservative h
     SECTION("Tight bracket Halley screening preserves coupled columns"){screening(IalScreeningMethod::Halley);}
     SECTION("Explicit legacy screening preserves coupled columns"){screening(IalScreeningMethod::Legacy);}
     SECTION("TOMS748 screening preserves coupled columns"){screening(IalScreeningMethod::Toms748);}
+    SECTION("Version bound single Newton cutoff preserves coupled columns"){screening(IalScreeningMethod::U202212SingleNewton);}
     SECTION("Cached four-equation structure retains all coupled partials"){reuseStructure=true;}
     LatticeConductivity law;law.model=LatticeConductivity::Model::InverseQuadratic;
     law.numerator=100.;law.denominator={-.0393,.00155,1.82e-6};
@@ -794,6 +1313,275 @@ TEST_CASE("Electrothermal tangent contact derivative matches fixed-state bias di
     }
 }
 
+TEST_CASE("Observed avalanche geometry rejects mismatched or nonphysical evidence",
+          "[ialmob][observed_ialmob][geometry]")
+{
+    Fixture f;
+    using J=nlohmann::json;
+    J cells=J::array();
+    for (Index id=0;id<2;++id) {
+        const auto& cell=f.mesh.getCell(id);
+        J coordinates=J::array();
+        for (Index node:cell.node_ids) coordinates.push_back({f.mesh.getNode(node).x,f.mesh.getNode(node).y});
+        cells.push_back({{"cell_id",id},{"node_ids",cell.node_ids},{"coordinates_m",coordinates},
+            {"mobility_vertex",id},{"source_measure_m2",{1e-15,2e-15,2e-15}}});
+    }
+    const J valid={{"schema","vela.ialmob.observed_avalanche_geometry.v1"},
+        {"node_count",6},{"cell_count",4},{"cells",cells}};
+    const auto path=std::filesystem::path(f.path.string()+".avalanche");
+    struct Cleanup {std::filesystem::path p;~Cleanup(){std::error_code e;std::filesystem::remove(p,e);}} cleanup{path};
+    const auto prepare=[&](const J& evidence) {
+        std::ofstream(path)<<evidence;
+        auto config=f.mobility;
+        auto options=std::make_shared<IalTransportOptions>(*config.ialmob);
+        options->avalancheGeometryFile=path.string();config.ialmob=options;
+        config.ialmobGeometry.reset();prepareIalTransportGeometry(config,f.mesh);
+        return config;
+    };
+    const auto original=prepare(valid);
+    auto impact=impactIonizationModelConfig("van_overstraeten");
+    const auto fingerprint=bvProcessConfigurationFingerprint(original,impact);
+    auto changed=valid;changed["cells"][0]["mobility_vertex"]=2;
+    CHECK(bvProcessConfigurationFingerprint(prepare(changed),impact)!=fingerprint);
+    changed=valid;changed["cells"][0]["source_measure_m2"][0]=.5e-15;
+    CHECK(bvProcessConfigurationFingerprint(prepare(changed),impact)!=fingerprint);
+    auto modified=original;auto options=std::make_shared<IalTransportOptions>(*modified.ialmob);
+    auto params=options->electrons.at(100).parameters();params.muMax*=1.01;
+    options->electrons.insert_or_assign(100,IalMobility(params,true));modified.ialmob=options;
+    CHECK(bvProcessConfigurationFingerprint(modified,impact)!=fingerprint);
+    CHECK(bvProcessConfigurationFingerprint(prepare(valid),impact)==fingerprint);
+    std::vector<J> invalid;
+    const auto bad=[&](auto edit){auto value=valid;edit(value);invalid.push_back(value);};
+    bad([](J& j){j["node_count"]=6.5;});
+    bad([](J& j){j["cell_count"]=3;});
+    bad([](J& j){j["cells"].erase(1);});
+    bad([](J& j){j["cells"].push_back(j["cells"][0]);});
+    bad([](J& j){j["cells"][0]["cell_id"]=-1;});
+    bad([](J& j){j["cells"][0]["cell_id"]=2;});
+    bad([](J& j){j["cells"][0]["node_ids"]={0,2,1};});
+    bad([](J& j){j["cells"][0]["node_ids"][0]=.1;});
+    bad([](J& j){j["cells"][0]["coordinates_m"][1][0]=2e-7;});
+    bad([](J& j){j["cells"][0]["coordinates_m"][0].push_back(0);});
+    bad([](J& j){j["cells"][0]["mobility_vertex"]=3;});
+    bad([](J& j){j["cells"][0]["mobility_vertex"]=.5;});
+    bad([](J& j){j["cells"][0]["source_measure_m2"]={0,0,0};});
+    bad([](J& j){j["cells"][0]["source_measure_m2"]={-1e-15,3e-15,3e-15};});
+    bad([](J& j){j["cells"][0]["source_measure_m2"]={1e-14,0,0};});
+    bad([](J& j){j["cells"][0]["source_measure_m2"].push_back(0);});
+    for (const auto& evidence:invalid) CHECK_THROWS(prepare(evidence));
+    const auto parserInput=J{{"geometry_file",f.path.string()},{"effective_electrodes",{"left","right"}},
+        {"crystal_x",{1,0,0}},{"crystal_y",{0,1,0}},
+        {"electron_parameters_cm",{{"100",J::object()}}},{"hole_parameters_cm",{{"100",J::object()}}}};
+    for (const auto& value:{"","relative.json"}) {
+        auto input=parserInput;input["avalanche_geometry_file"]=value;
+        CHECK_THROWS_AS(ialTransportOptionsFromJson(input),std::invalid_argument);
+    }
+}
+
+TEST_CASE("Observed IALMob avalanche assembles every live potential column in both unit systems",
+          "[ialmob][impact][observed_ialmob][jacobian]")
+{
+    const Real vt=constants::kb*300./constants::q;
+    for (bool tcad:{false,true}) for (bool interfaceCorner:{false,true}) {
+        const Real referenceDensity=0.;const bool boundaryProjection=true;
+        Fixture f(tcad,interfaceCorner);
+        auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
+        options->element.referenceDensity_m3=referenceDensity;
+        const auto sourcePath=std::filesystem::path(f.path.string()+".avalanche");
+        struct Cleanup {std::filesystem::path p;~Cleanup(){std::error_code e;std::filesystem::remove(p,e);}} cleanup{sourcePath};
+        nlohmann::json cells=nlohmann::json::array();
+        for(Index id=0;id<2;++id) {
+            const auto& c=f.mesh.getCell(id);std::array<std::array<Real,2>,3> coordinates;
+            for(int j=0;j<3;++j){const auto& n=f.mesh.getNode(c.node_ids[j]);coordinates[j]={n.x*f.mobility.internalLengthToM,n.y*f.mobility.internalLengthToM};}
+            cells.push_back({{"cell_id",id},{"node_ids",c.node_ids},{"coordinates_m",coordinates},
+                {"mobility_vertex",id},{"source_measure_m2",{1.1e-15,1.4e-15,2.5e-15}}});
+        }
+        std::ofstream(sourcePath)<<nlohmann::json({{"schema","vela.ialmob.observed_avalanche_geometry.v1"},
+            {"node_count",6},{"cell_count",4},{"cells",cells}});
+        options->avalancheGeometryFile=sourcePath.string();f.mobility.ialmob=options;
+        DDScalingSpec scaling;
+        if (tcad) {
+            scaling.enabled=true;scaling.V0=vt;scaling.C0=1e17;scaling.D0=1000.*vt;
+            scaling.mu0=1000.;scaling.L0=.1;scaling.permittivityReference_F_per_m=constants::eps0*11.7;
+            scaling.unitSystem=PhysicalUnitSystem::tcadInternal();
+            scaling.chargeAreaFactor=scaling.unitSystem.chargeAreaFactor();
+            scaling.chargeLineFactor=scaling.unitSystem.chargeLineFactor();
+            scaling.fieldFromCoordinateDeltaFactor=scaling.unitSystem.fieldFromCoordinateDeltaFactor();
+            scaling.currentDensityLineIntegralFactor=scaling.unitSystem.currentDensityAM2PerInternal()*scaling.unitSystem.lengthMPerInternal();
+        }
+        auto impact=impactIonizationModelConfig("van_overstraeten",
+            UnitScalingConfig{tcad?UnitScalingMode::UnitScaling:UnitScalingMode::LegacySI});
+        impact.drivingForce="quasi_fermi_gradient";impact.generation="current_density";
+        impact.currentApproximation="ialmob_element_density_grad_qf";
+        impact.contactElectricFieldFallback=true;
+        impact.sourceMappingMode="element_vertex_box_measure";
+        impact.quasiFermiGradientDiscretization="cell_gradient";impact.sourceJacobianMode="local_ad";
+        // Manufactured field scale makes avalanche resolvable on the small
+        // fixture. This changes no production coefficient or acceptance gate.
+        impact.bScale=.001;impact.aScale=.01;
+        impact.ialmobBoundaryFieldProjection=boundaryProjection;
+        const auto curves=detail::ialElementAvalancheOptionsFromConfig(impact);
+        CHECK(curves.electron.lowA_per_m==Catch::Approx(7.03e7*impact.aScale));
+        CHECK(curves.electron.lowB_V_per_m==Catch::Approx(1.231e8*impact.bScale));
+        RecombinationModelConfig off;off.mechanisms.clear();
+        CoupledDDAssembler assembler(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
+        const Real scale=tcad?vt:1.;
+        CoupledDDState state;state.psi=VectorXd(6);state.phin=VectorXd(6);state.phip=VectorXd(6);
+        for(int i=0;i<6;++i){state.psi[i]=(.48+.012*i)/scale;state.phin[i]=.003*i/scale;state.phip[i]=(.96-.002*i)/scale;}
+        const auto x=assembler.pack(state);CoupledDDBoundaryConditions bc;
+        // Branch diagnostics can be the first consumer, before any live cache.
+        CHECK_FALSE(assembler.impactIonizationActiveBranchFingerprint(x).empty());
+        // Call the source API before a full residual: geometry must be prepared.
+        const auto source=assembler.impactIonizationSourceJacobian(x,bc);
+        REQUIRE(source.norm()>0.);
+        const auto sourceFd=assembler.impactIonizationSourceFiniteDifferenceJacobian(x,bc,2e-7);
+        CHECK((source-sourceFd).norm()/source.norm()<3e-6);
+        const auto full=assembler.assembleJacobian(x,bc);
+        {
+            auto populationScaling=scaling;
+            populationScaling.stateVariables="potential_density";
+            CoupledDDAssembler population(f.mesh,f.materials,f.doping,vt,f.mobility,
+                off,{},impact,{}, {},populationScaling);
+            const auto n=assembler.electronDensity(x),p=assembler.holeDensity(x);
+            const auto y=population.packPopulation(state.psi*scale,n,p);
+            VectorXd direction=VectorXd::Zero(y.size());
+            direction.head(6)=VectorXd::LinSpaced(6,-.002,.003)/scale;
+            direction.segment(6,6)=.01*n;
+            direction.tail(6)=-.02*p;
+            const auto direct=population.impactIonizationSourceJacobian(y,bc);
+            const auto jacobian=population.assembleJacobian(y,bc);
+            const VectorXd sourceAction=direct*direction;
+            const VectorXd action=jacobian*direction;
+            REQUIRE(sourceAction.norm()>0.);
+            for (const Real h:{1.e-3,1.e-4}) {
+                const VectorXd plus=y+h*direction,minus=y-h*direction;
+                const VectorXd sourceFdAction=(population.impactIonizationSourceResidual(plus,bc)-
+                    population.impactIonizationSourceResidual(minus,bc))/(2.*h);
+                const VectorXd fdAction=(population.residual(plus,bc)-population.residual(minus,bc))/(2.*h);
+                CHECK((sourceAction-sourceFdAction).norm()/sourceAction.norm()<1e-5);
+                for (int block=0;block<3;++block) {
+                    const Real norm=action.segment(6*block,6).norm();
+                    CHECK((action-fdAction).segment(6*block,6).norm()<2e-5*norm);
+                }
+            }
+        }
+        DDSolution physical;
+        {
+            // Actual IAL/source bundle, including TCAD units and corner cells.
+            // Split values must preserve the equations, then respond to a low
+            // component that is erased by ordinary absolute-potential storage.
+            CoupledDDAssembler split(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
+            split.enableSplitDDState(true);
+            auto runtime=split.splitRuntime();const auto ordinary=assembler.residual(x,bc);
+            const auto wide=split.residual(x,bc);
+            for(int b=0;b<3;++b)CHECK((wide-ordinary).segment(b*6,6).norm()<1e-12*std::max(ordinary.segment(b*6,6).norm(),1e-30));
+            const auto terms=split.carrierContinuityTermDiagnostics(x,bc);
+            Real generation=0;for(const auto& t:terms)generation+=t.impactCombinedSource;
+            CHECK(generation>0.);
+            CHECK(generation==Catch::Approx(-assembler.impactIonizationSourceResidual(x,bc).segment(6,6).sum()).epsilon(1e-12));
+            VectorXd d=VectorXd::Zero(18);d(0)=0x1p-60;
+            const auto y=runtime->candidate(x,d,1.,runtime->low());
+            CHECK(y(0)==x(0));CHECK(runtime->low()(0)!=0.);
+            VectorXd plus,minus;auto response=runtime->symmetricDifference(y,d,bc,plus,minus);
+            CHECK(response.norm()>0.);
+            DDSolution checkpoint;runtime->save(y,checkpoint);
+            CHECK(checkpoint.hasConsistentSplitPackedState());
+            NewtonConfig nc;nc.splitDDState=true;nc.warmStart=true;nc.mobility=f.mobility;
+            nc.recombination.clear();nc.impactIonization=impact;nc.quasiFermiReference="contact_nearest_state";
+            nc.inputScaling=UnitScalingConfig{tcad?UnitScalingMode::UnitScaling:UnitScalingMode::LegacySI};
+            NewtonSolver reader(f.mesh,f.materials,f.doping,{{"left",0.},{"right",.01}},nc);
+            // A checkpoint is encoded in the solve's original reference frame.
+            // The nearest terminal may change when its final state is read back.
+            auto originalFrameConfig=nc;originalFrameConfig.quasiFermiReference="none";
+            NewtonSolver originalFrameReader(f.mesh,f.materials,f.doping,
+                {{"left",0.},{"right",.01}},originalFrameConfig);
+            const auto expectedReadback=originalFrameReader.evaluateResidual(checkpoint);
+            const auto nearestReadback=reader.evaluateResidual(checkpoint);
+            CHECK((nearestReadback.raw.array()==expectedReadback.raw.array()).all());
+            CHECK(checkpoint.hasConsistentSplitPackedState());
+            for(const auto* name:{"left","right"})
+                CHECK(reader.evaluateStateTerminalCurrent(checkpoint,name,1e-6*nc.inputScaling.unitSystem().currentDensityAM2PerInternal()*nc.inputScaling.unitSystem().lengthMPerInternal())==Catch::Approx(runtime->current(y,name)).epsilon(2e-12));
+            const auto r=split.residual(y,bc);
+            CoupledDDAssembler reloaded(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
+            reloaded.enableSplitDDState(true);auto rr=reloaded.splitRuntime();auto z=rr->restore(checkpoint);
+            CHECK((reloaded.residual(z,bc).array()==r.array()).all());
+            const auto local=runtime->terms(y,{});
+            for(const auto& t:local)if(t.electronContinuityActive) {
+                CHECK(std::abs(t.electronResidual-(t.electronFlux+t.electronRecombination+t.electronImpact))<1e-14*std::max({std::abs(t.electronFlux),std::abs(t.electronImpact),1e-30}));
+            }
+        }
+        physical.psi=state.psi*scale;physical.phin=state.phin*scale;physical.phip=state.phip*scale;
+        physical.n=assembler.electronDensity(x);physical.p=assembler.holeDensity(x);
+        auto probe=evaluateBVProcessProbe(f.mesh,f.doping,physical,f.mobility,impact,{},f.materials,300.,
+            tcad?scaling.fieldFromCoordinateDeltaFactor:1.);
+        const auto sourceResidual=assembler.impactIonizationSourceResidual(x,bc);
+        auto doubleRate=impact;doubleRate.aScale*=2.;
+        CoupledDDAssembler doubled(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},doubleRate,{}, {},scaling);
+        const VectorXd doubledSource=doubled.impactIonizationSourceResidual(x,bc);
+        CHECK((doubledSource-2.*sourceResidual).norm()/sourceResidual.norm()<1e-12);
+        const Real integralScale=tcad?scaling.unitSystem.continuitySourceIntegralFactor()/(scaling.C0*scaling.D0):1.;
+        CHECK(sourceResidual.segment(6,6).sum()==Catch::Approx(-probe.totalSourceIntegral*integralScale).epsilon(1e-12));
+        CHECK(sourceResidual.segment(12,6).sum()==Catch::Approx(-probe.totalSourceIntegral*integralScale).epsilon(1e-12));
+        REQUIRE(probe.records.size()==12);
+        for (const auto& record:probe.records) {
+            CHECK(record.activeBranches.find("flux_sign=not_applicable")!=std::string::npos);
+            CHECK(record.sourceIntegral==Catch::Approx(record.alpha*record.selectedFluxMagnitude*record.sourceMeasure).epsilon(1e-12));
+        }
+        for(int k=0;k<x.size();++k) {
+            auto plus=x,minus=x;const Real h=2e-7/scale;plus[k]+=h;minus[k]-=h;
+            const VectorXd fd=(assembler.residual(plus,bc)-assembler.residual(minus,bc))/(2*h);
+            const VectorXd positiveSource=assembler.impactIonizationSourceResidual(plus,bc);
+            const VectorXd negativeSource=assembler.impactIonizationSourceResidual(minus,bc);
+            const VectorXd sf=(positiveSource-negativeSource)/(2*h);
+            CAPTURE(tcad,referenceDensity,boundaryProjection,k);
+            const VectorXd sc=source.col(k);
+            // At a symmetric gradient, an orthogonal direction has zero
+            // first derivative. Bound subtraction roundoff by the operands,
+            // rather than divide a numerical zero-column error by itself.
+            const Real cancellationBound=32*std::numeric_limits<Real>::epsilon()*
+                (positiveSource.norm()+negativeSource.norm())/(2*h);
+            CHECK((sc-sf).norm()<=3e-5*std::max(sc.norm(),sf.norm())+cancellationBound);
+            for(int block=0;block<3;++block) {
+                const VectorXd a=VectorXd(full.col(k)).segment(block*6,6),b=fd.segment(block*6,6);
+                CHECK((a-b).norm()/std::max({a.norm(),b.norm(),1e-30})<3e-5);
+            }
+        }
+        bc.phin[0]=state.phin[0];bc.phip[0]=state.phip[0];
+        const auto constrained=assembler.impactIonizationSourceJacobian(x,bc);
+        for(int k=0;k<18;++k){CHECK(constrained.coeff(6,k)==0.);CHECK(constrained.coeff(12,k)==0.);}
+        // Oxide nodes have no generation even when interface nodes have carriers.
+        const auto residual=assembler.impactIonizationSourceResidual(x,bc);
+        for(int i:{4,5,10,11,16,17}) CHECK(residual[i]==0.);
+        CHECK_THROWS_AS(assembler.impactIonizationSourceBranchResolvedFiniteDifferenceJacobian(x,bc,1e-7),std::invalid_argument);
+        CarrierStatisticsConfig fermi;fermi.model="fermi_dirac";
+        CoupledDDAssembler unsupported(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling,{},fermi);
+        CHECK_THROWS_AS(unsupported.residual(x,bc),std::invalid_argument);
+        impact.sourceJacobianMode="frozen";
+        CoupledDDAssembler frozen(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
+        CHECK_THROWS_AS(frozen.residual(x,bc),std::invalid_argument);
+    }
+}
+
+TEST_CASE("Shared IALMob JSON applies default and explicit screening methods to both carriers", "[ialmob][screening_default][config]") {
+    using nlohmann::json;
+    json options={{"geometry_file",(std::filesystem::temp_directory_path()/"screening_geometry.json").string()},
+        {"effective_electrodes",{"gate"}},{"crystal_x",{1,0,0}},{"crystal_y",{0,1,0}},
+        {"electron_parameters_cm",{{"100",json::object()}}},{"hole_parameters_cm",{{"100",json::object()}}}};
+    const auto check=[&](IalScreeningMethod expected){
+        const auto config=mobilityModelConfigFromJson({{"model","ialmob"},
+            {"high_field_driving_force","quasi_fermi_gradient"},{"ialmob",options}});
+        REQUIRE(config.ialmob);
+        CHECK(config.ialmob->electrons.at(100).screeningMethod()==expected);
+        CHECK(config.ialmob->holes.at(100).screeningMethod()==expected);
+    };
+    check(IalScreeningMethod::Halley);
+    options["screening_method"]="legacy";check(IalScreeningMethod::Legacy);
+    options["screening_method"]="halley";check(IalScreeningMethod::Halley);
+    options["screening_method"]="invalid";
+    CHECK_THROWS_AS(ialTransportOptionsFromJson(options),std::invalid_argument);
+}
+
+
 TEST_CASE("Electrothermal structure reuse survives zero derivatives temperature and constraint changes", "[electrothermal][structure]") {
     Fixture f;ElectrothermalGeometry g;
     g.siliconArea_m2=VectorXd::Zero(6);g.fixedCharge_C_per_m=VectorXd::Zero(6);
@@ -851,4 +1639,25 @@ TEST_CASE("Electrothermal structure reuse survives zero derivatives temperature 
     CHECK((changed.assemble(x,bc).jacobian-fresh.assemble(x,bc).jacobian).norm()==0.);
     CHECK(cache->coupled->builds==5);
     cached.setStructureCache(nullptr);CHECK((cached.assemble(x,bc).jacobian-plain.assemble(x,bc).jacobian).norm()==0.);
+}
+
+TEST_CASE("Split IAL retains generalized SRH and density-enhanced Auger", "[ialmob][split][recombination]") {
+    Fixture f;
+    const Real vt=constants::Vt_300;
+    for(bool generation:{false,true})for(bool classical:{false,true})for(const auto* volume:{"legacy_node","material_local_mixed_voronoi"}) {
+        RecombinationModelConfig rc;rc.mechanisms={"srh","auger"};rc.activeMaterials={"Si"};
+        rc.augerDensityDependence={true,3.46667,8.25688,1e24,1e24};
+        rc.volumePolicy=volume;rc.augerWithGeneration=generation;rc.augerExcessProduct=classical?"classical_np":"generalized_fermi";
+        CoupledDDAssembler plain(f.mesh,f.materials,f.doping,vt,f.mobility,rc);
+        CoupledDDAssembler split(f.mesh,f.materials,f.doping,vt,f.mobility,rc);split.enableSplitDDState(true);
+        CoupledDDState s{VectorXd::Constant(6,.48),VectorXd::Constant(6,.01),VectorXd::Constant(6,.011)};
+        s.psi(1)+=.002;s.phin(2)+=.0001;s.phip(3)-=.0002;
+        auto x=plain.pack(s);auto a=plain.carrierContinuityTermDiagnostics(x,{}),b=split.carrierContinuityTermDiagnostics(x,{});
+        for(int i=0;i<4;++i) {
+            CAPTURE(generation,classical,i);
+            CHECK(b[i].electronRecombination==Catch::Approx(a[i].electronRecombination).epsilon(2e-12).margin(1e-60));
+            CHECK(b[i].electronFlux==Catch::Approx(a[i].electronFlux).epsilon(2e-12).margin(1e-60));
+        }
+        REQUIRE(split.assembleJacobian(x,{}).norm()>0.);
+    }
 }

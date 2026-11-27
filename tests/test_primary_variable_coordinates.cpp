@@ -125,3 +125,32 @@ TEST_CASE("Unit stopping and physical audit share exact assemblies within one ta
         REQUIRE(std::abs(result.state.lambda+1e7*p.value(result.state.x,result.state.lambda)-target)<1e-12);
     }
 }
+
+TEST_CASE("Population observers receive physical states without changing a solve",
+          "[coupled_load_line][primary_coordinates][diagnostic]") {
+    const auto s=linearPopulationSystem();const auto p=linearPort();
+    CoupledLoadLineConfig c;c.linearSolver="direct_bordered";c.lineSearchMode="full_step";
+    c.applyDeviceUpdateLimit=false;c.applyVoltageUpdateLimit=false;c.voltageCoefficient=2.;
+    c.maxIterations=4;c.equationTolerance=1e-10;c.minimumOriginalCorrections=1;
+    ArclengthState seed{VectorXd(3),1.};seed.x<<1.,1e20,.01;
+    for(bool unit:{false,true}) {
+        PopulationCoordinateNewton solver(s,p.value,c,p,{},refs(),unit);
+        const auto off=solver.solve(seed,10.,1e7);
+        int accepted=0,trials=0;
+        const auto on=solver.solve(seed,10.,1e7,
+            [&](int iteration,const ArclengthState& state) {
+                ++accepted;CHECK(iteration==accepted);
+                CHECK(state.x[1]==Catch::Approx(2e20));
+            },
+            [&](const CoupledLoadLineTrial& info,const ArclengthState& state) {
+                ++trials;
+                CHECK(state.x[1]>1e19);
+                const auto load=LoadLineResidual::evaluate(2.,state.lambda,1e7,p.value(state.x,state.lambda),10.);
+                CHECK(info.loadResidual_V==Catch::Approx(load.voltage_V).margin(1e-12));
+            });
+        REQUIRE(on.converged);REQUIRE(off.converged);
+        CHECK(on.iterations==off.iterations);CHECK(accepted==on.iterations);CHECK(trials>0);
+        CHECK((on.state.x.array()==off.state.x.array()).all());
+        CHECK(on.state.lambda==off.state.lambda);
+    }
+}

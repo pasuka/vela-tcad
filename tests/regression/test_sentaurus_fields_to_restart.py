@@ -106,5 +106,51 @@ class SentaurusFieldsToRestartTest(unittest.TestCase):
                 row["electrons_m3"], format(values["eDensity"] * 1.0e6, ".17g"))
 
 
+    def test_classical_dd_explicitly_allows_missing_quantum_potential(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fields = root / "fields"
+            fields.mkdir()
+            (root / "nodes.csv").write_text("node_id,x,y\n0,0,0\n")
+            entries = []
+            values = {
+                "ElectrostaticPotential": 0.1,
+                "eQuasiFermiPotential": 0.0,
+                "hQuasiFermiPotential": 0.0,
+                "ConductionBandEnergy": 3.6,
+                "ElectronAffinity": 0.9,
+                "eDensity": 2.0e10,
+                "hDensity": 3.0e10,
+            }
+            for name, value in values.items():
+                filename = f"{name}_region0.csv"
+                (fields / filename).write_text(
+                    f"node_id,component0\n0,{value}\n")
+                entries.append({
+                    "name": name,
+                    "csv_file": filename,
+                    "unit": "cm^-3" if name.endswith("Density") else "V",
+                    "mapping_status": "complete",
+                })
+            (root / "field_manifest.json").write_text(
+                json.dumps({"fields": entries}))
+            (root / "elements.csv").write_text(
+                "id,node0,node1,node2,region,material\n"
+                "0,0,0,0,R.Silicon,Silicon\n")
+            output = root / "state.csv"
+            subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "sentaurus_fields_to_restart.py"),
+                "--export-dir", str(root),
+                "--output", str(output),
+                "--allow-missing-electron-quantum-potential",
+            ], check=True)
+            with output.open(newline="") as handle:
+                row = next(csv.DictReader(handle))
+            self.assertEqual(float(row["electron_quantum_potential_V"]), 0.0)
+            self.assertEqual(float(row["electrons_m3"]), 2.0e16)
+            self.assertEqual(float(row["holes_m3"]), 3.0e16)
+
+
 if __name__ == "__main__":
     unittest.main()

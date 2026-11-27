@@ -31,7 +31,10 @@ struct NonlocalPairSources;
 }
 
 class SplitDDRuntime;
+namespace poisson_precision { struct Model; }
 class BvMethodsCoupledRuntime;
+class LegacyPopulationRuntime;
+class CoupledStateRuntime;
 
 struct CoupledDDState {
     VectorXd psi;
@@ -59,6 +62,8 @@ struct CoupledDDBoundaryConditions {
     std::unordered_map<Index, Real> phin;
     std::unordered_map<Index, Real> phip;
     std::unordered_map<Index, CoupledDDThermionicBoundary> thermionic;
+    // Optional normalized tails for the explicit split-DD boundary contract.
+    std::unordered_map<Index, Real> psiLow, phinLow, phipLow;
     // Exact neutral densities and built-in potentials for compensated ohmic rows.
     std::unordered_map<Index, std::array<Real, 3>> ohmicPopulation;
     std::unordered_map<Index, Real> ohmicBias;
@@ -131,6 +136,7 @@ struct CoupledDDPoissonTermDiagnostic {
     Real holeQuasiFermiMappingError = 0.0;
     bool hasSuppliedCarrierState = false;
     Real dielectricFlux = 0.0;
+    Real dielectricOperandSum = 0.0;
     Real dielectricFluxAbsSum = 0.0; ///< Sum of absolute individual edge terms, before cancellation.
     Real electronCharge = 0.0;
     Real holeCharge = 0.0;
@@ -220,6 +226,25 @@ struct CoupledDDEdgeFluxDiagnostic {
     Real electronQfReference0_V = 0.0;
     Real electronQfReference1_V = 0.0;
     Real electronSgCancellationCondition = 0.0;
+    // Split-runtime diagnostic only. Prefactors use internal concentration units;
+    // ni0/ni1 above remain the common intrinsic density for compatibility.
+    Real electronSgPopulationPrefactor0Internal = 0.0;
+    Real electronSgPopulationPrefactor1Internal = 0.0;
+    Real holeSgPopulationPrefactor0Internal = 0.0;
+    Real holeSgPopulationPrefactor1Internal = 0.0;
+    Real holeSgEta = 0.0;
+    Real holeSgReconstructedFluxScaled = 0.0;
+    Real holeSgStableFluxScaled = 0.0;
+    Real holeSgHighPrecisionReferenceFluxScaled = 0.0;
+    Real holeSgHighPrecisionReferenceTermScaleScaled = 0.0;
+    // A fresh direct-product evaluation from primitive split coordinates at
+    // this decimal precision, with production mobility held fixed. Not an
+    // independent mobility/model validation. Zero means unavailable.
+    int splitSgReferenceDecimalDigits = 0;
+    // Optional probe sidecar payload: binary64 primitive operands, decimal
+    // mobility and independently evaluated references. Never used by physics.
+    std::string splitSgOperandsJson;
+
     Real electronParticleLineFluxPerInternalCouple_per_m_s = 0.0;
     Real holeParticleLineFluxPerInternalCouple_per_m_s = 0.0;
 };
@@ -299,15 +324,22 @@ struct CarrierDiagonalFloorRegularizationConfig {
     Real minorityDensityRatio = 1.0;
 };
 
+/// Diagnostic scatter order and compensated accumulation; default assembly is unchanged.
+struct CoupledDDAssemblyAuditOptions {
+    std::vector<Index> edgeOrder; ///< Empty means original order; otherwise a full permutation.
+    bool compensated = false;
+};
+
 enum class BvMethodsTransportPurpose {
     other, terminalValue, terminalLinearization, terminalValidation, contactOutput
 };
 
 class CoupledDDAssembler {
     friend class BvMethodsCoupledRuntime;
-    mutable std::shared_ptr<BvMethodsCoupledRuntime> bvMethodsRuntime_;
+    friend class LegacyPopulationRuntime;
+    mutable std::shared_ptr<CoupledStateRuntime> coupledStateRuntime_;
     bool bvMethodsEvaluationReuse_ = false;
-    std::shared_ptr<BvMethodsCoupledRuntime> bvMethodsRuntime() const;
+    std::shared_ptr<CoupledStateRuntime> coupledStateRuntime() const;
     struct FixedJacobianData;
 public:
     /// Single-owner sequential cache. Stores no numeric Jacobian or state.
@@ -328,7 +360,7 @@ public:
     /// State keys are bit-exact; boundary replacement is evaluated on every call.
     void setBvMethodsEvaluationReuse(bool enabled) {
         if (enabled != bvMethodsEvaluationReuse_) {
-            bvMethodsRuntime_.reset(); bvMethodsEvaluationReuse_ = enabled;
+            coupledStateRuntime_.reset(); bvMethodsEvaluationReuse_ = enabled;
         }
     }
     /// Source-free element transport for terminal totals and their derivative.
@@ -376,11 +408,23 @@ public:
     /// Opt-in binary128 Poisson evaluation from packed Boltzmann coordinates.
     void setExtendedPoissonResidual(bool enabled);
     bool usesExtendedPoissonResidual() const { return extendedPoissonResidual_; }
+    /// Diagnostic inexact linearization only; does not change residual physics.
+    void setDiagnosticFreezeTransportQfMobility(bool enabled) {
+        if (enabled && mobilityConfig_.edgeAveraging != "element_box_phumob")
+            throw std::invalid_argument("QF mobility diagnostic requires element_box_phumob");
+        diagnosticFreezeTransportQfMobility_ = enabled;
+    }
 
     VectorXd pack(const CoupledDDState& state) const;
     CoupledDDState unpack(const VectorXd& x) const;
+    /// Initialize only explicitly prescribed coordinates of a fixed-bias population seed.
+    void projectPopulationBoundarySeed(VectorXd& seed, const CoupledDDBoundaryConditions& bcs) const;
     bool usesPopulationState() const { return scaling_.stateVariables == "potential_density"; }
-    bool usesLegacyPopulationState() const { return usesPopulationState() && !usesBvMethodsOperator(); }
+    bool usesLegacyPopulationState() const {
+        return usesPopulationState() && !usesBvMethodsOperator() &&
+            carrierStatisticsModel_ == CarrierStatisticsModel::Boltzmann &&
+            (mobilityConfig_.model == "masetti" || mobilityConfig_.model == "masetti_field");
+    }
     /// Physical internal densities; potential fields keep the existing scaled pack contract.
     VectorXd packPopulation(const VectorXd& psi_V, const VectorXd& n, const VectorXd& p) const;
     PopulationPhysicalFields populationPhysicalFields(const VectorXd& x) const;
@@ -427,6 +471,17 @@ public:
     VectorXd residual(const VectorXd& x,
                       const CoupledDDBoundaryConditions& bcs) const;
 
+    /// Export the actual Boltzmann Poisson coefficients for read-only hi/lo
+    /// arithmetic diagnostics. Does not enable split transport or change gates.
+    poisson_precision::Model poissonArithmeticModel(
+        const VectorXd& x, const CoupledDDBoundaryConditions& bcs) const;
+
+    VectorXd auditAssemblyResidual(const VectorXd& x,
+        const CoupledDDBoundaryConditions& bcs,
+        const CoupledDDAssemblyAuditOptions& options) const;
+    std::vector<CoupledDDCarrierTermDiagnostic> auditAssemblyCarrierTerms(
+        const VectorXd& x, const CoupledDDBoundaryConditions& bcs,
+        const CoupledDDAssemblyAuditOptions& options) const;
     // Frozen N4 diagnostic through the actual residual loop, before gauges,
     // scaling and contact replacement. Not public config/solver dispatch;
     // caller must independently establish the supplied band's constitutive
@@ -471,7 +526,14 @@ public:
 
     SparseMatrixd assembleJacobian(
         const VectorXd& x,
-        const CoupledDDBoundaryConditions& bcs) const;
+        const CoupledDDBoundaryConditions& bcs,
+        bool includeCarrierDiagonalFloor = true) const;
+
+    // Explicit PhuMob diagnostic: 0=full source, 1=omit only source mobility's
+    // direct QF field chain, 2=lag all avalanche derivatives. Residual unchanged.
+    SparseMatrixd assembleSourceDiagnosticJacobian(const VectorXd& x,
+        const CoupledDDBoundaryConditions& bcs, int sourceMode,
+        bool includeCarrierDiagonalFloor = true) const;
 
     /// For supported DG/QF transport, collect the continuity derivatives with
     /// respect to the quantum band shift during the usual DD assembly.
@@ -489,6 +551,10 @@ public:
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs,
         Real relativeStep = 1.0e-6) const;
+
+    // Direct SRH/Auger contribution, avoiding cancellation against transport.
+    SparseMatrixd recombinationSourceJacobian(
+        const VectorXd& x,const CoupledDDBoundaryConditions& bcs) const;
 
     // Assemble only the impact-ionization source contribution. These direct
     // paths avoid subtracting two full continuity residuals/Jacobians when the
@@ -557,6 +623,9 @@ public:
     bool hasPositiveFiniteCarriers(const VectorXd& x) const;
     Index numNodes() const { return mesh_.numNodes(); }
     const std::vector<Real>& intrinsicDensity() const { return ni_; }
+    const std::vector<Real>& intrinsicReferencePotential() const { return intrinsicReference_; }
+    const std::vector<Real>& electronReferencePrefactor() const { return niElectron_; }
+    const std::vector<Real>& holeReferencePrefactor() const { return niHole_; }
     const std::vector<Real>& electronDensityOfStates() const { return Nc_; }
     const std::vector<Real>& holeDensityOfStates() const { return Nv_; }
     const CarrierStatisticsConfig& carrierStatistics() const { return carrierStatistics_; }
@@ -566,6 +635,7 @@ public:
     VectorXd compensatedPopulationPoissonResidual(
         const VectorXd& state, const VectorXd& potentialLow,
         const CoupledDDBoundaryConditions& bcs) const;
+    Real populationThermalVoltage_V() const { return Vt_; }
     Real continuityResidualScale() const { return scaling_.enabled ? scaling_.C0 * scaling_.D0 : 1.0; }
     std::string impactIonizationConfigurationFingerprint() const;
     std::string impactIonizationActiveBranchFingerprint(const VectorXd& x) const;
@@ -573,11 +643,13 @@ public:
 private:
     SparseMatrixd assembleJacobianImpl(
         const VectorXd& x, const CoupledDDBoundaryConditions& bcs,
-        SparseMatrixd* quantumTransport) const;
+        SparseMatrixd* quantumTransport, int sourceMode = 0,
+        bool includeCarrierDiagonalFloor = true) const;
     PopulationPhysicalFields populationPhysicalFieldsWithEta(const VectorXd& x,
                                                              VectorXd* fermiEta) const;
     VectorXd legacyPopulationQfCoordinates(const VectorXd& populations,
                                           VectorXd* fermiEta = nullptr) const;
+    bool diagnosticFreezeTransportQfMobility_ = false;
     SparseMatrixd legacyPopulationJacobian(const SparseMatrixd& qfJacobian,
                                            const VectorXd& populations,
                                            const VectorXd& fermiEta,
@@ -598,13 +670,15 @@ private:
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs,
         const CoupledDDFeedbackStateSubstitution* substitution,
+        const CoupledDDAssemblyAuditOptions* audit = nullptr,
         const experimental::NonlocalPairSources* nonlocal = nullptr) const;
     std::vector<CoupledDDCarrierTermDiagnostic>
     carrierContinuityTermDiagnosticsImpl(
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs,
         const CoupledDDFeedbackStateSubstitution* substitution,
-        bool includeImpactIonization) const;
+        bool includeImpactIonization,
+        const CoupledDDAssemblyAuditOptions* audit = nullptr) const;
 
     template <typename Scalar>
     SparseMatrixd impactIonizationSourceFiniteDifferenceJacobianImpl(
@@ -620,7 +694,7 @@ private:
     static constexpr JacobianStorageIndex invalidJacobianOffset = -1;
     static constexpr std::size_t maxEdgeAvalancheStencilNodes = 8;
     static constexpr std::size_t maxEdgeAvalancheDerivativeColumns =
-        2 + 2 * maxEdgeAvalancheStencilNodes;
+        3 * maxEdgeAvalancheStencilNodes;
     enum class MobilityDopingBasis : std::uint8_t {
         NetDoping,
         TotalImpurity,
@@ -678,6 +752,7 @@ private:
     void prepareBoxMasettiCells();
     Real preparedBoxMasettiMobility(Index edgeId, CarrierType carrier,
                                     Real drivingField, const VectorXd* psi) const;
+    Real poissonConductance(Index edgeId) const;
     void buildNodalCurrentReconstructionKernels();
     Real cachedEdgeMobility(
         Index edgeId,
@@ -719,6 +794,12 @@ private:
                                Real quasiFermiSplitting_V,
                                const GeneralizedSrhCarrierState* srhState = nullptr,
                                const GeneralizedSrhCarrierState* augerState = nullptr) const;
+    struct NodeRecombinationDifferential {
+        Real rate=0.;
+        std::array<Real,3> derivative{};
+    };
+    NodeRecombinationDifferential nodeRecombinationDifferential(
+        Index node,const VectorXd& x,Real n,Real p,bool populationColumns=false) const;
     void rebuildFixedJacobianPattern(
         const std::vector<bool>& constrainedRows,
         bool includeCellStencil,
@@ -736,6 +817,8 @@ private:
     std::unique_ptr<MobilityModel> mobility_;
     RecombinationModelConfig recombinationConfig_;
     RecombinationModel recombination_;
+    std::vector<bool> recombinationNodes_;
+    std::vector<Real> recombinationVol_;
     BandgapNarrowingConfig bandgapNarrowingConfig_;
     ImpactIonizationModelConfig impactIonizationConfig_;
     std::unique_ptr<ImpactIonizationModel> impactIonization_;
@@ -750,8 +833,16 @@ private:
     /// string-valued configuration. Numerically identical: only the model lookup is hoisted.
     CarrierStatisticsModel carrierStatisticsModel_ = CarrierStatisticsModel::Boltzmann;
     bool usesFermiDirac_ = false;
+    bool effectiveBandSg_ = false;
     bool extendedPoissonResidual_ = false;
     std::vector<Real> ni_;
+    mutable VectorXd authoritativeElectronDensity_, authoritativeHoleDensity_;
+    bool usesIalPopulationEdgeSg() const {
+        return authoritativeElectronDensity_.size() != 0 && !usesFermiDirac_ &&
+            mobilityConfig_.model == "ialmob" &&
+            mobilityConfig_.carrierCurrentDiscretization == "scharfetter_gummel_edge";
+    }
+    std::vector<Real> intrinsicReference_, niElectron_, niHole_;
     std::vector<Real> Nc_;
     std::vector<Real> Nv_;
     std::vector<Material> cellMaterials_;

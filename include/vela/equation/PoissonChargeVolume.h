@@ -8,6 +8,9 @@ namespace vela {
 enum class PoissonChargeVolumePolicy {
     Global,
     MaterialLocalBarycentric,
+    MaterialLocalMixedVoronoi,
+    MaterialLocalCircumcentric,
+    MaterialLocalBox,
 };
 
 inline const char* poissonChargeVolumePolicyName(
@@ -18,6 +21,12 @@ inline const char* poissonChargeVolumePolicyName(
             return "global";
         case PoissonChargeVolumePolicy::MaterialLocalBarycentric:
             return "material_local";
+    case PoissonChargeVolumePolicy::MaterialLocalMixedVoronoi:
+        return "material_local_mixed_voronoi";
+    case PoissonChargeVolumePolicy::MaterialLocalBox:
+        return "material_local_box";
+    case PoissonChargeVolumePolicy::MaterialLocalCircumcentric:
+        return "material_local_circumcentric";
     }
     return "unknown";
 }

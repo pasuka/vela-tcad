@@ -1,0 +1,485 @@
+{
+  "_comment": "Controlled SLOT campaign base; use run_slot_ldmos_bv_campaign.py. External circuit is enabled by the driver; native exported geometry resources remain required. Not a globally qualified template.",
+  "contacts": [
+    {
+      "bias": 0.0,
+      "name": "source",
+      "type": "ohmic"
+    },
+    {
+      "bias": 0.0,
+      "name": "drain",
+      "type": "ohmic"
+    },
+    {
+      "bias": 0.0,
+      "name": "gate",
+      "type": "ohmic"
+    },
+    {
+      "bias": 0.0,
+      "name": "SLOT",
+      "type": "ohmic"
+    },
+    {
+      "bias": 0.0,
+      "name": "substrate",
+      "type": "ohmic"
+    }
+  ],
+  "doping": [
+    {
+      "acceptors": 4.136545324405086e+19,
+      "donors": 5.048315856197694e+19,
+      "region": "Silicon_1"
+    },
+    {
+      "acceptors": 0.0,
+      "donors": 0.0,
+      "region": "Oxide_1"
+    },
+    {
+      "acceptors": 0.0,
+      "donors": 0.0,
+      "region": "Nitride_2.1"
+    },
+    {
+      "acceptors": 0.0,
+      "donors": 0.0,
+      "region": "PolySilicon_1"
+    },
+    {
+      "acceptors": 0.0,
+      "donors": 0.0,
+      "region": "Nitride_1.1"
+    },
+    {
+      "acceptors": 0.0,
+      "donors": 0.0,
+      "region": "Nitride_2.2"
+    },
+    {
+      "acceptors": 0.0,
+      "donors": 0.0,
+      "region": "Nitride_1.2"
+    }
+  ],
+  "materials_file": "../../build/slot_energy_reference_20260921/controls/aligned_full/materials.json",
+  "mesh_file": "../../build/slot_ldmos_noavalanche_1p25_resume02/mesh.json",
+  "mesh_geometry": {
+    "edge_coupling_policy": "assembled_delaunay_fallback",
+    "node_volume_policy": "mixed_voronoi",
+    "require_non_obtuse": false,
+    "carrier_transport_couple_profile": "slot_ldmos_external_averagebox",
+    "external_averagebox_couples_file": "../../build/slot_element_ialmob_20260921/budget/native_transport.csv",
+    "external_averagebox_expected_edges": 36681
+  },
+  "node_doping_file": "../../build/slot_physics_controls_20260921/poly_controls/poly_doped/doping.csv",
+  "output_csv": "unused.csv",
+  "scaling": {
+    "mode": "unit_scaling"
+  },
+  "simulation_type": "dc_sweep",
+  "solver": {
+    "abstol": 1e-09,
+    "auger_cn_m6_per_s": 2.9e-31,
+    "auger_cp_m6_per_s": 1.028e-31,
+    "bandgap_narrowing": "old_slotboom",
+    "carrier_regularization_scale": 1e-08,
+    "carrier_row_qualified_stall_acceptance": true,
+    "carrier_row_convergence": {
+      "mode": "enforce",
+      "eps_row": 0.001,
+      "scale_floor": 1e-30,
+      "min_source_scale_fraction": 0.0,
+      "min_source_scale": 0,
+      "min_newton_max_iter": 24,
+      "diagnostic_csv": "diagnostics/carrier_row_convergence.csv",
+      "min_carrier_density_m3": 1e-200
+    },
+    "damping_psi": 0.2,
+    "handoff": {
+      "fallback": "none",
+      "gummel_max_iter": 0,
+      "newton_max_iter": 24,
+      "require_gummel_convergence": false
+    },
+    "line_search": true,
+    "line_search_mode": "merit",
+    "max_iter": 24,
+    "method": "newton",
+    "mobility": {
+      "doping_concentration_basis": "total_impurity",
+      "high_field_driving_force": "quasi_fermi_gradient",
+      "high_field_gradient_discretization": "transport_cell_vector",
+      "jacobian_field_derivatives": true,
+      "model": "ialmob",
+      "ialmob": {
+        "geometry_file": "../../build/slot_element_ialmob_20260921/local_control_r2/native_geometry.json",
+        "effective_electrodes": [
+          "source",
+          "drain",
+          "substrate"
+        ],
+        "crystal_x": [
+          1,
+          0,
+          0
+        ],
+        "crystal_y": [
+          0,
+          1,
+          0
+        ],
+        "high_field": true,
+        "reference_density_m3": 0,
+        "electron_parameters_cm": {
+          "100": {
+            "mumax": 1417.0,
+            "mumin": 56.0,
+            "alpha": 0.68,
+            "theta": 2.285,
+            "n_ref": 9.68e+16,
+            "B": 900000.0,
+            "C": 48400.0,
+            "delta": 715000000000000.0,
+            "eta": 1e+50,
+            "N1": 1.0,
+            "N2": 1.0,
+            "lambda": 0.0,
+            "lambda_sr": 0.0,
+            "A": 2.0,
+            "alpha_sr": 5e-22,
+            "k": 1.0,
+            "nu": 0.0,
+            "D1_inv": 300.0,
+            "D2_inv": 300.0,
+            "nu0_inv": 1.5,
+            "nu1_inv": 2.0,
+            "nu2_inv": 0.5,
+            "alpha1_inv": 0.0,
+            "alpha2_inv": 0.0,
+            "l_crit": 1e-06,
+            "l_crit_c": 1e-06,
+            "mass": 1.0,
+            "other_mass": 1.258
+          },
+          "110": {
+            "mumax": 1417.0,
+            "mumin": 56.0,
+            "alpha": 0.68,
+            "theta": 2.285,
+            "n_ref": 9.68e+16,
+            "B": 900000.0,
+            "C": 48400.0,
+            "delta": 715000000000000.0,
+            "eta": 1e+50,
+            "N1": 1.0,
+            "N2": 1.0,
+            "lambda": 0.0,
+            "lambda_sr": 0.0,
+            "A": 2.0,
+            "alpha_sr": 5e-22,
+            "k": 1.0,
+            "nu": 0.0,
+            "D1_inv": 300.0,
+            "D2_inv": 300.0,
+            "nu0_inv": 1.5,
+            "nu1_inv": 2.0,
+            "nu2_inv": 0.5,
+            "alpha1_inv": 0.0,
+            "alpha2_inv": 0.0,
+            "l_crit": 1e-06,
+            "l_crit_c": 1e-06,
+            "mass": 1.0,
+            "other_mass": 1.258
+          },
+          "111": {
+            "mumax": 1417.0,
+            "mumin": 56.0,
+            "alpha": 0.68,
+            "theta": 2.285,
+            "n_ref": 9.68e+16,
+            "B": 900000.0,
+            "C": 48400.0,
+            "delta": 715000000000000.0,
+            "eta": 1e+50,
+            "N1": 1.0,
+            "N2": 1.0,
+            "lambda": 0.0,
+            "lambda_sr": 0.0,
+            "A": 2.0,
+            "alpha_sr": 5e-22,
+            "k": 1.0,
+            "nu": 0.0,
+            "D1_inv": 300.0,
+            "D2_inv": 300.0,
+            "nu0_inv": 1.5,
+            "nu1_inv": 2.0,
+            "nu2_inv": 0.5,
+            "alpha1_inv": 0.0,
+            "alpha2_inv": 0.0,
+            "l_crit": 1e-06,
+            "l_crit_c": 1e-06,
+            "mass": 1.0,
+            "other_mass": 1.258
+          }
+        },
+        "hole_parameters_cm": {
+          "100": {
+            "mumax": 486.0,
+            "mumin": 46.0,
+            "alpha": 0.719,
+            "theta": 2.247,
+            "n_ref": 2.23e+17,
+            "B": 810000.0,
+            "C": 8360.0,
+            "delta": 258000000000000.0,
+            "eta": 1e+50,
+            "N1": 1.0,
+            "N2": 1.0,
+            "lambda": 0.0,
+            "lambda_sr": 0.0,
+            "A": 2.0,
+            "alpha_sr": 0.0,
+            "k": 1.0,
+            "nu": 0.0,
+            "D1_inv": 150.0,
+            "D2_inv": 150.0,
+            "nu0_inv": 1.5,
+            "nu1_inv": 2.0,
+            "nu2_inv": 0.5,
+            "alpha1_inv": 0.0,
+            "alpha2_inv": 0.0,
+            "l_crit": 1e-06,
+            "l_crit_c": 1e-06,
+            "mass": 1.258,
+            "other_mass": 1.0
+          },
+          "110": {
+            "mumax": 486.0,
+            "mumin": 46.0,
+            "alpha": 0.719,
+            "theta": 2.247,
+            "n_ref": 2.23e+17,
+            "B": 810000.0,
+            "C": 8360.0,
+            "delta": 258000000000000.0,
+            "eta": 1e+50,
+            "N1": 1.0,
+            "N2": 1.0,
+            "lambda": 0.0,
+            "lambda_sr": 0.0,
+            "A": 2.0,
+            "alpha_sr": 0.0,
+            "k": 1.0,
+            "nu": 0.0,
+            "D1_inv": 150.0,
+            "D2_inv": 150.0,
+            "nu0_inv": 1.5,
+            "nu1_inv": 2.0,
+            "nu2_inv": 0.5,
+            "alpha1_inv": 0.0,
+            "alpha2_inv": 0.0,
+            "l_crit": 1e-06,
+            "l_crit_c": 1e-06,
+            "mass": 1.258,
+            "other_mass": 1.0
+          },
+          "111": {
+            "mumax": 486.0,
+            "mumin": 46.0,
+            "alpha": 0.719,
+            "theta": 2.247,
+            "n_ref": 2.23e+17,
+            "B": 810000.0,
+            "C": 8360.0,
+            "delta": 258000000000000.0,
+            "eta": 1e+50,
+            "N1": 1.0,
+            "N2": 1.0,
+            "lambda": 0.0,
+            "lambda_sr": 0.0,
+            "A": 2.0,
+            "alpha_sr": 0.0,
+            "k": 1.0,
+            "nu": 0.0,
+            "D1_inv": 150.0,
+            "D2_inv": 150.0,
+            "nu0_inv": 1.5,
+            "nu1_inv": 2.0,
+            "nu2_inv": 0.5,
+            "alpha1_inv": 0.0,
+            "alpha2_inv": 0.0,
+            "l_crit": 1e-06,
+            "l_crit_c": 1e-06,
+            "mass": 1.258,
+            "other_mass": 1.0
+          }
+        },
+        "constant_material_mobility_cm2_per_Vs": {
+          "PolySilicon": {
+            "electron": 1417.0,
+            "hole": 470.5
+          }
+        },
+        "avalanche_geometry_file": "../../build/slot_observed_assembly_20260923/native_avalanche_geometry.json"
+      },
+      "contact_electric_field_fallback": false
+    },
+    "global_continuity_closure": {
+      "linear_system_stabilization": "replace_free_row_sum",
+      "mode": "enforce",
+      "source_floor": 1e-11,
+      "absolute_tolerance": 1e-12,
+      "tolerance": 0.01,
+      "feasibility_restoration": "final_linear_qf_projection",
+      "feasibility_restoration_factor": 1.0,
+      "restoration_jacobian": "stabilized",
+      "roundoff_audit": false,
+      "restoration_physical_rows_only": true
+    },
+    "quasi_fermi_trust_region_expansion_threshold": 0.75,
+    "quasi_fermi_trust_region_growth_factor": 2.0,
+    "quasi_fermi_trust_region_max_multiplier": 4.0,
+    "quasi_fermi_trust_region_min_multiplier": 0.125,
+    "quasi_fermi_trust_region_shrink_factor": 0.5,
+    "quasi_fermi_update_limit_V": 0.1,
+    "quasi_fermi_update_limit_minority_V": 0.05,
+    "quasi_fermi_update_limit_mode": "componentwise_poisson_recorrect",
+    "residual_filter_envelope_factor": 4.0,
+    "residual_filter_gamma": 0.0001,
+    "recombination": [
+      "srh",
+      "auger"
+    ],
+    "reltol": 1e-08,
+    "stall_residual_floor": 1e-08,
+    "residual_scales": {
+      "phin": 8476.074054,
+      "phip": 3518.300497,
+      "psi": 1.189625
+    },
+    "srh_doping_dependence": {
+      "concentration_basis": "total_impurity",
+      "electron": {
+        "gamma": 1.0,
+        "reference_doping_m3": 1e+16,
+        "tau_max_s": 1e-05,
+        "tau_min_s": 0.0
+      },
+      "electron_temperature_exponent": -1.5,
+      "enabled": true,
+      "hole": {
+        "gamma": 1.0,
+        "reference_doping_m3": 1e+16,
+        "tau_max_s": 3e-06,
+        "tau_min_s": 0.0
+      },
+      "hole_temperature_exponent": -1.5,
+      "reference_temperature_K": 300.0,
+      "temperature_dependence": true
+    },
+    "taun": 1e-05,
+    "taup": 3e-06,
+    "warm_start": true,
+    "diagnostic_history": true,
+    "return_best_feasible_on_failure": false,
+    "carrier_diagonal_floor": {
+      "enabled": false,
+      "scale": 10.0,
+      "minority_density_ratio": 1.0
+    },
+    "quasi_fermi_reference": "contact_nearest_state",
+    "contact_boundary_reconstruction": "legacy_node_local",
+    "auger_with_generation": false,
+    "recombination_materials": [
+      "Si"
+    ],
+    "auger_density_dependence": {
+      "enabled": true,
+      "electron": {
+        "enhancement": 3.46667,
+        "reference_density_m3": 1e+18
+      },
+      "hole": {
+        "enhancement": 8.25688,
+        "reference_density_m3": 1e+18
+      }
+    },
+    "recombination_volume_policy": "material_local_circumcentric",
+    "impact_ionization": {
+      "model": "van_overstraeten",
+      "coupling_mode": "self_consistent",
+      "driving_force": "quasi_fermi_gradient",
+      "generation": "current_density",
+      "current_magnitude_mode": "edge_scalar_abs",
+      "driving_force_interpolation": "none",
+      "edge_source_partition": "symmetric",
+      "electron_driving_force_ref_density_m3": 0.0,
+      "hole_driving_force_ref_density_m3": 0.0,
+      "minimum_field_V_m": 100.0,
+      "quasi_fermi_carrier_truncation": 0.0,
+      "quasi_fermi_gradient_discretization": "cell_gradient",
+      "source_geometry_scale": 1.0,
+      "source_volume_factor": 0.0,
+      "source_volume_policy": "genius_truncated",
+      "current_approximation": "ialmob_element_density_grad_qf",
+      "source_mapping_mode": "element_vertex_box_measure",
+      "cell_reconstructed_midpoint_density": "bernoulli",
+      "source_jacobian": "local_ad",
+      "ialmob_boundary_field_projection": true,
+      "contact_electric_field_fallback": true
+    }
+  },
+  "sweep": {
+    "bias_points": [
+      0.0
+    ],
+    "breakdown": {
+      "current_jump_ratio": 1000000000000.0,
+      "max_electric_field_V_per_m": 1000000000000.0,
+      "non_convergence": true
+    },
+    "contact": "drain",
+    "current_contact": "drain",
+    "external_circuit": {
+      "enabled": false,
+      "current_direction": 1.0,
+      "initial_inner_voltage_V": 0.0,
+      "max_bracket_steps": 400,
+      "max_inner_voltage_step_V": 0.01,
+      "max_iterations": 60,
+      "mode": "series_resistor",
+      "residual_tolerance_V": 1e-06,
+      "resistance_ohm_um": 1000000000000.0,
+      "voltage_tolerance_V": 1e-08
+    },
+    "growth_factor": 1.2,
+    "initial_step": 0.0001,
+    "max_retries": 20,
+    "max_step": 1.0,
+    "min_step": 1e-10,
+    "mode": "bv_reverse",
+    "shrink_factor": 0.5,
+    "start": 0.0,
+    "step": 1.0,
+    "stop": 0.0,
+    "stop_on_failure": true,
+    "write_vtk": false,
+    "diagnostics": {
+      "newton_history": {
+        "enabled": true,
+        "attempts_csv_file": "diagnostics/attempts.csv",
+        "iterations_csv_file": "diagnostics/iterations.csv",
+        "rejected_state_directory": "diagnostics/rejected_states"
+      }
+    }
+  },
+  "state_format": "hdf5",
+  "potential_origin_V": 0.0,
+  "discretization": {
+    "poisson_charge_volume_policy": "material_local_circumcentric",
+    "poisson_permittivity_coupling": "per_cell"
+  }
+}

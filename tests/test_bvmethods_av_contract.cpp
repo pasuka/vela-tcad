@@ -282,13 +282,16 @@ struct ProfileFixture {
     vela::ImpactIonizationModelConfig avalanche;
     vela::DDScalingSpec scaling;
     vela::CarrierStatisticsConfig statistics{"fermi_dirac_joyce_dixon"};
-    ProfileFixture() {
+    explicit ProfileFixture(bool firstCellContactsOnly = false) {
         using namespace vela;
         for(const auto& n:std::vector<Node>{{0,0.,0.},{1,1e-8,0.},{2,0.,1e-8},{3,1e-8,1e-8},{4,2e-8,0.},{5,2e-8,1e-8}})mesh.addNode(n);
         mesh.addCell({0,CellType::Tri3,0,{0,1,2}});mesh.addCell({1,CellType::Tri3,0,{1,3,2}});
         mesh.addCell({2,CellType::Tri3,1,{1,4,3}});mesh.addCell({3,CellType::Tri3,1,{4,5,3}});
         mesh.addRegion({0,"silicon","Si",{0,1}});mesh.addRegion({1,"oxide","SiO2",{2,3}});
-        mesh.addContact({0,"source",0,{0}});mesh.addContact({1,"drain",0,{2}});mesh.buildEdges();
+        mesh.addContact({0,"source",0,{0}});
+        if (!firstCellContactsOnly)
+            mesh.addContact({1,"drain",0,{2}});
+        mesh.buildEdges();
         BoxGeometryBuilder::Options opts;opts.poissonPermittivityPolicy=BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial;
         opts.cellBoxPolicy=BoxGeometryBuilder::CellBoxPolicy::DelaunayTransfer;mesh.buildBoxGeometry(opts);
         for(int i=0;i<4;++i)doping.setNodeDoping(i,1e23,2e22);
@@ -468,6 +471,63 @@ TEST_CASE("BVMethods Poisson-only assembly preserves the coupled potential block
         }
     }
 }
+TEST_CASE("BVMethods contact field is local to each semiconductor cell", "[bvmethods_profile][contact_field]") {
+    using namespace vela;
+    ProfileFixture f(true);
+    auto x=f.point();
+    const auto mask=detail::contactNodeMask(f.mesh);
+    REQUIRE(detail::cellTouchesContact(f.mesh.getCell(0),mask));
+    REQUIRE_FALSE(detail::cellTouchesContact(f.mesh.getCell(1),mask));
+    auto faceMask=mask;
+    faceMask[1]=true;
+    REQUIRE(detail::cellTouchesContact(f.mesh.getCell(0),faceMask));
+
+    const auto electric=f.assembler();
+    f.mobility.gradQfContactField=GradQfContactField::QuasiFermiGradient;
+    f.avalanche.gradQfContactField=GradQfContactField::QuasiFermiGradient;
+    const auto qf=f.assembler();
+    const auto electricSource=electric->impactIonizationSourceResidual(x,{});
+    const auto qfSource=qf->impactIonizationSourceResidual(x,{});
+    REQUIRE(electricSource[6]!=qfSource[6]);
+    REQUIRE(electricSource[9]==qfSource[9]);
+    const VectorXd electricResidual=electric->residual(x,{});
+    const VectorXd qfResidual=qf->residual(x,{});
+    REQUIRE(electricResidual[6]!=qfResidual[6]);
+    REQUIRE(electricResidual[9]==qfResidual[9]);
+
+    VectorXd direction=VectorXd::Zero(18);
+    direction[0]=.3;
+    direction[6]=.4;
+    direction[12]=-.2;
+    for (const auto* assembler:{electric.get(),qf.get()}) {
+        const VectorXd jv=assembler->assembleJacobian(x,{})*direction;
+        const VectorXd fd=(assembler->residual(x+1e-7*direction,{})-
+                           assembler->residual(x-1e-7*direction,{}))/(2e-7);
+        const auto a=jv.segment(6,12), b=fd.segment(6,12);
+        REQUIRE((a-b).norm()/std::max(a.norm(),b.norm())<2e-6);
+    }
+
+    f.scaling.stateVariables="potential_density";
+    const auto populationQf=f.assembler();
+    f.mobility.gradQfContactField=GradQfContactField::ElectricField;
+    f.avalanche.gradQfContactField=GradQfContactField::ElectricField;
+    const auto populationElectric=f.assembler();
+    const VectorXd n=electric->electronDensity(x), p=electric->holeDensity(x);
+    const VectorXd state=populationElectric->packPopulation(x.head(6),n,p);
+    direction[6]=n[0]*.4;
+    direction[12]=-p[0]*.2;
+    for (const auto* assembler:{populationElectric.get(),populationQf.get()}) {
+        const VectorXd jv=assembler->assembleJacobian(state,{})*direction;
+        const VectorXd fd=(assembler->residual(state+1e-7*direction,{})-
+                           assembler->residual(state-1e-7*direction,{}))/(2e-7);
+        const auto a=jv.segment(6,12), b=fd.segment(6,12);
+        REQUIRE((a-b).norm()/std::max(a.norm(),b.norm())<2e-6);
+    }
+    const VectorXd populationDifference=populationElectric->residual(state,{})-populationQf->residual(state,{});
+    const VectorXd qfDifference=electricResidual-qfResidual;
+    REQUIRE((populationDifference-qfDifference).norm()<1e-9*qfDifference.norm());
+}
+
 TEST_CASE("BVMethods frozen mobility tangent preserves live transport and conservation", "[bvmethods_profile]") {
     using namespace vela;ProfileFixture f;auto a=f.assembler();const auto x=f.point();
     detail::BvMethodsQfState s{x.head(6),x.segment(6,6),x.tail(6),a->electronDensity(x),a->holeDensity(x)};
@@ -565,7 +625,7 @@ TEST_CASE("BVMethods profile shared ports and boundary derivative preserve the f
     state.n=a->electronDensity(physical);state.p=a->holeDensity(physical);
     auto x=baseline.packArclengthState(state);
     const auto original=baseline.makeArclengthSystem("drain");
-    const auto reduced=optimized.makeArclengthSystem("drain",1e-4,true);
+    const auto reduced=optimized.makeArclengthSystem("drain",1e-4,false,nullptr,true);
     auto source=optimized.makeArclengthContactCurrentFunctional("source",1.);
     auto drain=optimized.makeArclengthContactCurrentFunctional("drain",1.);
     auto oldSource=baseline.makeArclengthContactCurrentFunctional("source",1.);

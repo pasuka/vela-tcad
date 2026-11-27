@@ -12,108 +12,133 @@
 
 namespace vela {
 namespace {
-Real screeningGDerivative(Real p, Real a, Real b)
+template<class T>
+T screeningGDerivative(T p, T a, T b)
 {
-    return .89233 * .19778 * a / std::pow(.41372 + a * p, 1.19778)
-        - .005978 * 1.80618 * b / std::pow(b * p, 2.80618);
+    return T(.89233L) * T(.19778L) * a / std::pow(T(.41372L) + a * p, T(1.19778L))
+        - T(.005978L) * T(1.80618L) * b / std::pow(b * p, T(2.80618L));
 }
-Real legacyScreeningMinimum(Real mass, Real temperature)
+template<class T>
+T legacyScreeningMinimum(T mass, T temperature)
 {
-    const Real a = std::pow(temperature / (300. * mass), .28227);
-    const Real b = std::pow(mass * 300. / temperature, .72169);
-    Real predictedLower = 0., predictedUpper = 0.;
-    if (mass >= .01 && mass <= 100. && temperature <= 1e5) {
+    const T a = std::pow(temperature / (T(300.L) * mass), T(.28227L));
+    const T b = std::pow(mass * T(300.L) / temperature, T(.72169L));
+    T predictedLower = T(0.L), predictedUpper = T(0.L);
+    if (mass >= T(.01L) && mass <= T(100.L) && temperature <= T(1e5L)) {
         // g'(p)=0 is equivalent to p^v/(c+a*p)^u=K. Its logarithmic
         // derivative v-u*a*p/(c+a*p) is positive (v>u), so there is one
         // sign change. Predict a bracket, but retain the original bisection
         // sequence and evaluate its original derivative near that root.
-        constexpr Real u = 1.19778, v = 2.80618, c = .41372;
-        const Real logK = std::log(.005978 * 1.80618 / (.89233 * .19778))
-            + (1. - v) * std::log(b) - std::log(a);
-        Real x = 0.;
+        constexpr T u = T(1.19778L), v = T(2.80618L), c = T(.41372L);
+        const T logK = std::log(T(.005978L) * T(1.80618L) / (T(.89233L) * T(.19778L)))
+            + (T(1.L) - v) * std::log(b) - std::log(a);
+        T x = T(0.L);
         for (int i = 0; i < 6; ++i) {
-            const Real ap = a * std::exp(x);
+            const T ap = a * std::exp(x);
             x -= (v * x - u * std::log(c + ap) - logK)
                 / (v - u * ap / (c + ap));
         }
-        const Real predicted = std::exp(x);
-        const Real lo = predicted * (1. - 1e-12), hi = predicted * (1. + 1e-12);
+        const T predicted = std::exp(x);
+        const T lo = predicted * (T(1.L) - T(1e-12L)), hi = predicted * (T(1.L) + T(1e-12L));
         // The margin is well outside cancellation at the floating root.
         // Nonfinite/unsuccessful predictions use the original full search.
-        if (lo > 1e-12 && hi < 1e12 && screeningGDerivative(lo,a,b) < 0.
-            && screeningGDerivative(hi,a,b) > 0.) {
+        if (lo > T(1e-12L) && hi < T(1e12L) && screeningGDerivative(lo,a,b) < T(0.L)
+            && screeningGDerivative(hi,a,b) > T(0.L)) {
             predictedLower = lo;
             predictedUpper = hi;
         }
     }
-    Real lower = 1e-12, upper = 1e12;
+    T lower = T(1e-12L), upper = T(1e12L);
     for (int i = 0; i < 100; ++i) {
-        const Real midpoint = std::sqrt(lower * upper);
+        const T midpoint = std::sqrt(lower * upper);
         // Once geometric bisection reaches an endpoint, another identical
         // iteration cannot refine the representable root.
         if (midpoint == lower || midpoint == upper) return midpoint;
-        const bool negative = predictedLower > 0. && midpoint < predictedLower ? true
-            : predictedUpper > 0. && midpoint > predictedUpper ? false
-            : screeningGDerivative(midpoint, a, b) < 0.;
+        const bool negative = predictedLower > T(0.L) && midpoint < predictedLower ? true
+            : predictedUpper > T(0.L) && midpoint > predictedUpper ? false
+            : screeningGDerivative(midpoint, a, b) < T(0.L);
         if (negative) lower = midpoint;
         else upper = midpoint;
     }
     return std::sqrt(lower * upper);
 }
 
-Real candidateScreeningMinimum(Real mass,Real temperature,IalScreeningMethod method) {
+template<class T>
+T candidateScreeningMinimum(T mass,T temperature,IalScreeningMethod method) {
     ++ialKernelProfile.screeningCandidateCalls;
     const auto fallback=[&]{++ialKernelProfile.screeningFallbacks;return legacyScreeningMinimum(mass,temperature);};
-    if(mass<.01 || mass>100. || temperature>1e5)return fallback();
-    constexpr Real u=1.19778,v=2.80618,c=.41372,alpha=.28227;
-    constexpr Real eps=std::numeric_limits<Real>::epsilon();
-    const Real logr=std::log(temperature/(300.*mass));
-    const Real d=std::log(.005978*1.80618/(.89233*.19778))
-        +(v-1.)*(alpha+.72169)*logr-(v-u)*std::log(c);
-    const auto inverse=[](Real z){return z<0.?z/v:z/(v-u);};
-    Real lo=inverse(d),hi=inverse(d+u*std::log(2.));
+    if(mass<T(.01L) || mass>T(100.L) || temperature>T(1e5L))return fallback();
+    constexpr T u=T(1.19778L),v=T(2.80618L),c=T(.41372L),alpha=T(.28227L);
+    constexpr T eps=std::numeric_limits<T>::epsilon();
+    const T logr=std::log(temperature/(T(300.L)*mass));
+    const T d=std::log(T(.005978L)*T(1.80618L)/(T(.89233L)*T(.19778L)))
+        +(v-T(1.L))*(alpha+T(.72169L))*logr-(v-u)*std::log(c);
+    const auto inverse=[](T z){return z<T(0.L)?z/v:z/(v-u);};
+    T lo=inverse(d),hi=inverse(d+u*std::log(T(2.L)));
     // Outward slack plus actual sign checks account for endpoint rounding.
-    lo-=16.*eps*(1.+std::abs(lo));hi+=16.*eps*(1.+std::abs(hi));
-    const auto evaluate=[&](Real y){
+    lo-=T(16.L)*eps*(T(1.L)+std::abs(lo));hi+=T(16.L)*eps*(T(1.L)+std::abs(hi));
+    const auto evaluate=[&](T y){
         ++ialKernelProfile.screeningFunctionEvaluations;
-        const Real e=std::exp(-std::abs(y));
-        const Real soft=std::max(y,0.)+std::log1p(e);
-        const Real sigmoid=y>=0.?1./(1.+e):e/(1.+e);
-        return std::array<Real,4>{v*y-u*soft-d,v-u*sigmoid,
-            -u*sigmoid*(1.-sigmoid),4.*eps*(1.+std::abs(d)+v*std::abs(y)+u*soft)};
+        const T e=std::exp(-std::abs(y));
+        const T soft=std::max(y,T(0.L))+std::log1p(e);
+        const T sigmoid=y>=T(0.L)?T(1.L)/(T(1.L)+e):e/(T(1.L)+e);
+        return std::array<T,4>{v*y-u*soft-d,v-u*sigmoid,
+            -u*sigmoid*(T(1.L)-sigmoid),T(4.L)*eps*(T(1.L)+std::abs(d)+v*std::abs(y)+u*soft)};
     };
-    const Real flo=evaluate(lo)[0],fhi=evaluate(hi)[0];
-    if(!std::isfinite(flo)||!std::isfinite(fhi)||flo>0.||fhi<0.)return fallback();
-    Real y=lo+(hi-lo)/2.;
+    const T flo=evaluate(lo)[0],fhi=evaluate(hi)[0];
+    if(!std::isfinite(flo)||!std::isfinite(fhi)||flo>T(0.L)||fhi<T(0.L))return fallback();
+    T y=lo+(hi-lo)/T(2.L);
     if(method==IalScreeningMethod::Toms748){
         std::uintmax_t budget=64;
         const auto interval=boost::math::tools::toms748_solve(
-            [&](Real x){return evaluate(x)[0];},lo,hi,flo,fhi,
-            [](Real a,Real b){return b-a<=8.*eps*(1.+std::abs(a)+std::abs(b));},budget);
-        y=interval.first+(interval.second-interval.first)/2.;
+            [&](T x){return evaluate(x)[0];},lo,hi,flo,fhi,
+            [](T a,T b){return b-a<=T(8.L)*eps*(T(1.L)+std::abs(a)+std::abs(b));},budget);
+        y=interval.first+(interval.second-interval.first)/T(2.L);
     }else{
         for(int iteration=0;iteration<32;++iteration){
             const auto q=evaluate(y);
             if(std::abs(q[0])<=q[3])break;
-            if(q[0]<0.)lo=y;else hi=y;
-            Real next=y-q[0]/q[1];
+            if(q[0]<T(0.L))lo=y;else hi=y;
+            T next=y-q[0]/q[1];
             if(method==IalScreeningMethod::Halley){
-                const Real denominator=2.*q[1]*q[1]-q[0]*q[2];
-                if(std::isfinite(denominator)&&denominator>0.)next=y-2.*q[0]*q[1]/denominator;
+                const T denominator=T(2.L)*q[1]*q[1]-q[0]*q[2];
+                if(std::isfinite(denominator)&&denominator>T(0.L))next=y-T(2.L)*q[0]*q[1]/denominator;
             }
-            if(!std::isfinite(next)||next<=lo||next>=hi)next=lo+(hi-lo)/2.;
+            if(!std::isfinite(next)||next<=lo||next>=hi)next=lo+(hi-lo)/T(2.L);
             if(next==y)break;
             y=next;
         }
     }
     const auto final=evaluate(y);
-    const Real result=std::exp(std::log(c)+y-alpha*logr);
-    if(!std::isfinite(result)||result<=0.||std::abs(final[0])>final[3]*4.)return fallback();
+    const T result=std::exp(std::log(c)+y-alpha*logr);
+    if(!std::isfinite(result)||result<=T(0.L)||std::abs(final[0])>final[3]*T(4.L))return fallback();
     return result;
 }
 
-void validateState(const IalMobilityState& state) {
-    for(Real value:{state.donors_m3,state.acceptors_m3,state.electrons_m3,
+template<class Scalar>
+void validateParameters(const BasicIalMobilityParameters<Scalar>& p) {
+    for (Scalar value : {p.muMax,p.muMin,p.alpha,p.nRef,p.mass,p.otherMass,
+                      p.nRefD,p.nRefA,p.cRefD,p.cRefA,p.nDopRef,p.nScRef,
+                      p.B,p.C,p.delta,p.eta,p.N1,p.lCrit,p.lCritC,
+                      p.d1Inv,p.d2Inv,p.d1Acc,p.d2Acc}) {
+        if (!std::isfinite(value) || value <= 0.)
+            throw std::invalid_argument("IALMob requires finite positive scale parameters");
+    }
+    for (Scalar value : {p.S,p.transitionP,p.lambda,p.lambdaSr,p.A,p.alphaSr,p.nu,p.N2,
+                      p.nu0Inv,p.nu1Inv,p.nu2Inv,p.nu0Acc,p.nu1Acc,p.nu2Acc}) {
+        if (!std::isfinite(value) || value < 0.)
+            throw std::invalid_argument("IALMob requires finite nonnegative exponents and offsets");
+    }
+    for (Scalar value : {p.theta,p.k,p.alpha1Inv,p.alpha2Inv,p.alpha1Acc,p.alpha2Acc})
+        if (!std::isfinite(value))
+            throw std::invalid_argument("IALMob requires finite temperature exponents");
+    if (p.muMax <= p.muMin)
+        throw std::invalid_argument("IALMob requires muMax > muMin");
+}
+
+template<class Scalar>
+void validateState(const BasicIalMobilityState<Scalar>& state) {
+    for(Scalar value:{state.donors_m3,state.acceptors_m3,state.electrons_m3,
                    state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m})
         if(!std::isfinite(value)||value<0.)throw std::invalid_argument("IALMob state must be finite and nonnegative");
     if(!std::isfinite(state.temperature_K)||state.temperature_K<50.)
@@ -129,6 +154,7 @@ IalScreeningMethod ialScreeningMethod(const std::string& name) {
     if(name=="newton")return IalScreeningMethod::Newton;
     if(name=="halley")return IalScreeningMethod::Halley;
     if(name=="toms748")return IalScreeningMethod::Toms748;
+    if(name=="u2022_12_single_newton")return IalScreeningMethod::U202212SingleNewton;
     throw std::invalid_argument("Unknown IALMob screening root method");
 }
 const char* ialScreeningMethodName(IalScreeningMethod method) {
@@ -137,6 +163,7 @@ const char* ialScreeningMethodName(IalScreeningMethod method) {
     case IalScreeningMethod::Newton: return "newton";
     case IalScreeningMethod::Halley: return "halley";
     case IalScreeningMethod::Toms748: return "toms748";
+    case IalScreeningMethod::U202212SingleNewton: return "u2022_12_single_newton";
     }
     throw std::invalid_argument("Unknown IALMob screening root method");
 }
@@ -146,6 +173,17 @@ Real ialScreeningMinimum(Real mass,Real temperature,IalScreeningMethod method) {
     ElectrothermalCostTimer cost(ElectrothermalCostProfile::ScreeningRoot,
         electrothermalCostProfile.mode==ElectrothermalCostProfile::Screening);
     ++physicsCallCounters.ialScreeningMinimumSolves;
+    if(method==IalScreeningMethod::U202212SingleNewton){
+        // Runtime identity was established for Si at 300 K. This bounded
+        // thermal interval is for opt-in consistency tests, not a claim of
+        // native validation at other temperatures or arbitrary material mass.
+        if((mass!=1. && mass!=1.258)||temperature<250.||temperature>500.)
+            throw std::invalid_argument("u2022_12_single_newton requires Si mass 1 or 1.258 and 250 <= T <= 500 K");
+        const Real cutoff=ial_detail::u202212ScreeningCutoff(mass,temperature);
+        if(!std::isfinite(cutoff)||cutoff<=0.)
+            throw std::runtime_error("Invalid U-2022.12 screening cutoff");
+        return cutoff;
+    }
     return method==IalScreeningMethod::Legacy?legacyScreeningMinimum(mass,temperature):candidateScreeningMinimum(mass,temperature,method);
 }
 
@@ -178,35 +216,73 @@ Real IalScreeningCache::minimum(Real mass,Real temperature,IalScreeningMethod me
 
 IalMobilityParameters IalMobility::siliconDefaults(bool electron)
 {
-    IalMobilityParameters p;
-    if (!electron) {
-        p.muMax = 470.5; p.muMin = 44.9; p.theta = 2.247;
-        p.alpha = .719; p.nRef = 2.23e17;
-        p.mass = 1.258; p.otherMass = 1.;
+    return ialSiliconDefaults<Real>(electron);
+}
+
+BasicIalMobilityDifferential<long double> evaluateExtendedSlotIalMobility(
+    const BasicIalMobilityState<long double>& state,
+    const BasicIalMobilityParameters<long double>& parameters, bool electron,
+    IalScreeningMethod method)
+{
+    validateState(state);
+    validateParameters(parameters);
+    const auto compatibleMass = static_cast<Real>(parameters.mass);
+    if (method == IalScreeningMethod::U202212SingleNewton &&
+        ((compatibleMass != 1. && compatibleMass != 1.258) ||
+         state.temperature_K < 250.L || state.temperature_K > 500.L))
+        throw std::invalid_argument("extended U-2022.12 IALMob requires silicon and 250 <= T <= 500 K");
+
+    using Dual80 = ial_detail::BasicDual<long double>;
+    const std::array inputs{state.donors_m3,state.acceptors_m3,state.electrons_m3,
+        state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m,state.temperature_K};
+    std::array<Dual80,7> variables;
+    for (std::size_t i=0; i<variables.size(); ++i) {
+        variables[i] = Dual80(inputs[i]);
+        variables[i].derivative[i] = 1.L;
     }
-    return p;
+    const auto cutoff = [&] {
+        if (method == IalScreeningMethod::U202212SingleNewton) {
+            struct CachedCutoff {
+                long double mass = 0;
+                long double temperature = 0;
+                Dual80 cutoff{0};
+            };
+            // Bounded per-thread storage for the two supported Si mass families.
+            // Use the full-precision operands as keys, including across decks.
+            static thread_local std::array<CachedCutoff, 2> cache;
+            auto& entry = cache[compatibleMass == 1. ? 0 : 1];
+            if (entry.mass != parameters.mass || entry.temperature != state.temperature_K) {
+                entry = {parameters.mass, state.temperature_K,
+                         ial_detail::u202212ScreeningCutoff(parameters.mass, variables[6])};
+            }
+            return entry.cutoff;
+        }
+        const auto minimum = method == IalScreeningMethod::Legacy
+            ? legacyScreeningMinimum(parameters.mass,state.temperature_K)
+            : candidateScreeningMinimum(parameters.mass,state.temperature_K,method);
+        return Dual80(minimum);
+    }();
+    if (!std::isfinite(cutoff.value) || cutoff.value <= 0.L)
+        throw std::runtime_error("Invalid extended U-2022.12 IALMob screening cutoff");
+    const auto prepared = ial_detail::prepare(
+        variables,parameters,electron,cutoff.value,cutoff.derivative[6]);
+    const auto values = ial_detail::evaluatePrepared(prepared,variables[4],parameters);
+    if (!std::isfinite(values[0].value) || values[0].value <= 0.L ||
+        !std::ranges::all_of(values[0].derivative, [](long double x) { return std::isfinite(x); }))
+        throw std::runtime_error("Extended IALMob produced invalid mobility or derivative");
+
+    BasicIalMobilityDifferential<long double> result;
+    result.result = {values[0].value,values[1].value,values[2].value,values[3].value,
+                     values[4].value,values[5].value};
+    std::copy_n(values[0].derivative.begin(),result.derivative_SI.size(),result.derivative_SI.begin());
+    result.temperatureDerivative_m2_per_Vs_K = values[0].derivative[6];
+    return result;
 }
 
 IalMobility::IalMobility(IalMobilityParameters p, bool electron,IalScreeningMethod method)
     : params_(p), electron_(electron),screeningMethod_(method)
 {
-    for (Real value : {p.muMax,p.muMin,p.alpha,p.nRef,p.mass,p.otherMass,
-                      p.nRefD,p.nRefA,p.cRefD,p.cRefA,p.nDopRef,p.nScRef,
-                      p.B,p.C,p.delta,p.eta,p.N1,p.lCrit,p.lCritC,
-                      p.d1Inv,p.d2Inv,p.d1Acc,p.d2Acc}) {
-        if (!std::isfinite(value) || value <= 0.)
-            throw std::invalid_argument("IALMob requires finite positive scale parameters");
-    }
-    for (Real value : {p.S,p.transitionP,p.lambda,p.lambdaSr,p.A,p.alphaSr,p.nu,p.N2,
-                      p.nu0Inv,p.nu1Inv,p.nu2Inv,p.nu0Acc,p.nu1Acc,p.nu2Acc}) {
-        if (!std::isfinite(value) || value < 0.)
-            throw std::invalid_argument("IALMob requires finite nonnegative exponents and offsets");
-    }
-    for (Real value : {p.theta,p.k,p.alpha1Inv,p.alpha2Inv,p.alpha1Acc,p.alpha2Acc})
-        if (!std::isfinite(value))
-            throw std::invalid_argument("IALMob requires finite temperature exponents");
-    if (p.muMax <= p.muMin)
-        throw std::invalid_argument("IALMob requires muMax > muMin");
+    validateParameters(p);
     // Keep the original fast path for the isothermal coupled solver.
     pMin_ = ialScreeningMinimum(p.mass, 300.,screeningMethod_);
 }
@@ -215,6 +291,8 @@ IalMobilityResult IalMobility::evaluate(const IalMobilityState& state,IalScreeni
     IalMobilityPreparationCache* preparation,bool generated) const
 {
     validateState(state);
+    if(generated&&screeningMethod_==IalScreeningMethod::U202212SingleNewton)
+        throw std::invalid_argument("U-2022.12 screening compatibility requires the reference IALMob kernel");
     const auto minimum=[&]{return state.temperature_K==300.?pMin_:
         cache?cache->minimum(params_.mass,state.temperature_K,screeningMethod_):ialScreeningMinimum(params_.mass,state.temperature_K,screeningMethod_);};
     if(generated) {
@@ -259,6 +337,8 @@ IalMobilityDifferential IalMobility::evaluateWithDerivatives(const IalMobilitySt
     IalMobilityPreparationCache* preparation,bool generated) const
 {
     validateState(state);
+    if(generated&&screeningMethod_==IalScreeningMethod::U202212SingleNewton)
+        throw std::invalid_argument("U-2022.12 screening compatibility requires the reference IALMob kernel");
     IalMobilityDifferential result;
     const std::array<Real,7> inputs{state.donors_m3,state.acceptors_m3,
         state.electrons_m3,state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m,state.temperature_K};
@@ -267,12 +347,14 @@ IalMobilityDifferential IalMobility::evaluateWithDerivatives(const IalMobilitySt
         variables[i]=ial_detail::Dual(inputs[i]);
         variables[i].derivative[i]=1.;
     }
-    // At the clamped minimum, dG/dP = 0. The envelope derivative is the
-    // partial dG/dT; differentiating the numerical minimizer is unnecessary.
+    // Ordinary methods use the stationary envelope derivative. The explicit
+    // one-step compatibility cutoff is not stationary and must carry dPcut/dT.
     const auto prepare=[&]{
         const Real minimum=state.temperature_K==300.?pMin_:
             cache?cache->minimum(params_.mass,state.temperature_K,screeningMethod_):ialScreeningMinimum(params_.mass,state.temperature_K,screeningMethod_);
-        return ial_detail::prepare(variables,params_,electron_,minimum);
+        const Real slope=screeningMethod_==IalScreeningMethod::U202212SingleNewton?
+            ial_detail::u202212ScreeningCutoff(params_.mass,variables[6]).derivative[6]:0.;
+        return ial_detail::prepare(variables,params_,electron_,minimum,slope);
     };
     const auto differentiated=[&]{
         if(generated){

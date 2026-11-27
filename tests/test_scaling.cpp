@@ -160,6 +160,38 @@ TEST_CASE("UnitScalingSystem: positive reference scales on PN-like deck", "[scal
     REQUIRE(sc.R0() > 0.0);
 }
 
+TEST_CASE("UnitScalingSystem retains the source temperature through thermal scaling",
+          "[scaling][arithmetic]")
+{
+    const nlohmann::json base = {
+        {"solver", {{"temperature_K", 300.0}}},
+        {"decimal_stage_controls", {{"solver", {{"temperature_K", "299.999999999999972"}}}}}
+    };
+    if constexpr (compiledArithmeticPrecision == ArithmeticPrecision::Double) {
+        REQUIRE_THROWS_AS(parseUnitScalingReferenceConfig(base), std::invalid_argument);
+    } else {
+        auto upper = base;
+        upper["decimal_stage_controls"]["solver"]["temperature_K"] = "300.000000000000028";
+        const auto low = parseUnitScalingReferenceConfig(base);
+        const auto high = parseUnitScalingReferenceConfig(upper);
+        const UnitScalingSystem::AutoInputs inputs{1e16, 1e10, 1., 1000.};
+        const auto setup = [&](const UnitScalingReferenceConfig& refs) {
+            return UnitScalingSystem::fromInputs(300., 11.7 * constants::eps0, inputs, refs,
+                                                 PhysicalUnitSystem::tcadInternal());
+        };
+        REQUIRE(setup(high).V0() > setup(low).V0());
+        REQUIRE(setup(high).D0() > setup(low).D0());
+        REQUIRE(setup(high).V0() == thermalVoltageForInputs(300., high));
+        REQUIRE_THROWS_AS(thermalVoltageForInputs(301., high), std::invalid_argument);
+        const double above300 = std::nextafter(300., 301.);
+        upper["solver"]["temperature_K"] = above300;
+        upper["decimal_stage_controls"]["solver"]["temperature_K"] =
+            "300.0000000000000284217094304040074348449707031251";
+        const auto midpoint = parseUnitScalingReferenceConfig(upper);
+        REQUIRE(thermalVoltageForInputs(above300, midpoint) > 0.);
+    }
+}
+
 TEST_CASE("UnitScalingConfig unit_scaling keeps TCAD values internal", "[scaling]")
 {
     const UnitScalingConfig unitScaling{UnitScalingMode::UnitScaling};

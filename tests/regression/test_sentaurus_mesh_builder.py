@@ -400,7 +400,8 @@ class MeshFileContractTest(unittest.TestCase):
             }, indent=2) + "\n", encoding="utf-8")
             result = subprocess.run(
                 [str(runner), "--config", str(root / "sim.json")],
-                cwd=root, capture_output=True, text=True, check=True)
+                cwd=root, capture_output=True, text=True, check=False)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
             self.assertNotIn("warning", result.stderr.lower())
             with (root / "iv.csv").open(encoding="utf-8") as handle:
                 rows = list(csv.DictReader(handle))

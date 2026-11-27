@@ -114,11 +114,18 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
           doping,
           bandgapNarrowingConfig,
           validatedThermalVoltage(temperature_K), carrierStatisticsModel(carrierStatistics)))
+    , intrinsicReference_(detail::buildNodeIntrinsicReference(mesh,matdb,temperature_K))
+    , niElectron_(detail::carrierReferencePrefactor(ni_,intrinsicReference_,validatedThermalVoltage(temperature_K),true))
+    , niHole_(detail::carrierReferencePrefactor(ni_,intrinsicReference_,validatedThermalVoltage(temperature_K),false))
     , Nc_(detail::buildNodeDensityOfStates(mesh, matdb, temperature_K, true))
     , Nv_(detail::buildNodeDensityOfStates(mesh, matdb, temperature_K, false))
     , carrierStatistics_(std::move(carrierStatistics))
     , electronQuantumPotentialConfig_(std::move(electronQuantumPotential))
 {
+    (void)carrierStatisticsModel(carrierStatistics_);
+    if (carrierStatistics_.transport == "effective_band_sg" &&
+        (electronQuantumPotentialConfig_.enabled || mobilityConfig_.carrierCurrentDiscretization == "element_qf_gradient"))
+        throw std::invalid_argument("effective_band_sg requires classical edge SG transport.");
     detail::validateElementBoxMobilityContext(mesh_,mobilityConfig_,scaling_.regionResolvedInterfaceAssembly);
     if (bandgapNarrowingConfig.equalNiFluxEvaluation !=
             "legacy_factor_difference" &&
@@ -269,6 +276,13 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         return runtime->contact(x,contactName);
     }
     std::unordered_set<Index> contactNodes(contact->node_ids.begin(), contact->node_ids.end());
+    const bool ialPopulationSg = solution.stateVariables == "potential_density" &&
+        !usesFermiDirac(carrierStatistics_) && mobilityConfig_.model == "ialmob" &&
+        mobilityConfig_.carrierCurrentDiscretization == "scharfetter_gummel_edge";
+    const bool hasPackedPopulationPotential =
+        ialPopulationSg && solution.hasConsistentPopulationPotential();
+    const auto& sgPotential = hasPackedPopulationPotential ? solution.populationPsi : solution.psi;
+    const Real sgPotentialScale = hasPackedPopulationPotential ? solution.populationPotentialScale_V : 1.;
     const Real temperature_K = thermalVoltage_ * constants::q / constants::kb;
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh_, matdb_, temperature_K);
@@ -313,7 +327,7 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
               fieldFactor)
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
-        mobilityConfig_.contactElectricFieldFallback
+        mobilityConfig_.useElectricFieldAtGradQfContacts()
         ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
               mobilityConfig_, mesh_, edgeCells_, cellMaterials,
               solution.psi, fieldFactor)
@@ -624,21 +638,21 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             const Real coef = mun * thermalVoltage_ * fieldFactor / edgeLength;
             if (fermiDirac) {
                 const Real etaI = (electronPsi_i - phin_i) / thermalVoltage_
-                    + std::log(ni_i / Nc_[idxI]);
+                    + std::log(niElectron_[idxI] / Nc_[idxI]);
                 const Real etaJ = (electronPsi_j - phin_j) / thermalVoltage_
-                    + std::log(ni_j / Nc_[idxJ]);
+                    + std::log(niElectron_[idxJ] / Nc_[idxJ]);
                 const Real driftPotential =
                     (psi_j - psi_i) -
                     (1.0 - exponentialWeight) * (quantum_j - quantum_i)
                     + thermalVoltage_ * std::log(
-                        (ni_j / Nc_[idxJ]) / (ni_i / Nc_[idxI]));
-                const Real fermiDensityI = Nc_[idxI] * fermiDiracHalf(etaI);
-                const Real fermiDensityJ = Nc_[idxJ] * fermiDiracHalf(etaJ);
+                        (niElectron_[idxJ] / Nc_[idxJ]) / (niElectron_[idxI] / Nc_[idxI]));
+                const Real fermiDensityI = scaledFermiDiracHalf(Nc_[idxI], etaI);
+                const Real fermiDensityJ = scaledFermiDiracHalf(Nc_[idxJ], etaJ);
                 electronGeneralizedFactor = sgGeneralizedEinsteinFactor(
                     fermiDensityI, fermiDensityJ, etaI, etaJ);
                 electronGeneralizedArgument = driftPotential /
                     (thermalVoltage_ * electronGeneralizedFactor);
-                if (carrierStatistics_.sgFormulation == FermiSgFormulation::EffectivePotential) {
+                if (carrierStatistics_.effectiveSgFormulation() == FermiSgFormulation::EffectivePotential) {
                     electronGeneralizedFactor = 1.0;
                     if (n_i > 0.0 && n_j > 0.0)
                         electronGeneralizedArgument = std::log(n_j) - std::log(n_i) +
@@ -648,31 +662,30 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                     sgElectronFermiDiracQuantumContinuityFlux(
                     n_i, n_j, fermiDensityI, fermiDensityJ,
                     etaI, etaJ, driftPotential,
-                    0.0, electronQfDrop, thermalVoltage_, coef, carrierStatistics_.sgFormulation);
+                    0.0, electronQfDrop, thermalVoltage_, coef, carrierStatistics_.effectiveSgFormulation());
                 electronContinuityFluxLongDouble01 =
                     sgElectronFermiDiracQuantumContinuityFluxLongDouble(
                         n_i, n_j, fermiDensityI, fermiDensityJ,
                         etaI, etaJ, driftPotential,
-                        electronQfDropLong, thermalVoltage_, coef, carrierStatistics_.sgFormulation);
+                        electronQfDropLong, thermalVoltage_, coef, carrierStatistics_.effectiveSgFormulation());
+            } else if (ialPopulationSg) {
+                const auto drift = sgPopulationEdgeDrift(sgPotential[i], sgPotential[j],
+                    sgPotentialScale, thermalVoltage_, niElectron_[idxI], niElectron_[idxJ], bgnEnabled_);
+                electronContinuityFlux01 = sgBoltzmannPopulationContinuityFluxFromDrift(
+                    n_i, n_j, drift, thermalVoltage_, coef, 0., 0., 0.);
             } else if (solution.stateVariables == "potential_density" && !electronQuantumPotentialConfig_.enabled) {
+                // Match the population residual even when the mobility is constant.
                 electronContinuityFlux01 = sgBoltzmannPopulationContinuityFlux(
                     n_i, n_j, ni_i, ni_j,
                     dpsi, thermalVoltage_, coef, bgnEnabled_);
             } else {
-                const Real electronPsiRelative_i = electronPsi_i;
-                const Real electronPsiRelative_j = static_cast<Real>(
-                    static_cast<vela::ArithmeticReal>(psi_j) -
-                    static_cast<vela::ArithmeticReal>(electronReference_i) -
-                    static_cast<vela::ArithmeticReal>(1.0 - exponentialWeight) *
-                        static_cast<vela::ArithmeticReal>(quantum_j));
-                const Real phin_j_relative = referencedValueRelativeTo(
-                    electronReference_j, phin_j, electronReference_i);
+                const Real electronPsiFromNode0Qf = electronPsi_i - phin_i;
+                const Real electronPsiFromNode0QfAtJ =
+                    electronPsi_j - phin_j + electronQfDrop;
                 electronContinuityFlux01 = sgElectronBoltzmannContinuityFlux(
-                    ni_i, ni_j,
-                    electronPsiRelative_i, electronPsiRelative_j,
-                    phin_i, phin_j_relative, thermalVoltage_, coef,
-                    SGBoltzmannFluxPolicy{
-                        bgnEnabled_, compensatedEqualNiFlux_});
+                    niElectron_[idxI], niElectron_[idxJ],
+                    electronPsiFromNode0Qf, electronPsiFromNode0QfAtJ,
+                    0.0, electronQfDrop, thermalVoltage_, coef, SGBoltzmannFluxPolicy{bgnEnabled_, compensatedEqualNiFlux_});
             }
             if (!fermiDirac)
                 electronContinuityFluxLongDouble01 = electronContinuityFlux01;
@@ -686,44 +699,46 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             const Real coef = mup * thermalVoltage_ * fieldFactor / edgeLength;
             if (fermiDirac) {
                 const Real etaI = (phip_i_forHole - holePsi_i) / thermalVoltage_
-                    + std::log(ni_i / Nv_[idxI]);
+                    + std::log(niHole_[idxI] / Nv_[idxI]);
                 const Real etaJ = (phip_j_forHole - holePsi_j) / thermalVoltage_
-                    + std::log(ni_j / Nv_[idxJ]);
+                    + std::log(niHole_[idxJ] / Nv_[idxJ]);
                 const Real driftPotential = psi_j - psi_i + electrostaticTailDrop
                     + thermalVoltage_ * std::log(
-                        (ni_i / Nv_[idxI]) / (ni_j / Nv_[idxJ]));
+                        (niHole_[idxI] / Nv_[idxI]) / (niHole_[idxJ] / Nv_[idxJ]));
                 holeGeneralizedFactor = sgGeneralizedEinsteinFactor(
                     p_i, p_j, etaI, etaJ);
                 holeGeneralizedArgument = driftPotential /
                     (thermalVoltage_ * holeGeneralizedFactor);
+                if (carrierStatistics_.transport == "effective_band_sg") {
+                    holeGeneralizedFactor = 1.0;
+                    holeGeneralizedArgument = -sgEffectiveBandArgument(p_i, p_j, -holeQfDropForFlux / thermalVoltage_);
+                }
                 holeContinuityFlux01 = sgHoleFermiDiracContinuityFlux(
                     p_i, p_j, etaI, etaJ, driftPotential,
                     0.0, holeQfDropForFlux,
-                    thermalVoltage_, coef, carrierStatistics_.sgFormulation);
+                    thermalVoltage_, coef, carrierStatistics_.effectiveSgFormulation());
                 holeContinuityFluxLongDouble01 =
                     sgHoleFermiDiracContinuityFluxLongDouble(
                         p_i, p_j, etaI, etaJ, driftPotential,
-                        holeQfDropForFluxLong, thermalVoltage_, coef, carrierStatistics_.sgFormulation);
+                        holeQfDropForFluxLong, thermalVoltage_, coef, carrierStatistics_.effectiveSgFormulation());
+            } else if (ialPopulationSg && !holeQfDropOverrideApplied) {
+                const auto drift = sgPopulationEdgeDrift(sgPotential[i], sgPotential[j],
+                    -sgPotentialScale, thermalVoltage_, niHole_[idxI], niHole_[idxJ], bgnEnabled_);
+                holeContinuityFlux01 = sgBoltzmannPopulationContinuityFluxFromDrift(
+                    p_i, p_j, drift, thermalVoltage_, coef, 0., 0., 0.);
             } else if (solution.stateVariables == "potential_density" && !holeQfDropOverrideApplied) {
                 holeContinuityFlux01 = sgBoltzmannPopulationContinuityFlux(
                     p_i, p_j, ni_i, ni_j,
                     -(dpsi + electrostaticTailDrop), thermalVoltage_, coef, bgnEnabled_);
             } else {
-                const Real holePsiRelative_i = holePsi_i;
-                const Real holePsiRelative_j = static_cast<Real>(
-                    static_cast<vela::ArithmeticReal>(psi_j) -
-                    static_cast<vela::ArithmeticReal>(holeReference_i));
-                const Real phip_j_relative = holeQfDropOverrideApplied
-                    ? phip_i_forHole + holeQfDropForFlux
-                    : referencedValueRelativeTo(
-                        holeReference_j, phip_j_forHole, holeReference_i);
+                const Real holePsiFromNode0Qf = holePsi_i - phip_i_forHole;
+                const Real holePsiFromNode0QfAtJ =
+                    holePsi_j - phip_j_forHole + holeQfDropForFlux;
                 holeContinuityFlux01 = sgHoleBoltzmannContinuityFlux(
-                    ni_i, ni_j,
-                    holePsiRelative_i, holePsiRelative_j,
-                    phip_i_forHole, phip_j_relative,
-                    thermalVoltage_, coef,
-                    SGBoltzmannFluxPolicy{
-                        bgnEnabled_, compensatedEqualNiFlux_});
+                    niHole_[idxI], niHole_[idxJ],
+                    holePsiFromNode0Qf, holePsiFromNode0QfAtJ,
+                    0.0, holeQfDropForFlux,
+                    thermalVoltage_, coef, SGBoltzmannFluxPolicy{bgnEnabled_, compensatedEqualNiFlux_});
             }
             if (!fermiDirac)
                 holeContinuityFluxLongDouble01 = holeContinuityFlux01;

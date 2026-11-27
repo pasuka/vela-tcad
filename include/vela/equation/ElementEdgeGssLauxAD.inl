@@ -601,6 +601,47 @@ triangleGssAvalancheSourceIntegralsLocal(
     return source;
 }
 
+// IALMob has nine local potential columns, including both density responses.
+// Convert its interleaved vertex columns to the incoming local AD basis. The
+// scalar path evaluates fresh values and is independent of the AD Jacobian.
+template <typename Scalar>
+inline std::array<Scalar,2> localIalAvalancheMobilities(
+    const MobilityModelConfig& config,const DeviceMesh& mesh,const DopingModel& doping,
+    Index cellId,const std::array<Scalar,3>& psi,const std::array<Scalar,3>& phin,
+    const std::array<Scalar,3>& phip,const std::array<Scalar,3>& n,
+    const std::array<Scalar,3>& p,Real Vt)
+{
+    if constexpr (!std::is_same_v<Scalar,Real> && !std::is_same_v<Scalar,Tri3LocalForwardDual>) {
+        throw std::invalid_argument("IALMob avalanche does not support multiprecision source audits");
+    } else {
+        std::array<IalElementVertexState,3> state;
+        const auto& nodes=mesh.getCell(cellId).node_ids;
+        for (std::size_t i=0;i<3;++i) {
+            const Real factor=config.internalConcentrationToM3;
+            const Real v=localAdValue(psi[i]),fn=localAdValue(phin[i]),fp=localAdValue(phip[i]);
+            const Real ne=localAdValue(n[i])*factor,hp=localAdValue(p[i])*factor;
+            // Match the limited Boltzmann exponential, including clamped branches.
+            const Real etaN=(v-fn)/Vt,etaP=(fp-v)/Vt;
+            state[i]={v,fn,fp,doping.donors(nodes[i])*factor,doping.acceptors(nodes[i])*factor,
+                ne,hp,etaN>-500.&&etaN<500.?ne/Vt:0.,etaP>-500.&&etaP<500.?hp/Vt:0.};
+        }
+        const auto mobility=evaluateIalTransportCell(config,cellId,state,
+            std::is_same_v<Scalar,Tri3LocalForwardDual>);
+        std::array<Scalar,2> result{Scalar(mobility.electron.value),Scalar(mobility.hole.value)};
+        if constexpr (std::is_same_v<Scalar,Tri3LocalForwardDual>) {
+            for (std::size_t carrier=0;carrier<2;++carrier) {
+                const auto& m=carrier==0?mobility.electron:mobility.hole;
+                for (std::size_t j=0;j<Tri3LocalPotentialDofCount;++j)
+                    for (std::size_t i=0;i<3;++i)
+                        result[carrier].derivative[j]+=m.derivative[3*i]*psi[i].derivative[j]
+                            +m.derivative[3*i+1]*phin[i].derivative[j]
+                            +m.derivative[3*i+2]*phip[i].derivative[j];
+            }
+        }
+        return result;
+    }
+}
+
 template <typename Scalar>
 inline ElementEdgeGssLauxLocalSourceIntegrals<Scalar>
 elementEdgeGssLauxAvalancheSourceIntegralsLocal(
@@ -635,16 +676,27 @@ elementEdgeGssLauxAvalancheSourceIntegralsLocal(
         throw std::invalid_argument(
             "element-edge local AD requires Tri3 cells");
     }
+    const auto& material=cellMaterials.at(cellId);
+    if (material.ni<=0. || (material.mun<=0. && material.mup<=0.)) return {};
+    std::array<Scalar,2> ialMobility{};
+    if (mobilityConfig.model=="ialmob")
+        ialMobility=localIalAvalancheMobilities(mobilityConfig,mesh,doping,cellId,psi,phin,phip,n,p,Vt);
 
     const auto electricGradient = localAdTri3Gradient(mesh, cell, psi);
     const auto electronGradient = localAdTri3Gradient(mesh, cell, phin);
     const auto holeGradient = localAdTri3Gradient(mesh, cell, phip);
-    const Scalar electronQfField =
+    Scalar electronQfField =
         localAdNorm2(electronGradient[0], electronGradient[1]) *
         Scalar(fieldFactor);
-    const Scalar holeQfField =
+    Scalar holeQfField =
         localAdNorm2(holeGradient[0], holeGradient[1]) *
         Scalar(fieldFactor);
+    if (const auto tangent = ialAvalancheBoundaryTangent(impactConfig, mobilityConfig, cellId)) {
+        electronQfField = localAdAbs(electronGradient[0] * Scalar(tangent->x()) +
+            electronGradient[1] * Scalar(tangent->y())) * Scalar(fieldFactor);
+        holeQfField = localAdAbs(holeGradient[0] * Scalar(tangent->x()) +
+            holeGradient[1] * Scalar(tangent->y())) * Scalar(fieldFactor);
+    }
     Scalar electronImpactField = electronQfField;
     Scalar holeImpactField = holeQfField;
     if (impactConfig.drivingForce == "electric_field") {
@@ -698,14 +750,14 @@ elementEdgeGssLauxAvalancheSourceIntegralsLocal(
             mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient";
         const bool vectorQfMobility = qfMobility &&
             mobilityConfig.highFieldGradientDiscretization == "transport_cell_vector";
-        const Scalar electronMobility = localAdEndpointAveragedMobility(
+        const Scalar electronMobility = mobilityConfig.model=="ialmob" ? ialMobility[0] : localAdEndpointAveragedMobility(
             mobilityConfig, mobility, mesh, doping, cellMaterials, cellId,
             node0, node1, localEdge, (localEdge + 1) % 3,
             CarrierType::Electron,
             qfMobility ? (vectorQfMobility ? electronQfField : electronEdgeField)
                        : electricEdgeField,
             n, p);
-        const Scalar holeMobility = localAdEndpointAveragedMobility(
+        const Scalar holeMobility = mobilityConfig.model=="ialmob" ? ialMobility[1] : localAdEndpointAveragedMobility(
             mobilityConfig, mobility, mesh, doping, cellMaterials, cellId,
             node0, node1, localEdge, (localEdge + 1) % 3,
             CarrierType::Hole,

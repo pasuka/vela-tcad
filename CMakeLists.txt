@@ -325,6 +325,24 @@ endif()
 # ---------------------------------------------------------------------------
 # Library: vela_core
 # ---------------------------------------------------------------------------
+# pkg-config may emit <prefix>/bin/../include. Normalize it so CMake recognizes
+# the compiler's implicit include root and does not move it ahead of <cmath>.
+# An explicit -isystem for that root breaks GCC's #include_next <math.h>.
+if(MINGW)
+    foreach(_target PkgConfig::UMFPACK PkgConfig::SPQR PkgConfig::CHOLMOD PkgConfig::VELA_METIS)
+        if(TARGET ${_target})
+            get_target_property(_includes ${_target} INTERFACE_INCLUDE_DIRECTORIES)
+            if(_includes)
+                set(_normalized_includes)
+                foreach(_dir IN LISTS _includes)
+                    cmake_path(NORMAL_PATH _dir OUTPUT_VARIABLE _normalized_dir)
+                    list(APPEND _normalized_includes "${_normalized_dir}")
+                endforeach()
+                set_property(TARGET ${_target} PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${_normalized_includes}")
+            endif()
+        endif()
+    endforeach()
+endif()
 add_library(vela_core STATIC
     src/boundary/BoundaryCondition.cpp
     src/core/ScalingSystem.cpp
@@ -354,13 +372,18 @@ add_library(vela_core STATIC
     src/physics/NonlocalPathCellSource.cpp
     src/physics/SRHRecombination.cpp
     src/physics/MobilityModel.cpp
+    src/physics/SlotIALMobility.cpp
     src/physics/IalMobility.cpp
     src/physics/IalHighFieldMobility.cpp
     src/physics/SiliconThermalPhysics.cpp
     src/physics/IalInterfaceGeometry.cpp
     src/equation/IalElementMobility.cpp
+    src/equation/IalElementAvalanche.cpp
     src/equation/BvMethodsCoupledRuntime.cpp
+    src/equation/LegacyPopulationRuntime.cpp
     src/equation/IalTransport.cpp
+    src/equation/IalPopulationContinuity.cpp
+    src/equation/ExtendedBoltzmannMaterials.cpp
     src/physics/RecombinationModel.cpp
     src/physics/ImpactIonizationModel.cpp
     src/physics/BandgapNarrowing.cpp
@@ -375,6 +398,7 @@ add_library(vela_core STATIC
     src/discretization/ScharfetterGummel.cpp
     src/discretization/ThermalSgCurrent.cpp
     src/solver/LinearSolver.cpp
+    src/solver/ExtendedSparseLu.cpp
     src/solver/EftLinearDefect.cpp
     src/solver/ConstraintElimination.cpp
     src/solver/GummelSolver.cpp
@@ -385,11 +409,13 @@ add_library(vela_core STATIC
     src/post/TerminalCharge.cpp
     src/post/StoredCharge.cpp
     src/solver/NewtonSolver.cpp
+    src/solver/GlobalContinuityAudit.cpp
     src/solver/PopulationNewtonSolver.cpp
     src/equation/CoupledDDAssembler.cpp
     src/equation/SplitDDRuntime.cpp
     src/numerics/ResidualNorm.cpp
     src/numerics/LineSearch.cpp
+    src/numerics/BankRose.cpp
     src/simulation/PoissonSimulation.cpp
     src/simulation/ConfigParsing.cpp
     src/simulation/CurveSweep.cpp
@@ -397,6 +423,8 @@ add_library(vela_core STATIC
     src/simulation/ElectrothermalSimulation.cpp
     src/simulation/ElectrothermalSweep.cpp
     src/simulation/DCSweep.cpp
+    src/simulation/DCSweepStepControl.cpp
+    src/simulation/ExtendedBorderedLoadLine.cpp
 )
 
 target_include_directories(vela_core PUBLIC
@@ -668,6 +696,12 @@ if(VELA_HAS_EXTENDED80)
         get_property(_value TARGET vela_core PROPERTY ${_property})
         set_property(TARGET vela_core_extended80 PROPERTY ${_property} "${_value}")
     endforeach()
+    target_sources(vela_core_extended80 PRIVATE
+        src/solver/ExtendedBoltzmannColdStart.cpp
+        src/solver/ExtendedFixedBiasNewton.cpp
+        src/equation/ExtendedAveragePoissonGeometry.cpp
+        src/equation/ExtendedPopulationDevice.cpp
+    src/equation/ExtendedPhuMobPopulation.cpp)
     target_compile_definitions(vela_core_extended80 PUBLIC VELA_ARITHMETIC_EXTENDED80=1)
     add_executable(vela_example_runner_extended80 src/tools/vela_example_runner.cpp)
     target_link_libraries(vela_example_runner_extended80 PRIVATE vela_core_extended80)
@@ -792,6 +826,8 @@ add_executable(ialmob_geometry_probe src/tools/ialmob_geometry_probe.cpp)
 target_link_libraries(ialmob_geometry_probe PRIVATE vela_core)
 add_executable(ialmob_element_probe src/tools/ialmob_element_probe.cpp)
 target_link_libraries(ialmob_element_probe PRIVATE vela_core)
+add_executable(ialmob_element_avalanche_probe src/tools/ialmob_element_avalanche_probe.cpp)
+target_link_libraries(ialmob_element_avalanche_probe PRIVATE vela_core)
 
 add_executable(sentaurus_vanoverstraeten_fit src/tools/sentaurus_vanoverstraeten_fit.cpp)
 target_link_libraries(sentaurus_vanoverstraeten_fit PRIVATE vela_core)
@@ -1034,7 +1070,11 @@ add_executable(test_bernoulli tests/test_bernoulli.cpp)
 target_link_libraries(test_bernoulli PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_production_numerics tests/test_production_numerics.cpp)
+target_sources(test_production_numerics PRIVATE tests/test_shadow_convergence.cpp)
 target_link_libraries(test_production_numerics PRIVATE vela_core Catch2::Catch2WithMain)
+add_test(NAME shadow_convergence_replay
+    COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_shadow_convergence_replay.py)
 add_executable(test_split_dd_runtime tests/test_split_dd_runtime.cpp)
 target_link_libraries(test_split_dd_runtime PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_split_dd_state tests/test_split_dd_state.cpp)
@@ -1042,13 +1082,20 @@ target_link_libraries(test_split_dd_state PRIVATE vela_core Catch2::Catch2WithMa
 add_executable(test_permittivity_assembly tests/test_permittivity_assembly.cpp)
 target_link_libraries(test_permittivity_assembly PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_element_box_transport tests/test_element_box_transport.cpp)
+target_sources(test_element_box_transport PRIVATE tests/test_dilute_fermi_transport.cpp)
 target_link_libraries(test_element_box_transport PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_sg_flux tests/test_sg_flux.cpp)
 target_link_libraries(test_sg_flux PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_carrier_statistics tests/test_carrier_statistics.cpp)
+add_executable(test_legacy_population_runtime tests/test_legacy_population_runtime.cpp)
+target_link_libraries(test_legacy_population_runtime PRIVATE vela_core Catch2::Catch2WithMain)
+target_sources(test_carrier_statistics PRIVATE tests/test_slot_log_inverse.cpp)
+target_sources(test_carrier_statistics PRIVATE tests/test_slot_population_coordinates.cpp)
 target_link_libraries(test_carrier_statistics PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_slot_population_hold tests/test_slot_population_hold.cpp)
+target_link_libraries(test_slot_population_hold PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_joyce_dixon_contract tests/test_joyce_dixon_contract.cpp)
 target_link_libraries(test_joyce_dixon_contract PRIVATE vela_core Catch2::Catch2WithMain)
@@ -1074,6 +1121,10 @@ target_link_libraries(test_device_stability PRIVATE vela_core Catch2::Catch2With
 
 add_executable(test_newton_solver tests/test_newton_solver.cpp)
 target_link_libraries(test_newton_solver PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_newton_trend_stop tests/test_newton_trend_stop.cpp)
+target_include_directories(test_newton_trend_stop PRIVATE include)
+target_link_libraries(test_newton_trend_stop PRIVATE Catch2::Catch2WithMain)
+add_test(NAME newton_trend_stop COMMAND test_newton_trend_stop)
 
 add_executable(test_update_error_report tests/test_update_error_report.cpp)
 target_link_libraries(test_update_error_report PRIVATE vela_core Catch2::Catch2WithMain)
@@ -1090,7 +1141,7 @@ target_link_libraries(test_mobility PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_phumob tests/test_phumob.cpp)
 target_link_libraries(test_phumob PRIVATE vela_core Catch2::Catch2WithMain)
 
-add_executable(test_impact_ionization tests/test_impact_ionization.cpp)
+add_executable(test_impact_ionization tests/test_impact_ionization.cpp tests/test_ialmob_element_avalanche.cpp)
 target_link_libraries(test_impact_ionization PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_path_ionization_integral tests/test_path_ionization_integral.cpp)
@@ -1140,6 +1191,8 @@ target_link_libraries(test_density_gradient_quantum_potential PRIVATE vela_core 
 
 add_executable(test_line_search_backtrack_failure tests/test_line_search_backtrack_failure.cpp)
 target_link_libraries(test_line_search_backtrack_failure PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_bank_rose tests/test_bank_rose.cpp)
+target_link_libraries(test_bank_rose PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_dc_sweep tests/test_dc_sweep.cpp)
 target_link_libraries(test_dc_sweep PRIVATE vela_core Catch2::Catch2WithMain)
@@ -1214,6 +1267,7 @@ vela_catch_discover_tests(test_builtin_material_alignment)
 vela_catch_discover_tests(test_poisson)
 add_test(NAME poisson COMMAND test_poisson [poisson])
 vela_catch_discover_tests(test_linear_solver)
+vela_catch_discover_tests(test_slot_population_hold)
 # Preserve the caller's optional MKL loader PATH and Catch2's skip metadata.
 # The Windows presets already supply the UCRT64 runtime PATH.
 catch_discover_tests(test_mkl_pardiso)
@@ -1227,7 +1281,14 @@ vela_catch_discover_tests(test_split_dd_runtime)
 vela_catch_discover_tests(test_permittivity_assembly)
 vela_catch_discover_tests(test_element_box_transport)
 vela_catch_discover_tests(test_sg_flux)
+if(TARGET vela_core_extended80)
+    add_executable(test_extended80_local_contract tests/test_extended80_local_contract.cpp)
+    target_link_libraries(test_extended80_local_contract PRIVATE vela_core_extended80 Catch2::Catch2WithMain)
+    vela_catch_discover_tests(test_extended80_local_contract)
+endif()
+
 vela_catch_discover_tests(test_joyce_dixon_contract)
+vela_catch_discover_tests(test_legacy_population_runtime)
 vela_catch_discover_tests(test_bvmethods_av_contract)
 vela_catch_discover_tests(test_bvmethods_population_newton)
 vela_catch_discover_tests(test_bvmethods_derivative_switch)
@@ -1251,6 +1312,7 @@ vela_catch_discover_tests(test_recombination)
 vela_catch_discover_tests(test_lattice_heat)
 vela_catch_discover_tests(test_density_gradient_quantum_potential)
 vela_catch_discover_tests(test_line_search_backtrack_failure)
+vela_catch_discover_tests(test_bank_rose)
 vela_catch_discover_tests(test_dc_sweep)
 add_test(NAME dc_sweep COMMAND test_dc_sweep [dc_sweep])
 vela_catch_discover_tests(test_dc_sweep_output_contract)
@@ -1302,6 +1364,66 @@ add_test(NAME reference_tcad_regression
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_reference_tcad_tools.py)
 vela_set_windows_msys2_test_path(reference_tcad_regression)
+set_property(TEST reference_tcad_regression APPEND PROPERTY ENVIRONMENT
+    "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
+
+add_test(NAME poisson_arithmetic_probe
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_poisson_arithmetic_probe.py
+            --runner $<TARGET_FILE:vela_example_runner>)
+vela_set_windows_msys2_test_path(poisson_arithmetic_probe)
+
+add_test(NAME zero_supply_load_line_probe
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_zero_supply_load_line_probe.py
+            --runner $<TARGET_FILE:vela_example_runner>)
+vela_set_windows_msys2_test_path(zero_supply_load_line_probe)
+
+add_test(NAME slot_ldmos_local_continuity_audit
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_audit_slot_ldmos_local_continuity)
+set_tests_properties(slot_ldmos_local_continuity_audit PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(slot_ldmos_local_continuity_audit)
+
+add_test(NAME slot_ldmos_noavalanche_continuation
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_run_slot_ldmos_noavalanche_continuation
+            tests.regression.test_slot_reference_frame
+            tests.regression.test_slot_poly_equilibrium)
+set_tests_properties(slot_ldmos_noavalanche_continuation PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(slot_ldmos_noavalanche_continuation)
+
+add_test(NAME slot_ldmos_idl_configuration
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_slot_idl_configuration)
+set_tests_properties(slot_ldmos_idl_configuration PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(slot_ldmos_idl_configuration)
+
+add_test(NAME slot_ldmos_loadline_continuation
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_run_slot_ldmos_loadline_continuation
+            tests.regression.test_run_slot_ldmos_bv_campaign
+            tests.regression.test_slot_loadline_step_control
+            tests.regression.test_slot_bounded_recovery
+            tests.regression.test_slot_local_row_repair
+            tests.regression.test_slot_probe_failure)
+set_tests_properties(slot_ldmos_loadline_continuation PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(slot_ldmos_loadline_continuation)
+
+add_test(NAME slot_ldmos_ialmob_tools
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_slot_ldmos_ialmob_tools
+            tests.regression.test_prepare_slot_ldmos_element_ialmob
+            tests.regression.test_prepare_slot_ldmos_physics_controls
+            tests.regression.test_slot_ldmos_energy_reference)
+set_tests_properties(slot_ldmos_ialmob_tools PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    ENVIRONMENT "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
+vela_set_windows_msys2_test_path(slot_ldmos_ialmob_tools)
 
 add_test(NAME dd_state_frame_translation
     COMMAND ${Python3_EXECUTABLE}
@@ -1701,6 +1823,19 @@ set_tests_properties(sentaurus_vm_reference_runner PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_vm_reference_runner)
 
+add_test(NAME slot_linear_quality
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_slot_linear_quality)
+set_tests_properties(slot_linear_quality PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(slot_linear_quality)
+
+add_test(NAME slot_population_acceptance
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_slot_population_acceptance)
+set_tests_properties(slot_population_acceptance PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(slot_population_acceptance)
 add_test(NAME sentaurus2022_sde_fixture_oracle
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_sentaurus2022_sde_fixture_vm
@@ -1813,6 +1948,11 @@ add_test(NAME ialmob_element_probes_protocol
             --geometry $<TARGET_FILE:ialmob_geometry_probe>
             --element $<TARGET_FILE:ialmob_element_probe>)
 vela_set_windows_msys2_test_path(ialmob_element_probes_protocol)
+add_test(NAME ialmob_element_avalanche_probe_protocol
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_ialmob_element_avalanche_probe.py
+            --runner $<TARGET_FILE:ialmob_element_avalanche_probe>)
+vela_set_windows_msys2_test_path(ialmob_element_avalanche_probe_protocol)
 
 add_test(NAME sentaurus_sde_frontend
     COMMAND ${Python3_EXECUTABLE} -m unittest
@@ -2178,10 +2318,16 @@ if(_reference_u2022_cases)
     endforeach()
 endif()
 
-option(VELA_ENABLE_SLOT_LDMOS_CI "Register the SLOT LDMOS BVDS and IdVg sd-sim regressions" OFF)
+option(VELA_ENABLE_SLOT_LDMOS_CI "Register the SLOT LDMOS BVDS, IdVg and IdVd sd-sim regressions" OFF)
+option(VELA_ENABLE_SLOT_LDMOS_IDSAT_CI "Register the SLOT LDMOS IDSAT sd-sim regression" OFF)
+set(_slot_cases)
 if(VELA_ENABLE_SLOT_LDMOS_CI)
-    set(VELA_SLOT_LDMOS_BVDS_CMD "" CACHE FILEPATH "Prepared SLOT LDMOS BVDS CMD with its input package")
-    set(VELA_SLOT_LDMOS_IDVG_CMD "" CACHE FILEPATH "Prepared SLOT LDMOS IdVg CMD with its input package")
+    list(APPEND _slot_cases bvds idvg idvd)
+endif()
+if(VELA_ENABLE_SLOT_LDMOS_IDSAT_CI)
+    list(APPEND _slot_cases idsat)
+endif()
+if(_slot_cases)
     set(VELA_SLOT_LDMOS_SD_SIM "" CACHE FILEPATH "Optional sd-sim from a separately qualified SLOT runtime")
     set(_slot_launcher $<TARGET_FILE:sd-sim>)
     if(VELA_SLOT_LDMOS_SD_SIM)
@@ -2189,18 +2335,32 @@ if(VELA_ENABLE_SLOT_LDMOS_CI)
             message(FATAL_ERROR "VELA_SLOT_LDMOS_SD_SIM must point to the sd-sim executable")
         endif()
         set(_slot_launcher "${VELA_SLOT_LDMOS_SD_SIM}")
+    else()
+        add_dependencies(sd-sim sentaurus_import vela_example_runner)
     endif()
-    foreach(_slot_case IN ITEMS bvds idvg)
+    foreach(_slot_case IN LISTS _slot_cases)
         string(TOUPPER "${_slot_case}" _slot_case_upper)
         set(_slot_input_var VELA_SLOT_LDMOS_${_slot_case_upper}_CMD)
+        set(${_slot_input_var} "" CACHE FILEPATH "Prepared SLOT LDMOS ${_slot_case_upper} CMD with its input package")
         if(NOT EXISTS "${${_slot_input_var}}" OR IS_DIRECTORY "${${_slot_input_var}}")
             message(FATAL_ERROR "Set ${_slot_input_var} to the prepared SLOT CMD to enable SLOT CTest coverage")
         endif()
         set(_slot_test slot_ldmos_${_slot_case}_sdevice)
+        set(_slot_args)
+        if(_slot_case STREQUAL "idvd" OR _slot_case STREQUAL "idsat")
+            set(_slot_par_var VELA_SLOT_LDMOS_${_slot_case_upper}_DEFAULT_PAR)
+            set(${_slot_par_var} "" CACHE FILEPATH "Optional material defaults library for the ${_slot_case_upper} CMD")
+            if(${_slot_par_var})
+                if(NOT EXISTS "${${_slot_par_var}}" OR IS_DIRECTORY "${${_slot_par_var}}")
+                    message(FATAL_ERROR "${_slot_par_var} must point to a material defaults PAR file")
+                endif()
+                list(APPEND _slot_args --default-par "${${_slot_par_var}}")
+            endif()
+        endif()
         add_test(NAME ${_slot_test}
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_slot_ldmos_ci.py
                 ${_slot_case} --cmd "${${_slot_input_var}}" --launcher "${_slot_launcher}"
-                --output "${CMAKE_CURRENT_BINARY_DIR}/slot-ldmos-reports")
+                --output "${CMAKE_CURRENT_BINARY_DIR}/slot-ldmos-reports" ${_slot_args})
         set_tests_properties(${_slot_test} PROPERTIES LABELS "slot-ldmos;sdevice" TIMEOUT 14400)
         vela_set_windows_msys2_test_path(${_slot_test})
     endforeach()
@@ -2416,6 +2576,10 @@ if(VELA_HDF5_TARGET AND VELA_ENABLE_HDF5)
     endif()
 endif()
 
+# Opt-in SLOT global population step and selected BVMethods policy checks.
+add_executable(test_population_step_control tests/test_population_step_control.cpp tests/test_bvmethods_population_newton.cpp)
+target_link_libraries(test_population_step_control PRIVATE vela_core Catch2::Catch2WithMain)
+vela_catch_discover_tests(test_population_step_control)
 add_test(NAME bvmethods_profile_inputs
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_profile_inputs.py)

@@ -17,6 +17,37 @@ void DeviceMesh::addNode(const Node& node)
     nodes_.push_back(node);
 }
 
+void DeviceMesh::addNode(const Node& node, ArithmeticPoint coordinates)
+{
+    if (!std::isfinite(coordinates[0]) || !std::isfinite(coordinates[1]) ||
+        static_cast<Real>(coordinates[0]) != node.x || static_cast<Real>(coordinates[1]) != node.y)
+        throw std::invalid_argument("Mesh coordinate differs from its compatibility value");
+    // Nodes without an authoritative decimal coordinate use the binary64 source.
+    decimalCoordinates_.resize(nodes_.size() + 1);
+    nodes_.push_back(node);
+    decimalCoordinates_.back() = coordinates;
+}
+
+bool DeviceMesh::hasDecimalCoordinates(Index id) const
+{
+    return id < decimalCoordinates_.size() && decimalCoordinates_[id].has_value();
+}
+
+DeviceMesh::ArithmeticPoint DeviceMesh::arithmeticCoordinates(Index id) const
+{
+    const auto& node = getNode(id);
+    if (hasDecimalCoordinates(id)) return *decimalCoordinates_[id];
+    return {node.x, node.y};
+}
+
+ArithmeticReal DeviceMesh::arithmeticEdgeLength(Index edgeId) const
+{
+    const auto& edge = getEdge(edgeId);
+    const auto a = arithmeticCoordinates(edge.n0);
+    const auto b = arithmeticCoordinates(edge.n1);
+    return std::hypot(b[0] - a[0], b[1] - a[1]);
+}
+
 void DeviceMesh::addCell(const Cell& cell)
 {
     cells_.push_back(cell);

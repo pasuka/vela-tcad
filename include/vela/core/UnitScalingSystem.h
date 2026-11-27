@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/UnitScaling.h"
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
@@ -12,13 +13,27 @@ class DopingModel;
 class MaterialDatabase;
 
 struct UnitScalingReferenceConfig {
+    struct TemperatureInput {
+        ArithmeticReal kelvin;
+        Real compatibilityKelvin;
+    };
+
     // Nullopt means "auto".
     std::optional<Real> characteristicLength_m;
     std::optional<Real> referenceConcentration_m3;
     std::optional<Real> referenceMobility_m2_V_s;
+    std::optional<TemperatureInput> decimalTemperature_K;
 };
 
 UnitScalingReferenceConfig parseUnitScalingReferenceConfig(const nlohmann::json& cfg);
+Real thermalVoltageForInputs(Real temperature_K, const UnitScalingReferenceConfig& refs);
+ArithmeticReal arithmeticThermalVoltageForInputs(
+    Real temperature_K, const UnitScalingReferenceConfig& refs);
+
+template<class Scalar>
+struct UnitScalingValues {
+    Scalar V0, C0, L0, mu0, D0, lambda2, J0, R0, E0, rho0;
+};
 
 class UnitScalingSystem {
 public:
@@ -27,6 +42,8 @@ public:
         Real niFloor_m3 = 0.0;
         Real meshMaxLength_m = 0.0;
         Real maxMobility_m2_V_s = 0.0;
+        std::optional<ArithmeticReal> arithmeticMaxAbsNetDoping;
+        std::optional<ArithmeticReal> arithmeticMeshMaxLength;
     };
 
     UnitScalingSystem(Real temperature_K,
@@ -57,6 +74,9 @@ public:
     Real R0() const { return R0_; }
     Real E0() const { return E0_; }
     Real rho0() const { return rho0_; }
+    // The wide solver consumes this set together. Existing callers retain
+    // their original scales and binary64 rounding order.
+    const UnitScalingValues<ArithmeticReal>& arithmeticValues() const { return arithmetic_; }
 
     Real scalePotential(Real value) const { return value / V0_; }
     Real scaleLength(Real value) const { return value / L0_; }
@@ -71,6 +91,10 @@ public:
     Real unscaleCurrentDensity(Real value) const { return value * J0_; }
 
 private:
+    UnitScalingSystem(Real temperature_K, Real epsRef_F_per_m, Real concentrationScale_m3,
+                      Real lengthScale_m, Real mobilityScale_m2_V_s, const PhysicalUnitSystem& unitSystem,
+                      const UnitScalingReferenceConfig& refs);
+
     Real V0_ = 0.0;
     Real C0_ = 0.0;
     Real L0_ = 0.0;
@@ -81,6 +105,7 @@ private:
     Real R0_ = 0.0;
     Real E0_ = 0.0;
     Real rho0_ = 0.0;
+    UnitScalingValues<ArithmeticReal> arithmetic_{};
 };
 
 } // namespace vela

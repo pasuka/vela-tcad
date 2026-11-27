@@ -4,7 +4,7 @@
 #include "vela/solver/ConstraintElimination.h"
 
 #include <Eigen/OrderingMethods>
-#include <Eigen/SparseLU>
+#include "vela/solver/SparseLuFactors.h"
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -38,9 +38,20 @@ bool solveSpqrSystem(const SparseMatrixd& A,
  * VELA_LINEAR_SOLVER to one of "sparselu", "sparseqr",
  * "umfpack", "sparselu_metis", "umfpack_metis", "mumps", "mumps_metis",
  * "superlu_mt", "superlu_mt_metis", "strumpack", "bicgstab_ilut",
- * "gmres_ilut", "simplicial_ldlt", or "pardiso_mkl". The latter requires an
- * explicit absolute VELA_MKL_RT_LIBRARY (or VELA_MKL_RT_DLL) runtime path on
- * Windows/Linux and is never selected automatically. It uses binary64 LP64.
+ * "gmres_ilut", "sparselu_long_double", or "simplicial_ldlt".
+ * "sparselu_long_double" promotes assembled binary64 inputs to long double
+ * for Eigen factorisation and solve, then rounds the direction back to double.
+ * It requires a wider long double, caches unchanged factors, and is not full
+ * extended-precision assembly or nonlinear state storage.
+ * "sparselu_eliminated", "sparselu_eliminated_long_double",
+ * "umfpack_eliminated" and "pardiso_mkl_eliminated" are opt-in
+ * affine diagonal-singleton elimination backends. Vendor reduced solvers retain
+ * identical-matrix factors for residual correction; Eigen alternate paths do not. All
+ * correct RHS in long double, round to double, solve the free system and lift.
+ * "pardiso_mkl_eliminated_keep_psi" and "sparselu_eliminated_keep_psi"
+ * explicitly require three equal contiguous [psi, phin, phip] nodal blocks.
+ * They retain all first-block equations and eliminate only carrier singleton
+ * constraints. They must not be used for interleaved or other block layouts.
  * Optional direct backends retain symbolic
  * and identical-value numeric factors; the other alternate backends do not.
  */
@@ -105,6 +116,7 @@ private:
     bool factorStatistics_ = true;
     std::unique_ptr<UmfPackState> umfpack_;
     std::unique_ptr<detail::DirectBackend> direct_;
+    std::unique_ptr<LinearSolver> eliminatedDirect_;
     void createDirectBackend();
     VectorXd solveDirect(const SparseMatrixd& A, const VectorXd& b);
     VectorXd solveUmfPack(const SparseMatrixd& A, const VectorXd& b);
@@ -115,29 +127,6 @@ private:
     using SparseLUOrdering = Eigen::COLAMDOrdering<StorageIndex>;
 #endif
 
-    class SparseLUSolver
-        : public Eigen::SparseLU<SparseMatrixd, SparseLUOrdering> {
-    public:
-        bool analysisIsOk() const noexcept { return this->m_analysisIsOk; }
-        /// Conventional scalar LU work implied by stored factor structure;
-        /// excludes blocked-kernel padding, pivot searches and memory work.
-        double structuralFlops() const {
-            std::vector<double> lower(this->cols(), 0.), upper(this->cols(), 0.);
-            for (Eigen::Index col = 0; col < this->cols(); ++col) {
-                for (typename SparseLUSolver::SCMatrix::InnerIterator it(this->m_Lstore, col); it; ++it) {
-                    if (it.row() > col) ++lower[col];
-                    else if (it.row() < col) ++upper[it.row()];
-                }
-                for (Eigen::Map<SparseMatrixd>::InnerIterator it(this->m_Ustore, col); it; ++it)
-                    if (it.row() < col) ++upper[it.row()];
-            }
-            double flops = 0.;
-            for (Eigen::Index i = 0; i < this->cols(); ++i)
-                flops += lower[i] * (1. + 2. * upper[i]);
-            return flops;
-        }
-    };
-
     bool patternMatches(const SparseMatrixd& A) const;
     void cachePattern(const SparseMatrixd& A);
     void analyzePatternIfNeeded(const SparseMatrixd& A);
@@ -145,7 +134,7 @@ private:
     bool valuesMatchFactorization(const SparseMatrixd& A) const;
     void cacheFactorizationValues(const SparseMatrixd& A);
 
-    SparseLUSolver solver_;
+    detail::SparseLuFactors<Real, SparseLUOrdering> solver_;
     bool hasAnalyzedPattern_ = false;
     Eigen::Index cachedRows_ = 0;
     Eigen::Index cachedCols_ = 0;

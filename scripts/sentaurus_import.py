@@ -750,6 +750,13 @@ def apply_solver_physics(deck: dict[str, Any],
             "damping": 0.5,
         }
 
+    if "BennettWilson" in models:
+        if models & {"OldSlotboom", "Slotboom", "NoBandGapNarrowing", "delAlamo", "JainRoulston"}:
+            raise ValueError("BennettWilson with other BGN selections requires material-scoped mapping")
+        if "Fermi" in models:
+            raise ValueError("BennettWilson import currently supports the verified Boltzmann/no-Fermi mapping only")
+        solver["bandgap_narrowing"] = "bennett_wilson"
+
     if "OldSlotboom" in models:
         solver["bandgap_narrowing"] = "old_slotboom"
 

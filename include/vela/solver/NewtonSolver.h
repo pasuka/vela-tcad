@@ -8,20 +8,24 @@
 #include "vela/material/MaterialDatabase.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/numerics/LineSearch.h"
+#include "vela/numerics/BankRose.h"
 #include "vela/physics/BandgapNarrowing.h"
 #include "vela/physics/BandToBandTunnelingModel.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/ImpactIonizationModel.h"
 #include "vela/physics/MobilityModel.h"
 #include "vela/simulation/PseudoArclength.h"
+#include "vela/simulation/CarrierReducedLoadLine.h"
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/DensityUpdateConvergence.h"
 #include "vela/solver/PopulationState.h"
 #include <functional>
+#include <array>
 #include <limits>
 #include <memory>
-#include <nlohmann/json_fwd.hpp>
+#include <nlohmann/json.hpp>
 #include <string>
+#include <stdexcept>
 #include <unordered_map>
 #include <vector>
 
@@ -33,6 +37,7 @@ struct NewtonCarrierRowConvergenceConfig {
     std::string mode = "off"; ///< "off", "report", or "enforce".
     Real epsRow = 1.0e-3;
     Real scaleFloor = 1.0e-300;
+    std::string floorLimitedAction = "enforce"; ///< "enforce" (default) or explicit "report".
     Real minSourceScaleFraction = 1.0e-3;
     Real minSourceScale = 0.0;
     Real minSourceGlobalFraction = 0.0; ///< Optional fraction of the maximum carrier source scale; 0 disables.
@@ -72,10 +77,24 @@ struct NewtonGlobalContinuityClosureConfig {
     std::string mode = "off"; ///< "off", "report", or "enforce".
     Real tolerance = 1.0e-2;
     Real sourceFloor = 1.0e-12;
+    Real absoluteTolerance = 1.0e-12;
+    std::string linearSystemStabilization = "off";
+    ///< "off" or mathematically equivalent "replace_free_row_sum".
+    std::string feasibilityRestoration = "off";
+    ///< "off", per-step "linear_qf_projection", or
+    ///< "final_linear_qf_projection". The final-only mode is attempted only
+    ///< after the device residual reaches the configured stall floor.
+    Real feasibilityRestorationFactor = 1.0;
+    ///< Fraction in (0, 1] of the linear QF projection applied per trial.
+    bool restorationPhysicalRowsOnly = false; ///< Exclude inactive QF gauge rows/DOFs from final projection.
+    bool roundoffAudit = false; ///< E3: actual assembly-order, reduction, repeatability audit.
+    std::string auditJsonlFile; ///< Opt-in replacement-row and final-trial audit.
+    std::string restorationJacobian = "stabilized"; ///< Final-only: stabilized or physical.
 };
 
 struct NewtonGlobalContinuityCarrierClosure {
     bool qualified = false;
+    bool satisfied = true;
     Real contactFlux = 0.0;
     Real integratedSource = 0.0;
     Real mismatch = 0.0;
@@ -94,11 +113,15 @@ struct NewtonGlobalContinuityClosureEvaluation {
 };
 
 struct NewtonCarrierRowConvergenceViolation {
+    bool qualified = false; ///< Existing source/density/flux gate; diagnostic only.
     Index nodeId = 0;
     std::string carrier;
     Real residual = 0.0;
     Real scale = 0.0;
     Real ratio = 0.0;
+    Real physicalScale = 0.0; ///< max(abs(flux sum), abs(recombination), abs(impact)), before floor.
+    bool floorLimited = false; ///< Diagnostic only; does not exempt this row.
+    bool blocksAcceptance = true;
     Real carrierDensity_m3 = 0.0;
     Real flux = 0.0;
     Real recombination = 0.0;
@@ -108,11 +131,23 @@ struct NewtonCarrierRowConvergenceViolation {
     bool sourceQualified = false;
 };
 
+struct NewtonCarrierRowScaleGroup {
+    std::size_t rowCount = 0; ///< Only rows selected by the existing qualification policy.
+    std::size_t violationCount = 0;
+    Real maxRatio = 0.0;
+    Real maxAbsoluteResidual = 0.0;
+};
+
 struct NewtonCarrierRowConvergenceEvaluation {
     bool enabled = false;
     bool enforced = false;
     bool satisfied = true;
     Real epsRow = 0.0;
+    Real scaleFloor = 0.0;
+    std::string floorLimitedAction = "enforce";
+    std::size_t blockingViolationCount = 0;
+    NewtonCarrierRowScaleGroup floorLimited;
+    NewtonCarrierRowScaleGroup nonFloorLimited;
     Real maxRatio = 0.0;
     Index maxRatioNode = -1;
     std::string maxRatioCarrier;
@@ -150,6 +185,9 @@ struct NewtonBlockAbsoluteConvergenceConfig {
 };
 
 struct NewtonConfig {
+    // Not parsed by production JSON. Only dedicated diagnostic runner modes
+    // may set this transport-only, residual-preserving inexact linearization.
+    bool diagnosticFreezeTransportQfMobility = false;
     /// Explicit sequential experiment; no nonlinear state is retained here.
     /// The owner controls lifetime and invalidation across DC requests.
     std::shared_ptr<LinearSolver> sequentialLinearSolver;
@@ -163,14 +201,23 @@ struct NewtonConfig {
     Real temperature_K = constants::T0; ///< Lattice temperature [K]
     PoissonChargeVolumePolicy poissonChargeVolumePolicy =
         PoissonChargeVolumePolicy::Global;
+    bool poissonPerCellPermittivity = false;
     Real dampingFactor = 1.0;
+    Real populationStepFraction = 0.0; ///< Opt-in global fraction-to-boundary; zero preserves legacy updates.
     bool lineSearch = true;
-    std::string lineSearchMode = "merit"; ///< "merit" or "block_filter".
+    BankRoseConfig bankRose{}; ///< Explicit alternative to backtracking; default off.
+    std::string lineSearchMode = "merit"; ///< "merit", "block_filter", or "block_closure_filter".
     Real residualFilterGamma = 1.0e-4;
     Real residualFilterEnvelopeFactor = 2.0;
     bool verbose = true;
     bool warmStart = false; ///< Preserve supplied quasi-Fermi potentials instead of resetting interiors.
+    bool contactPreprojection = false; ///< Project fixed-voltage population trial seeds onto Dirichlet targets.
     bool diagnostics = false; ///< Store detailed line-search diagnostics in NewtonResult::history.
+    std::string progressDirectory; ///< Opt-in diagnostic-only per-accepted-iterate snapshots (new directory).
+    bool captureLinearSystem = false; ///< In-memory matrices/directions in progressDirectory; diagnostic only.
+    Real softTimeLimitSeconds = 0.0; ///< Stop unsuccessfully between iterations; zero disables. Not a hard timeout.
+    std::string diagnosticStopPolicy = "off"; ///< Opt-in failure-only row_trend_v1; requires full progress snapshots.
+    bool returnBestFeasibleOnFailure = false; ///< On failure, expose the lowest-residual iterate that passed carrier-row and global-closure checks.
     Real maxUpdate = 0.0; ///< Optional infinity-norm cap on one Newton update in solver unknown units.
     Real quasiFermiUpdateLimit_V = 0.0; ///< Optional physical-voltage cap on phin/phip Newton updates.
     Real quasiFermiUpdateLimitMinority_V = 0.0; ///< Optional tighter physical-voltage cap on the minority-carrier quasi-Fermi update per node; 0 disables (uses the global cap for both carriers).
@@ -184,10 +231,13 @@ struct NewtonConfig {
     int linearRefinementIterations = 0;
     std::string populationLinearDefect = "mp100";
     bool reuseFixedVoltageBorderedAnalysis = false;
+    int linearFactorRefinementSteps = 0; ///< Opt-in 0..3 guarded corrections of the actual three-block linear system.
     Real legacyTransportJacobianStep = 1e-6;
     Real legacyAvalancheJacobianStep = 1e-7;
     std::string poissonResidualPrecision = "double"; ///< "double" or opt-in "binary128" packed Boltzmann evaluation.
     bool splitDDState = false; ///< Opt-in unified hi/lo plain-PhuMob state.
+    /// Explicit fixed-contact low parts; paired with contactBiases high parts.
+    std::unordered_map<std::string,Real> splitContactBiasLow_V;
     bool stableMeritComparison = false; ///< Exact-sign squared-norm comparison for unweighted L2 merit searches.
     bool exactDirichletUpdates = false; ///< Remove direct-solve roundoff from exact Dirichlet identity-row updates.
     Real stallResidualFloor = 1.0e-9; ///< Residual floor for accepting line-search stalls as solved.
@@ -210,7 +260,8 @@ struct NewtonConfig {
     NewtonGlobalContinuityClosureConfig globalContinuityClosure{}; ///< Optional contact-flux versus integrated-source convergence check.
     Real finiteDifferenceStep = 1.0e-6;
     std::string jacobian = "analytic"; ///< "analytic" or "finite_difference"
-    std::string quasiFermiReference = "none"; ///< "none", "contact_majority", or "contact_basin"
+    std::string quasiFermiReference = "none"; ///< "none", "contact_majority", "contact_basin", or "contact_nearest_state"
+    std::string poissonOnlyQuasiFermiInitialization = "contact_basin"; ///< "contact_basin" reconstructs ABA QFs; "preserve_initial" retains the supplied QF field except contact projections.
     /// Recenter warm-start QF coordinates on the supplied physical state so
     /// sub-ULP corrections are represented as local increments.
     bool quasiFermiRecenterOnInitialState = false;
@@ -236,6 +287,8 @@ struct NewtonConfig {
     Real augerCn = 2.90e-43; ///< Electron Auger coefficient [m^6/s]
     Real augerCp = 1.028e-43; ///< Hole Auger coefficient [m^6/s]
     std::string augerExcessProduct = "generalized_fermi"; ///< "generalized_fermi" or "classical_np".
+    std::string recombinationVolumePolicy = "legacy_node";
+    std::vector<std::string> recombinationMaterials; ///< Empty: all materials.
     bool augerWithGeneration = true; ///< Compatibility default; false clips Auger generation.
     AugerDensityDependenceConfig augerDensityDependence{};
     MobilityModelConfig mobility{}; ///< Mobility model configuration
@@ -255,6 +308,7 @@ struct NewtonConfig {
     DensityUpdateConvergenceConfig populationUpdateConvergence;
     bool compensatedPopulationState = false;
     std::string populationSgCurrent = "quasi_fermi";
+    std::string populationWriteback = "independent"; ///< Opt-in Boltzmann psi-rounding compensation.
     std::string populationSgBootstrapLinearization = "unchanged";
     PopulationUpdateConfig populationUpdate;
     Real populationMinimumDensity_cm3 = -1.; ///< Internal default sentinel; resolves to 1e-100 for population, zero for QF.
@@ -401,9 +455,40 @@ struct NewtonResidualEvaluation {
     Real potentialScale = 1.0;
 };
 
+struct NewtonLoadLineIterationEvaluation {
+    CarrierReducedLoadLine linearSystem;
+    SparseMatrixd deviceJacobian;
+    SparseMatrixd physicalBordered;
+    VectorXd physicalRhs;
+    VectorXd rawDirection;
+    SparseMatrixd coordinateMatrix,coordinateBackend;
+    VectorXd coordinateDirection,coordinateRowScale,coordinateColumnScale,coordinateScaledRhs;
+    VectorXd directionShared,directionRelative;
+    DDSolution trialSolution;
+    // Opt-in diagnostic candidates; never promoted to accepted sweep history.
+    std::vector<DDSolution> auditCandidates;
+    std::vector<nlohmann::json> auditCandidateReports;
+    nlohmann::json report;
+};
+
 struct NewtonPoissonTermEvaluation {
     std::vector<CoupledDDPoissonTermDiagnostic> rows;
     bool scaledState = false;
+    Real potentialScale = 1.0;
+};
+
+// Diagnostic snapshot before all step caps, projections and line search.
+// The physical matrix already includes boundary/gauge equations; carrier
+// term probes separately expose pre-boundary physical balance rows.
+struct NewtonLinearSystemEvaluation {
+    std::unordered_map<std::string, double> timings;
+    SparseMatrixd physicalJacobian;
+    SparseMatrixd regularizedJacobian;
+    SparseMatrixd solveMatrix;
+    VectorXd residual;
+    VectorXd solveRhs;
+    VectorXd direction;
+    std::vector<int> replacementRows;
     Real potentialScale = 1.0;
 };
 
@@ -539,6 +624,15 @@ struct NewtonDirectionalDerivativeEvaluation {
     Real finiteDifferenceNorm = 0.0;
     Real absoluteError = 0.0;
     Real relativeError = 0.0;
+};
+
+// A bounded candidate search failed numerically; not an input/runtime failure.
+class NewtonBlockNoCandidate : public std::runtime_error {
+public:
+    explicit NewtonBlockNoCandidate(std::string diagnostics)
+        : std::runtime_error("carrier_density has no residual-decreasing candidate"),
+          diagnosticsJson(std::move(diagnostics)) {}
+    std::string diagnosticsJson;
 };
 
 struct NewtonBlockStepEvaluation {
@@ -728,6 +822,10 @@ struct NewtonCarrierBlockDecompositionEvaluation {
 struct NewtonCarrierTermDiagnosticsEvaluation {
     NewtonResidualEvaluation residual;
     std::vector<CoupledDDCarrierTermDiagnostic> rows;
+    /// Converts a normalized continuity row to unsigned current per device
+    /// depth. Includes q, the assembler's C0*D0 normalization and line units;
+    /// contact orientation and electron/hole signs remain the caller's job.
+    Real continuityResidualToAPerUm = 0.0;
 };
 
 /// First-order terminal-current sensitivity evaluated on the production
@@ -811,12 +909,24 @@ public:
     NewtonResidualEvaluation evaluateResidual(const DDSolution& state) const;
     NewtonPoissonTermEvaluation evaluatePoissonTerms(
         const DDSolution& state) const;
+
+    /// Read-only coefficient export for fixed-QF compensated Poisson probes.
+    nlohmann::json exportPoissonArithmeticModel(const DDSolution& state) const;
     Real maxContactMajorityQuasiFermiDrop(const DDSolution& state) const;
     Real maxContactMajorityQuasiFermiDrop(
         const DDSolution& state,
         const std::vector<std::string>& contacts) const;
     NewtonStepEvaluation evaluateStep(
         const DDSolution& state, Real directionalAuditScale = 0.0) const;
+    NewtonLinearSystemEvaluation evaluateLinearSystem(const DDSolution& state,
+        NewtonLinearSystemEvaluation* mobilityAlternative = nullptr,
+        int factorRefinementSteps = 0) const;
+    NewtonLinearSystemEvaluation evaluateSourceDiagnosticPair(const DDSolution& state,
+        NewtonLinearSystemEvaluation* alternative, int factorRefinementSteps,
+        int sourceMode) const;
+    /// Same packed-state/port functional semantics, one shared raw residual.
+    std::unordered_map<std::string, Real> evaluatePackedContactCurrents(
+        const VectorXd& packed, Real currentScale) const;
     std::vector<NewtonFeedbackSubstitutionEvaluation>
     evaluateFeedbackSubstitutions(
         const DDSolution& state,
@@ -830,9 +940,14 @@ public:
         const DDSolution& state,
         const DDSolution& physicalPerturbation,
         bool freezeTransportMobility = false) const;
+    /// Diagnostic only. carrier_local uses zero-based carrier rows [n, p],
+    /// excludes contacts and allows at most 64 DOFs. Damping follows step caps.
+    /// Trial densities are reconstructed using the configured statistics.
     NewtonBlockStepEvaluation evaluateBlockStep(
         const DDSolution& state,
-        const std::string& mode) const;
+        const std::string& mode,
+        Real damping = 1.0,
+        const std::vector<int>& localCarrierRows = {}) const;
     NewtonRegularizedCarrierStepEvaluation evaluateRegularizedCarrierStep(
         const DDSolution& state,
         Real regularizationScale) const;
@@ -847,6 +962,11 @@ public:
         Index focusNode) const;
     NewtonCarrierBlockDecompositionEvaluation
     evaluateCarrierBlockDecomposition(const DDSolution& state) const;
+    /// Frozen-state audit: retain referenced QF low parts at contacts and use
+    /// physical equations before Dirichlet replacement. Does not qualify a state.
+    NewtonGlobalContinuityClosureEvaluation evaluateFrozenGlobalContinuityClosure(
+        const DDSolution& state) const;
+
     NewtonCarrierTermDiagnosticsEvaluation evaluateCarrierTermDiagnostics(
         const DDSolution& state,
         bool solvedEquationTerms = false) const;
@@ -877,23 +997,30 @@ public:
     /// vector [psi, phin, phip] produced by CoupledDDAssembler::pack, reusing the
     /// exact assembler, boundary-condition construction, and Jacobian assembly of
     /// the standard Newton solve. `biasFiniteDifferenceStep_V` sizes the central
-    /// finite difference used to estimate dF/dV.
+    /// finite difference used to estimate dF/dV. Pass the same initial reference
+    /// state to every arclength factory/packer to freeze consistent seed-aware
+    /// QF coordinates. It is read during construction only, never captured.
+    /// The contact bias map must contain the initial continuation bias.
     PrimaryVariableScales primaryVariableScales() const;
     ApproximateNativeRhsScales approximateNativeRhsScales() const;
     ArclengthSystem makeArclengthSystem(const std::string& activeContact,
                                         Real biasFiniteDifferenceStep_V = 1.0e-4,
+                                        bool positiveDensityTrials = false,
+                                        const DDSolution* referenceState = nullptr,
                                         bool boundaryOnlyParameterDerivative = false) const;
 
     /// Convert a physical-unit DDSolution into the scaled packed state vector and
     /// back, consistent with makeArclengthSystem. These help drive the continuation
     /// from a converged Newton solution and interpret the corrected state.
-    VectorXd packArclengthState(const DDSolution& state) const;
-    DDSolution unpackArclengthState(const VectorXd& x) const;
+    VectorXd packArclengthState(const DDSolution& state,
+                                const DDSolution* referenceState = nullptr) const;
+    DDSolution unpackArclengthState(const VectorXd& x,
+                                   const DDSolution* referenceState = nullptr) const;
     /// Return a reusable unpacker backed by one cached assembler. This avoids
     /// rebuilding immutable mesh/material kernels for repeated terminal-current
     /// evaluations inside bordered circuit Newton.
     std::function<DDSolution(const VectorXd&)>
-    makeArclengthStateUnpacker() const;
+    makeArclengthStateUnpacker(const DDSolution* referenceState = nullptr) const;
     /// Evaluate the standard carrier/closure gates at the actual packed state
     /// and contact bias, without running Newton or altering the physical state.
     std::function<NewtonStateConvergenceEvaluation(const VectorXd&, Real)>
@@ -908,11 +1035,36 @@ public:
     /// caller's signed terminal-current units.
     ArclengthScalarFunctional makeArclengthContactCurrentFunctional(
         const std::string& contactName,
-        Real currentScale) const;
+        Real currentScale,
+        const DDSolution* referenceState = nullptr) const;
 
     /// State-aware terminal residual sum; retains split coordinate tails.
     Real evaluateStateTerminalCurrent(const DDSolution& state,
         const std::string& contactName,Real currentScale) const;
+
+    /// Zero-bias diagnostic, at most one accepted coupled update. Uses the
+    /// production split-state runtime and never grants device qualification.
+    NewtonLoadLineIterationEvaluation evaluateZeroLoadLineIteration(
+        const DDSolution& state, const std::string& contactName,
+        Real resistance_ohm_um, Real currentScale,
+        const std::string& backend = "pardiso_mkl") const;
+
+    /// Zero-supply follow-up retaining the previous internal contact voltage.
+    NewtonLoadLineIterationEvaluation evaluateZeroSupplyLoadLineIteration(
+        const DDSolution& state, const std::string& contactName,
+        Real resistance_ohm_um, Real currentScale,
+        const std::string& backend = "pardiso_mkl") const;
+
+    /// Independent single-update diagnostic within a voltage box <= 0.2 V.
+    /// Does not qualify states or change the zero-supply probe's restrictions.
+    NewtonLoadLineIterationEvaluation evaluateBoundedSupplyLoadLineIteration(
+        const DDSolution& state, const std::string& contactName,
+        Real resistance_ohm_um, Real currentScale, Real supplyVoltage_V,
+        Real maxAbsDeviceVoltage_V,
+        const std::string& backend = "pardiso_mkl",
+        const std::string& trialBoundaryPolicy = "linear_direction",
+        bool traceWeakRows = false, bool pairedTrialAudit = false,
+        bool constantRelativeCoordinates = false) const;
 
     /// Solve J^T lambda = dI/dx for one terminal-current functional without
     /// changing the device state or any configured physical model.
@@ -922,14 +1074,17 @@ public:
         Real currentScale) const;
 
 private:
+    void configureAssemblerNumerics(CoupledDDAssembler& assembler,
+                                      const DDSolution* state = nullptr) const;
     NewtonResult solvePopulation(const DDSolution& initial) const;
-    void configureAssemblerNumerics(CoupledDDAssembler& assembler) const;
     CoupledDDBoundaryConditions buildBoundaryConditions(
         const CoupledDDAssembler& assembler) const;
     CoupledDDBoundaryConditions buildBoundaryConditions(
         const CoupledDDAssembler& assembler,
-        const std::unordered_map<std::string, Real>& contactBiases) const;
-    std::shared_ptr<CoupledDDAssembler> makeArclengthAssembler() const;
+        const std::unordered_map<std::string, Real>& contactBiases,
+        const std::unordered_map<std::string, Real>* contactLowOverride = nullptr) const;
+    std::shared_ptr<CoupledDDAssembler> makeArclengthAssembler(
+        const DDSolution* referenceState = nullptr) const;
     NewtonResult solveCompensatedPopulation(const DDSolution& initial) const;
     NewtonResult solveMonolithicDensityGradientBox(
         const DDSolution& initial,
@@ -964,13 +1119,66 @@ NewtonConfig newtonConfigFromJson(
 
 NewtonCarrierRowConvergenceEvaluation evaluateCarrierRowConvergence(
     const std::vector<CoupledDDCarrierTermDiagnostic>& rows,
-    const NewtonCarrierRowConvergenceConfig& cfg);
+    const NewtonCarrierRowConvergenceConfig& cfg,
+    std::vector<NewtonCarrierRowConvergenceViolation>* activeRowAudit = nullptr);
 
 NewtonGlobalContinuityClosureEvaluation evaluateGlobalContinuityClosure(
     const std::vector<CoupledDDCarrierTermDiagnostic>& rows,
     const std::vector<Index>& electronContactNodes,
     const std::vector<Index>& holeContactNodes,
     const NewtonGlobalContinuityClosureConfig& cfg);
+
+/// Replace one free electron and hole continuity row by the corresponding
+/// sum of all free rows. This is an invertible row transformation and therefore
+/// leaves the exact Newton system unchanged while exposing global conservation
+/// directly to a finite-precision linear solve.
+bool stabilizeGlobalContinuityLinearSystem(
+    SparseMatrixd& matrix,
+    VectorXd& rhs,
+    int nodeCount,
+    const std::vector<Index>& electronContactNodes,
+    const std::vector<Index>& holeContactNodes);
+
+/// Solve the row-stabilized system through a rank-one/rank-two Woodbury
+/// correction while retaining the sparse factorization of the original
+/// Jacobian.
+VectorXd solveGlobalContinuityStabilizedSystem(
+    LinearSolver& linearSolver,
+    const SparseMatrixd& matrix,
+    const VectorXd& rhs,
+    int nodeCount,
+    const std::vector<Index>& electronContactNodes,
+    const std::vector<Index>& holeContactNodes);
+
+/// Apply the minimum-norm correction over unconstrained quasi-Fermi unknowns
+/// that restores the electron and hole free-row sums of the linearized trial.
+/// Returns false without modifying step when the two-row projection is rank
+/// deficient or non-finite.
+bool restoreGlobalContinuityLinearizedStep(
+    VectorXd& step,
+    const SparseMatrixd& matrix,
+    const VectorXd& residual,
+    int nodeCount,
+    const std::vector<Index>& electronContactNodes,
+    const std::vector<Index>& holeContactNodes,
+    nlohmann::json* diagnostics = nullptr,
+    const std::vector<CoupledDDCarrierTermDiagnostic>* physicalRows = nullptr);
+
+nlohmann::json globalContinuityReductionAudit(const std::vector<Real>& values);
+nlohmann::json auditGlobalContinuityRoundoff(const CoupledDDAssembler& assembler,
+    const VectorXd& state, const CoupledDDBoundaryConditions& bcs,
+    const NewtonGlobalContinuityClosureConfig& config, Index edgeCount);
+
+/// Full linear free-row sums, including electrostatic/Dirichlet step entries.
+std::array<Real, 2> globalContinuityLinearizedSums(
+    const SparseMatrixd& matrix, const VectorXd& residual, const VectorXd& step,
+    int nodeCount, const std::vector<Index>& electronContactNodes,
+    const std::vector<Index>& holeContactNodes);
+
+/// Ideal exact-restoration alpha lower bound with the initial closure mode frozen.
+Real globalContinuityIdealAlphaLowerBound(
+    const NewtonGlobalContinuityClosureEvaluation& evaluation,
+    const NewtonGlobalContinuityClosureConfig& config);
 
 NewtonCarrierRowRecoveryResult recoverCarrierRowsWithGummelDensity(
     const DeviceMesh& mesh,

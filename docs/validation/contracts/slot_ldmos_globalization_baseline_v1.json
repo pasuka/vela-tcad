@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "case": "slot_ldmos_delaunay_noavalanche_globalization",
+  "source_commit": "164df1b",
+  "status_labels": {
+    "sentaurus_reference": "sentaurus_oracle",
+    "legacy_high_voltage": "legacy_invalidated",
+    "delaunay_0p5V": "delaunay_provisional"
+  },
+  "accepted_checkpoint": {
+    "bias_V": 0.5,
+    "current_A_per_um": 2.9187277463e-16,
+    "convergence_reason": "initial_stall_residual_floor",
+    "newton_iterations": 0,
+    "residual_blocks": {
+      "psi": 4.18111e-6,
+      "electron": 2.52123e-10,
+      "hole": 1.55050e-6
+    },
+    "qf_bounds_warnings": 546,
+    "qualification": "provisional_pending_strict_same_bias_reclosure"
+  },
+  "failed_lifts": [
+    {
+      "target_bias_V": 0.625,
+      "delta_bias_V": 0.125,
+      "initial_residual_blocks": {
+        "psi": 14.3879,
+        "electron": 584.627,
+        "hole": 1.55050e-6
+      },
+      "failure": "first_nonlinear_line_search_rejected"
+    },
+    {
+      "target_bias_V": 0.75,
+      "delta_bias_V": 0.25,
+      "initial_residual_blocks": {
+        "psi": 28.7759,
+        "electron": 1005.38
+      },
+      "failure": "first_nonlinear_line_search_rejected"
+    },
+    {
+      "target_bias_V": 1.0,
+      "delta_bias_V": 0.5,
+      "initial_residual_blocks": {
+        "psi": 57.5517,
+        "electron": 1711.35
+      },
+      "failure": "first_nonlinear_line_search_rejected"
+    }
+  ],
+  "required_post_fix_checks": {
+    "strict_0p5V_reclosure": true,
+    "minimum_real_newton_iterations": 1,
+    "final_global_closure_required": true,
+    "maximum_current_shift_decades": 0.05,
+    "next_bias_V": 0.625
+  },
+  "post_fix_validation": {
+    "strict_0p5V": {
+      "converged": true,
+      "convergence_reason": "final_global_continuity_restoration",
+      "current_A_per_um": 3.0535948881e-16,
+      "current_shift_decades_from_provisional": 0.0196,
+      "global_electron_closure_mismatch": 5.2956328928e-13,
+      "global_hole_closure_mismatch": 3.5881907269e-13
+    },
+    "strict_0p625V": {
+      "converged": true,
+      "convergence_reason": "final_global_continuity_restoration",
+      "newton_iterations": 8,
+      "initial_electron_block": 584.6273907537,
+      "final_electron_block": 9.980013711e-10,
+      "current_A_per_um": 3.7207300754e-16,
+      "global_electron_closure_mismatch": 3.2099644464e-13,
+      "global_hole_closure_mismatch": 5.1155202461e-13
+    },
+    "strict_1V": {
+      "converged": true,
+      "convergence_reason": "final_global_continuity_restoration",
+      "accepted_intermediate_biases_V": [0.8125, 0.90625],
+      "current_A_per_um": 5.1772757291e-16,
+      "sentaurus_direct_current_A_per_um": 5.90523e-16,
+      "current_error_decades": -0.0571355223,
+      "global_electron_closure_mismatch": 8.9842103337e-13,
+      "global_hole_closure_mismatch": 7.5287951731e-13
+    }
+  }
+}

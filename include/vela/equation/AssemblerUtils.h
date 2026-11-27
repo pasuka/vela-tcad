@@ -12,6 +12,7 @@
  */
 
 #include "vela/core/Types.h"
+#include "vela/core/PopulationDomainError.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/UnitScaling.h"
 #include "vela/equation/ChargeSpec.h"
@@ -23,6 +24,8 @@
 #include "vela/discretization/Tri3CurrentReconstruction.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/numerics/SplitCoordinate.h"
+#include "vela/mesh/ContactCell.h"
+#include "vela/mesh/BoxGeometryBuilder.h"
 #include "vela/material/Material.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
@@ -45,6 +48,7 @@
 #include <string_view>
 #include <utility>
 #include <type_traits>
+#include <optional>
 
 namespace vela::detail {
 
@@ -1268,6 +1272,14 @@ inline Real estimateSurfaceDistance(const DeviceMesh& mesh,
     return std::abs((cx - mx) * normalX + (cy - my) * normalY);
 }
 
+template <typename ValueAt>
+inline Point2 cellScalarGradient(
+    const DeviceMesh& mesh,
+    const Cell&       cell,
+    ValueAt&&         valueAt,
+    bool&             valid,
+    Real&             area);
+
 inline std::pair<Real, Real> nearestSurfaceFieldAndDistanceForCell(
     const DeviceMesh& mesh,
     const std::vector<std::vector<Index>>& edgeCells,
@@ -1329,7 +1341,12 @@ inline std::pair<Real, Real> nearestSurfaceFieldAndDistanceForCell(
         const Real distance = std::hypot(cx - nearestX, cy - nearestY);
         if (distance < nearestDistance) {
             nearestDistance = distance;
-            nearestField = std::abs(gradient.dot(normal)) * fieldFactor;
+            // IALMob uses the gradient of true interface distance. Beyond a
+            // finite segment endpoint this is radial, not its line normal.
+            const Point2 distanceGradient = isIALMobilityModel(mobilityConfig) && distance > 0.0
+                ? Point2{(cx - nearestX) / distance, (cy - nearestY) / distance}
+                : normal;
+            nearestField = std::abs(gradient.dot(distanceGradient)) * fieldFactor;
         }
     }
     return {nearestField, nearestDistance};
@@ -1347,8 +1364,7 @@ inline void updateElementHighFieldGeometry(MobilityModelConfig& config,
         throw std::invalid_argument("Element HFS requires full QF derivatives");
     const auto cellEdges = partialLayer ? buildCellEdgeMap(edgeCells,mesh)
                                        : std::vector<std::vector<Index>>{};
-    std::vector<bool> contact(mesh.numNodes(),false);
-    for(const auto& c:mesh.contacts())for(Index n:c.node_ids)contact[n]=true;
+    const auto contact = contactNodeMask(mesh);
     config.highFieldCells.resize(mesh.numCells());
     for(Index cid=0;cid<mesh.numCells();++cid) {
         if(!isTransportMaterial(materials.at(cid)))continue;
@@ -1356,8 +1372,7 @@ inline void updateElementHighFieldGeometry(MobilityModelConfig& config,
             throw std::invalid_argument("Element HFS currently qualifies 300 K only");
         const auto& cell=mesh.getCell(cid);auto& out=config.highFieldCells[cid];
         if(cell.node_ids.size()!=3)throw std::invalid_argument("Element HFS requires triangles");
-        if (partialLayer || config.contactElectricFieldFallback)
-            for (Index n : cell.node_ids) out.contact = out.contact || contact[n];
+        out.contact=cellTouchesContact(cell,contact);
         const auto& a=mesh.getNode(cell.node_ids[0]);const auto& b=mesh.getNode(cell.node_ids[1]);const auto& c=mesh.getNode(cell.node_ids[2]);
         Real x1=b.x-a.x,y1=b.y-a.y,x2=c.x-a.x,y2=c.y-a.y,det=x1*y2-x2*y1;
         if(det==0.)throw std::invalid_argument("Degenerate HFS cell");
@@ -1384,11 +1399,12 @@ struct ElementHighFieldDrive {Real field=0.;std::array<Real,3> derivative{};bool
 inline ElementHighFieldDrive elementHighFieldDrive(const MobilityModelConfig& config,
     const DeviceMesh& mesh,Index cid,const VectorXd& psi,const VectorXd* qf) {
     const auto& g=config.highFieldCells.at(cid);const auto& cell=mesh.getCell(cid);
-    if(!g.contact && (!qf || qf->size()!=psi.size()))throw std::invalid_argument("Element HFS requires live physical quasi-Fermi potentials");
-    const auto& z=g.contact?psi:*qf;auto i=cell.node_ids[0],j=cell.node_ids[1],k=cell.node_ids[2];
+    const bool useElectric=g.contact && config.useElectricFieldAtGradQfContacts(true);
+    if(!useElectric && (!qf || qf->size()!=psi.size()))throw std::invalid_argument("Element HFS requires live physical quasi-Fermi potentials");
+    const auto& z=useElectric?psi:*qf;auto i=cell.node_ids[0],j=cell.node_ids[1],k=cell.node_ids[2];
     const auto& s=g.stencil;
     const auto [gx, gy] = tri3Gradient(std::array<Real, 3>{z(i), z(j), z(k)}, s);
-    ElementHighFieldDrive out;out.contact=g.contact;out.field=std::hypot(gx,gy);
+    ElementHighFieldDrive out;out.contact=useElectric;out.field=std::hypot(gx,gy);
     const bool differentiable = usesMasettiElementHighField(config)
         ? out.field > 0.0 : out.field >= 100. / config.internalFieldToVPerM;
     if (differentiable) {
@@ -1533,8 +1549,11 @@ inline void updateSurfaceMobilityCellGeometry(
                 const Real distance = std::hypot(cx - nearestX, cy - nearestY);
                 if (distance < nearest) {
                     nearest = distance;
-                    config.surface.cellNormalX[cellId] = segment.nx;
-                    config.surface.cellNormalY[cellId] = segment.ny;
+                    const bool distanceNormal = isIALMobilityModel(config) && distance > 0.0;
+                    config.surface.cellNormalX[cellId] = distanceNormal
+                        ? (cx - nearestX) / distance : segment.nx;
+                    config.surface.cellNormalY[cellId] = distanceNormal
+                        ? (cy - nearestY) / distance : segment.ny;
                     config.surface.cellDistances[cellId] = distance;
                 }
             }
@@ -1546,28 +1565,17 @@ inline void updateSurfaceMobilityCellGeometry(
         if (!std::isfinite(config.surface.cellNormalX[cellId]) ||
             !std::isfinite(config.surface.cellNormalY[cellId]))
             continue;
-        const Cell& cell = mesh.getCell(cellId);
-        if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+        bool validGradient = false;
+        Real doubleArea = 0.0;
+        const Point2 gradient = cellScalarGradient(
+            mesh, mesh.getCell(cellId), [&](Index node) {
+                return psi(static_cast<int>(node));
+            }, validGradient, doubleArea);
+        if (!validGradient)
             continue;
-        const Node& p0 = mesh.getNode(cell.node_ids[0]);
-        const Node& p1 = mesh.getNode(cell.node_ids[1]);
-        const Node& p2 = mesh.getNode(cell.node_ids[2]);
-        const Real dx10 = p1.x - p0.x;
-        const Real dy10 = p1.y - p0.y;
-        const Real dx20 = p2.x - p0.x;
-        const Real dy20 = p2.y - p0.y;
-        const Real det = dx10 * dy20 - dy10 * dx20;
-        if (std::abs(det) <= 1.0e-300)
-            continue;
-        const Real dv10 = psi(static_cast<int>(cell.node_ids[1])) -
-            psi(static_cast<int>(cell.node_ids[0]));
-        const Real dv20 = psi(static_cast<int>(cell.node_ids[2])) -
-            psi(static_cast<int>(cell.node_ids[0]));
-        const Real gradientX = (dv10 * dy20 - dv20 * dy10) / det;
-        const Real gradientY = (dx10 * dv20 - dx20 * dv10) / det;
         config.surface.cellNormalFields[cellId] = std::abs(
-            gradientX * config.surface.cellNormalX[cellId] +
-            gradientY * config.surface.cellNormalY[cellId]) * fieldFactor;
+            gradient.x() * config.surface.cellNormalX[cellId] +
+            gradient.y() * config.surface.cellNormalY[cellId]) * fieldFactor;
     }
 }
 
@@ -1723,6 +1731,9 @@ inline Real elementBoxCellMobility(const DeviceMesh& mesh,const DopingModel& dop
     const MobilityModelConfig* config=nullptr,const EdgeMobilityCarrierState* populations=nullptr,
     const VectorXd* psi=nullptr, Real* masettiFieldDerivative=nullptr)
 {
+    if (config && std::find(config->constantMaterials.begin(), config->constantMaterials.end(), material.name)
+            != config->constantMaterials.end())
+        return carrier == CarrierType::Electron ? material.mun : material.mup;
     const bool phumob=config && config->edgeAveraging=="element_box_phumob";
     if(phumob && (!populations || !populations->electrons || !populations->holes ||
         populations->electrons->size()!=mesh.numNodes() || populations->holes->size()!=mesh.numNodes()))
@@ -1862,6 +1873,8 @@ inline std::vector<ElementBoxPhuMobDerivative> elementBoxPhuMobDerivatives(
     for(Index cid:edgeCells.at(edgeId)) {
         const auto& mat=materials.at(cid);
         if((carrier==CarrierType::Electron?mat.mun:mat.mup)<=0) continue;
+        if (std::find(config.constantMaterials.begin(), config.constantMaterials.end(), mat.name)
+                != config.constantMaterials.end()) continue;
         const Real g=cellBoxEdgeCoefficient(mesh,cid,edgeId);
         if(g==0) continue;
         const auto measures=cellBoxNodeMeasures(mesh,cid);
@@ -1925,6 +1938,9 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
     if (cells.empty()) return 0.0;
 
     const Edge& edge = mesh.getEdge(edgeId);
+    const bool densityDependent = mobilityConfig && !isPhuMobModel(*mobilityConfig) && mobilityDependsOnCarrierDensity(*mobilityConfig);
+    if (densityDependent && !carrierState)
+        throw std::invalid_argument("density-dependent edge mobility requires electron and hole fields");
 
     const bool surfaceEnabled =
         mobilityConfig != nullptr && isSurfaceMobilityModel(*mobilityConfig);
@@ -2028,7 +2044,7 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
             : 0.0;
         const bool phuMob = mobilityConfig != nullptr &&
             isPhuMobModel(*mobilityConfig);
-        const Real modelMobility = (carrier == CarrierType::Electron)
+        const Real modelMobility = densityDependent ? 0.0 : (carrier == CarrierType::Electron)
             ? (phuMob
                 ? mobility.electronMobilityWithIonizedImpurities(
                     material, donors, acceptors, electronDensity, holeDensity,
@@ -2043,10 +2059,25 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                 : mobility.holeMobility(
                     material, mobilityDoping, 0.0, 0.0,
                     electricField, surfaceNormalField, surfaceDistance));
-        if (modelMobility <= 0.0)
+        const auto evaluate = [&](Real electrons, Real holes, Index node) {
+            const MobilityDopants dopants{doping.donors(node), doping.acceptors(node)};
+            return carrier == CarrierType::Electron
+                ? mobility.electronMobility(material, mobilityDoping, electrons, holes,
+                    electricField, surfaceNormalField, surfaceDistance, dopants)
+                : mobility.holeMobility(material, mobilityDoping, electrons, holes,
+                    electricField, surfaceNormalField, surfaceDistance, dopants);
+        };
+        // Use endpoint mobility averaging, as in the cell source kernels.
+        // Retain the established edge doping and normal-field reconstruction.
+        const Real endpointMobility = densityDependent
+            ? 0.5 * (evaluate(carrierState->electron0, carrierState->hole0, edge.n0) +
+                     evaluate(carrierState->electron1, carrierState->hole1, edge.n1))
+            : 0.0;
+        const Real selectedMobility = densityDependent ? endpointMobility : modelMobility;
+        if (selectedMobility <= 0.0)
             continue;
 
-        sum += modelMobility;
+        sum += selectedMobility;
         ++contributingCells;
     }
     if (boxMasetti)
@@ -2054,6 +2085,24 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
     if (contributingCells == 0)
         return 0.0;
     return sum / static_cast<Real>(contributingCells);
+}
+
+// Compatibility adapter for SLOT diagnostics supplying complete carrier fields.
+inline Real edgeMobilityFromCarrierFields(const std::vector<std::vector<Index>>& edgeCells,
+                         const DeviceMesh& mesh, const DopingModel& doping,
+                         const MobilityModel& mobility, const std::vector<Material>& materials,
+                         Index edgeId, CarrierType carrier, Real electricField,
+                         const MobilityModelConfig* config, const VectorXd* psi,
+                         const VectorXd* n, const VectorXd* p)
+{
+    if (!n || !p || n->size() != static_cast<int>(mesh.numNodes()) ||
+        p->size() != static_cast<int>(mesh.numNodes()))
+        throw std::invalid_argument("edge mobility requires complete carrier fields");
+    const auto& edge = mesh.getEdge(edgeId);
+    const EdgeMobilityCarrierState state{(*n)(edge.n0), (*n)(edge.n1),
+        (*p)(edge.n0), (*p)(edge.n1), n, p};
+    return edgeMobility(edgeCells, mesh, doping, mobility, materials, edgeId,
+                        carrier, electricField, config, psi, &state);
 }
 
 /// Return average model mobility [m^2/V/s] over semiconductor cells adjacent to a node.
@@ -2065,7 +2114,9 @@ inline Real nodeMobility(const std::vector<std::vector<Index>>& nodeCells,
                          Index                                 nodeId,
                          CarrierType                           carrier,
                          Real                                  drivingField,
-                         const MobilityModelConfig*            mobilityConfig = nullptr)
+                         const MobilityModelConfig*            mobilityConfig = nullptr,
+                         Real electronDensity = 0.0,
+                         Real holeDensity = 0.0)
 {
     const auto& cells = nodeCells[nodeId];
     if (cells.empty())
@@ -2092,13 +2143,14 @@ inline Real nodeMobility(const std::vector<std::vector<Index>>& nodeCells,
             : std::numeric_limits<Real>::quiet_NaN();
         const Real mobilityDoping = nodeMobilityDopingConcentration(
             mesh, doping, nodeId, c, mobilityConfig);
+        const MobilityDopants dopants{doping.donors(nodeId), doping.acceptors(nodeId)};
         const Real modelMobility = (carrier == CarrierType::Electron)
             ? mobility.electronMobility(
-                material, mobilityDoping, 0.0, 0.0, drivingField,
-                surfaceNormalField, surfaceDistance)
+                material, mobilityDoping, electronDensity, holeDensity, drivingField,
+                surfaceNormalField, surfaceDistance, dopants)
             : mobility.holeMobility(
-                material, mobilityDoping, 0.0, 0.0, drivingField,
-                surfaceNormalField, surfaceDistance);
+                material, mobilityDoping, electronDensity, holeDensity, drivingField,
+                surfaceNormalField, surfaceDistance, dopants);
         if (modelMobility <= 0.0)
             continue;
         sum += modelMobility;
@@ -2522,11 +2574,69 @@ inline Real avalancheSourceEdgeArea(
     return area * config.sourceGeometryScale;
 }
 
+inline bool usesIalElementAvalancheSource(const ImpactIonizationModelConfig& config)
+{
+    return config.currentApproximation=="ialmob_element_density_grad_qf";
+}
+
+inline bool usesPhuMobElementAvalancheSource(const ImpactIonizationModelConfig& config)
+{
+    return config.currentApproximation=="phumob_element_density_grad_qf" ||
+           config.currentApproximation=="phumob_element_sg_best_vertex";
+}
+
 /// Validates the impact-ionization configuration shared by the Gummel and
 /// Newton solver config loaders. `context` is prefixed to any thrown message.
 inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& config,
                                                  const char* context)
 {
+    const bool observedIal=usesIalElementAvalancheSource(config);
+    const bool phumobElement=usesPhuMobElementAvalancheSource(config);
+    const bool laggedPhuMobSgSource =
+        config.currentApproximation=="phumob_element_sg_best_vertex" &&
+        config.sourceJacobianMode=="frozen";
+    if (phumobElement &&
+        (config.model!="van_overstraeten" || config.generation!="current_density" ||
+         config.drivingForce!="quasi_fermi_gradient" ||
+         config.quasiFermiGradientDiscretization!="cell_gradient" ||
+         config.sourceMappingMode!="element_vertex_box_measure" ||
+         (config.sourceJacobianMode!="local_ad" && !laggedPhuMobSgSource) ||
+         config.ialmobBoundaryFieldProjection ||
+         config.drivingForceInterpolation!="none" ||
+         config.electronDrivingForceRefDensity!=0. || config.holeDrivingForceRefDensity!=0. ||
+         config.quasiFermiCarrierTruncation!=0. || config.sourceVolumeFactor!=0. ||
+         config.sourceGeometryScale!=1. || config.edgeSourcePartition!="symmetric" ||
+         config.currentMagnitudeMode!="edge_scalar_abs" || config.sourceVolumePolicy!="genius_truncated" ||
+         config.debugRawVanOverstraeten || config.temperature_K!=300. || config.referenceTemperature_K!=300. ||
+         (!config.gradQfContactField && config.contactElectricFieldFallback &&
+          (config.contactElectricFieldFallbackScope!="contact_node_cell" ||
+           config.contactElectricFieldFallbackMode!="cell_gradient_magnitude"))))
+        throw std::invalid_argument(std::string(context)+": PhuMob source requires its explicit 300 K GradQF profile, with frozen tangents supported only for SG");
+    if (observedIal &&
+        (config.model!="van_overstraeten" || config.generation!="current_density" ||
+         config.drivingForce!="quasi_fermi_gradient" ||
+         config.quasiFermiGradientDiscretization!="cell_gradient" ||
+         config.sourceMappingMode!="element_vertex_box_measure" ||
+         config.sourceJacobianMode!="local_ad" ||
+         !config.ialmobBoundaryFieldProjection ||
+         config.contactElectricFieldFallbackScope!="contact_node_cell" ||
+         config.contactElectricFieldFallbackMode!="cell_gradient_magnitude" ||
+         config.drivingForceInterpolation!="none" ||
+         config.electronDrivingForceRefDensity!=0. || config.holeDrivingForceRefDensity!=0. ||
+         config.quasiFermiCarrierTruncation!=0. || config.sourceVolumeFactor!=0. ||
+           config.sourceGeometryScale!=1. || config.edgeSourcePartition!="symmetric" ||
+           config.currentMagnitudeMode!="edge_scalar_abs" || config.sourceVolumePolicy!="genius_truncated" ||
+         config.debugRawVanOverstraeten || config.temperature_K!=300. ||
+         config.referenceTemperature_K!=300.))
+        throw std::invalid_argument(std::string(context)+": observed IALMob source requires its explicit 300 K GradQF/local_ad profile");
+    if (config.ialmobBoundaryFieldProjection &&
+        ((!observedIal && config.currentApproximation != "element_edge_sg_gss_laux") ||
+         config.generation != "current_density" ||
+         config.drivingForce != "quasi_fermi_gradient")) {
+        throw std::invalid_argument(std::string(context) +
+            ": ialmob_boundary_field_projection requires element-edge SG/GSS-Laux "
+            "current-density avalanche with a quasi-Fermi-gradient drive.");
+    }
     if (config.couplingMode != "self_consistent" &&
         config.couplingMode != "postprocess_only") {
         throw std::invalid_argument(
@@ -2565,7 +2675,7 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
             ": contact-face fallback modes require scope 'contact_boundary_face'.");
     }
 
-    if (config.contactElectricFieldFallback &&
+    if (!config.gradQfContactField && config.contactElectricFieldFallback &&
         (config.drivingForce != "quasi_fermi_gradient" ||
          config.quasiFermiGradientDiscretization != "cell_gradient" ||
          config.generation != "current_density" ||
@@ -2603,6 +2713,9 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
         config.currentApproximation != "cell_vector_current_reconstructed" &&
         config.currentApproximation != "nodal_vector_current_reconstructed" &&
         config.currentApproximation != "element_edge_sg_gss_laux" &&
+        config.currentApproximation != "ialmob_element_density_grad_qf" &&
+        config.currentApproximation != "phumob_element_density_grad_qf" &&
+        config.currentApproximation != "phumob_element_sg_best_vertex" &&
         config.currentApproximation != "conserved_total_current") {
         throw std::invalid_argument(
             std::string(context) +
@@ -2756,7 +2869,7 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
     }
     const bool elementEdgeGssLauxRequested =
         config.currentApproximation == "element_edge_sg_gss_laux" ||
-        config.sourceMappingMode == "element_vertex_box_measure";
+        (config.sourceMappingMode == "element_vertex_box_measure" && !observedIal && !phumobElement);
     if (elementEdgeGssLauxRequested &&
         (config.generation != "current_density" ||
          (config.drivingForce != "quasi_fermi_gradient" &&
@@ -2852,6 +2965,11 @@ inline bool usesElementEdgeGssLauxAvalancheSource(
     return config.generation == "current_density" &&
            config.currentApproximation == "element_edge_sg_gss_laux" &&
            config.sourceMappingMode == "element_vertex_box_measure";
+}
+
+inline bool usesElementLocalAvalancheSource(const ImpactIonizationModelConfig& config)
+{
+    return usesElementEdgeGssLauxAvalancheSource(config) || usesIalElementAvalancheSource(config) || usesPhuMobElementAvalancheSource(config);
 }
 
 inline bool usesDensityGradientAvalancheCurrent(
@@ -3034,6 +3152,8 @@ inline bool usesEdgeCurrentAvalancheSource(
             config.currentApproximation == "cell_vector_current_reconstructed" ||
             config.currentApproximation == "nodal_vector_current_reconstructed" ||
             config.currentApproximation == "element_edge_sg_gss_laux" ||
+            config.currentApproximation == "ialmob_element_density_grad_qf" ||
+            usesPhuMobElementAvalancheSource(config) ||
             config.currentApproximation == "conserved_total_current");
 }
 
@@ -3058,17 +3178,6 @@ inline bool usesCellGradientQuasiFermiAvalancheDrive(
            config.quasiFermiGradientDiscretization == "cell_gradient";
 }
 
-inline std::vector<bool> contactNodeMask(const DeviceMesh& mesh)
-{
-    std::vector<bool> mask(static_cast<std::size_t>(mesh.numNodes()), false);
-    for (const Contact& contact : mesh.contacts()) {
-        for (Index nodeId : contact.node_ids) {
-            if (nodeId < mesh.numNodes())
-                mask[static_cast<std::size_t>(nodeId)] = true;
-        }
-    }
-    return mask;
-}
 inline bool cellTouchesContact(const DeviceMesh& mesh, const Cell& cell)
 {
     for (const Contact& contact : mesh.contacts()) {
@@ -3080,17 +3189,6 @@ inline bool cellTouchesContact(const DeviceMesh& mesh, const Cell& cell)
         }
     }
     return false;
-}
-
-inline bool cellTouchesContact(
-    const Cell& cell,
-    const std::vector<bool>& contactNodes)
-{
-    return std::any_of(
-        cell.node_ids.begin(), cell.node_ids.end(),
-        [&](Index node) {
-            return node < contactNodes.size() && contactNodes[node];
-        });
 }
 
 inline bool cellTouchesContactBoundaryFace(
@@ -3193,8 +3291,7 @@ inline bool cellUsesContactElectricFieldFallback(
     const DeviceMesh& mesh,
     const Cell& cell)
 {
-    return config.contactElectricFieldFallback &&
-           config.drivingForce == "quasi_fermi_gradient" &&
+    return config.useElectricFieldAtGradQfContacts() &&
            (config.contactElectricFieldFallbackScope == "contact_boundary_face"
                 ? cellTouchesContactBoundaryFace(mesh, cell)
                 : cellTouchesContact(mesh, cell));
@@ -3265,11 +3362,12 @@ inline Real edgeHighFieldDrivingField(bool qfDrivingForce,
                                       const std::vector<std::vector<Index>>& edgeCells,
                                       const DeviceMesh& mesh,
                                       Index edgeId,
-                                      const std::vector<bool>& contactNodes)
+                                      const std::vector<bool>& contactNodes,
+                                      bool useContactElectricField = true)
 {
     if (!qfDrivingForce)
         return electricField;
-    if (edgeTouchesContactElement(mesh, edgeCells, edgeId, contactNodes))
+    if (useContactElectricField && edgeTouchesContactElement(mesh, edgeCells, edgeId, contactNodes))
         return electricField;
     return qfField;
 }
@@ -3687,10 +3785,37 @@ inline bool isTransportMaterial(const Material& material)
     return material.ni > 0.0 || material.mun > 0.0 || material.mup > 0.0;
 }
 
+/// Restrict nodal SRH/Auger to explicitly selected materials, preserving the
+/// existing node volumes. Mixed semiconductor ownership needs a separate
+/// material-local source integration contract and is rejected here.
+inline std::vector<bool> recombinationNodeMask(const DeviceMesh& mesh,
+    const std::vector<Material>& materials,const std::vector<std::string>& selected)
+{
+    std::vector<bool> active(mesh.numNodes(),selected.empty());
+    if (selected.empty()) return active;
+    std::unordered_set<std::string> names(selected.begin(),selected.end()),found;
+    if (names.count("") || names.size()!=selected.size())
+        throw std::invalid_argument("recombination_materials must contain unique nonempty names");
+    std::vector<bool> excluded(mesh.numNodes(),false);
+    for (const auto& cell:mesh.cells()) {
+        const auto& name=mesh.getRegion(cell.region_id).material;
+        const bool enabled=names.count(name)!=0;
+        if (enabled) found.insert(name);
+        if (!isTransportMaterial(materials.at(cell.id))) continue;
+        for (Index node:cell.node_ids) {
+            if (enabled) active[node]=true; else excluded[node]=true;
+        }
+    }
+    if (found!=names) throw std::invalid_argument("Unknown recombination material");
+    for (Index i=0;i<mesh.numNodes();++i)
+        if (active[i]&&excluded[i])
+            throw std::invalid_argument("Mixed semiconductor recombination ownership is unsupported");
+    return active;
+}
+
 /// Return the control-volume area used only for mobile and ionized-dopant
-/// charge in Poisson.  The material-local diagnostic intentionally remains
-/// barycentric in P1 so its single changed factor is the material ownership;
-/// Sentaurus Measure/mixed-Voronoi semantics are a later, independent profile.
+/// charge in Poisson. Barycentric and mixed-Voronoi material ownership are
+/// explicit independent policies; neither changes continuity source volumes.
 inline std::vector<Real> computePoissonChargeVolumes(
     const DeviceMesh& mesh,
     const std::vector<Material>& cellMaterials,
@@ -3708,7 +3833,8 @@ inline std::vector<Real> computePoissonChargeVolumes(
         allCellsTransport = allCellsTransport && isTransportMaterial(material);
     // Preserve the legacy arithmetic and bit pattern on a one-material
     // semiconductor mesh instead of recomputing an equivalent area sum.
-    if (allCellsTransport)
+    if (allCellsTransport && policy != PoissonChargeVolumePolicy::MaterialLocalCircumcentric &&
+        policy != PoissonChargeVolumePolicy::MaterialLocalBox)
         return computeNodeVolumes(mesh);
 
     std::vector<Real> volume(mesh.numNodes(), 0.0);
@@ -3721,8 +3847,53 @@ inline std::vector<Real> computePoissonChargeVolumes(
                 "computePoissonChargeVolumes: material_local supports Tri3 cells only.");
         }
         const Real share = triangleArea(mesh, cell) / 3.0;
-        for (Index node : cell.node_ids)
-            volume.at(static_cast<std::size_t>(node)) += share;
+        const auto shares = policy == PoissonChargeVolumePolicy::MaterialLocalBox
+            ? cellBoxNodeMeasures(mesh,cell.id)
+            : policy == PoissonChargeVolumePolicy::MaterialLocalCircumcentric
+            ? BoxGeometryBuilder::circumcentricVertexVolumes(mesh,cell)
+            : policy == PoissonChargeVolumePolicy::MaterialLocalMixedVoronoi
+            ? BoxGeometryBuilder::mixedVoronoiVertexVolumes(mesh,cell)
+            : std::array<Real,3>{share,share,share};
+        for (std::size_t k=0;k<3;++k)
+            volume.at(static_cast<std::size_t>(cell.node_ids[k])) += shares[k];
+    }
+    if (policy == PoissonChargeVolumePolicy::MaterialLocalCircumcentric ||
+        policy == PoissonChargeVolumePolicy::MaterialLocalBox) {
+        for (const auto& cell : mesh.cells()) {
+            if (!isTransportMaterial(cellMaterials.at(cell.id))) continue;
+            for (Index node : cell.node_ids)
+                if (!(volume.at(node)>0.0) || !std::isfinite(volume.at(node)))
+                    throw std::invalid_argument("Circumcentric transport node volume must be positive and finite");
+        }
+    }
+    return volume;
+}
+
+/// SRH/Auger integration measure only. Semiconductor shares at dielectric
+/// interfaces exclude the dielectric area; flux, charge and avalanche retain
+/// their independently selected measures. Mixed semiconductor source ownership
+/// is checked by recombinationNodeMask.
+inline std::vector<Real> recombinationNodeVolumes(const DeviceMesh& mesh,
+    const std::vector<Material>& materials, const std::string& policy)
+{
+    if (policy == "legacy_node") return computeNodeVolumes(mesh);
+    if (policy == "material_local_box")
+        return computePoissonChargeVolumes(mesh,materials,
+            PoissonChargeVolumePolicy::MaterialLocalBox);
+    if (policy == "material_local_circumcentric")
+        return computePoissonChargeVolumes(mesh,materials,
+            PoissonChargeVolumePolicy::MaterialLocalCircumcentric);
+    if (policy != "material_local_mixed_voronoi")
+        throw std::invalid_argument("Unsupported recombination_volume_policy");
+    if (materials.size() != mesh.numCells())
+        throw std::invalid_argument("Recombination cell material count mismatch");
+    std::vector<Real> volume(mesh.numNodes(), 0.0);
+    for (const auto& cell : mesh.cells()) {
+        if (!isTransportMaterial(materials.at(cell.id))) continue;
+        if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+            throw std::invalid_argument("Material-local recombination requires Tri3 cells");
+        const auto shares = BoxGeometryBuilder::mixedVoronoiVertexVolumes(mesh,cell);
+        for (std::size_t k=0;k<3;++k) volume.at(cell.node_ids[k]) += shares[k];
     }
     return volume;
 }
@@ -3807,8 +3978,7 @@ inline Real contactCellElectricFieldMagnitudeForMobility(
 {
     if (applied != nullptr)
         *applied = false;
-    if (!config.contactElectricFieldFallback ||
-        config.highFieldDrivingForce != "quasi_fermi_gradient" ||
+    if (!config.useElectricFieldAtGradQfContacts() ||
         edgeId >= edgeCells.size()) {
         return fallbackField;
     }
@@ -3850,9 +4020,9 @@ inline std::vector<Real> contactCellElectricFieldEdgeMagnitudesForMobility(
     const VectorXd&                          potential,
     Real                                     fieldFactor)
 {
-    std::vector<Real> fields(mesh.numEdges(), 0.0);
-    if (!config.contactElectricFieldFallback ||
-        config.highFieldDrivingForce != "quasi_fermi_gradient") {
+    // A valid contact field can be exactly zero. A negative entry means no sample.
+    std::vector<Real> fields(mesh.numEdges(), -1.0);
+    if (!config.useElectricFieldAtGradQfContacts()) {
         return fields;
     }
     const std::vector<bool> contactNodes = contactNodeMask(mesh);
@@ -3890,9 +4060,9 @@ inline Real mobilityHighFieldDrivingField(
 {
     if (config.highFieldDrivingForce != "quasi_fermi_gradient")
         return electricField;
-    if (config.contactElectricFieldFallback &&
+    if (config.useElectricFieldAtGradQfContacts() &&
         edgeId < contactElectricFields.size() &&
-        contactElectricFields[edgeId] > 0.0) {
+        contactElectricFields[edgeId] >= 0.0) {
         return contactElectricFields[edgeId];
     }
     return quasiFermiField;
@@ -4049,6 +4219,9 @@ inline Real edgeQuasiFermiCoefficientField(
     Real                                   fieldFactor)
 {
     if (usesCellGradientQuasiFermiAvalancheDrive(config)) {
+        if (config.useElectricFieldAtGradQfContacts() &&
+            edgeTouchesContactElement(mesh, edgeCells, edgeId, contactNodes))
+            return electricField;
         bool validGradient = false;
         const Point2 gradient = edgeAveragedCellScalarGradient(
             edgeCells, edgeId, qfGradientCache, validGradient);
@@ -4057,7 +4230,8 @@ inline Real edgeQuasiFermiCoefficientField(
     if (config.debugRawVanOverstraeten)
         return edgeQfField;
     return edgeHighFieldDrivingField(
-        true, edgeQfField, electricField, edgeCells, mesh, edgeId, contactNodes);
+        true, edgeQfField, electricField, edgeCells, mesh, edgeId, contactNodes,
+        config.useElectricFieldAtGradQfContacts(true));
 }
 
 inline std::vector<Real> computeElectronAvalancheNodeQuasiFermiDrivingFields(
@@ -4255,30 +4429,40 @@ inline Real triangleGssEndpointAveragedMobility(
     Real                          fieldFactor = 1.0)
 {
     const Material& material = cellMaterials.at(static_cast<std::size_t>(cellId));
-    const auto [surfaceField, surfaceDistance] =
-        isSurfaceMobilityModel(mobilityConfig) &&
-            cellId < mobilityConfig.surface.cellNormalFields.size() &&
-            cellId < mobilityConfig.surface.cellDistances.size()
-        ? std::pair<Real, Real>{
-              mobilityConfig.surface.cellNormalFields[cellId],
-              mobilityConfig.surface.cellDistances[cellId]}
-        : isSurfaceMobilityModel(mobilityConfig) && psi != nullptr && cellEdgeIds != nullptr
-        ? nearestSurfaceFieldAndDistanceForCell(
-              mesh, buildEdgeCellMap(mesh), *psi, cellId, mobilityConfig,
-              fieldFactor)
-        : std::pair<Real, Real>{0.0, 0.0};
+    const auto [surfaceField, surfaceDistance] = [&]() -> std::pair<Real, Real> {
+        if (!isSurfaceMobilityModel(mobilityConfig)) return {0.0, 0.0};
+        const auto& surface = mobilityConfig.surface;
+        if (cellId < surface.cellNormalFields.size() && cellId < surface.cellDistances.size()) {
+            Real normalField = surface.cellNormalFields[cellId];
+            // Geometry is invariant, but the trial potential must update Enormal.
+            if (psi && cellId < surface.cellNormalX.size() && cellId < surface.cellNormalY.size()) {
+                bool valid = false;
+                Real area = 0.0;
+                const Point2 gradient = cellScalarGradient(mesh, mesh.getCell(cellId),
+                    [&](Index node) { return (*psi)(node); }, valid, area);
+                if (valid)
+                    normalField = std::abs(gradient.x() * surface.cellNormalX[cellId] +
+                        gradient.y() * surface.cellNormalY[cellId]) * surface.coordinateFieldFactor;
+            }
+            return {normalField, surface.cellDistances[cellId]};
+        }
+        return psi && cellEdgeIds ? nearestSurfaceFieldAndDistanceForCell(
+            mesh, buildEdgeCellMap(mesh), *psi, cellId, mobilityConfig, fieldFactor)
+            : std::pair<Real, Real>{0.0, 0.0};
+    }();
     const auto atNode = [&](Index node) {
         const Real mobilityDoping = nodeMobilityDopingConcentration(
             mesh, doping, node, cellId, &mobilityConfig);
+        const MobilityDopants dopants{doping.donors(node), doping.acceptors(node)};
         return carrier == CarrierType::Electron
             ? mobility.electronMobility(
                 material, mobilityDoping, n(static_cast<int>(node)),
                 p(static_cast<int>(node)), drivingField,
-                surfaceField, surfaceDistance)
+                surfaceField, surfaceDistance, dopants)
             : mobility.holeMobility(
                 material, mobilityDoping, n(static_cast<int>(node)),
                 p(static_cast<int>(node)), drivingField,
-                surfaceField, surfaceDistance);
+                surfaceField, surfaceDistance, dopants);
     };
     return 0.5 * (atNode(node0) + atNode(node1));
 }
@@ -4479,7 +4663,12 @@ triangleGssAvalancheSourceRecords(
     return records;
 }
 
+inline std::optional<Point2> ialAvalancheBoundaryTangent(
+    const ImpactIonizationModelConfig& impact,
+    const MobilityModelConfig& mobility, Index cellId);
+
 #include "vela/equation/ElementEdgeGssLauxAD.inl"
+#include "vela/equation/IalElementAvalancheAssembly.inl"
 
 struct ElementEdgeGssLauxAvalancheSourceRecord {
     Index cellId = 0;
@@ -4505,6 +4694,23 @@ struct ElementEdgeGssLauxAvalancheSourceRecord {
     std::array<Real, 3> holeSourceIntegrals{};
     std::array<Real, 3> combinedSourceIntegrals{};
 };
+
+inline std::optional<Point2> ialAvalancheBoundaryTangent(
+    const ImpactIonizationModelConfig& impact,
+    const MobilityModelConfig& mobility, Index cellId)
+{
+    if (!impact.ialmobBoundaryFieldProjection) return std::nullopt;
+    if (mobility.model != "ialmob" || !mobility.ialmobGeometry) {
+        throw std::invalid_argument(
+            "ialmob_boundary_field_projection requires prepared element IALMob geometry");
+    }
+    const auto& geometry = *mobility.ialmobGeometry;
+    const int support = geometry.cellSupportIndex.at(cellId);
+    if (support < 0) return std::nullopt;
+    const auto& cell = geometry.cells.at(static_cast<std::size_t>(support)).geometry;
+    if (!cell.partialBoundaryLayer) return std::nullopt;
+    return Point2{cell.boundaryTangent[0], cell.boundaryTangent[1]};
+}
 
 inline ElementEdgeGssLauxAvalancheSourceRecord
 elementEdgeGssLauxAvalancheSourceRecordForCell(
@@ -4537,6 +4743,17 @@ elementEdgeGssLauxAvalancheSourceRecordForCell(
             "element-edge GSS/Laux avalanche source requires Tri3 cells");
     }
 
+    ElementEdgeGssLauxAvalancheSourceRecord record;
+    record.cellId = cellId;
+    record.edgePartialVolumes = tri3ElementEdgeBoxPartialVolumes(mesh, cell);
+    record.vertexMeasures = tri3ElementVertexBoxMeasures(mesh, cell);
+    // Match the transport support used by the source Jacobian. A doping-based
+    // surface model can return positive mobility in an insulator; silicon
+    // densities on shared vertices must not generate avalanche inside it.
+    const Material& material = cellMaterials.at(static_cast<std::size_t>(cellId));
+    if (material.ni <= 0.0 || (material.mun <= 0.0 && material.mup <= 0.0))
+        return record;
+
     bool electricGradientValid = false;
     Real electricDoubleArea = 0.0;
     const Point2 electricGradient =
@@ -4561,16 +4778,13 @@ elementEdgeGssLauxAvalancheSourceRecordForCell(
             "degenerate triangle cannot evaluate avalanche driving fields");
     }
 
-    ElementEdgeGssLauxAvalancheSourceRecord record;
-    record.cellId = cellId;
-    record.edgePartialVolumes =
-        tri3ElementEdgeBoxPartialVolumes(mesh, cell);
-    record.vertexMeasures =
-        tri3ElementVertexBoxMeasures(mesh, cell);
     const bool useContactFallback =
         cellUsesContactElectricFieldFallback(config, mesh, cell);
-    const Real electronQfField = electronGradient.norm() * fieldFactor;
-    const Real holeQfField = holeGradient.norm() * fieldFactor;
+    const auto boundaryTangent = ialAvalancheBoundaryTangent(config, mobilityConfig, cellId);
+    const Real electronQfField = (boundaryTangent
+        ? std::abs(electronGradient.dot(*boundaryTangent)) : electronGradient.norm()) * fieldFactor;
+    const Real holeQfField = (boundaryTangent
+        ? std::abs(holeGradient.dot(*boundaryTangent)) : holeGradient.norm()) * fieldFactor;
     if (config.drivingForce == "electric_field") {
         record.electronImpactField = electricGradient.norm() * fieldFactor;
         record.holeImpactField = record.electronImpactField;
@@ -4592,6 +4806,17 @@ elementEdgeGssLauxAvalancheSourceRecordForCell(
         impact.electronCoefficient(record.electronImpactField);
     record.holeAlpha =
         impact.holeCoefficient(record.holeImpactField);
+
+    IalElementMobilityResult ialCell;
+    if (mobilityConfig.model=="ialmob") {
+        std::array<IalElementVertexState,3> state;
+        for (std::size_t k=0;k<3;++k) {
+            const auto i=cell.node_ids[k];const Real factor=mobilityConfig.internalConcentrationToM3;
+            state[k]={psi[i],phin[i],phip[i],doping.donors(i)*factor,doping.acceptors(i)*factor,
+                n[i]*factor,p[i]*factor};
+        }
+        ialCell=evaluateIalTransportCell(mobilityConfig,cellId,state,false);
+    }
 
     for (int localEdge = 0; localEdge < 3; ++localEdge) {
         const std::size_t local = static_cast<std::size_t>(localEdge);
@@ -4642,22 +4867,22 @@ elementEdgeGssLauxAvalancheSourceRecordForCell(
                 ? holeGradient.norm() * fieldFactor
                 : holeEdgeField)
             : electricEdgeField;
-        const Real electronLowFieldMobility =
+        const Real electronLowFieldMobility = mobilityConfig.model=="ialmob" ? ialCell.electronLowField.value :
             triangleGssEndpointAveragedMobility(
                 mobilityConfig, mobility, mesh, doping, cellMaterials, n, p, cellId,
                 node0, node1, CarrierType::Electron, 0.0,
                 &psi, &cellEdgeIds, fieldFactor);
-        const Real holeLowFieldMobility =
+        const Real holeLowFieldMobility = mobilityConfig.model=="ialmob" ? ialCell.holeLowField.value :
             triangleGssEndpointAveragedMobility(
                 mobilityConfig, mobility, mesh, doping, cellMaterials, n, p, cellId,
                 node0, node1, CarrierType::Hole, 0.0,
                 &psi, &cellEdgeIds, fieldFactor);
-        const Real electronMobility =
+        const Real electronMobility = mobilityConfig.model=="ialmob" ? ialCell.electron.value :
             triangleGssEndpointAveragedMobility(
                 mobilityConfig, mobility, mesh, doping, cellMaterials, n, p, cellId,
                 node0, node1, CarrierType::Electron,
                 electronMobilityDrive, &psi, &cellEdgeIds, fieldFactor);
-        const Real holeMobility =
+        const Real holeMobility = mobilityConfig.model=="ialmob" ? ialCell.hole.value :
             triangleGssEndpointAveragedMobility(
                 mobilityConfig, mobility, mesh, doping, cellMaterials, n, p, cellId,
                 node0, node1, CarrierType::Hole,
@@ -4715,7 +4940,7 @@ elementEdgeGssLauxAvalancheSourceRecordForCell(
         localHoleDensity[localNode] = p(static_cast<int>(node));
         localIntrinsicDensity[localNode] = ni.at(node);
     }
-    if (isSurfaceMobilityModel(mobilityConfig)) {
+    if (isSurfaceMobilityModel(mobilityConfig) || mobilityConfig.model=="ialmob") {
         const Real electronGeneration = record.electronAlpha *
             record.electronCurrentVector.norm();
         const Real holeGeneration = record.holeAlpha *
@@ -5069,18 +5294,18 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
             const Real holeMobilityField = vectorQfMobility
                 ? holeVectorMobilityFields[e]
                 : (qfMobility ? holeQfField : electricField);
-            const Real mun = edgeMobility(
+            const Real mun = edgeMobilityFromCarrierFields(
                 edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Electron,
-                electronMobilityField, &mobilityConfig, &psi);
+                electronMobilityField, &mobilityConfig, &psi, &n, &p);
             if (mun > 0.0) {
                 const Real signedFlux = electronEdgeSgFlux(edge, mun).continuityFlux;
                 rawSignedElectronFlux[static_cast<std::size_t>(e)] = signedFlux;
                 rawElectronFlux[static_cast<std::size_t>(e)] = std::abs(signedFlux);
                 activeElectronEdge[static_cast<std::size_t>(e)] = true;
             }
-            const Real mup = edgeMobility(
+            const Real mup = edgeMobilityFromCarrierFields(
                 edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Hole,
-                holeMobilityField, &mobilityConfig, &psi);
+                holeMobilityField, &mobilityConfig, &psi, &n, &p);
             if (mup > 0.0) {
                 const Real signedFlux = holeEdgeSgFlux(edge, mup).continuityFlux;
                 rawSignedHoleFlux[static_cast<std::size_t>(e)] = signedFlux;
@@ -5244,20 +5469,20 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
         record.electronMobilityDrivingField = electronMobilityField;
         record.holeMobilityDrivingField = holeMobilityField;
 
-        const Real mun = edgeMobility(
+        const Real mun = edgeMobilityFromCarrierFields(
             edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Electron,
-            electronMobilityField, &mobilityConfig, &psi);
+            electronMobilityField, &mobilityConfig, &psi, &n, &p);
         record.electronMobility = mun;
-        record.electronLowFieldMobility = edgeMobility(
+        record.electronLowFieldMobility = edgeMobilityFromCarrierFields(
             edgeCells, mesh, doping, mobility, cellMaterials, e,
-            CarrierType::Electron, 0.0, &mobilityConfig, &psi);
-        const Real mup = edgeMobility(
+            CarrierType::Electron, 0.0, &mobilityConfig, &psi, &n, &p);
+        const Real mup = edgeMobilityFromCarrierFields(
             edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Hole,
-            holeMobilityField, &mobilityConfig, &psi);
+            holeMobilityField, &mobilityConfig, &psi, &n, &p);
         record.holeMobility = mup;
-        record.holeLowFieldMobility = edgeMobility(
+        record.holeLowFieldMobility = edgeMobilityFromCarrierFields(
             edgeCells, mesh, doping, mobility, cellMaterials, e,
-            CarrierType::Hole, 0.0, &mobilityConfig, &psi);
+            CarrierType::Hole, 0.0, &mobilityConfig, &psi, &n, &p);
         constexpr bool IncludeElectronNiGradientDrift = true;
         const Real electronContinuityCoefficient =
             mun > 0.0 ? mun * Vt * fieldFactor / h : 0.0;
@@ -5689,6 +5914,28 @@ currentDensityAvalancheSourceComponentIntegrals(
     const std::vector<Real>&           Nv = {},
     bool                               populationFlux = false)
 {
+    if (usesIalElementAvalancheSource(config) || usesPhuMobElementAvalancheSource(config)) {
+        SgAvalancheSourceComponentIntegrals source;
+        source.electron.assign(mesh.numNodes(),0.);
+        source.hole.assign(mesh.numNodes(),0.);
+        source.combined.assign(mesh.numNodes(),0.);
+        for (const auto& cell:mesh.cells()) {
+            if (mesh.getRegion(cell.region_id).material!="Si") continue;
+            std::array<Real,3> lp,lfn,lfp,ln,lh;
+            for (std::size_t i=0;i<3;++i) {
+                const auto id=cell.node_ids.at(i);
+                lp[i]=psi[id];lfn[i]=phin[id];lfp[i]=phip[id];ln[i]=n[id];lh[i]=p[id];
+            }
+            const auto local=usesPhuMobElementAvalancheSource(config)
+                ? phumobElementAvalancheSourceIntegralsLocal(config,mobilityConfig,mesh,doping,cellMaterials,cell.id,lp,lfn,lfp,ln,lh)
+                : ialElementAvalancheSourceIntegralsLocal(config,mobilityConfig,mesh,doping,cell.id,lp,lfn,lfp,ln,lh);
+            for (std::size_t i=0;i<3;++i) {
+                const auto id=cell.node_ids[i];source.electron[id]+=local.electron[i];
+                source.hole[id]+=local.hole[i];source.combined[id]+=local.combined[i];
+            }
+        }
+        return source;
+    }
     if (usesElementEdgeGssLauxAvalancheSource(config)) {
         SgAvalancheSourceComponentIntegrals source;
         source.electron.assign(
@@ -5850,10 +6097,10 @@ inline Real impactIonizationGenerationRate(
     const Real alphaP = impact.holeCoefficient(holeImpactField);
     const Real mun = nodeMobility(
         nodeCells, mesh, doping, mobility, cellMaterials, nodeId, CarrierType::Electron,
-        electronImpactField, &mobilityConfig);
+        electronImpactField, &mobilityConfig, n, p);
     const Real mup = nodeMobility(
         nodeCells, mesh, doping, mobility, cellMaterials, nodeId, CarrierType::Hole,
-        holeImpactField, &mobilityConfig);
+        holeImpactField, &mobilityConfig, n, p);
     return alphaN * mun * std::max(n, 0.0) * std::abs(electronImpactField) +
            alphaP * mup * std::max(p, 0.0) * std::abs(holeImpactField);
 }
@@ -5942,6 +6189,45 @@ inline std::vector<Real> buildNodeNi(const DeviceMesh&       mesh,
         }
     }
     return ni_v;
+}
+
+/// Material reference for disconnected, isothermal semiconductor components.
+/// A shared semiconductor node cannot have two different intrinsic references;
+/// this implementation does not approximate a heterojunction interface law.
+inline std::vector<Real> buildNodeIntrinsicReference(
+    const DeviceMesh& mesh, const MaterialDatabase& matdb, Real temperature_K)
+{
+    std::vector<Real> result(mesh.numNodes(),0.);
+    std::vector<bool> found(mesh.numNodes(),false);
+    for (const auto& cell:mesh.cells()) {
+        const auto material=matdb.getMaterial(mesh.getRegion(cell.region_id).material,temperature_K);
+        if (!isTransportMaterial(material)) continue;
+        const Real offset=material.intrinsic_reference_potential_V;
+        if (!std::isfinite(offset)) throw std::invalid_argument("Nonfinite intrinsic reference");
+        if (offset!=0. && std::abs(temperature_K-300.)>1e-8)
+            throw std::invalid_argument("Intrinsic reference currently requires isothermal 300 K");
+        for (Index node:cell.node_ids) {
+            if (found[node] && result[node]!=offset)
+                throw std::invalid_argument("Mixed semiconductor intrinsic references are unsupported");
+            found[node]=true;result[node]=offset;
+        }
+    }
+    return result;
+}
+
+/// Carrier-specific Boltzmann prefactors. Their product remains ni^2, so the
+/// physical intrinsic density used by recombination is never changed.
+inline std::vector<Real> carrierReferencePrefactor(
+    const std::vector<Real>& ni,const std::vector<Real>& offsets,Real vt,bool electrons)
+{
+    std::vector<Real> result=ni;
+    for (std::size_t i=0;i<ni.size();++i) {
+        if (offsets.at(i)==0. || ni[i]==0.) continue;
+        result[i]*=std::exp((electrons?-1.:1.)*offsets[i]/vt);
+        if (!(result[i]>0.) || !std::isfinite(result[i]))
+            throw std::invalid_argument("Intrinsic reference overflows carrier prefactor");
+    }
+    return result;
 }
 
 /// Build per-node effective conduction/valence density of states.  Shared
@@ -6051,16 +6337,17 @@ inline std::vector<Real> buildValidatedEffectiveNodeNi(
  * (e.g. insulator nodes in continuity assemblies where all adjacent edges
  * were skipped due to zero mobility).
  */
-inline void applyDirichletBC(SparseMatrixd&                         A,
-                              VectorXd&                              b,
-                              const std::unordered_map<Index, Real>& bcs)
+template<class Scalar>
+void applyDirichletBC(Eigen::SparseMatrix<Scalar>& A,
+                      Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& b,
+                      const std::unordered_map<Index, std::type_identity_t<Scalar>>& bcs)
 {
     A.makeCompressed();
 
     // Step 1: propagate prescribed values into free-node RHS
     for (const auto& [nodeId, value] : bcs) {
         const int i = static_cast<int>(nodeId);
-        for (SparseMatrixd::InnerIterator it(A, i); it; ++it) {
+        for (typename Eigen::SparseMatrix<Scalar>::InnerIterator it(A, i); it; ++it) {
             const int k = static_cast<int>(it.row());
             if (k == i) continue;
             if (bcs.count(static_cast<Index>(k)) == 0)
@@ -6075,14 +6362,14 @@ inline void applyDirichletBC(SparseMatrixd&                         A,
 
     for (int col = 0; col < A.outerSize(); ++col) {
         const bool colIsDirichlet = dirichletSet.count(col) > 0;
-        for (SparseMatrixd::InnerIterator it(A, col); it; ++it) {
+        for (typename Eigen::SparseMatrix<Scalar>::InnerIterator it(A, col); it; ++it) {
             const int  row          = static_cast<int>(it.row());
             const bool rowIsDirichlet = dirichletSet.count(row) > 0;
             if (rowIsDirichlet || colIsDirichlet)
                 it.valueRef() = (row == col) ? 1.0 : 0.0;
         }
     }
-    A.prune(0.0);
+    A.prune(Scalar{0});
 
     // Explicitly ensure A(i,i) = 1 even if the node had no prior entries.
     for (const auto& [nodeId, value] : bcs) {

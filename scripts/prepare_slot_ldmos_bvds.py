@@ -55,6 +55,18 @@ PROFILE_BUNDLES = {
             "cell_reconstructed_midpoint_density": "bernoulli",
         },
     },
+    "element_edge_sg_gss_laux_delaunay": {
+        "mesh_geometry": {
+            "node_volume_policy": "mixed_voronoi",
+            "require_non_obtuse": False,
+            "edge_coupling_policy": "assembled_delaunay_fallback",
+        },
+        "impact_ionization": {
+            "current_approximation": "element_edge_sg_gss_laux",
+            "source_mapping_mode": "element_vertex_box_measure",
+            "cell_reconstructed_midpoint_density": "bernoulli",
+        },
+    },
 }
 
 SENTAURUS_SERIES_RESISTANCE_OHM_UM = 1.0e12
@@ -105,6 +117,7 @@ def mesh_quality(nodes: list[dict[str, Any]], triangles: list[dict[str, Any]]) -
     maximum_aspect = 0.0
     obtuse: list[int] = []
     runtime_rejected: list[int] = []
+    edge_cotangents: dict[tuple[int, int], list[float]] = defaultdict(list)
     for cell in triangles:
         points = [coords[node_id] for node_id in cell["node_ids"]]
         twice_area = abs(
@@ -126,6 +139,38 @@ def mesh_quality(nodes: list[dict[str, Any]], triangles: list[dict[str, Any]]) -
             obtuse.append(cell["id"])
         if cell_maximum > 90.0 + 1.0e-10:
             runtime_rejected.append(cell["id"])
+        node_ids = cell["node_ids"]
+        for index in range(3):
+            a = node_ids[index]
+            b = node_ids[(index + 1) % 3]
+            opposite = node_ids[(index + 2) % 3]
+            key = (a, b) if a < b else (b, a)
+            ax, ay = coords[a]
+            bx, by = coords[b]
+            ox, oy = coords[opposite]
+            ux, uy = ax - ox, ay - oy
+            vx, vy = bx - ox, by - oy
+            cross = ux * vy - uy * vx
+            cot = 0.0 if abs(cross) <= 1.0e-30 else (ux * vx + uy * vy) / abs(cross)
+            edge_cotangents[key].append(cot)
+
+    interior_edges = [values for values in edge_cotangents.values() if len(values) == 2]
+    nonmanifold_edges = [values for values in edge_cotangents.values() if len(values) > 2]
+    negative_local_edges = [
+        values for values in interior_edges if any(value < 0.0 for value in values)
+    ]
+    unresolved_edges = [
+        values for values in interior_edges if sum(values) < -1.0e-12
+    ]
+    repaired_edges = [
+        values for values in negative_local_edges if sum(values) >= -1.0e-12
+    ]
+    unresolved_fraction = (
+        len(unresolved_edges) / len(interior_edges) if interior_edges else 0.0
+    )
+    delaunay_profile_qualified = (
+        not nonmanifold_edges and unresolved_fraction <= 1.0e-4
+    )
     return {
         "cell_count": len(triangles),
         "minimum_area_um2": minimum_area,
@@ -134,6 +179,13 @@ def mesh_quality(nodes: list[dict[str, Any]], triangles: list[dict[str, Any]]) -
         "obtuse_cell_count": len(obtuse),
         "runtime_non_obtuse_rejected_cell_count": len(runtime_rejected),
         "non_obtuse": not runtime_rejected,
+        "interior_edge_count": len(interior_edges),
+        "nonmanifold_edge_count": len(nonmanifold_edges),
+        "negative_local_cotangent_edge_count": len(negative_local_edges),
+        "edge_aggregation_repair_count": len(repaired_edges),
+        "aggregated_negative_edge_count": len(unresolved_edges),
+        "aggregated_negative_edge_fraction": unresolved_fraction,
+        "delaunay_profile_qualified": delaunay_profile_qualified,
     }
 
 
@@ -247,7 +299,11 @@ def load_neutral_export(
     }
     coordinate_audit = {
         "input_column_labels": ["x_um", "y_um"],
-        "input_physical_unit": "cm",
+        "input_physical_unit": (
+            "cm" if math.isclose(coordinate_scale_to_um, 1.0e4)
+            else "um" if math.isclose(coordinate_scale_to_um, 1.0)
+            else "source_coordinate"
+        ),
         "output_physical_unit": "um",
         "scale_to_um": coordinate_scale_to_um,
         "input_bounds": {
@@ -326,6 +382,7 @@ def write_transport_doping(
 
     zeroed_nodes = 0
     zeroed_nonzero_nodes = 0
+    silicon_nonzero_doping_nodes = 0
     with output_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
@@ -339,13 +396,23 @@ def write_transport_doping(
                     zeroed_nonzero_nodes += 1
                 row["donors_cm3"] = "0"
                 row["acceptors_cm3"] = "0"
+            elif (float(row["donors_cm3"]) != 0.0 or
+                  float(row["acceptors_cm3"]) != 0.0):
+                silicon_nonzero_doping_nodes += 1
             writer.writerow(row)
+    if silicon_nonzero_doping_nodes == 0:
+        raise PreparationError(
+            "Silicon transport region has no nonzero nodal doping; re-export "
+            "DonorConcentration and AcceptorConcentration from a solved "
+            "Sentaurus device TDR before preparing SLOT-LDMOS BVDS."
+        )
     return {
         "policy": "retain doping only on nodes incident to Silicon cells",
         "silicon_transport_node_count": len(silicon_nodes),
         "nontransport_node_count": len(rows) - len(silicon_nodes),
         "zeroed_node_count": zeroed_nodes,
         "zeroed_previously_nonzero_node_count": zeroed_nonzero_nodes,
+        "silicon_nonzero_doping_node_count": silicon_nonzero_doping_nodes,
     }
 
 
@@ -405,11 +472,43 @@ def solver_config(profile: str, avalanche_coupling: str | None) -> dict[str, Any
         "damping_psi": 0.2,
         "bandgap_narrowing": "old_slotboom",
         "mobility": {
-            "model": "masetti_field",
+            "model": "masetti_field_lombardi",
             "doping_concentration_basis": "total_impurity",
             "high_field_driving_force": "quasi_fermi_gradient",
+            "high_field_gradient_discretization": "transport_cell_vector",
+            "surface": {
+                "surface_interface": ["Silicon_1", "Oxide_1"],
+            },
         },
         "recombination": ["srh", "auger"],
+        "taun": 1.0e-5,
+        "taup": 3.0e-6,
+        "srh_doping_dependence": {
+            "enabled": True,
+            "concentration_basis": "total_impurity",
+            "temperature_dependence": True,
+            "reference_temperature_K": 300.0,
+            "electron_temperature_exponent": -1.5,
+            "hole_temperature_exponent": -1.5,
+            "electron": {
+                "tau_min_s": 0.0,
+                "tau_max_s": 1.0e-5,
+                # unit_scaling decks use cm^-3 as their internal unit.
+                "reference_doping_m3": 1.0e16,
+                "gamma": 1.0,
+            },
+            "hole": {
+                "tau_min_s": 0.0,
+                "tau_max_s": 3.0e-6,
+                "reference_doping_m3": 1.0e16,
+                "gamma": 1.0,
+            },
+        },
+        # unit_scaling decks use cm^6/s for coefficient overrides.  These are
+        # the 300 K sums from the project Silicon.par.  Sentaurus' optional
+        # density-enhancement H terms are not yet represented by Vela.
+        "auger_cn_m6_per_s": 2.90e-31,
+        "auger_cp_m6_per_s": 1.028e-31,
     }
     if avalanche_coupling is not None:
         if avalanche_coupling not in {"postprocess_only", "self_consistent"}:
@@ -581,9 +680,15 @@ def prepare(
     profile: str,
     stop_voltage: float,
     coordinate_scale_to_um: float = 1.0e4,
+    equilibrium_state_file: Path | None = None,
 ) -> dict[str, Any]:
     if not math.isfinite(coordinate_scale_to_um) or coordinate_scale_to_um <= 0.0:
         raise PreparationError("coordinate scale to um must be positive and finite")
+    if equilibrium_state_file is not None:
+        equilibrium_state_file = equilibrium_state_file.resolve()
+        if not equilibrium_state_file.is_file():
+            raise PreparationError(
+                f"equilibrium state file does not exist: {equilibrium_state_file}")
     mesh, contact_audit, coordinate_audit = load_neutral_export(
         input_dir, coordinate_scale_to_um
     )
@@ -593,6 +698,14 @@ def prepare(
             "element_edge_sg_gss_laux is forbidden on this mesh: "
             f"{quality['obtuse_cell_count']} obtuse cells, maximum angle "
             f"{quality['maximum_triangle_angle_deg']:.9g} degrees"
+        )
+    if (profile == "element_edge_sg_gss_laux_delaunay" and
+            not quality["delaunay_profile_qualified"]):
+        raise PreparationError(
+            "element_edge_sg_gss_laux_delaunay is forbidden on this mesh: "
+            f"{quality['aggregated_negative_edge_count']} negative assembled edges "
+            f"of {quality['interior_edge_count']} interior edges and "
+            f"{quality['nonmanifold_edge_count']} nonmanifold edges"
         )
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -678,7 +791,10 @@ def prepare(
             "depends_on": [],
             "bias_points": [0.0],
             "avalanche_coupling": None,
-            "initial_state_file": None,
+            "initial_state_file": (
+                equilibrium_state_file.as_posix()
+                if equilibrium_state_file is not None else None
+            ),
             "external_resistor": False,
             "initial_inner_voltage_V": 0.0,
             "max_inner_voltage_step_V": 0.01,
@@ -872,11 +988,22 @@ def prepare(
         "mesh_geometry": PROFILE_BUNDLES[profile]["mesh_geometry"],
         "impact_ionization_current_support": PROFILE_BUNDLES[profile]["impact_ionization"],
         "staged_bvds_manifest": "slot_ldmos_bvds_stages_manifest.json",
+        "equilibrium_initial_state_file": (
+            equilibrium_state_file.as_posix()
+            if equilibrium_state_file is not None else None
+        ),
         "external_circuit_contract": stages_manifest["external_circuit_contract"],
         "forbidden_profiles": (
-            ["element_edge_sg_gss_laux"] if not quality["non_obtuse"] else []
+            (["element_edge_sg_gss_laux"] if not quality["non_obtuse"] else [])
+            + (["element_edge_sg_gss_laux_delaunay"]
+               if not quality["delaunay_profile_qualified"] else [])
         ),
         "decision": (
+            "Use assembled Delaunay edge couplings with mixed-Voronoi node volumes; "
+            "apply the positive local fallback only to genuinely negative assembled "
+            "dual faces. This is a SLOT-specific atomic profile and does not alter "
+            "the existing non-obtuse profile or global defaults."
+            if profile == "element_edge_sg_gss_laux_delaunay" else
             "Use positive barycentric control volumes and the box builder's "
             "negative-cotangent fallback on the exact TDR mesh. Do not claim the "
             "PN2D non-obtuse SG/GSS-Laux qualification for this device."
@@ -894,6 +1021,14 @@ def parse_args() -> argparse.Namespace:
         "--profile",
         choices=sorted(PROFILE_BUNDLES),
         default="legacy_cell_reconstructed",
+    )
+    parser.add_argument(
+        "--equilibrium-state-file",
+        type=Path,
+        help=(
+            "Optional Sentaurus-derived zero-bias DDSolution CSV used to "
+            "warm-start stage 00 on strongly doped process meshes."
+        ),
     )
     parser.add_argument("--stop-voltage", type=float, default=60.0)
     parser.add_argument(
@@ -917,6 +1052,7 @@ def main() -> int:
             args.profile,
             args.stop_voltage,
             args.coordinate_scale_to_um,
+            args.equilibrium_state_file,
         )
     except PreparationError as error:
         print(f"prepare_slot_ldmos_bvds: {error}", file=sys.stderr)

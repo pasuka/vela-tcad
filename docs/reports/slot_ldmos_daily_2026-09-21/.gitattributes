@@ -1,0 +1,6 @@
+*.md text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+*.svg text eol=lf
+*.png binary
+*.npz binary

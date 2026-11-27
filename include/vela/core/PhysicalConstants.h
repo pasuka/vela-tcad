@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 namespace vela::constants {
 
@@ -30,6 +31,46 @@ inline constexpr double dosPi = std::numbers::pi;
 #endif
 inline constexpr double T0 = 300.0;
 inline constexpr double Vt_300 = kb * T0 / q;
+
+constexpr long double extendedVacuumPermittivity()
+{
+#if defined(VELA_CONSTANTS_SENT_U2022_12) && VELA_CONSTANTS_SENT_U2022_12
+    return 8.8542e-12L;
+#else
+    return 8.8541878128e-12L;
+#endif
+}
+
+template <typename T>
+struct ArithmeticConstants {
+    T q;
+    T kb;
+    T h;
+    T m0;
+    T dosPi;
+};
+
+template <typename T>
+constexpr ArithmeticConstants<T> arithmeticConstants()
+{
+    if constexpr (std::is_same_v<T, long double>) {
+#if defined(VELA_CONSTANTS_SENT_U2022_12) && VELA_CONSTANTS_SENT_U2022_12
+        return {1.602192e-19L, 1.380662e-23L, 6.626176e-34L, 9.109534e-31L, 3.141592654L};
+#else
+        return {1.602176634e-19L, 1.380649e-23L, 6.62607015e-34L, 9.1093837015e-31L,
+                std::numbers::pi_v<long double>};
+#endif
+    } else {
+        return {q, kb, h, m0, dosPi};
+    }
+}
+
+template <typename T>
+constexpr T thermalVoltage(T temperature)
+{
+    constexpr auto constants = arithmeticConstants<T>();
+    return constants.kb * temperature / constants.q;
+}
 
 inline void requireProfile(std::string_view requested)
 {

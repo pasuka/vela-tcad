@@ -92,7 +92,7 @@
         "mode": "voltage",
         "start_V": 0.0,
         "stop_V": 1.0,
-        "step_V": 0.05,
+        "step_V": 1.0,
         "initial_step_V": 0.01,
         "min_step_V": 1e-06,
         "max_step_V": 0.05,

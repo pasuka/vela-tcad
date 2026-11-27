@@ -210,6 +210,17 @@ repository-local and does not change the Windows system or user environment.
 Set the UCRT64 `PATH` manually only when invoking raw MSYS2 tools outside these
 CMake workflows.
 
+For direct simulation runs, the same launcher supplies the runtime DLL path:
+
+```powershell
+.\scripts\with_ucrt64_path.cmd .\build-release\vela_example_runner.exe --config .\path\to\case.json
+```
+
+It also supports frozen runner copies outside `build-release/`. If an installed
+DLL such as `libcholmod.dll` is reported missing before any solver output, use
+the launcher with the matching UCRT64 installation to supply its search path. Build
+performance runs with the `windows-ucrt64-release` configure and build preset.
+
 For initial setup or environment repair, install packages from a UCRT64 shell.
 `pacman -Syu` is a system update step, not a prerequisite for each repository task:
 

@@ -1,4 +1,6 @@
 #include "vela/io/StateArchive.h"
+#include "vela/io/ExtendedPopulationArchive.h"
+#include <cmath>
 #include "vela/io/DDSolutionState.h"
 #include "vela/io/StateIdentity.h"
 #include "vela/io/ElectrothermalState.h"
@@ -9,6 +11,7 @@
 #include <bit>
 #include <chrono>
 #include <fstream>
+#include <iterator>
 #include <limits>
 
 TEST_CASE("Thermal record keeps temperature and independent QF increments across archive references", "[state_archive]") {
@@ -337,4 +340,60 @@ TEST_CASE("Compensated population HDF5 restart preserves all low components", "[
     REQUIRE_THROWS(vela::writeStateArchive(workspace.root/"invalid-compensated.h5", invalid));
     archive.fields.erase("population_holes_low_internal");
     REQUIRE_THROWS(vela::restoreDDSolution(archive));
+}
+
+TEST_CASE("Extended population archive preserves low bits and rejects incompatible identity",
+          "[state_archive][extended80]") {
+    if (std::numeric_limits<long double>::digits != 64 ||
+        std::numeric_limits<long double>::max_exponent != 16384) {
+        SKIP("80-bit long double is unavailable");
+    }
+    const auto low = std::ldexp(1.0L, -60);
+    const auto tiny = std::numeric_limits<long double>::denorm_min();
+    const auto largest = std::numeric_limits<long double>::max();
+    Workspace working;
+    const auto path = working.root / "extended.h5";
+    const auto legacy = working.root / "legacy.h5";
+    const vela::ExtendedPopulationArchiveIdentity identity{
+        std::string(64, 'a'), std::string(64, 'b'), vela::ExtendedPopulationArchiveRole::Accepted};
+    vela::ExtendedPopulationState input;
+    input.coordinates.resize(9);
+    input.coordinates << 1.0L + low, -0.0L, -largest,
+                         1.0L - low, tiny, largest,
+                         1.0L, 0.0L, std::numeric_limits<long double>::min();
+    input.potentialScale_V = 1.0L + low;
+    input.potentialOrigin_V = -low;
+    input.concentrationScale_m3 = 1.0L - low;
+    input.deviceBias_V = 1.0L + low;
+    input.supplyBias_V = 1.0L + 2 * low;
+    input.drainCurrent_A_per_um = -tiny;
+    vela::writeExtendedPopulationArchive(path, input, identity);
+    CHECK(std::distance(std::filesystem::directory_iterator(working.root),
+                        std::filesystem::directory_iterator()) == 1);
+    const auto result = vela::readExtendedPopulationArchive(path, 3, identity);
+    REQUIRE(result.coordinates == input.coordinates);
+    CHECK(std::signbit(result.coordinates[1]));
+    CHECK_FALSE(std::signbit(result.coordinates[7]));
+    CHECK(result.potentialScale_V == input.potentialScale_V);
+    CHECK(result.potentialOrigin_V == input.potentialOrigin_V);
+    CHECK(result.concentrationScale_m3 == input.concentrationScale_m3);
+    CHECK(result.deviceBias_V == input.deviceBias_V);
+    CHECK(result.supplyBias_V == input.supplyBias_V);
+    CHECK(result.drainCurrent_A_per_um == input.drainCurrent_A_per_um);
+    CHECK_THROWS(vela::readExtendedPopulationArchive(path, 2, identity));
+    auto mismatched = identity;
+    mismatched.meshSha256 = std::string(64, 'c');
+    CHECK_THROWS(vela::readExtendedPopulationArchive(path, 3, mismatched));
+    mismatched = identity;
+    mismatched.inputSha256 = std::string(64, 'c');
+    CHECK_THROWS(vela::readExtendedPopulationArchive(path, 3, mismatched));
+    mismatched = identity;
+    mismatched.role = vela::ExtendedPopulationArchiveRole::Diagnostic;
+    CHECK_THROWS(vela::readExtendedPopulationArchive(path, 3, mismatched));
+    CHECK_THROWS(vela::readStateArchive(path, 3, identity.meshSha256));
+    vela::writeStateArchive(legacy, example());
+    CHECK_THROWS(vela::readExtendedPopulationArchive(legacy, 3, identity));
+    input.coordinates[3] = -1;
+    CHECK_THROWS(vela::writeExtendedPopulationArchive(path, input, identity));
+    CHECK(vela::readExtendedPopulationArchive(path, 3, identity).coordinates == result.coordinates);
 }

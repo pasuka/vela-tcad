@@ -37,6 +37,9 @@ Real logBernoulli(Real value)
 
 Real signedSaturatedExp(Real logMagnitude, Real sign)
 {
+    // Invalid arithmetic is not a finite overflow and must remain observable.
+    if (std::isnan(logMagnitude) || !std::isfinite(sign))
+        return std::numeric_limits<Real>::quiet_NaN();
     if (sign == 0.0)
         return 0.0;
     const Real logMaximum = std::log(std::numeric_limits<Real>::max());
@@ -98,6 +101,24 @@ vela::ArithmeticReal longDoubleBernoulli(vela::ArithmeticReal value)
     return value / std::expm1(value);
 }
 
+ArithmeticReal arithmeticBernoulliDerivative(ArithmeticReal x)
+{
+    if (std::abs(x) < VELA_ARITHMETIC_LITERAL(0.01)) {
+        const ArithmeticReal x2 = x * x;
+        return -VELA_ARITHMETIC_LITERAL(0.5) + x *
+            (ArithmeticReal(1) / 6 - x2 * (ArithmeticReal(1) / 180 -
+                x2 * (ArithmeticReal(1) / 5040 - x2 / 151200)));
+    }
+    if (x > 0) {
+        const ArithmeticReal e = std::exp(-x);
+        const ArithmeticReal d = -std::expm1(-x);
+        return e * (d - x) / (d * d);
+    }
+    const ArithmeticReal e = std::exp(x);
+    const ArithmeticReal d = std::expm1(x);
+    return (d - x * e) / (d * d);
+}
+
 Real finiteRealFromLongDouble(vela::ArithmeticReal value)
 {
     const vela::ArithmeticReal maximum =
@@ -148,7 +169,7 @@ Real sgHoleContinuityFlux(Real p0, Real p1, Real dpsi, Real Vt, Real coef)
     return detail::sgWeightedPopulationDifference(coef, p0, p1, w.b_plus, w.b_minus);
 }
 
-vela::ArithmeticReal sgPopulationLogRatio(Real numerator, Real denominator)
+ArithmeticReal arithmeticPopulationLogRatio(ArithmeticReal numerator, ArithmeticReal denominator)
 {
     const vela::ArithmeticReal low = std::min(numerator, denominator);
     const vela::ArithmeticReal high = std::max(numerator, denominator);
@@ -156,6 +177,11 @@ vela::ArithmeticReal sgPopulationLogRatio(Real numerator, Real denominator)
     const vela::ArithmeticReal magnitude = std::isfinite(relativeDifference)
         ? std::log1p(relativeDifference) : std::log(high) - std::log(low);
     return numerator < denominator ? -magnitude : magnitude;
+}
+
+ArithmeticReal sgPopulationLogRatio(Real numerator, Real denominator)
+{
+    return arithmeticPopulationLogRatio(numerator, denominator);
 }
 
 numerics::SplitCoordinate sgPopulationLogRatioCompensated(Real numerator, Real denominator)
@@ -201,16 +227,86 @@ numerics::SplitCoordinate sgPopulationLogRatioCompensated(Real numerator, Real d
 }
 
 namespace {
-Real populationFluxFromLogImbalance(Real population0, Real population1, ArithmeticReal eta,
-                                   Real coef, Real correction0, Real correction1, ArithmeticReal logRatio)
+ArithmeticReal populationFluxFromLogImbalance(
+    ArithmeticReal population0, ArithmeticReal population1, ArithmeticReal eta,
+    ArithmeticReal coef, ArithmeticReal correction0, ArithmeticReal correction1, ArithmeticReal logRatio)
 {
     if (logRatio >= 0.)
-        return static_cast<Real>(coef * longDoubleBernoulli(-eta) * population0
-            * (ArithmeticReal(1.) + correction0) * (-std::expm1(-logRatio)));
-    return static_cast<Real>(coef * longDoubleBernoulli(eta) * population1
-        * (ArithmeticReal(1.) + correction1) * std::expm1(logRatio));
+        return coef * longDoubleBernoulli(-eta) * population0
+            * (ArithmeticReal(1.) + correction0) * (-std::expm1(-logRatio));
+    return coef * longDoubleBernoulli(eta) * population1
+        * (ArithmeticReal(1.) + correction1) * std::expm1(logRatio);
 }
 } // namespace
+
+SGPopulationEdgeDifferential sgBoltzmannPopulationEdge(
+    ArithmeticReal psi0, ArithmeticReal psi1, ArithmeticReal population0,
+    ArithmeticReal population1, ArithmeticReal ni0, ArithmeticReal ni1,
+    ArithmeticReal signedPotentialScale, ArithmeticReal Vt, ArithmeticReal coefficient,
+    bool includeNiGradientDrift)
+{
+    if (!(Vt > 0) || !std::isfinite(Vt))
+        throw std::domain_error("SG population edge requires finite positive thermal voltage");
+    // Keep the coordinate difference before any conversion to volts.
+    auto eta = (psi1 - psi0) * signedPotentialScale / Vt;
+    if (includeNiGradientDrift && ni0 > 0 && ni1 > 0)
+        eta += arithmeticPopulationLogRatio(ni1, ni0);
+    const auto left = coefficient * longDoubleBernoulli(-eta);
+    const auto right = -coefficient * longDoubleBernoulli(eta);
+    const auto flux = population0 > 0 && population1 > 0
+        ? populationFluxFromLogImbalance(population0, population1, eta, coefficient, 0, 0,
+                                         eta + arithmeticPopulationLogRatio(population0, population1))
+        : left * population0 + right * population1;
+    const auto potential1 = -coefficient * signedPotentialScale / Vt *
+        (arithmeticBernoulliDerivative(-eta) * population0 +
+         arithmeticBernoulliDerivative(eta) * population1);
+    return {flux, left, right, potential1};
+}
+
+SGPopulationEdgeDifferential sgFermiPopulationEdge(
+    ArithmeticReal psi0, ArithmeticReal psi1, ArithmeticReal population0,
+    ArithmeticReal population1, ArithmeticReal intrinsic0, ArithmeticReal intrinsic1,
+    ArithmeticReal dos0, ArithmeticReal dos1, ArithmeticReal signedPotentialScale,
+    ArithmeticReal Vt, ArithmeticReal coefficient, CarrierStatisticsModel model)
+{
+    for (const auto value : {population0, population1, intrinsic0, intrinsic1, dos0, dos1, Vt})
+        if (!(value > 0) || !std::isfinite(value))
+            throw std::domain_error("Effective-band SG requires positive finite populations, material and scale");
+    const auto ratio0 = static_cast<long double>(population0) / dos0;
+    const auto ratio1 = static_cast<long double>(population1) / dos1;
+    const auto correction0 = extendedFermiDegeneracy(ratio0, model);
+    const auto correction1 = extendedFermiDegeneracy(ratio1, model);
+    const auto delta = static_cast<ArithmeticReal>(correction0.logCorrection - correction1.logCorrection);
+    const auto potentialFactor = signedPotentialScale / Vt;
+    const auto classical = (psi1 - psi0) * potentialFactor +
+        arithmeticPopulationLogRatio(intrinsic1, intrinsic0);
+    const auto drift = classical + delta;
+    const auto imbalance = (classical + arithmeticPopulationLogRatio(population0, population1)) + delta;
+    const auto flux = populationFluxFromLogImbalance(population0, population1, drift, coefficient, 0, 0, imbalance);
+    const auto driftDerivative = -coefficient * (arithmeticBernoulliDerivative(-drift) * population0 +
+                                                 arithmeticBernoulliDerivative(drift) * population1);
+    // At fixed electrostatic potential the effective band itself depends on
+    // concentration. A ratio that underflows still has the dilute derivative.
+    const auto slope = [](long double ratio, long double logSlope, ArithmeticReal density, ArithmeticReal dos) {
+        return static_cast<ArithmeticReal>(ratio >= std::numeric_limits<long double>::min()
+            ? logSlope / density : 1 / (2 * std::sqrt(2.L) * dos));
+    };
+    return {flux,
+            coefficient * longDoubleBernoulli(-drift) + driftDerivative * slope(ratio0, correction0.logSlope, population0, dos0),
+            -coefficient * longDoubleBernoulli(drift) - driftDerivative * slope(ratio1, correction1.logSlope, population1, dos1),
+            driftDerivative * potentialFactor};
+}
+
+numerics::SplitCoordinate sgPopulationEdgeDrift(
+    Real psi0, Real psi1, Real signedPotentialScale, Real Vt,
+    Real ni0, Real ni1, bool includeNiGradientDrift)
+{
+    auto eta = numerics::SplitCoordinate::sum(psi1, -psi0)
+        .scaled(signedPotentialScale).divided(Vt);
+    if (includeNiGradientDrift && ni0 > 0. && ni1 > 0.)
+        eta = eta.added(sgPopulationLogRatioCompensated(ni1, ni0));
+    return eta;
+}
 
 Real sgBoltzmannPopulationContinuityFlux(
     Real population0, Real population1, Real ni0, Real ni1,
@@ -655,11 +751,12 @@ Real stableGeneralizedFermiDifference(Real rightDensity,
                                       Real logarithmicLeftOverRight,
                                       Real coefficient)
 {
+    if (!std::isfinite(rightDensity) || !std::isfinite(rightBernoulliArgument) ||
+        !std::isfinite(logarithmicLeftOverRight) || !std::isfinite(coefficient))
+        return std::numeric_limits<Real>::quiet_NaN();
     if (!(rightDensity > 0.0) || coefficient == 0.0 ||
         logarithmicLeftOverRight == 0.0)
         return 0.0;
-    if (!std::isfinite(logarithmicLeftOverRight) || !std::isfinite(coefficient))
-        return std::numeric_limits<Real>::quiet_NaN();
 
     const Real logAbsRelativeDifference = logarithmicLeftOverRight > 50.0
         ? logarithmicLeftOverRight
@@ -698,6 +795,17 @@ vela::ArithmeticReal effectivePotentialFermiFluxExtended(
 }
 
 } // namespace
+
+Real sgEffectiveBandArgument(Real density0, Real density1, Real signedQfDropOverVt)
+{
+    if (!(density0 > 0.0) || !(density1 > 0.0))
+        return std::numeric_limits<Real>::quiet_NaN();
+    const Real ratio = density1 / density0;
+    const Real logRatio = ratio > 0.5 && ratio < 2.0
+        ? std::log1p((density1 - density0) / density0)
+        : std::log(density1) - std::log(density0);
+    return logRatio + signedQfDropOverVt;
+}
 
 Real sgElectronFermiDiracContinuityFlux(
     Real n0, Real n1, Real eta0, Real eta1, Real driftPotential,

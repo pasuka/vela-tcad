@@ -147,6 +147,10 @@ struct ArclengthSystem {
     /// Optional in-place limiter for the bordered-Newton update before line search.
     std::function<void(const VectorXd& x, VectorXd& deltaX, Real& deltaLambda)>
         limitUpdate;
+    /// Optional nonlinear trial map used by the coupled load-line corrector.
+    /// Its derivative at alpha=0 must equal deltaX; defaults to x+alpha*deltaX.
+    std::function<VectorXd(const VectorXd& x, const VectorXd& deltaX, Real alpha)>
+        trialState;
     /// Coordinate-aware finite update, evaluated independently for every alpha.
     std::function<ArclengthTrial(const ArclengthState&, const VectorXd&, Real, Real)> makeTrial;
     /// Optional coordinate-aware secant predictor; invalid output rolls back.

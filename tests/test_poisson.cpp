@@ -336,6 +336,33 @@ TEST_CASE("PoissonAssembler: matrix dimensions match node count", "[poisson]")
     REQUIRE(asm_.rhs().size()    == static_cast<int>(N));
 }
 
+TEST_CASE("PoissonAssembler retains decimal compensation in the charge source",
+          "[poisson][doping][arithmetic]")
+{
+    auto mesh = makePNMesh();
+    MaterialDatabase materials;
+    DopingModel doping(mesh.numNodes());
+    constexpr auto donor = "1.000000000000000000867361737988403547205962240695953369140625";
+
+    doping.setNodeDoping(0, 1.0, 1.0);
+    PoissonAssembler baseline(mesh, materials, doping);
+    baseline.assemble();
+    REQUIRE(baseline.rhs()[0] == 0.);
+
+    if constexpr (compiledArithmeticPrecision == ArithmeticPrecision::Extended80) {
+        doping.setNodeDopingFromDecimal(0, donor, "1");
+        PoissonAssembler extended(mesh, materials, doping);
+        extended.assemble();
+        REQUIRE(doping.netDoping(0) == 0.);
+        REQUIRE(doping.netDopingForAssembly(0) == std::ldexp(1.L, -60));
+        REQUIRE(extended.rhs()[0] > 0.);
+        REQUIRE(extended.rhs()[1] == baseline.rhs()[1]);
+    } else {
+        REQUIRE_THROWS_AS(doping.setNodeDopingFromDecimal(0, donor, "1"), std::invalid_argument);
+        REQUIRE_FALSE(doping.hasDecimalNodeDoping());
+    }
+}
+
 TEST_CASE("PoissonAssembler: scaled RHS maps to physical RHS by eps_ref*V0",
           "[poisson][scaling][boundary][interface]")
 {

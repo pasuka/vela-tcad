@@ -41,6 +41,18 @@ including subnormals, retain their binary64 bits. The solver additionally checks
 the split mesh fingerprint when loading its runtime; the archive still requires
 the independent full `mesh_sha256` check.
 
+The explicit classical IALMob split profile consumes this same complete bundle
+in Poisson, populations, SG, recombination and local field/source evaluation.
+Read-only residual packing and terminal evaluation preserve the checkpoint's QF
+reference frame; they must not select a new terminal-nearest frame from the
+final physical fields or replace it with geometric contact basins. Continuation
+rebasing remains explicit and applies the new boundary conditions separately.
+Public physical arrays
+remain rounded projections, not substitutes for the packed high/low fields.
+Supported physics and numerical limitations are listed under `split_dd_state`
+in [the configuration schema](config_schema.md). See the
+[BVDS production validation](validation/slot_ldmos_bvds_C_production_low_state_2026-10-16.md)
+for full qualification, reload and explicit low-zeroing controls.
 For `state_variables: potential_density`, the optional internal carrier pair
 requires `population_coordinate_schema: vela.population-coordinates.v1` and a
 positive finite `population_concentration_m3_per_internal` conversion factor.
@@ -89,6 +101,86 @@ provenance, not a promise of cross-model qualification.
 
 ## Loading and checkpoint recovery
 
+### Explicit SLOT reference-frame continuation
+
+`scripts/run_slot_ldmos_reference_frame.py` prepares a **new** bundle with an
+explicit `--target-origin-V`. Its `--initial-drain-voltage-V`, optional
+`--previous-drain-voltage-V`, and `--targets` are absolute physical drain
+voltages. These differ from the underlying direct driver's solver-frame
+`--initial-bias`/`--targets`. Physical voltage equals stored voltage plus origin;
+Vds is drain voltage minus source voltage in either frame.
+
+The entry requires explicit Newton, enforced carrier-row and global-closure
+gates, direct device bias, the SLOT Si/PolySilicon and SiO2/Oxide/Nitride material
+classification, and ohmic contacts. External circuits, explicit boundary
+objects and other contact/material profiles are rejected. This is not automatic
+origin selection or a general device translation API.
+
+The input config declares the current seed's source origin. A previous seed in
+another frame requires `--previous-source-origin-V`; otherwise it must match
+the input config's origin. Complete archive `bias_V`, `bias_contact` and
+`contact_biases_V` provenance must match the declared physical voltages. Legacy
+migration archives lacking these fields are rejected, rather than inferring
+their bias from filenames. Mesh identity and origin are independently checked.
+
+The helper preserves the compensated split-QF remainder and density arrays,
+shifts potential/contact coordinates, and projects inactive contact dummy QF
+constraints to the new terminal coordinates (62 SLOT nodes on the current
+mesh). Interior inactive QF remains zero. Density arrays are input storage,
+not proof that re-evaluated physical densities are unchanged. All outputs are
+`reference_frame_candidate`, `qualified=false`, with parent/configuration hashes.
+
+Without `--run`, the tool only prepares candidates; `completed` remains false.
+The optional `--carrier-corrector-mode carrier_density` forwards the existing
+density-coordinate candidate correction to the direct continuation driver;
+the default remains `carrier_only`. Neither mode changes the physical deck or
+the full coupled and all-active-row acceptance requirements.
+`density_then_qf` uses the first half of the pass budget (rounded up) for density
+coordinates, then the remaining passes for QF coordinates, carrying the last
+candidate across the transition. It requires at least two passes; eight passes
+give at most four density and four QF corrections. An audit or full-validation
+failure never grants acceptance; a timeout terminates recovery rather than
+switching coordinates. Per-step modes and final validation remain in the ledger.
+With `--run --runner ...`, it uses the existing direct driver **serially**:
+first fully requalify the optional previous anchor, then fully requalify the
+current anchor at the same physical bias, and only then advance requested
+targets. A failed previous anchor prevents current/target dispatch. Predictions
+use requalified anchors in the same frame and remain candidates themselves.
+Every accepted point retains full device, closure and all-active-row auditing.
+
+`--restore-poly-equilibrium` optionally forwards the guarded PolySilicon
+candidate restoration after a carrier correction; it requires a positive
+`--carrier-corrector-passes` budget. It remains off by default. In addition to
+the canonical SG profile, the helper accepts the explicit observed
+`ialmob_element_density_grad_qf` profile: that implementation assembles avalanche
+only on Si cells. The helper still rejects Poly nodes shared with any other
+transport material, floating or conflicting contacts, Poly recombination,
+variable Poly mobility and unsupported statistics. All supported cases require
+the original full-device and all-row validation after projection. The option
+does not remove Poly equations or change tolerances.
+
+`manifest.json` records resource/tool hashes, per-phase results, solver-frame
+drain voltage, absolute physical drain voltage and Vds. Referenced physical
+resources include the external AverageBox transport CSV; relative paths are
+resolved before translation, and changed resources block solver dispatch.
+Each phase also retains
+the direct driver's per-attempt `reports/adaptive_checkpoint.json`; during an
+interruption this may be newer than the completed-phase manifest. Resume by
+selecting that independently qualified state and its phase `base.json` as inputs
+to a **new** output bundle, with the corresponding physical drain voltage.
+Do not overwrite the interrupted bundle or treat a candidate as qualified.
+
+Example (paths are illustrative; no higher-bias targets means anchor verification only):
+
+```powershell
+python scripts/run_slot_ldmos_reference_frame.py --base-config SOURCE/base.json --initial-state SOURCE/final_state.h5 --initial-drain-voltage-V 3.125 --target-origin-V 1 --output build/slot_frame_new --runner build-release/vela_example_runner.exe --run
+```
+
+Use the UCRT64 runtime PATH and `VELA_LINEAR_SOLVER=umfpack` for the current SLOT
+Release case. Default full-Newton budget is 24 iterations; no physical or
+acceptance threshold is changed by this wrapper. Returning a qualified state
+to another frame can fail numerical qualification and always requires revalidation.
+
 An explicitly selected seed is an initial guess, so its previous bias need not
 equal the new target. Mesh, layout, units and potential origin must match; use an
 explicit conversion/translation when necessary. The hashed case bundle declares
@@ -126,6 +218,34 @@ Python: `state_archive.py`, `electrothermal_state.py`. The migration-only
 `migrate_state_seed_to_hdf5.py` imports historical CSV/VDS1 and records parsed
 binary64 equality and source/output hashes. It is not a runtime fallback.
 Curve/statistics CSV and mesh/doping inputs retain their existing formats.
+
+The SLOT direct-continuation, load-line and Poly-equilibrium drivers use the
+same HDF5 contract. Their shared `slot_state_archive.py` checks independent mesh
+identity, DD mode, potential origin and nonnegative carrier densities. Secant
+and equilibrium outputs remain unqualified candidates with parent hashes;
+split QF references and increments are retained separately. Block-step probes
+also write HDF5 candidates, never accepted checkpoints. A successful probe
+without its expected HDF5 candidate is an interface failure, not a reason to
+bisect voltage.
+The continuation report records the supplied seed separately; it reports no
+qualified bias/state until at least one target passes in that run. A seed's
+previous model or accepted-state label does not itself qualify the new campaign.
+Timeouts during the coupled solve, row audit or carrier-candidate correction
+stop that target without voltage bisection. The report preserves the target and
+records the timed-out stage; a missing convergence result is not numerical failure.
+After each finished attempt, `reports/adaptive_checkpoint.json` atomically records
+the last qualified state and hash, previous predictor state, remaining targets
+and last completed attempt. It is flushed once per attempt, not per Newton
+iteration. This recovery record does not indicate whether a process is running;
+configuration identity and the referenced qualification evidence must be checked
+before using it to prepare a new continuation campaign.
+
+SLOT load-line checkpoint schema v2 binds the independently qualified device
+file and the circuit confirmation file separately. Numerical confirmation
+requires exact decoded field equality; differing container/provenance bytes
+alone do not invalidate the state. Both concrete files retain their own hashes.
+Legacy CSV checkpoints/v1 load-line ledgers require explicit migration and
+requalification, not implicit runtime fallback.
 
 The general codec preserves binary64 values including signed zero. The DD
 QF-mode solver writer retains its pre-existing normalization of subnormal values to

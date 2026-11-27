@@ -7,20 +7,65 @@
 #include <cmath>
 #include <stdexcept>
 #include <vector>
+#include <atomic>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <type_traits>
 
 namespace vela::linear_refinement {
 using MP = boost::multiprecision::cpp_dec_float_100;
 
-struct Defect {
-    vela::VectorXd values;
-    double backwardMax = 0;
-    vela::VectorXd componentwiseBackwardErrors;
+template<class Scalar>
+struct BasicDefect {
+    Eigen::Matrix<Scalar, Eigen::Dynamic, 1> values;
+    Scalar backwardMax = 0;
+    Eigen::Matrix<Scalar, Eigen::Dynamic, 1> componentwiseBackwardErrors;
 };
+using Defect = BasicDefect<double>;
+
+// Opt-in forensic export. Never changes a direction or a convergence decision.
+// The caller owns an isolated output directory; each system gets a fresh child.
+inline void exportFailedSystem(const vela::SparseMatrixd& matrix,
+                               const vela::VectorXd& rhs,
+                               const vela::VectorXd& direction,
+                               const vela::VectorXd& rowScale,
+                               const vela::VectorXd& columnScale,
+                               const Defect& defect) {
+    const char* root = std::getenv("VELA_BORDERED_FAILURE_DUMP");
+    if (!root || !*root) return;
+    static std::atomic<unsigned long> sequence{0};
+    std::filesystem::path folder;
+    do {
+        folder = std::filesystem::path(root) /
+            ("system_" + std::to_string(sequence.fetch_add(1)));
+        std::filesystem::create_directories(folder.parent_path());
+    } while (!std::filesystem::create_directory(folder));
+    std::ofstream a(folder / "A.mtx"), v(folder / "vectors.csv");
+    a.exceptions(std::ios::badbit | std::ios::failbit);
+    v.exceptions(std::ios::badbit | std::ios::failbit);
+    a << "%%MatrixMarket matrix coordinate real general\n"
+      << matrix.rows() << ' ' << matrix.cols() << ' ' << matrix.nonZeros() << '\n'
+      << std::setprecision(17);
+    for (int col=0; col<matrix.outerSize(); ++col)
+        for (vela::SparseMatrixd::InnerIterator e(matrix,col); e; ++e)
+            a << e.row()+1 << ' ' << e.col()+1 << ' ' << e.value() << '\n';
+    v << "index,rhs,direction,row_scale,column_scale,defect,backward_error\n"
+      << std::setprecision(17);
+    for (Eigen::Index i=0; i<rhs.size(); ++i)
+        v << i << ',' << rhs[i] << ',' << direction[i] << ',' << rowScale[i]
+          << ',' << columnScale[i] << ',' << defect.values[i] << ','
+          << defect.componentwiseBackwardErrors[i] << '\n';
+}
 
 namespace detail {
-template<class Coefficient>
-Defect accumulateDefect(const SparseMatrixd& J, const VectorXd& F,
-                        const VectorXd& step, Coefficient coefficient) {
+template<class Scalar, class Coefficient>
+BasicDefect<Scalar> accumulateDefect(
+    const Eigen::SparseMatrix<Scalar>& J,
+    const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& F,
+    const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& step,
+    Coefficient coefficient) {
     if (J.rows() != F.size() || J.cols() != step.size() || !F.allFinite() || !step.allFinite())
         throw std::invalid_argument("Invalid refinement defect dimensions or input");
     ScopedPerformanceTimer timer("linear.mp_defect.total");
@@ -34,15 +79,16 @@ Defect accumulateDefect(const SparseMatrixd& J, const VectorXd& F,
     preciseStep.reserve(static_cast<std::size_t>(step.size()));
     for (int col=0;col<step.size();++col) preciseStep.emplace_back(step(col));
     for (int col=0;col<J.outerSize();++col)
-        for (vela::SparseMatrixd::InnerIterator it(J,col);it;++it) {
+        for (typename Eigen::SparseMatrix<Scalar>::InnerIterator it(J,col);it;++it) {
             const MP term=coefficient(it)*preciseStep[it.col()];
             r[it.row()]+=term; denominator[it.row()]+=abs(term);
         }
-    Defect answer{vela::VectorXd(F.size()),0,vela::VectorXd::Zero(F.size())};
+    using Vector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+    BasicDefect<Scalar> answer{Vector(F.size()), 0, Vector::Zero(F.size())};
     for (int i=0;i<F.size();++i) {
-        answer.values(i)=static_cast<double>(r[i]);
+        answer.values(i)=static_cast<Scalar>(r[i]);
         if (denominator[i]!=0) {
-            answer.componentwiseBackwardErrors(i)=static_cast<double>(abs(r[i])/denominator[i]);
+            answer.componentwiseBackwardErrors(i)=static_cast<Scalar>(abs(r[i])/denominator[i]);
             answer.backwardMax=std::max(answer.backwardMax,answer.componentwiseBackwardErrors(i));
         }
     }
@@ -52,64 +98,84 @@ Defect accumulateDefect(const SparseMatrixd& J, const VectorXd& F,
 }
 } // namespace detail
 
-inline Defect highPrecisionDefect(const SparseMatrixd& J, const VectorXd& F,
-                                 const VectorXd& step) {
+template<class Scalar>
+BasicDefect<Scalar> computeHighPrecisionDefect(
+    const Eigen::SparseMatrix<Scalar>& J,
+    const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& F,
+    const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& step) {
     return detail::accumulateDefect(J, F, step,
-        [](const SparseMatrixd::InnerIterator& entry) { return MP(entry.value()); });
+        [](const typename Eigen::SparseMatrix<Scalar>::InnerIterator& entry) {
+            return MP(entry.value());
+        });
 }
 
-// Scoped to one linear system. The original matrix must remain unchanged.
+// The matrix and its sparse traversal order must stay fixed while refining one system.
+template<class Scalar>
 class PreparedMpDefect {
 public:
-    explicit PreparedMpDefect(const SparseMatrixd& matrix) : matrix_(matrix) {
+    using Matrix = Eigen::SparseMatrix<Scalar>;
+    using Vector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+
+    explicit PreparedMpDefect(const Matrix& matrix) : matrix_(matrix) {
         ScopedPerformanceTimer timer("linear.mp_defect.prepare");
-        coefficients_.reserve(static_cast<std::size_t>(matrix_.nonZeros()));
-        for (int col = 0; col < matrix_.outerSize(); ++col)
-            for (SparseMatrixd::InnerIterator entry(matrix_, col); entry; ++entry)
+        coefficients_.reserve(static_cast<std::size_t>(matrix.nonZeros()));
+        for (Eigen::Index col = 0; col < matrix.outerSize(); ++col)
+            for (typename Matrix::InnerIterator entry(matrix, col); entry; ++entry)
                 coefficients_.emplace_back(entry.value());
     }
-    PreparedMpDefect(SparseMatrixd&&) = delete;
+    PreparedMpDefect(Matrix&&) = delete;
 
-    Defect evaluate(const VectorXd& residual, const VectorXd& step) const {
+    BasicDefect<Scalar> evaluate(const Vector& residual, const Vector& step) const {
         std::size_t index = 0;
         return detail::accumulateDefect(matrix_, residual, step,
-            [&](const SparseMatrixd::InnerIterator&) -> const MP& {
+            [&](const typename Matrix::InnerIterator&) -> const MP& {
                 return coefficients_[index++];
             });
     }
 
 private:
-    const SparseMatrixd& matrix_;
+    const Matrix& matrix_;
     std::vector<MP> coefficients_;
 };
+
+inline Defect highPrecisionDefect(const SparseMatrixd& J, const VectorXd& F,
+                                  const VectorXd& step) {
+    return computeHighPrecisionDefect<double>(J, F, step);
+}
 
 // BVMethods requests this only for the PARDISO bordered path.
 bool useBvMethodsEftDefect();
 Defect eftDefect(const SparseMatrixd&, const VectorXd&, const VectorXd&);
 Defect eftDefectWithoutMp100(const SparseMatrixd&, const VectorXd&, const VectorXd&);
 
-template<class Solve, class Observer>
-vela::VectorXd refineWithSolve(const vela::SparseMatrixd& J, const vela::VectorXd& F,
-                      const vela::VectorXd& rowWeights, vela::VectorXd step,
-                      Solve solve, int corrections, Observer observe) {
+BasicDefect<long double> extendedEftDefect(const Eigen::SparseMatrix<long double>&,
+    const Eigen::VectorX<long double>&, const Eigen::VectorX<long double>&);
+
+template<class Scalar, class Solve, class Observer>
+Eigen::Matrix<Scalar, Eigen::Dynamic, 1> refineWithSolve(
+    const Eigen::SparseMatrix<Scalar>& J,
+    const std::type_identity_t<Eigen::Matrix<Scalar, Eigen::Dynamic, 1>>& F,
+    const std::type_identity_t<Eigen::Matrix<Scalar, Eigen::Dynamic, 1>>& rowWeights,
+    std::type_identity_t<Eigen::Matrix<Scalar, Eigen::Dynamic, 1>> step,
+    Solve solve, int corrections, Observer observe) {
     if (corrections<0 || J.rows()!=F.size() || J.cols()!=step.size() || rowWeights.size()!=F.size())
         throw std::invalid_argument("Invalid linear refinement dimensions/count");
     if (!rowWeights.allFinite() || (rowWeights.array() <= 0).any())
         throw std::invalid_argument("Refinement row weights must be finite and positive");
     if (corrections == 0) {
-        const Defect defect = highPrecisionDefect(J, F, step);
+        const auto defect = computeHighPrecisionDefect(J, F, step);
         observe(0, step, defect);
         return step;
     }
 
-    vela::SparseMatrixd scaled=J;
+    Eigen::SparseMatrix<Scalar> scaled=J;
     for (int col=0;col<scaled.outerSize();++col)
-        for (vela::SparseMatrixd::InnerIterator it(scaled,col);it;++it)
+        for (typename Eigen::SparseMatrix<Scalar>::InnerIterator it(scaled,col);it;++it)
             it.valueRef()*=rowWeights(it.row());
 
     const PreparedMpDefect prepared(J);
     for (int k=0;k<=corrections;++k) {
-        const Defect defect = prepared.evaluate(F, step);
+        const auto defect = prepared.evaluate(F, step);
         observe(k,step,defect);
         if (k<corrections) {
             step+=solve(scaled,(-defect.values.cwiseProduct(rowWeights)).eval());

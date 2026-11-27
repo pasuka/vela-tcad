@@ -44,6 +44,26 @@ class SlotLdmosJvpAuditPreparationTest(unittest.TestCase):
             {1.0e-4, 1.0e-6, 1.0e-8},
         )
 
+    def test_supports_avalanche_free_low_voltage_deck(self) -> None:
+        base = {
+            "simulation_type": "dc_sweep",
+            "contacts": [
+                {"name": "source", "bias": 0.0},
+                {"name": "drain", "bias": 0.0},
+            ],
+            "solver": {"mobility": {"model": "masetti_field_lombardi"}},
+            "sweep": {"contact": "drain"},
+        }
+        document = build_document(
+            base,
+            state_file="state.csv",
+            output_csv="jvp.csv",
+            hotspot_node=6445,
+            drain_bias_V=1.0,
+            disable_impact=True,
+        )
+        self.assertNotIn("impact_ionization", document["solver"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -12,6 +12,9 @@ std::string stateSha256(std::string_view bytes);
 // regions, contacts and length units. Excludes derived solver caches.
 std::string stateMeshIdentity(const DeviceMesh& mesh, UnitScalingConfig scaling = UnitScalingConfig{});
 std::string stateMeshIdentity(const DeviceMesh& mesh, double lengthMPerInternal);
+// Includes the exact geometry consumed by an extended80 state. The mesh/1
+// identity above continues to define binary64 archives.
+std::string extendedStateMeshIdentity(const DeviceMesh& mesh, long double lengthMPerInternal);
 // Input-only source hashes, prepared once per request, never at each state write.
 nlohmann::json stateInputProvenance(const nlohmann::json& config,
                                   const std::filesystem::path& directory);

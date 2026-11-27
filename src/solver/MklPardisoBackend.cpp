@@ -1,8 +1,12 @@
 #include "DirectBackend.h"
 #include "vela/core/PerformanceProfiler.h"
 #include <array>
+#include <atomic>
+#include <bit>
+#include <cstdint>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <limits>
 #include <stdexcept>
 #ifdef _WIN32
@@ -118,7 +122,36 @@ public:
         checked(22);
     }
     VectorXd solve(const VectorXd& b) override {
-        VectorXd rhs=b,x=VectorXd::Zero(n_);checked(33,rhs.data(),x.data());
+        VectorXd rhs=b,x=VectorXd::Zero(n_);
+        if (const char* directory = std::getenv("VELA_PARDISO_INPUT_CAPTURE_DIR");
+            directory && *directory && n_ >= 30000) {
+            // Capture the CSR arrays and RHS passed to phase 33, after
+            // equilibration, constraint substitution and CSC-to-CSR conversion.
+            static std::atomic<unsigned> sequence{0};
+            const auto index = sequence.fetch_add(1);
+            if (index < 4) {
+                static_assert(std::endian::native == std::endian::little);
+                const auto path = std::filesystem::path(directory) /
+                    ("pardiso_input_" + std::to_string(index) + ".bin");
+                if (std::filesystem::exists(path))
+                    throw std::runtime_error("Refusing to overwrite PARDISO input capture");
+                std::ofstream out(path, std::ios::binary);
+                out.exceptions(std::ios::badbit | std::ios::failbit);
+                const std::array<std::uint64_t, 2> header{
+                    static_cast<std::uint64_t>(n_), values_.size()};
+                const auto bytes = [&](const auto* ptr, std::size_t count) {
+                    out.write(reinterpret_cast<const char*>(ptr),
+                        static_cast<std::streamsize>(count * sizeof(*ptr)));
+                };
+                out.write("VELAPD01", 8);
+                bytes(header.data(), header.size());
+                bytes(rows_.data(), rows_.size());
+                bytes(cols_.data(), cols_.size());
+                bytes(values_.data(), values_.size());
+                bytes(rhs.data(), rhs.size());
+            }
+        }
+        checked(33,rhs.data(),x.data());
         observePerformanceValue("linear.mkl_refinement_steps",ip_[6]);
         observePerformanceValue("linear.mkl_perturbed_pivots",ip_[13]);
         observePerformanceValue("linear.mkl_threads",threadCount_);

@@ -1,6 +1,9 @@
 #include "vela/simulation/ConfigParsing.h"
+#include "vela/core/ArithmeticDecimal.h"
 #include "vela/io/CsvUtils.h"
 #include "vela/mesh/DeviceMesh.h"
+#include "vela/physics/ImpactIonizationModel.h"
+#include "vela/physics/MobilityModel.h"
 
 #include <nlohmann/json.hpp>
 #include <cmath>
@@ -14,6 +17,26 @@
 #include <utility>
 
 namespace vela {
+
+void validateCarrierTransportCouplePhysics(
+    const std::string& profile, const ImpactIonizationModelConfig& impact,
+    const MobilityModelConfig& mobility, bool quantumPotential)
+{
+    if (profile == "mesh_default") return;
+    const bool slot = profile == "slot_ldmos_external_averagebox";
+    const bool observedSource = slot && mobility.model == "ialmob" &&
+        impact.model == "van_overstraeten" &&
+        impact.currentApproximation == "ialmob_element_density_grad_qf" &&
+        impact.sourceJacobianMode == "local_ad";
+    if (quantumPotential || (!slot && isSurfaceMobilityModel(mobility)) ||
+        (impact.model != "none" && !observedSource)) {
+        throw std::invalid_argument(
+            "external AverageBox requires quantum potential off; avalanche is "
+            "restricted to SLOT explicit IALMob element source with local_ad; "
+            "Templates also requires surface mobility off.");
+    }
+}
+
 namespace {
 
 void appendConfigFixedChargeSpec(
@@ -167,12 +190,27 @@ BoxGeometryBuilder::Options parseBoxGeometryOptions(const nlohmann::json& cfg)
     }
     options.requireNonObtuse = geometry.value("require_non_obtuse", false);
 
+    const std::string edgePolicy = geometry.value(
+        "edge_coupling_policy", "local_positive_fallback");
+    if (edgePolicy == "local_positive_fallback") {
+        options.edgeCouplingPolicy =
+            BoxGeometryBuilder::EdgeCouplingPolicy::LocalPositiveFallback;
+    } else if (edgePolicy == "assembled_delaunay_fallback") {
+        options.edgeCouplingPolicy =
+            BoxGeometryBuilder::EdgeCouplingPolicy::AssembledDelaunayFallback;
+    } else {
+        throw std::runtime_error(
+            "ConfigParsing: mesh_geometry.edge_coupling_policy must be "
+            "'local_positive_fallback' or 'assembled_delaunay_fallback'.");
+    }
     const std::string permittivity = geometry.value("poisson_permittivity_policy", "legacy_average");
     const std::string cellBox = geometry.value("cell_box_policy", "legacy_positive");
     if (cellBox == "delaunay_transfer")
         options.cellBoxPolicy = BoxGeometryBuilder::CellBoxPolicy::DelaunayTransfer;
+    else if (cellBox == "average_intersection")
+        options.cellBoxPolicy = BoxGeometryBuilder::CellBoxPolicy::AverageIntersection;
     else if (cellBox != "legacy_positive")
-        throw std::runtime_error("cell_box_policy must be legacy_positive or delaunay_transfer.");
+        throw std::runtime_error("cell_box_policy must be legacy_positive, delaunay_transfer, or average_intersection.");
     if (permittivity == "cell_material")
         options.poissonPermittivityPolicy = BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial;
     else if (permittivity != "legacy_average")
@@ -206,6 +244,17 @@ BoxGeometryBuilder::Options parseBoxGeometryOptions(const nlohmann::json& cfg)
     return options;
 }
 
+bool parsePoissonPerCellPermittivity(const nlohmann::json& cfg)
+{
+    if (!cfg.contains("discretization")) return false;
+    const auto& d = cfg.at("discretization");
+    if (!d.is_object()) throw std::invalid_argument("discretization must be an object");
+    const auto value = d.value("poisson_permittivity_coupling", "edge_mean");
+    if (value == "edge_mean") return false;
+    if (value == "per_cell") return true;
+    throw std::invalid_argument("discretization.poisson_permittivity_coupling must be 'edge_mean' or 'per_cell'");
+}
+
 PoissonChargeVolumePolicy parsePoissonChargeVolumePolicy(
     const nlohmann::json& cfg)
 {
@@ -220,10 +269,20 @@ PoissonChargeVolumePolicy parsePoissonChargeVolumePolicy(
         "poisson_charge_volume_policy", "global");
     if (policy == "global")
         return PoissonChargeVolumePolicy::Global;
+    if (policy == "material_local_box")
+        return PoissonChargeVolumePolicy::MaterialLocalBox;
+    if (policy == "material_local_circumcentric")
+        return PoissonChargeVolumePolicy::MaterialLocalCircumcentric;
+    if (policy == "material_local_mixed_voronoi") {
+        if (!cfg.contains("mesh_geometry") ||
+            cfg.at("mesh_geometry").value("node_volume_policy","barycentric")!="mixed_voronoi")
+            throw std::runtime_error("ConfigParsing: material_local_mixed_voronoi requires mesh_geometry.node_volume_policy='mixed_voronoi'.");
+        return PoissonChargeVolumePolicy::MaterialLocalMixedVoronoi;
+    }
     if (policy != "material_local") {
         throw std::runtime_error(
             "ConfigParsing: discretization.poisson_charge_volume_policy must be "
-            "'global' or 'material_local'.");
+            "'global', 'material_local', 'material_local_mixed_voronoi', 'material_local_circumcentric', or 'material_local_box'.");
     }
     if (cfg.contains("mesh_geometry") &&
         cfg.at("mesh_geometry").value("node_volume_policy", "barycentric") !=
@@ -235,13 +294,15 @@ PoissonChargeVolumePolicy parsePoissonChargeVolumePolicy(
     return PoissonChargeVolumePolicy::MaterialLocalBarycentric;
 }
 
-CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
+static CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfileImpl(
     DeviceMesh& mesh,
     const nlohmann::json& cfg,
     const std::filesystem::path& configDirectory,
-    UnitScalingConfig scaling)
+    UnitScalingConfig scaling, std::vector<long double>* arithmeticCouples)
 {
     CarrierTransportCoupleProfileReport report;
+    if (arithmeticCouples)
+        arithmeticCouples->clear();
     if (!cfg.contains("mesh_geometry"))
         return report;
 
@@ -261,13 +322,15 @@ CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
         }
         return report;
     }
-    if (report.profile != "templates_ldmos_external_averagebox") {
+    if (report.profile != "templates_ldmos_external_averagebox" &&
+        report.profile != "slot_ldmos_external_averagebox") {
         throw std::runtime_error(
             "ConfigParsing: mesh_geometry.carrier_transport_couple_profile must be "
             "'mesh_default' or the template-private diagnostic "
-            "'templates_ldmos_external_averagebox'.");
+            "'templates_ldmos_external_averagebox' or 'slot_ldmos_external_averagebox'.");
     }
-    if (geometry.value("node_volume_policy", "barycentric") != "barycentric") {
+    if (report.profile == "templates_ldmos_external_averagebox" &&
+        geometry.value("node_volume_policy", "barycentric") != "barycentric") {
         throw std::runtime_error(
             "ConfigParsing: templates_ldmos_external_averagebox requires "
             "mesh_geometry.node_volume_policy='barycentric'.");
@@ -321,6 +384,9 @@ CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
         edgeByNodes[{std::min(edge.n0, edge.n1), std::max(edge.n0, edge.n1)}] = edgeId;
     }
     std::map<std::pair<Index, Index>, Real> overrides;
+    std::vector<long double> wide;
+    if (arithmeticCouples)
+        wide.assign(mesh.numEdges(), -1.L);
     Index lineNumber = 1;
     while (std::getline(input, line)) {
         ++lineNumber;
@@ -335,10 +401,16 @@ CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
         Index node0 = 0;
         Index node1 = 0;
         Real coupleM = 0.0;
+        long double wideCoupleM = 0;
         try {
             node0 = static_cast<Index>(std::stoull(fields[0]));
             node1 = static_cast<Index>(std::stoull(fields[1]));
-            coupleM = std::stod(fields[2]);
+            if (arithmeticCouples) {
+                wideCoupleM = parseArithmeticDecimal<long double>(trimCsvToken(fields[2]));
+                coupleM = static_cast<Real>(wideCoupleM);
+            } else {
+                coupleM = std::stod(fields[2]);
+            }
         } catch (const std::exception&) {
             throw std::runtime_error(
                 "ConfigParsing: invalid external AverageBox CSV value at row " +
@@ -358,6 +430,16 @@ CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
                 std::to_string(lineNumber) + " references a non-mesh edge.");
         }
         const Real internal = scaling.unitSystem().metersToInternalLength(coupleM);
+        if (arithmeticCouples) {
+            if (wideCoupleM < 0 || !std::isfinite(wideCoupleM))
+                throw std::runtime_error("Invalid extended AverageBox couple at row " + std::to_string(lineNumber));
+            const auto legacyLength = scaling.unitSystem().lengthMPerInternal();
+            const auto length = legacyLength == 1e-6 ? 1e-6L : static_cast<long double>(legacyLength);
+            const auto converted = wideCoupleM / length;
+            if (!std::isfinite(converted))
+                throw std::runtime_error("Unrepresentable extended AverageBox couple at row " + std::to_string(lineNumber));
+            wide[edgeByNodes.at(pair)] = converted;
+        }
         if (!overrides.emplace(pair, internal).second) {
             throw std::runtime_error(
                 "ConfigParsing: duplicate external AverageBox edge at row " +
@@ -386,7 +468,23 @@ CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
             report.maximumCouple = std::max(report.maximumCouple, couple);
         }
     }
+    if (arithmeticCouples)
+        *arithmeticCouples = std::move(wide);
     return report;
+}
+
+CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
+    DeviceMesh& mesh, const nlohmann::json& cfg, const std::filesystem::path& directory,
+    UnitScalingConfig scaling)
+{
+    return applyCarrierTransportCoupleProfileImpl(mesh, cfg, directory, scaling, nullptr);
+}
+
+CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
+    DeviceMesh& mesh, const nlohmann::json& cfg, const std::filesystem::path& directory,
+    UnitScalingConfig scaling, std::vector<long double>& arithmeticCouples)
+{
+    return applyCarrierTransportCoupleProfileImpl(mesh, cfg, directory, scaling, &arithmeticCouples);
 }
 
 PoissonCoupleProfileReport applyPoissonCoupleProfile(

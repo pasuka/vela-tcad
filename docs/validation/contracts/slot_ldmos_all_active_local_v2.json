@@ -1,0 +1,111 @@
+{
+  "schema_version": 2,
+  "id": "slot_ldmos_all_active_local_v2",
+  "date": "2026-09-06",
+  "scope": "Opt-in Masetti, avalanche-off SLOT-LDMOS continuation. Not a global default and not the unchanged-physics v1 profile.",
+  "previous_contract": "slot_ldmos_physical_closure_restoration_v1.json",
+  "explicit_changes_from_v1": [
+    "legacy_node_local contact doping boundary",
+    "contact_nearest_state numerical QF coordinates",
+    "all active carrier rows checked, including rows below the old source threshold",
+    "bounded physical-carrier Newton candidates followed by full original coupled and local revalidation"
+  ],
+  "required_solver_controls": {
+    "quasi_fermi_reference": "contact_nearest_state",
+    "contact_boundary_reconstruction": "legacy_node_local",
+    "global_continuity_closure": {
+      "linear_system_stabilization": "replace_free_row_sum",
+      "mode": "enforce",
+      "source_floor": 1e-11,
+      "absolute_tolerance": 1e-12,
+      "tolerance": 0.01,
+      "feasibility_restoration": "final_linear_qf_projection",
+      "feasibility_restoration_factor": 1.0,
+      "restoration_jacobian": "stabilized",
+      "restoration_physical_rows_only": true
+    },
+    "carrier_row_convergence": {
+      "mode": "enforce",
+      "eps_row": 0.001,
+      "scale_floor": 1e-30,
+      "min_source_scale_fraction": 0.0,
+      "min_source_scale": 0,
+      "min_newton_max_iter": 2,
+      "min_carrier_density_m3": 1e-200
+    },
+    "carrier_diagonal_floor": {
+      "enabled": true,
+      "scale": 10.0,
+      "minority_density_ratio": 1.0
+    },
+    "quasi_fermi_update_limit_V": 0.1,
+    "quasi_fermi_update_limit_minority_V": 0.05,
+    "quasi_fermi_update_limit_mode": "componentwise_poisson_recorrect",
+    "abstol": 1e-09,
+    "reltol": 1e-08
+  },
+  "physics": {
+    "mesh_geometry": {
+      "edge_coupling_policy": "assembled_delaunay_fallback",
+      "node_volume_policy": "mixed_voronoi",
+      "require_non_obtuse": false
+    },
+    "mobility": {
+      "doping_concentration_basis": "total_impurity",
+      "high_field_driving_force": "quasi_fermi_gradient",
+      "high_field_gradient_discretization": "transport_cell_vector",
+      "jacobian_field_derivatives": true,
+      "model": "masetti_field"
+    },
+    "bandgap_narrowing": "old_slotboom",
+    "recombination": [
+      "srh",
+      "auger"
+    ],
+    "avalanche": "off",
+    "external_circuit_enabled": false,
+    "temperature_K": 300,
+    "poly_silicon": "electrostatic_only"
+  },
+  "input_files": {
+    "mesh_file": {
+      "path": "build/slot_ldmos_noavalanche_1p25_resume02/mesh.json",
+      "sha256": "4f6d365a3fb4724ab86dcbea3d584bdec99948c7c9b7ecc5614419ab0aa066f3"
+    },
+    "node_doping_file": {
+      "path": "build/slot_ldmos_noavalanche_1p25_resume02/doping.csv",
+      "sha256": "6c397a00bf34b69ce7ceb999f0e465eaa724910db5e3129d92a1b696f2676cc4"
+    },
+    "materials_file": {
+      "path": "build/slot_ldmos_noavalanche_1p25_resume02/materials.json",
+      "sha256": "c4c145859c2f146ac25666fb7fb60a81838acbf8c918102bc60dd4e0ab7a8265"
+    }
+  },
+  "acceptance": {
+    "full_coupled_converged": true,
+    "global_closure_satisfied": true,
+    "all_active_electron_and_hole_rows_above_eps": 0,
+    "eps_row": 0.001,
+    "scale_floor": 1e-30,
+    "min_active_rows_per_carrier": 1,
+    "new_bias_requires_positive_actual_coupled_newton_iterations": true,
+    "carrier_probe_alone_is_not_acceptance": true,
+    "same_bias_zero_iteration_revalidation_is_not_new_newton_work": true,
+    "rejected_candidates_do_not_advance_state": true,
+    "restartable_state": true
+  },
+  "profile_variants": {
+    "default_si_intrinsic": {
+      "ni_cm3": 10000000000.0
+    },
+    "sentaurus_si_intrinsic_aligned": {
+      "ni_cm3": 10749877484.352535,
+      "material_file": "build/low_voltage_20260906/intrinsic_aligned_materials.json",
+      "limitation": "Poly transport and intrinsic-potential offset remain unmatched."
+    }
+  },
+  "evidence_root": "build/low_voltage_20260906",
+  "qualified_chain": "qualified_0_to_2_chain.json",
+  "independent_replay": "single_run_0_to_2_replay/reports/adaptive_noavalanche_summary.json",
+  "qualification_rule": "Inspect completed and each accepted attempt; directory names and probe exit success are not voltage qualification."
+}

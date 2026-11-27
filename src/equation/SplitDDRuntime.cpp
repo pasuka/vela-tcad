@@ -6,12 +6,75 @@
 #include "vela/solver/GummelSolver.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/equation/IalTransport.h"
+#include "vela/numerics/StableBoltzmannSg.h"
 #include "SplitMeshFingerprint.h"
+#include <boost/multiprecision/cpp_dec_float.hpp>
 #include <algorithm>
 
 namespace vela {
 using split_dd::Wide;
 namespace {
+std::function<void(split_dd::Evaluation&)> ialSplitPhysics(
+    const nlohmann::json& model,std::shared_ptr<const MobilityModelConfig> config) {
+    if(!config)return {};
+    if(!config->ialmob || !config->ialmobGeometry || !model.contains("ial_cells"))
+        throw std::invalid_argument("Split IAL requires prepared production geometry");
+    IalElementAvalancheOptions sourceOptions;
+    if(model.value("ial_avalanche",false)) {
+        const auto decode=[](const nlohmann::json& a){return ElementIonizationCurve{a[0],a[1],a[2],a[3],a[4]};};
+        sourceOptions.electron=decode(model["ial_ionization"][0]);sourceOptions.hole=decode(model["ial_ionization"][1]);
+        sourceOptions.minimumField_V_per_m=model["ial_ionization_cutoff"];
+        if (model.value("ial_ionization_uses_qf_at_contact",false))
+            sourceOptions.contactField=GradQfContactField::QuasiFermiGradient;
+    }
+    return [model,config,sourceOptions](split_dd::Evaluation& o) {
+        const auto& geometry=*config->ialmobGeometry;
+        std::vector<Wide> mn(geometry.cells.size()),mp(mn.size());
+        for(std::size_t k=0;k<geometry.cells.size();++k) {
+            const auto& support=geometry.cells[k];const auto& ids=model["ial_cells"][k];
+            std::array<IalElementVertexState,3> local;
+            const int anchor=ids[0];
+            for(int v=0;v<3;++v) {
+                const int node=ids[v];const auto& material=model["node_physics"][node];
+                auto cast=[](const Wide& x){return static_cast<Real>(x);};
+                const Wide f=config->internalConcentrationToM3;
+                // These three fields are independently translation-invariant
+                // inside the local mobility/source kernels. Densities already
+                // include the absolute psi-QF difference, in wide arithmetic.
+                local[v]={cast(o.psi[node]-o.psi[anchor]),cast(o.phin[node]-o.phin[anchor]),
+                    cast(o.phip[node]-o.phip[anchor]),material[0].get<double>()*config->internalConcentrationToM3,
+                    material[1].get<double>()*config->internalConcentrationToM3,
+                    cast(o.n[node]*f),cast(o.p[node]*f)};
+            }
+            const auto result=evaluateIalTransportCell(*config,support.cellId,local,false);
+            mn[k]=result.electron.value;mp[k]=result.hole.value;
+            if(model.value("ial_avalanche",false)) {
+                const auto source=evaluateIalTransportAvalancheCell(*config,support.cellId,local,
+                    sourceOptions);
+                const Wide factor=model["ial_source_factor"].get<double>();
+                for(int v=0;v<3;++v) {
+                    const int node=ids[v];
+                    o.impactElectron[node]+=Wide(source.electron.source_per_m_s[v].value)*factor;
+                    o.impactHole[node]+=Wide(source.hole.source_per_m_s[v].value)*factor;
+                }
+            }
+        }
+        for(const auto& edge:model["transport_edges"]) {
+            const int id=edge["id"];Wide en=geometry.constantElectronEdges.at(id),hp=geometry.constantHoleEdges.at(id);
+            for(const auto& w:geometry.edges.at(id)){en+=Wide(w.weight)*mn[w.support];hp+=Wide(w.weight)*mp[w.support];}
+            o.edgeMun.push_back(en);o.edgeMup.push_back(hp);
+        }
+    };
+}
+Wide boundaryTail(const std::unordered_map<Index,Real>& tails,Index i) {
+    const auto it=tails.find(i);return it==tails.end()?Wide(0):Wide(it->second);
+}
+Wide qfTarget(Real z,const std::unordered_map<Index,Real>& tails,Index i,
+              Real reference,Real scale) {
+    if(!tails.contains(i))return Wide(z-reference/scale);
+    return Wide(z)+boundaryTail(tails,i)-Wide(reference)/Wide(scale);
+}
 VectorXd project(const std::vector<Wide>& values) {
     VectorXd out(values.size());for(std::size_t i=0;i<values.size();++i)out(i)=static_cast<Real>(values[i]);return out;
 }
@@ -57,9 +120,11 @@ Real DDSolution::splitQuasiFermiDifferenceAt(int node) const {return static_cast
 
 struct SplitDDRuntime::Impl {
     nlohmann::json model;split_dd::Operator op;VectorXd low;
+    std::shared_ptr<const MobilityModelConfig> mobilityConfig;
     mutable VectorXd cachedX,cachedLow;mutable split_dd::Evaluation cached;
     std::string key;
-    explicit Impl(nlohmann::json j):model(std::move(j)),op(model),low(VectorXd::Zero(3*model["nodes"].size())),key(model["mesh_fingerprint"]) {}
+    explicit Impl(nlohmann::json j,std::shared_ptr<const MobilityModelConfig> config)
+        :model(std::move(j)),op(model,ialSplitPhysics(model,config)),low(VectorXd::Zero(3*model["nodes"].size())),mobilityConfig(std::move(config)),key(model["mesh_fingerprint"]) {}
     split_dd::State state(const VectorXd& x) const {
         const int N=model["nodes"].size();
         if(x.size()!=3*N || low.size()!=x.size())throw std::invalid_argument("Split runtime vector size mismatch");
@@ -78,13 +143,14 @@ struct SplitDDRuntime::Impl {
     std::vector<Wide> residual(const VectorXd& x,const CoupledDDBoundaryConditions& bcs) const {
         if(!bcs.thermionic.empty())throw std::invalid_argument("Split runtime does not support thermionic boundaries");
         auto r=evaluate(x).residual;auto s=state(x);const int N=s.size();const double scale=model["potential_scale"];
-        for(const auto& [i,z]:bcs.psi)r[i]=s.coordinate(i)-Wide(z);
-        for(const auto& [i,z]:bcs.phin)r[N+i]=s.coordinate(N+i)-Wide(z-model["nodes"][i][7].get<double>()/scale);
-        for(const auto& [i,z]:bcs.phip)r[2*N+i]=s.coordinate(2*N+i)-Wide(z-model["nodes"][i][8].get<double>()/scale);
+        for(const auto& [i,z]:bcs.psi)r[i]=s.coordinate(i)-Wide(z)-boundaryTail(bcs.psiLow,i);
+        for(const auto& [i,z]:bcs.phin)r[N+i]=s.coordinate(N+i)-qfTarget(z,bcs.phinLow,i,model["nodes"][i][7].get<double>(),scale);
+        for(const auto& [i,z]:bcs.phip)r[2*N+i]=s.coordinate(2*N+i)-qfTarget(z,bcs.phipLow,i,model["nodes"][i][8].get<double>(),scale);
         return r;
     }
 };
-SplitDDRuntime::SplitDDRuntime(nlohmann::json model):impl_(std::make_unique<Impl>(std::move(model))) {}
+SplitDDRuntime::SplitDDRuntime(nlohmann::json model,std::shared_ptr<const MobilityModelConfig> config)
+    :impl_(std::make_unique<Impl>(std::move(model),std::move(config))) {}
 SplitDDRuntime::~SplitDDRuntime()=default;
 void SplitDDRuntime::setLow(const VectorXd& low) {if(low.size()!=impl_->low.size() || !low.allFinite())throw std::invalid_argument("Invalid split coordinate tail");impl_->low=low;}
 VectorXd SplitDDRuntime::low() const {return impl_->low;}
@@ -115,10 +181,13 @@ std::vector<CoupledDDCarrierTermDiagnostic> SplitDDRuntime::terms(const VectorXd
         t.electronContinuityActive=active[i]&&!bcs.phin.contains(i);t.holeContinuityActive=active[i]&&!bcs.phip.contains(i);
         t.electronFlux=static_cast<Real>(ef[i]);t.holeFlux=static_cast<Real>(hf[i]);t.electronFluxAbsSum=static_cast<Real>(ea[i]);t.holeFluxAbsSum=static_cast<Real>(ha[i]);
         Wide source=o.srh[i]*Wide(impl_->model["node_physics"][i][4].get<double>());t.electronRecombination=t.holeRecombination=static_cast<Real>(source);
+        const Wide impact=o.impactElectron[i]+o.impactHole[i];
+        t.electronImpact=t.holeImpact=-static_cast<Real>(impact);
+        t.impactElectronSource=static_cast<Real>(o.impactElectron[i]);t.impactHoleSource=static_cast<Real>(o.impactHole[i]);t.impactCombinedSource=static_cast<Real>(impact);
         t.electronResidual=static_cast<Real>(rr[N+i]);t.holeResidual=static_cast<Real>(rr[2*N+i]);
         if(!active[i]){t.electronGauge=t.electronResidual;t.holeGauge=t.holeResidual;}
-        if(bcs.phin.contains(i)){t.electronBoundary=t.electronResidual;t.electronFlux=t.electronFluxAbsSum=t.electronRecombination=t.electronGauge=0.;}
-        if(bcs.phip.contains(i)){t.holeBoundary=t.holeResidual;t.holeFlux=t.holeFluxAbsSum=t.holeRecombination=t.holeGauge=0.;}
+        if(bcs.phin.contains(i)){t.electronBoundary=t.electronResidual;t.electronFlux=t.electronFluxAbsSum=t.electronRecombination=t.electronImpact=t.electronGauge=0.;}
+        if(bcs.phip.contains(i)){t.holeBoundary=t.holeResidual;t.holeFlux=t.holeFluxAbsSum=t.holeRecombination=t.holeImpact=t.holeGauge=0.;}
     }return out;
 }
 std::vector<CoupledDDEdgeFluxDiagnostic> SplitDDRuntime::edges(const VectorXd& x) const {
@@ -126,6 +195,19 @@ std::vector<CoupledDDEdgeFluxDiagnostic> SplitDDRuntime::edges(const VectorXd& x
     std::vector<CoupledDDEdgeFluxDiagnostic> out;
     auto cast=[](const Wide& v){return static_cast<Real>(v);};
     auto bernoulli=[](const Wide& u)->Wide{return u==0?Wide(1):u/expm1(u);};
+    // Deliberately independent of the cached 100-digit production expression:
+    // rebuild populations and direct Bernoulli products at 200 decimal digits.
+    using Reference=boost::multiprecision::number<boost::multiprecision::cpp_dec_float<200>>;
+    const int N=model["nodes"].size();
+    const auto referencePotential=[&](int block,int node)->Reference {
+        const int index=block*N+node;
+        Reference v=(Reference(x(index))+Reference(impl_->low(index)))*Reference(model["potential_scale"].get<double>());
+        if(block)v+=Reference(model["nodes"][node][block==1?7:8].get<double>());
+        return v;
+    };
+    const auto referenceB=[](const Reference& v)->Reference {
+        return v==0?Reference(1):Reference(v/expm1(v));
+    };
     const Wide lineFactor=Wide(model["current_factor"].get<double>())*Wide(1e6)/Wide(constants::q);
     for(std::size_t k=0;k<o.electronFlux.size();++k) {
         const auto& e=model["transport_edges"][k];int i=e["i"],j=e["j"];
@@ -139,16 +221,75 @@ std::vector<CoupledDDEdgeFluxDiagnostic> SplitDDRuntime::edges(const VectorXd& x
         d.electronFlux=cast(o.electronFlux[k]);d.holeFlux=cast(o.holeFlux[k]);
         d.electronParticleLineFlux_per_m_s=cast(o.electronFlux[k]*lineFactor);d.holeParticleLineFlux_per_m_s=cast(o.holeFlux[k]*lineFactor);
         if(!e["weights"].empty()) {
-            Wide vt=model["nodes"][i][10].get<double>(),eta=(o.psi[j]-o.psi[i])/vt+log(Wide(d.ni1_m3)/Wide(d.ni0_m3));
-            Wide left=o.n[i]*bernoulli(-eta),right=o.n[j]*bernoulli(eta),coef=mn*Wide(e["coefficient"].get<double>());
+            const auto prefactor=[&](int node,int carrier)->double {
+                return model.contains("population_prefactors")?
+                    model["population_prefactors"][node][carrier].get<double>():
+                    model["nodes"][node][9].get<double>();
+            };
+            const double ni0=prefactor(i,0),ni1=prefactor(j,0),hp0=prefactor(i,1),hp1=prefactor(j,1);
+            const Wide vt=model["nodes"][i][10].get<double>();
+            const Wide eta=(o.psi[j]-o.psi[i])/vt+log(Wide(ni1)/Wide(ni0));
+            const Wide etaH=(o.psi[j]-o.psi[i])/vt+log(Wide(hp0)/Wide(hp1));
+            const Wide left=o.n[i]*bernoulli(-eta),right=o.n[j]*bernoulli(eta),coef=mn*Wide(e["coefficient"].get<double>());
+            const Wide hleft=o.p[i]*bernoulli(etaH),hright=o.p[j]*bernoulli(-etaH),hcoef=mp*Wide(e["coefficient"].get<double>());
+            d.electronSgPopulationPrefactor0Internal=ni0;d.electronSgPopulationPrefactor1Internal=ni1;
+            d.holeSgPopulationPrefactor0Internal=hp0;d.holeSgPopulationPrefactor1Internal=hp1;
             d.electronSgBoltzmannDecompositionAvailable=true;d.electronSgEta=cast(eta);d.electronSgBernoulliMinusEta=cast(bernoulli(-eta));d.electronSgBernoulliEta=cast(bernoulli(eta));
             d.electronSgLeftTermInternal=cast(left);d.electronSgRightTermInternal=cast(right);d.electronSgSignedDifferenceInternal=cast(left-right);
-            d.electronSgReconstructedFluxScaled=cast(coef*(left-right));d.electronSgStableFluxScaled=d.electronSgHighPrecisionReferenceFluxScaled=d.electronFlux;
-            d.electronSgHighPrecisionReferenceTermScaleScaled=cast(abs(coef)*(abs(left)+abs(right)));
+            d.electronSgReconstructedFluxScaled=cast(coef*(left-right));d.electronSgStableFluxScaled=d.electronFlux;
             d.electronSgLogLeftOverRight=cast((o.phin[j]-o.phin[i])/vt);d.electronSgRightFactorFluxScaled=cast(coef*right);
             d.electronQfReference0_V=model["nodes"][i][7];d.electronQfReference1_V=model["nodes"][j][7];
             d.electronSgPhin0Relative_V=cast(o.phin[i]-Wide(d.electronQfReference0_V));d.electronSgPhin1Relative_V=cast(o.phin[j]-Wide(d.electronQfReference0_V));
             d.electronSgCancellationCondition=cast((abs(left)+abs(right))/std::max(Wide(abs(left-right)),Wide("1e-100")));
+            d.holeSgEta=cast(etaH);d.holeSgReconstructedFluxScaled=cast(hcoef*(hleft-hright));d.holeSgStableFluxScaled=d.holeFlux;
+            const Reference rv(model["nodes"][i][10].get<double>()),geo(e["coefficient"].get<double>());
+            const Reference psi0=referencePotential(0,i),psi1=referencePotential(0,j);
+            const Reference fn0=referencePotential(1,i),fn1=referencePotential(1,j),fp0=referencePotential(2,i),fp1=referencePotential(2,j);
+            const Reference re=(psi1-psi0)/rv+log(Reference(ni1)/Reference(ni0));
+            const Reference rh=(psi1-psi0)/rv+log(Reference(hp0)/Reference(hp1));
+            const Reference nl=Reference(ni0)*exp((psi0-fn0)/rv)*referenceB(-re);
+            const Reference nr=Reference(ni1)*exp((psi1-fn1)/rv)*referenceB(re);
+            const Reference pl=Reference(hp0)*exp((fp0-psi0)/rv)*referenceB(rh);
+            const Reference pr=Reference(hp1)*exp((fp1-psi1)/rv)*referenceB(-rh);
+            // Mobility is the actual frozen production operand, transferred
+            // without projecting it through binary64.
+            const Reference em(mn.str(110,std::ios_base::scientific)),hm(mp.str(110,std::ios_base::scientific));
+            const Reference en=em*geo*(nl-nr),hp=hm*geo*(pl-pr);
+            d.electronSgHighPrecisionReferenceFluxScaled=static_cast<Real>(en);
+            d.holeSgHighPrecisionReferenceFluxScaled=static_cast<Real>(hp);
+            d.electronSgHighPrecisionReferenceTermScaleScaled=static_cast<Real>(abs(em*geo)*(abs(nl)+abs(nr)));
+            d.holeSgHighPrecisionReferenceTermScaleScaled=static_cast<Real>(abs(hm*geo)*(abs(pl)+abs(pr)));
+            d.splitSgReferenceDecimalDigits=200;
+            nlohmann::json primitives={{"potential_scale_V",model["potential_scale"]},{"Vt_V",model["nodes"][i][10]},
+                {"electron_prefactors_internal",{ni0,ni1}},{"hole_prefactors_internal",{hp0,hp1}},
+                {"common_ni_internal",{d.ni0_m3,d.ni1_m3}},{"coefficient",e["coefficient"]},
+                {"mobility_internal_decimal",{mn.str(110,std::ios_base::scientific),mp.str(110,std::ios_base::scientific)}}};
+            for(int b=0;b<3;++b)for(int node:{i,j}) {
+                primitives["packed_hi"].push_back(x(b*N+node));primitives["packed_low"].push_back(impl_->low(b*N+node));
+            }
+            primitives["qf_reference_V"]={model["nodes"][i][7],model["nodes"][j][7],model["nodes"][i][8],model["nodes"][j][8]};
+            d.splitSgOperandsJson=nlohmann::json{{"schema","vela.split-sg-operands.v1"},{"production_transport_active",true},
+                {"primitive_numbers","binary64; decimal strings for mobility"},{"units","internal concentration, mobility and scaled residual flux; potentials in V"},
+                {"reference_method","200-digit recomputed populations and direct Bernoulli products; frozen production mobility"},
+                {"production_cache",{
+                    {"identity","direct serialization of this evaluation; not reference reconstruction"},
+                    {"psi_V",{o.psi[i].str(110,std::ios_base::scientific),o.psi[j].str(110,std::ios_base::scientific)}},
+                    {"phin_V",{o.phin[i].str(110,std::ios_base::scientific),o.phin[j].str(110,std::ios_base::scientific)}},
+                    {"phip_V",{o.phip[i].str(110,std::ios_base::scientific),o.phip[j].str(110,std::ios_base::scientific)}},
+                    {"n_internal",{o.n[i].str(110,std::ios_base::scientific),o.n[j].str(110,std::ios_base::scientific)}},
+                    {"p_internal",{o.p[i].str(110,std::ios_base::scientific),o.p[j].str(110,std::ios_base::scientific)}},
+                    {"flux_scaled",{o.electronFlux[k].str(110,std::ios_base::scientific),o.holeFlux[k].str(110,std::ios_base::scientific)}}}},
+                {"primitives",std::move(primitives)},
+                {"reference_eta",{re.str(205,std::ios_base::scientific),rh.str(205,std::ios_base::scientific)}},
+                {"reference_flux",{en.str(205,std::ios_base::scientific),hp.str(205,std::ios_base::scientific)}}}.dump();
+
+        } else {
+            // An absent SG kernel is not a zero-valued SG argument. Export
+            // this distinction so downstream comparisons cannot mistake a
+            // default diagnostic field for an actual production operand.
+            d.splitSgOperandsJson=nlohmann::json{{"schema","vela.split-sg-operands.v1"},
+                {"production_transport_active",false},{"reason","empty transport support; SG kernel not evaluated"},
+                {"electron_flux_scaled",d.electronFlux},{"hole_flux_scaled",d.holeFlux}}.dump();
         }
         out.push_back(d);
     }return out;
@@ -232,15 +373,91 @@ VectorXd SplitDDRuntime::restoreForContinuation(const DDSolution& s) {
     setLow(lo);return hi;
 }
 
+VectorXd SplitDDRuntime::coordinateDelta(const VectorXd& x,const VectorXd& base,const VectorXd& baseLow) const {
+    const auto tail=low();
+    if(x.size()!=tail.size() || base.size()!=x.size() || baseLow.size()!=x.size() ||
+       !x.allFinite() || !base.allFinite() || !baseLow.allFinite())
+        throw std::invalid_argument("Invalid split coordinate delta");
+    VectorXd delta(x.size());
+    for(int i=0;i<x.size();++i)
+        delta[i]=static_cast<Real>((Wide(x[i])-Wide(base[i]))+(Wide(tail[i])-Wide(baseLow[i])));
+    return delta;
+}
+
+nlohmann::json SplitDDRuntime::constantTransportDirection(const VectorXd& x,
+    const VectorXd& direction,const CoupledDDBoundaryConditions& bcs) const {
+    if(direction.size()!=x.size() || !direction.allFinite())throw std::invalid_argument("Invalid transport direction");
+    auto result=nlohmann::json::array();
+    if(!impl_->mobilityConfig || !impl_->mobilityConfig->ialmobGeometry)return result;
+    const auto& geometry=*impl_->mobilityConfig->ialmobGeometry;
+    const auto& model=impl_->model;const auto& o=impl_->evaluate(x);
+    const int N=x.size()/3;const Wide scale=model["potential_scale"].get<double>();
+    std::vector<bool> active(N,false),excluded(N,false);std::vector<Wide> dn(N),dp(N);
+    for(int i=0;i<N;++i)excluded[i]=model["node_physics"][i][5].get<bool>();
+    if(model.contains("ial_cells"))for(const auto& cell:model["ial_cells"])
+        for(const auto& node:cell)excluded[node.get<int>()]=true;
+    std::size_t k=0;
+    for(const auto& edge:model["transport_edges"]) {
+        const int i=edge["i"],j=edge["j"],id=edge["id"];
+        if(edge["weights"].empty()){++k;continue;}
+        active[i]=active[j]=true;
+        const bool constant=geometry.edges.at(id).empty() && geometry.constantElectronEdges.at(id)>0 && geometry.constantHoleEdges.at(id)>0;
+        if(!constant){excluded[i]=excluded[j]=true;++k;continue;}
+        const Wide vt=model["nodes"][i][10].get<double>();
+        if(model["nodes"][j][10].get<double>()!=static_cast<double>(vt))throw std::runtime_error("Unequal SG thermal voltages");
+        const auto pref=[&](int node,int carrier)->Wide {
+            return model.contains("population_prefactors")?Wide(model["population_prefactors"][node][carrier].get<double>()):Wide(model["nodes"][node][9].get<double>());
+        };
+        const Wide eta=(o.psi[j]-o.psi[i])/vt+log(pref(j,0)/pref(i,0));
+        const Wide etaH=(o.psi[j]-o.psi[i])/vt+log(pref(i,1)/pref(j,1));
+        const Wide deta=(Wide(direction[j])-Wide(direction[i]))*scale/vt;
+        const Wide en=numerics::stableBoltzmannSgDirection<Wide>(
+            o.edgeMun[k]*Wide(edge["coefficient"].get<double>())*o.n[j],eta,(o.phin[j]-o.phin[i])/vt,
+            (Wide(direction[j])-Wide(direction[N+j]))*scale/vt,deta,(Wide(direction[N+j])-Wide(direction[N+i]))*scale/vt);
+        const Wide hp=numerics::stableBoltzmannSgDirection<Wide>(
+            o.edgeMup[k]*Wide(edge["coefficient"].get<double>())*o.p[j],-etaH,(o.phip[i]-o.phip[j])/vt,
+            (Wide(direction[2*N+j])-Wide(direction[j]))*scale/vt,-deta,(Wide(direction[2*N+i])-Wide(direction[2*N+j]))*scale/vt);
+        dn[i]+=en;dn[j]-=en;dp[i]+=hp;dp[j]-=hp;++k;
+    }
+    for(int i=0;i<N;++i)if(active[i]&&!excluded[i]) {
+        if(o.srh[i]!=0 || o.impactElectron[i]!=0 || o.impactHole[i]!=0)throw std::runtime_error("Source in constant transport row");
+        if(!bcs.phin.contains(i))result.push_back({{"node",i},{"carrier","electron"},{"row",N+i},{"action",static_cast<Real>(dn[i])}});
+        if(!bcs.phip.contains(i))result.push_back({{"node",i},{"carrier","hole"},{"row",2*N+i},{"action",static_cast<Real>(dp[i])}});
+    }
+    return result;
+}
+
 void SplitDDRuntime::applyBoundary(VectorXd& x,const CoupledDDBoundaryConditions& bcs) {
     // Use precisely the same normalized constraints as residual().
     const auto frame=impl_->state(x);const int N=frame.size();auto lo=low();
-    for(const auto& [i,z]:bcs.psi){x(i)=z;lo(i)=0.;}
-    for(const auto& [i,z]:bcs.phin){x(N+i)=z-frame.reference(1,i)/frame.potentialScale();lo(N+i)=0.;}
-    for(const auto& [i,z]:bcs.phip){x(2*N+i)=z-frame.reference(2,i)/frame.potentialScale();lo(2*N+i)=0.;}
+    for(const auto& [i,z]:bcs.psi){x(i)=z;lo(i)=static_cast<Real>(boundaryTail(bcs.psiLow,i));}
+    for(const auto& [i,z]:bcs.phin){const Wide target=qfTarget(z,bcs.phinLow,i,frame.reference(1,i),frame.potentialScale());x(N+i)=static_cast<Real>(target);lo(N+i)=static_cast<Real>(target-Wide(x(N+i)));}
+    for(const auto& [i,z]:bcs.phip){const Wide target=qfTarget(z,bcs.phipLow,i,frame.reference(2,i),frame.potentialScale());x(2*N+i)=static_cast<Real>(target);lo(2*N+i)=static_cast<Real>(target-Wide(x(2*N+i)));}
     setLow(lo);
 }
 
+void setSplitBoundaryTarget(CoupledDDBoundaryConditions& bcs,int component,
+    Index node,Real builtIn,Real voltage,Real scale,Real voltageLow) {
+    if(component<0 || component>2 || !std::isfinite(builtIn) ||
+       !std::isfinite(voltage) || !std::isfinite(voltageLow) || !std::isfinite(scale) || scale<=0)
+        throw std::invalid_argument("Invalid split boundary target");
+    const Wide target=(Wide(builtIn)+Wide(voltage)+Wide(voltageLow))/Wide(scale);
+    const Real hi=static_cast<Real>(target),lo=static_cast<Real>(target-Wide(hi));
+    if(component==0){bcs.psi[node]=hi;bcs.psiLow[node]=lo;}
+    else if(component==1){bcs.phin[node]=hi;bcs.phinLow[node]=lo;}
+    else {bcs.phip[node]=hi;bcs.phipLow[node]=lo;}
+}
+void shiftSplitBoundaryVoltage(CoupledDDBoundaryConditions& bcs,Index node,
+    Real voltageDelta,Real scale,Real previousLow) {
+    if(!std::isfinite(voltageDelta) || !std::isfinite(previousLow) || !std::isfinite(scale) || scale<=0)
+        throw std::invalid_argument("Invalid split voltage shift");
+    const auto shift=[&](auto& hi,auto& lo) {
+        if(!hi.contains(node))return;
+        const Wide target=Wide(hi.at(node))+boundaryTail(lo,node)+(Wide(voltageDelta)-Wide(previousLow))/Wide(scale);
+        hi[node]=static_cast<Real>(target);lo[node]=static_cast<Real>(target-Wide(hi[node]));
+    };
+    shift(bcs.psi,bcs.psiLow);shift(bcs.phin,bcs.phinLow);shift(bcs.phip,bcs.phipLow);
+}
 DDSolution predictSplitDDState(const DDSolution& previous,const DDSolution& current,
     Real ratio,const std::array<bool,3>& fields) {
     if(!previous.hasConsistentSplitPackedState() || !current.hasConsistentSplitPackedState() ||
@@ -284,7 +501,12 @@ std::shared_ptr<SplitDDRuntime> CoupledDDAssembler::splitRuntime() const {
 }
 std::shared_ptr<SplitDDRuntime> CoupledDDAssembler::buildSplitRuntime() const {
     const bool enormal=usesElementDistanceLombardi(mobilityConfig_);
-    if((mobilityConfig_.model!="phumob" && !enormal) || mobilityConfig_.edgeAveraging!="element_box_phumob" || usesFermiDirac_ || !recombination_.srhEnabled() || recombination_.augerEnabled() || recombination_.bandToBandEnabled() || impactIonizationCoupled_ || electronQuantumPotentialConfig_.enabled || (electronQuantumPotential_V_.size()&&!electronQuantumPotential_V_.isZero(0.)))throw std::invalid_argument("Split DD requires qualified element-box PhuMob, Boltzmann and SRH without quantum/avalanche");
+    const bool ial=mobilityConfig_.model=="ialmob";
+    if((!ial && ((mobilityConfig_.model!="phumob" && !enormal) || mobilityConfig_.edgeAveraging!="element_box_phumob" || !recombination_.srhEnabled() || recombination_.augerEnabled() || impactIonizationCoupled_)) || usesFermiDirac_ || recombination_.bandToBandEnabled() || electronQuantumPotentialConfig_.enabled || (electronQuantumPotential_V_.size()&&!electronQuantumPotential_V_.isZero(0.)))throw std::invalid_argument("Split DD requires supported classical PhuMob/SRH or IALMob without quantum/BTBT");
+    if(ial && (mobilityConfig_.carrierCurrentDiscretization!="scharfetter_gummel_edge" ||
+        (impactIonizationEnabled_ && (!detail::usesIalElementAvalancheSource(impactIonizationConfig_) || !impactIonizationCoupled_ || impactIonizationConfig_.sourceJacobianMode!="local_ad")) ||
+        !mobilityConfig_.jacobianFieldDerivatives))
+        throw std::invalid_argument("Split IAL requires edge SG and complete local-AD observed avalanche");
     const int N=mesh_.numNodes();const double scale=scaling_.enabled?scaling_.V0:1.;
     const Real cs=scaling_.enabled?scaling_.C0*scaling_.D0:1.;const Real fieldFactor=scaling_.enabled?scaling_.fieldFromCoordinateDeltaFactor:1.;
     const Real sourceFactor=scaling_.enabled?scaling_.unitSystem.continuitySourceIntegralFactor():1.;const Real area=scaling_.enabled?scaling_.chargeAreaFactor:1.;
@@ -292,7 +514,29 @@ std::shared_ptr<SplitDDRuntime> CoupledDDAssembler::buildSplitRuntime() const {
     nlohmann::json geometry=nlohmann::json::array();
     for(int i=0;i<N;++i){const auto& node=mesh_.getNode(i);geometry.push_back({node.x,node.y});
         j["nodes"].push_back({0.,0.,0.,0.,0.,0.,scale,electronQuasiFermiReferenceAt(i),holeQuasiFermiReferenceAt(i),ni_[i],Vt_,doping_.netDoping(i),poissonElectronVol_[i],poissonHoleVol_[i],poissonDopantVol_[i],constants::q,area,scaling_.enabled?scaling_.permittivityReference_F_per_m*scaling_.V0:1.,fixedInterfaceChargeRhs_(i)});
-        Real doping=recombination_.srhDopingConcentration(doping_.donors(i),doping_.acceptors(i));j["node_physics"].push_back({doping_.donors(i),doping_.acceptors(i),recombination_.electronLifetime(doping),recombination_.holeLifetime(doping),srhVol_[i]*sourceFactor/cs});}
+        Real doping=recombination_.srhDopingConcentration(doping_.donors(i),doping_.acceptors(i));j["node_physics"].push_back({doping_.donors(i),doping_.acceptors(i),recombination_.electronLifetime(doping),recombination_.holeLifetime(doping),(ial?recombinationVol_[i]:srhVol_[i])*sourceFactor/cs});
+        if(ial){j["population_prefactors"].push_back({niElectron_[i],niHole_[i]});j["node_physics"].back().push_back(bool(recombinationNodes_[i]));}}
+    std::shared_ptr< const MobilityModelConfig > ialConfig;
+    if(ial) {
+        auto prepared=mobilityConfig_;prepareIalTransportGeometry(prepared,mesh_);
+        ialConfig=std::make_shared<const MobilityModelConfig>(std::move(prepared));
+        j["ial_cells"]=nlohmann::json::array();
+        for(const auto& support:ialConfig->ialmobGeometry->cells)j["ial_cells"].push_back(mesh_.getCell(support.cellId).node_ids);
+        j["ial_avalanche"]=impactIonizationCoupled_;
+        j["ial_source_factor"]=sourceFactor/cs/(mobilityConfig_.internalConcentrationToM3*mobilityConfig_.internalLengthToM*mobilityConfig_.internalLengthToM);
+        if(impactIonizationCoupled_) {
+            const auto opt=detail::ialElementAvalancheOptionsFromConfig(impactIonizationConfig_);
+            for(const auto& c:{opt.electron,opt.hole})j["ial_ionization"].push_back({c.lowA_per_m,c.lowB_V_per_m,c.highA_per_m,c.highB_V_per_m,c.switchField_V_per_m});
+            j["ial_ionization_cutoff"]=opt.minimumField_V_per_m;
+            if (opt.contactField==GradQfContactField::QuasiFermiGradient)
+                j["ial_ionization_uses_qf_at_contact"]=true;
+        }
+        const auto& r=recombination_.config();const auto& d=r.augerDensityDependence;
+        j["recombination"]={{"srh",recombination_.srhEnabled()},{"auger",recombination_.augerEnabled()},
+            {"classical",recombination_.usesClassicalAugerExcessProduct()},{"generation",r.augerWithGeneration},
+            {"density_dependence",d.enabled},{"electron",{r.augerCn,d.electronEnhancement,d.electronReferenceDensity}},
+            {"hole",{r.augerCp,d.holeEnhancement,d.holeReferenceDensity}}};
+    }
     for(Index c=0;c<mesh_.numCells();++c){const auto& cell=mesh_.getCell(c);geometry.push_back({cell.node_ids[0],cell.node_ids[1],cell.node_ids[2],cell.region_id});}
     for(const auto& contact:mesh_.contacts())geometry.push_back({contact.name,contact.node_ids});
     j["mesh_fingerprint"] = detail::splitMeshFingerprint(geometry.dump());
@@ -301,7 +545,7 @@ std::shared_ptr<SplitDDRuntime> CoupledDDAssembler::buildSplitRuntime() const {
       {"common",{pm.donorClusterReference,pm.acceptorClusterReference,pm.donorClusterCoefficient,pm.acceptorClusterCoefficient,pm.electronMassRatio,pm.holeMassRatio,pm.conwellWeisskopfFactor,pm.brooksHerringFactor,pm.electronHoleScatteringFactor,pm.holeElectronScatteringFactor,pm.gA,pm.gB,pm.gC,pm.gAlpha,pm.gAlphaPrime,pm.gBeta,pm.gGamma,pm.internalConcentrationToCm3,pm.internalMobilityToCm2PerVS}}};
     j["boundary"]=nlohmann::json::array({nlohmann::json::array(),nlohmann::json::array(),nlohmann::json::array()});
     std::vector<int> surfaceCell(mesh_.numCells(),-1);
-    if(enormal) {
+    if(enormal && !ial) {
         if(mobilityConfig_.electronLombardi.alpha!=0 || mobilityConfig_.holeLombardi.alpha!=0)
             throw std::invalid_argument("Split element Lombardi requires alpha=0");
         detail::updateSurfaceMobilityCellGeometry(mobilityConfig_,mesh_,edgeCells_,VectorXd::Zero(N),mobilityConfig_.surface.coordinateFieldFactor,&cellMaterials_);
@@ -333,18 +577,26 @@ std::shared_ptr<SplitDDRuntime> CoupledDDAssembler::buildSplitRuntime() const {
     j["continuity_scale"]=cs;j["field_factor"]=fieldFactor;j["current_factor"]=constants::q*cs*(scaling_.enabled?scaling_.currentDensityLineIntegralFactor:1.)*1e-6;
     for(Index e=0;e<mesh_.numEdges();++e){const auto& edge=mesh_.getEdge(e);if(edge.length<1e-30)continue;j["poisson_edges"].push_back({edge.n0,edge.n1,edgeAssemblyKernels_[e].poissonCoupling});
         nlohmann::json weights=nlohmann::json::array(),ports=nlohmann::json::object();vela::ArithmeticReal total=0;
-        for(Index cid:edgeCells_[e]){const auto& m=cellMaterials_[cid];if(m.ni<=0&&m.mun<=0&&m.mup<=0)continue;total+=detail::cellBoxEdgeCoefficient(mesh_,cid,e);}
-        if(total>0)for(Index cid:edgeCells_[e]){const auto& m=cellMaterials_[cid];if(m.ni<=0&&m.mun<=0&&m.mup<=0)continue;if(m.temperature_K.value_or(300.)!=300.||m.mun<=0||m.mup<=0)throw std::invalid_argument("Split DD requires 300 K silicon transport");Real g=detail::cellBoxEdgeCoefficient(mesh_,cid,e);if(g==0)continue;const auto measures=detail::cellBoxNodeMeasures(mesh_,cid);vela::ArithmeticReal volume=(vela::ArithmeticReal)measures[0]+measures[1]+measures[2];for(int k=0;k<3;++k)weights.push_back({mesh_.getCell(cid).node_ids[k],static_cast<Real>((vela::ArithmeticReal)g*measures[k]/volume/total)});}
+        if(ial) {
+            // Only the active-support marker is needed here: IAL mobility
+            // weights come exclusively from its independently checked geometry.
+            const auto& g=*ialConfig->ialmobGeometry;
+            if(couple_[e]>0 && (!g.edges.at(e).empty() || g.constantElectronEdges.at(e)>0 || g.constantHoleEdges.at(e)>0))
+                weights.push_back({edge.n0,1.});
+        } else {
+            for(Index cid:edgeCells_[e]){const auto& m=cellMaterials_[cid];if(m.ni<=0&&m.mun<=0&&m.mup<=0)continue;total+=detail::cellBoxEdgeCoefficient(mesh_,cid,e);}
+            if(total>0)for(Index cid:edgeCells_[e]){const auto& m=cellMaterials_[cid];if(m.ni<=0&&m.mun<=0&&m.mup<=0)continue;if(m.temperature_K.value_or(300.)!=300.||m.mun<=0||m.mup<=0)throw std::invalid_argument("Split DD requires 300 K silicon transport");Real g=detail::cellBoxEdgeCoefficient(mesh_,cid,e);if(g==0)continue;const auto measures=detail::cellBoxNodeMeasures(mesh_,cid);vela::ArithmeticReal volume=(vela::ArithmeticReal)measures[0]+measures[1]+measures[2];for(int k=0;k<3;++k)weights.push_back({mesh_.getCell(cid).node_ids[k],static_cast<Real>((vela::ArithmeticReal)g*measures[k]/volume/total)});}
+        }
         if(couple_[e]>0)for(const auto& c:mesh_.contacts()){bool i=std::find(c.node_ids.begin(),c.node_ids.end(),edge.n0)!=c.node_ids.end();bool h=std::find(c.node_ids.begin(),c.node_ids.end(),edge.n1)!=c.node_ids.end();if(i!=h)ports[c.name]=i?1.:-1.;}
         j["transport_edges"].push_back({{"id",e},{"i",edge.n0},{"j",edge.n1},{"coefficient",Vt_*fieldFactor*couple_[e]/edge.length/cs},{"weights",weights},{"ports",ports},{"length",edge.length},{"couple",couple_[e]},
             {"length_m",scaling_.unitSystem.internalLengthToMeters(edge.length)},{"couple_m",scaling_.unitSystem.internalLengthToMeters(couple_[e])}});
-        if(enormal) {
+        if(enormal && !ial) {
             auto& ws=j["transport_edges"].back()["cell_weights"];ws=nlohmann::json::array();
             if(total>0)for(Index cid:edgeCells_[e])if(surfaceCell[cid]>=0) {
                 const Real g=detail::cellBoxEdgeCoefficient(mesh_,cid,e);if(g!=0)ws.push_back({surfaceCell[cid],static_cast<Real>((vela::ArithmeticReal)g/total)});
             }
         }
     }
-    return std::make_shared<SplitDDRuntime>(std::move(j));
+    return std::make_shared<SplitDDRuntime>(std::move(j),std::move(ialConfig));
 }
 } // namespace vela

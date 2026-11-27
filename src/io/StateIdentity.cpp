@@ -1,4 +1,5 @@
 #include "vela/io/StateIdentity.h"
+#include "vela/core/Extended80Encoding.h"
 #include <array>
 #include <bit>
 #include <cstdint>
@@ -74,6 +75,22 @@ std::string stateMeshIdentity(const DeviceMesh& mesh, double lengthMPerInternal)
     }
     return stateSha256(bytes);
 }
+std::string extendedStateMeshIdentity(const DeviceMesh& mesh, long double lengthMPerInternal) {
+    requireExtended80Format();
+    std::string bytes = "vela.mesh/extended80/1";
+    bytes += stateMeshIdentity(mesh, static_cast<double>(lengthMPerInternal));
+    const auto append = [&](long double value) {
+        for (const auto word : encodeExtended80(value))
+            for (int i = 0; i < 8; ++i)
+                bytes.push_back(static_cast<char>(word >> (8 * i)));
+    };
+    append(lengthMPerInternal);
+    for (Index i = 0; i < mesh.numNodes(); ++i)
+        for (const auto coordinate : mesh.arithmeticCoordinates(i))
+            append(coordinate);
+    return stateSha256(bytes);
+}
+
 nlohmann::json stateInputProvenance(const nlohmann::json& config,
                                   const std::filesystem::path& directory) {
     using json = nlohmann::json;

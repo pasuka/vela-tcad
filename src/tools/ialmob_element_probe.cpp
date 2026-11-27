@@ -10,9 +10,12 @@ int main(int argc,char** argv) {
         if (argc!=2) throw std::invalid_argument("Usage: ialmob_element_probe INPUT.json");
         std::ifstream stream(argv[1]);const auto input=json::parse(stream);
         for (const auto& [k,v]:input.items())
-            if (k!="temperature_K"&&k!="electron_parameters_cm"&&k!="hole_parameters_cm"&&k!="elements_SI")
+            if (k!="temperature_K"&&k!="electron_parameters_cm"&&k!="hole_parameters_cm"&&k!="elements_SI"&&k!="high_field"&&k!="reference_density_m3")
                 throw std::invalid_argument("Unsupported element probe input: "+k);
         if (input.at("temperature_K").get<double>()!=300.) throw std::invalid_argument("IALMob requires 300 K");
+        vela::IalElementMobilityOptions options;
+        options.highField=input.value("high_field",true);
+        options.referenceDensity_m3=input.value("reference_density_m3",1e18);
         std::map<int,vela::IalMobility> electron,hole;
         for (const auto& [key,params]:input.at("electron_parameters_cm").items())
             electron.emplace(std::stoi(key),vela::IalMobility(vela::probe_detail::parameters(params,true),true));
@@ -38,7 +41,7 @@ int main(int argc,char** argv) {
                     v.at("donors_m3"),v.at("acceptors_m3"),v.at("electrons_m3"),v.at("holes_m3"),
                     v.at("electron_response_m3_per_V"),v.at("hole_response_m3_per_V")};
             }
-            const auto r=vela::evaluateIalElementMobility(g,states,em,hm);
+            const auto r=vela::evaluateIalElementMobility(g,states,em,hm,options);
             rows.push_back({{"cell_id",cell.at("cell_id")},{"electron_low_m2_per_Vs",r.electronLowField.value},
                 {"hole_low_m2_per_Vs",r.holeLowField.value},{"electron_m2_per_Vs",r.electron.value},
                 {"hole_m2_per_Vs",r.hole.value},{"electron_derivative_per_V",r.electron.derivative},
