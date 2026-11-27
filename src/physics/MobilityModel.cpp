@@ -913,7 +913,7 @@ MobilityModelConfig mobilityModelConfigFromJson(
 
 bool usesVertexSampledMasetti(const MobilityModelConfig& config)
 {
-    return isMasettiModel(config.model) &&
+    return isMasettiModel(config.model) && !mobilityDependsOnCarrierDensity(config) &&
         (config.edgeAveraging == "element_box_masetti" ||
          (config.edgeAveraging == "auto" &&
           config.dopingConcentrationBasis != "cell_reconstructed_total_impurity"));

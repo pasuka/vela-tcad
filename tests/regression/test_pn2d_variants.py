@@ -236,7 +236,7 @@ class Variants(unittest.TestCase):
 
     def test_zero_source_checks_through_current_balance(self):
         gate=v.read_json(v.CONTRACT)
-        state={'global_continuity_closure_satisfied':'true',
+        state={'global_continuity_closure_satisfied':'false',
                'global_electron_integrated_source':'0','global_hole_integrated_source':'0',
                'global_electron_continuity_closure_ratio':'1','global_hole_continuity_closure_ratio':'1'}
         ports={name:{'current_electron_A_per_um':value,'current_hole_A_per_um':-value}

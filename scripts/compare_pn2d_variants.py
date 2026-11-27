@@ -55,14 +55,14 @@ def compare_current(ref, candidate, contract):
 
 
 def continuity_satisfied(state, contract, ports=None, source_floor=1e-14):
-    flag=str(state.get('global_continuity_closure_satisfied','')).lower() in ('1','true')
-    if not flag: return False
+    flag=str(state.get('global_continuity_closure_satisfied','')).lower()
+    if flag not in ('0','1','false','true'): return False
     for carrier in ['electron','hole']:
         ratio=float(state[f'global_{carrier}_continuity_closure_ratio'])
         source=float(state[f'global_{carrier}_integrated_source'])
         if not math.isfinite(ratio) or ratio<0 or not math.isfinite(source): return False
         if abs(source)>=source_floor:
-            if ratio>contract['conservation']['continuity_relative_max']: return False
+            if flag not in ('1','true') or ratio>contract['conservation']['continuity_relative_max']: return False
         else:
             # The solver ratio divides a NET flux mismatch by net flux/source.
             # With SRH off, roundoff / roundoff can equal one. Verify actual
