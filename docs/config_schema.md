@@ -302,8 +302,8 @@ Newton numerical and geometry controls added for explicit validation profiles:
   `5e-22 A/µm` (each continuity equation), with backtracking on the live
   residual. A continuity row can also meet its binary64 roundoff bound
   of 16 machine epsilons times the sum of absolute flux and source terms.
-  The correction uses the SG/Poisson Jacobian with mobility
-  and generation/recombination coefficients frozen during linearization.
+  In the Boltzmann path, the SG/Poisson correction holds mobility, SRH
+  recombination and avalanche generation fixed during linearization.
   HDF5 checkpoints store the three low components as one bundle. It is
   supported for voltage-controlled sweeps. Terminal totals use the compensated
   transport fluxes. Spatial fields in VTU retain the usual binary64 output
@@ -312,6 +312,9 @@ Newton numerical and geometry controls added for explicit validation profiles:
   It derives the edge driving drop from compensated potential and density,
   uses the same flux for the continuity rows and terminal integration, and
   stores zero electron and hole populations at inactive insulator nodes.
+  The Fermi–Dirac correction holds mobility fixed during linearization.
+  When SRH is enabled, both continuity rows include derivatives of the
+  SRH rate with respect to electron and hole concentrations.
   In the experimental `monolithic_box` DG solver, the same
   switch preserves only the electrostatic potential remainder. Poisson uses
   compensated edge and charge accumulation, and the continuity and DG rows
