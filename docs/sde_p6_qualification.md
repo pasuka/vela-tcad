@@ -160,9 +160,13 @@ This is an estimator relative to quadrature,
 not a mathematical bound on the unknown exact integral. Analytic Gaussian
 convergence and resource-exhaustion tests check its behavior independently.
 Source minima still stop MaxTransDiff; independent integral accuracy refinement
-may produce smaller cells. The existing 12-round/200000-node budget remains
-in force and exhaustion fails closed. The internal target does not replace or
-relax the user-approved **1% comparative integral acceptance**.
+may produce smaller cells. With a positive integral target, the M3 and M5
+offline package defaults to 16 rounds so edges introduced by late integral
+splits can satisfy the authored size rules. The raw pipeline defaults to 12
+rounds. An explicit `--maxtransdiff-max-iterations` takes precedence. The
+200000-node default and the **1% comparative integral acceptance** still apply.
+Budget exhaustion fails closed and reports which refinement rules still mark
+edges when the round limit is reached.
 
 ## Qualification and commercial validation
 

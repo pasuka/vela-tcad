@@ -6,6 +6,8 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parent
+PACKAGE_INTEGRAL_TARGET = 0.00025
+PACKAGE_INTEGRAL_MAX_ITERATIONS = 16
 
 
 def verify():
@@ -34,6 +36,7 @@ def main():
         from sentaurus_gmsh_pipeline import build_parser, main as pipeline_main
         arguments = sys.argv[1:]
         args = build_parser().parse_args(arguments)
+        provided_options = {arg.split('=', 1)[0] for arg in arguments}
         components = [args.gmsh_python or os.environ.get('VELA_GMSH_PYTHON'),
                       args.gmsh_library or os.environ.get('VELA_GMSH_LIBRARY'),
                       args.gmsh_executable or os.environ.get('VELA_GMSH_EXECUTABLE')]
@@ -45,10 +48,17 @@ def main():
             os.environ['PATH'] = directory+os.pathsep+os.environ.get('PATH','')
             if os.name == 'nt':
                 handles.append(os.add_dll_directory(directory))
-        if '--runtime-dir' not in arguments and not any(a.startswith('--runtime-dir=') for a in arguments):
+        if '--runtime-dir' not in provided_options:
             arguments += ['--runtime-dir',str(args.output_dir.resolve()/'.gmsh-runtime')]
-        if args.capability_level in {'M3','M5'} and not any(a.split('=')[0]=='--integral-relative-target' for a in arguments):
-            arguments += ['--integral-relative-target','0.00025']
+        if args.capability_level in {'M3','M5'}:
+            integral_target = args.integral_relative_target
+            if '--integral-relative-target' not in provided_options:
+                integral_target = PACKAGE_INTEGRAL_TARGET
+                arguments += ['--integral-relative-target',str(integral_target)]
+            # Integral splits can introduce new edges that violate an authored
+            # size rule even after the integral error has met its target.
+            if integral_target > 0:
+                arguments = ['--maxtransdiff-max-iterations', str(PACKAGE_INTEGRAL_MAX_ITERATIONS)] + arguments
         return pipeline_main(arguments)
     except (ValueError,OSError,ImportError) as error:
         print('vela-sde: '+str(error),file=sys.stderr)

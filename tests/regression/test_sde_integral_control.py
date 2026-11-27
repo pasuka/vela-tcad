@@ -80,7 +80,9 @@ class IntegralTests(unittest.TestCase):
                 '--maxtransdiff-max-iterations','0'],cwd=REPO,capture_output=True,text=True)
             self.assertEqual(2,result.returncode)
             self.assertFalse((out/'run_manifest.json').exists())
-            self.assertEqual('iteration_budget',json.loads((out/'fail_report.json').read_text())['details']['reason'])
+            report = json.loads((out/'fail_report.json').read_text())
+            self.assertEqual('iteration_budget', report['details']['reason'])
+            self.assertIn('doping integral', report['message'])
 
 
 if __name__=='__main__':unittest.main()

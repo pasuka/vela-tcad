@@ -11,6 +11,36 @@ from prepare_sde_offline_assets import download
 
 
 class InputBoundaryTests(unittest.TestCase):
+    def test_packaged_integral_refinement_has_round_headroom_and_honours_explicit_limits(self):
+        import sde_package_entry as entry
+        from sentaurus_gmsh_pipeline import build_parser
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            required = ['--sde', str(root / 'input.cmd'), '--output-dir', temp,
+                        '--gmsh-python', str(root / 'gmsh.py'),
+                        '--gmsh-library', str(root / 'libgmsh'),
+                        '--gmsh-executable', str(root / 'gmsh')]
+            for options, target, limit in (
+                ([], .00025, 16),
+                (['--capability-level', 'M5'], .00025, 16),
+                (['--integral-relative-target=.001'], .001, 16),
+                (['--integral-relative-target=0'], 0., 12),
+                (['--maxtransdiff-max-iterations=0'], .00025, 0),
+                (['--maxtransdiff-max-iterations', '20'], .00025, 20),
+                (['--capability-level', 'M2'], 0., 12),
+            ):
+                with self.subTest(options=options), \
+                     patch.object(sys, 'argv', ['run_sde.py', *required, *options]), \
+                     patch.object(sys, 'path', sys.path.copy()), \
+                     patch.object(sys, 'dont_write_bytecode'), patch.dict(os.environ), \
+                     patch.object(entry, 'verify'), patch('sentaurus_gmsh_pipeline.main', return_value=0) as run:
+                    self.assertEqual(0, entry.main())
+                    args = build_parser().parse_args(run.call_args.args[0])
+                    self.assertEqual(target, args.integral_relative_target)
+                    self.assertEqual(limit, args.maxtransdiff_max_iterations)
+                    self.assertEqual(200000, args.maxtransdiff_max_nodes)
+
     def test_transient_http_error_retries_locked_download(self):
         import prepare_sde_offline_assets as offline
         payload=b'locked asset'
@@ -174,8 +204,8 @@ class QualificationFailureTests(unittest.TestCase):
     def test_modeling_failure_surfaces_inner_stage_and_preserves_failure_status(self):
         failure=self.run_failed_child({
             'schema':'vela.sentaurus_gmsh_preprocess.fail_report.v1','status':'failed',
-            'stage':'gmsh_backend','message':'MaxTransDiff iteration budget exhausted',
-            'details':{'max_iterations':12}},r'\[gmsh_backend\].*iteration budget exhausted')
+            'stage':'gmsh_backend','message':'adaptive refinement iteration budget exhausted: Multibox',
+            'details':{'max_iterations':12}},r'\[gmsh_backend\].*iteration budget exhausted: Multibox')
         self.assertEqual('gmsh_backend',failure['stage'])
         self.assertEqual('fail_report.json',failure['report'])
 

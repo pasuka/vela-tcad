@@ -226,6 +226,7 @@ def remesh(gmsh, device_ir, field_dag, mesh_size, max_iterations=DEFAULT_MAX_ITE
                 values[tag]=cache[key]
             _,metrics=analyse(device_ir,coordinates,cells,values,marked,owner)
             reports.append(metrics)
+        doping_marked=bool(marked)
         # Integral refinement can reveal nonlinear gradients on new diagonals.
         # Red-split parents of doping-marked edges so their span actually halves;
         # repeated green diagonals can otherwise defer the stop beyond the budget.
@@ -266,7 +267,11 @@ def remesh(gmsh, device_ir, field_dag, mesh_size, max_iterations=DEFAULT_MAX_ITE
             return report
         if iteration == max_iterations:
             report.update(status='failed',reason='iteration_budget')
-            raise GmshBackendError('MaxTransDiff iteration budget exhausted',report)
+            pending = [name for name, edges_remaining in (
+                ('MaxTransDiff', doping_marked), ('MaxLenInt', interface_marks),
+                ('Multibox', multibox_marks), ('doping integral', integral_marks),
+            ) if edges_remaining]
+            raise GmshBackendError('adaptive refinement iteration budget exhausted: '+', '.join(pending),report)
         marked = longest_edge_closure(coordinates,triangles,marked)
         report['rounds'][-1]['closure_edges'] = len(marked)
         predicted = len(coordinates)+len(marked)
