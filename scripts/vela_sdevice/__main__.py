@@ -108,7 +108,7 @@ def main(argv=None):
     device.add_argument("--slot-dfise-grid", type=Path, metavar="GRD",
                         help="DF-ISE export corresponding to the native SLOT grid")
     device.add_argument("--pn2d-population", action="store_true",
-                        help="Use potential and carrier densities with Quasistationary controls for a classical PN2D deck")
+                        help="Use the qualified PN2D density reference profile, including its mixed-precision ExtendedPrecision path")
     device.add_argument("-i", action="store_true", dest="initial_only",
                         help="Vela limitation: run only the first emitted stage; native initial-save semantics not verified")
     device.add_argument("--exit-on-failure", action="store_true")

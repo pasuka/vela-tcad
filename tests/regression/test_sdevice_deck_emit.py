@@ -298,6 +298,10 @@ Material="Silicon" {
                 baseline = emit(ir, sidecar=sidecar)
                 candidate = emit(ir, sidecar=sidecar, options=EmitOptions(pn2d_population=True))
                 for old, new in zip(baseline.decks, candidate.decks, strict=True):
+                    if ir["math"].get("arithmetic_precision") == "extended80":
+                        self.assertTrue(old["solver"]["require_end_to_end_precision"])
+                        self.assertEqual(new["solver"]["arithmetic_precision"], "extended80")
+                        self.assertFalse(new["solver"].get("require_end_to_end_precision", False))
                     self.assertEqual(new["solver"]["state_variables"], "potential_density")
                     self.assertEqual(new["solver"]["method"], "newton")
                     self.assertEqual(new["solver"]["primary_variable_coordinates"], "unit")

@@ -604,7 +604,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             raise DeckEmitError("E409", file="sidecar", detail="monolithic DG population coordinates require Unit scaling without QF controls")
     if "arithmetic_precision" in ir["math"]:
         solver["arithmetic_precision"] = ir["math"]["arithmetic_precision"]
-        if solver["arithmetic_precision"] == "extended80":
+        if solver["arithmetic_precision"] == "extended80" and not options.pn2d_population:
             solver["require_end_to_end_precision"] = True
     contacts, electrodes = _contacts(ir, mesh, report, decisions)
     if mesh["angles"]["obtuse_element_count"]:

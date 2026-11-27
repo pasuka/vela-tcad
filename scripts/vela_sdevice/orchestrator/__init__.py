@@ -224,6 +224,8 @@ class DeviceRun:
                     raise RunError(identifier, f"{key.capitalize()} file '{path}' not found")
             location = Path(os.environ.get("VELA_BIN", Path(sys.argv[0]).resolve().parent))
             precision = self.ir["math"].get("arithmetic_precision", "double")
+            pn2d_reference = getattr(self.options, "pn2d_population", False)
+            strict_extended80 = precision == "extended80" and not pn2d_reference
             if self.arithmetic_input is not None and precision != "extended80":
                 raise RunError("E202", "--check-arithmetic-input requires ExtendedPrecision in Math")
             runner_name = "vela_example_runner_extended80" if precision == "extended80" else "vela_example_runner"
@@ -255,7 +257,7 @@ class DeviceRun:
                 policy = DopingPolicy.from_inputs(mode, compute_net, registry if mode == "auto" else ())
             except (OSError, ValueError) as error:
                 raise RunError("E402", f"Cannot load datexcodes: {error}") from error
-            decimal_mesh = precision == "extended80" and slot_context is None
+            decimal_mesh = strict_extended80 and slot_context is None
             mesh = import_grid(grid_path, self.work,
                                importer=importer[0] if importer else None,
                                decimal_doping=decimal_mesh, decimal_coordinates=decimal_mesh, doping_policy=policy)
@@ -335,8 +337,12 @@ class DeviceRun:
                 if runner is None:
                     self.manifest["arithmetic"]["capability_check"] = "failed"
                     raise RunError("E202", f"Runner '{runner_name}' for {precision} arithmetic cannot be resolved")
-                if precision == "extended80":
+                if strict_extended80:
                     self._require_extended80(runner)
+                elif precision == "extended80":
+                    self._extended80_runner_capabilities(runner)
+                    self.manifest["arithmetic"]["capability_check"] = "pn2d_mixed_reference"
+                    self.log("INFO", "PN2D population reference uses extended arithmetic with the qualified mixed-precision linear solver and state path")
                 self.publisher = OutputPublisher(self.cmd.parent, self.work, self.result)
                 count = 1 if self.options.initial_only else len(self.result.decks)
                 for index in range(count):
@@ -362,7 +368,7 @@ class DeviceRun:
                         self.result = bind_current_start(self.result, index, current, voltages)
                         self.publisher.result = self.result
                         self._write_plan()
-                        if precision == "extended80":
+                        if strict_extended80:
                             self._require_extended80(runner)
                         stage = self.result.stage_plan["stages"][index]
                         self.log("INFO", f"Current Time mapping bound to {current} A/um at stage {index}")
@@ -398,7 +404,7 @@ class DeviceRun:
                         self.publisher.result = self.result
                         self.log("WARNING", f"W206: stage {index} reached {voltages}; rebasing later decks")
                         self._write_plan()
-                        if precision == "extended80":
+                        if strict_extended80:
                             self._require_extended80(runner)
         except (DeckEmitError, MaterialsError, MeshImportError) as error:
             exit_code = self._failure(RunError(error.message_id, getattr(error, "message", str(error))))
@@ -454,7 +460,7 @@ class DeviceRun:
                 pass
         return error.exit_code
 
-    def _require_extended80(self, runner):
+    def _extended80_runner_capabilities(self, runner):
         audit = self.manifest["arithmetic"]
         audit["capability_check"] = "failed"
         audit["executable"] = runner[-1]
@@ -464,6 +470,11 @@ class DeviceRun:
                 capabilities.get("significand_bits"), capabilities.get("max_exponent")) != (
                 "extended80", 2, 64, 16384):
             raise RunError("E202", "Selected runner does not have the requested 80-bit arithmetic format")
+        return capabilities
+
+    def _require_extended80(self, runner):
+        capabilities = self._extended80_runner_capabilities(runner)
+        audit = self.manifest["arithmetic"]
         override = audit["linear_solver_override"]
         coverage = audit["frontend_input_check"]
         backends = capabilities.get("end_to_end_linear_backends")
