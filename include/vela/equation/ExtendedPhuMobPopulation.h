@@ -24,7 +24,7 @@ struct ArithmeticPhuMobTransportCoefficients {
 struct ArithmeticPhuMobTriangle {
     using Scalar = ArithmeticReal;
     // Coordinates are in metres. Couplings are face length divided by edge
-    // length in cyclic vertex order. Measures are material-local areas in m².
+    // length in cyclic vertex order. Measures are material-local areas in m^2.
     std::array<std::array<Scalar, 2>, 3> coordinates;
     std::array<Scalar, 3> edgeCouple, vertexMeasure, interfaceDistance;
     std::array<Scalar, 2> surfaceNormal;

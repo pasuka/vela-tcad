@@ -29,7 +29,7 @@ from vela_sdevice.plt import read_plt_document
 class OfflinePackageTests(unittest.TestCase):
     @unittest.skipIf(os.name == "nt", "ELF dependency-chain probe requires Linux")
     def test_runpath_resolves_indirect_libraries_after_relocation(self):
-        compiler = shutil.which("cc")
+        compiler = shutil.which(os.environ.get("CC") or "cc")
         self.assertIsNotNone(compiler, "Linux packaging verification requires a C compiler")
         self.assertIsNotNone(shutil.which("patchelf"), "Linux packaging verification requires patchelf")
         with tempfile.TemporaryDirectory() as temp:
