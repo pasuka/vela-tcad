@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 import math
 import sys
@@ -17,6 +18,9 @@ sys.path.insert(0, str(REPO / "scripts"))
 import transportmodels_fixed_contract as fixed  # noqa: E402
 import run_transportmodels_dd_contact_basin_regression as dd_basin  # noqa: E402
 import run_transportmodels_dd_dg_continuous_baseline as continuous  # noqa: E402
+from compare_sentaurus_tdr_tdx import iter_dat_datasets  # noqa: E402
+from transportmodels_idvd_fixture import stage_transportmodels_inputs  # noqa: E402
+from vela_sdevice.mesh_import import _load_dfise  # noqa: E402
 
 
 class TransportModelsFixedContractTest(unittest.TestCase):
@@ -37,6 +41,29 @@ class TransportModelsFixedContractTest(unittest.TestCase):
         self.assertEqual(4.0727403846153845,
                          materials["Si"]["electron_affinity_eV"])
         self.assertEqual(3.6, materials["Si"]["electron_quantum_gamma"])
+
+    def test_dfise_stage_preserves_active_dopants_and_vela_doping(self) -> None:
+        fixture = REPO / "reference_tcad/transportmodels_sentaurus2022/ci_u2022_12"
+        with (fixture.parent / "vela/doping.csv").open(encoding="utf-8", newline="") as stream:
+            archived = sorted(csv.DictReader(stream), key=lambda row: int(row["node_id"]))
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory) / "staged"
+            stage_transportmodels_inputs(fixture, work, "pp6_des")
+            datasets = dict(iter_dat_datasets(work / "n1_msh.dat"))
+            imported = _load_dfise(work / "n1_msh.grd")
+        donors = [float(row["donors_cm3"]) for row in archived]
+        acceptors = [float(row["acceptors_cm3"]) for row in archived]
+        self.assertTrue(any(d > 0 and a > 0 for d, a in zip(donors, acceptors)))
+        for name, values in (("ArsenicActiveConcentration", donors),
+                             ("BoronActiveConcentration", acceptors)):
+            field = datasets[name]
+            self.assertEqual(len(values), field["count"])
+            self.assertIn("R.Substrate", field["regions"])
+            self.assertEqual(values, field["values"])
+        self.assertEqual([d - a for d, a in zip(donors, acceptors)],
+                         datasets["DopingConcentration"]["values"])
+        self.assertEqual(donors, [row["donors_cm3"] for row in imported["doping"]])
+        self.assertEqual(acceptors, [row["acceptors_cm3"] for row in imported["doping"]])
 
     def test_dd_and_dg_differ_only_by_frozen_quantum_section(self) -> None:
         dd = fixed.apply_contract(self.base, "dd")

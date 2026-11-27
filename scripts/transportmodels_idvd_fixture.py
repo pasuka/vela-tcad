@@ -65,7 +65,12 @@ def stage_transportmodels_inputs(fixture, work, stem):
         "Log10AbsDopingConcentration": {
             "values": [math.log10(value) if value else 0.0 for value in magnitudes]
         },
-        "species": {},
+        # The source mesh has one donor species (arsenic) and one acceptor
+        # species (boron). Sentaurus reconstructs their sum from these fields.
+        "species": {
+            "ArsenicActiveConcentration": {"values": donors},
+            "BoronActiveConcentration": {"values": acceptors},
+        },
     }
     write_dfise(work / "n1_msh.grd", work / "n1_msh.dat", {
         **mesh, "materials": materials, "triangles": triangles, "contacts": contacts,

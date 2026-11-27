@@ -19,6 +19,11 @@ in `../vela/mesh.json` and the separately exported donor and acceptor
 concentrations in `../vela/doping.csv`. The [artifact manifest](../artifact_manifest.json)
 identifies the original reflected `n1_msh.tdr`. The test uses the tracked neutral
 mesh and does not require a TDR reader or a Sentaurus installation.
+The generated DAT also names the archived donor and acceptor arrays as
+`ArsenicActiveConcentration` and `BoronActiveConcentration`, respectively.
+These are the two species in the original mesh. Sentaurus uses them to
+reconstruct the total active doping after TDX conversion. A net-only input
+loses the compensated portion of the doping used by SRH and bandgap narrowing.
 
 The [archived CMD](../source/pp12_des.cmd) supplies the model options and
 `Solve` sequence. The test deck uses the GRD grid path, explicit isothermal
