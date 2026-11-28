@@ -397,6 +397,7 @@ Material="Silicon" {
         high = "0.500000000000000000867361737988403547205962240695953369140625"
         cmd = f'''File {{ Grid="mesh.grd" Parameter="models.par" }}
             Electrode {{ {{Name="left" Voltage=0}} {{Name="right" Voltage=0}} }}
+            Plot {{ Potential ElectricField/Vector }}
             Math {{ ExtendedPrecision }}
             Solve {{ Coupled {{Poisson Electron Hole}}
               Quasistationary(Goal {{Name="left" Voltage=2}})
@@ -404,6 +405,9 @@ Material="Silicon" {
                  Plot(FilePrefix="probe" Time=({low}; {high}))
                  CurrentPlot(Time=(Range=({low} {high}) Intervals=2)) }} }}'''
         wide = emit(parse_cmd_text(cmd, path_name="checkpoints.cmd"))
+        for deck in wide.decks:
+            self.assertIn("ElectrostaticPotential", deck["sweep"]["vtk_fields"])
+            self.assertIn("ElectricField/Vector", deck["sweep"]["vtk_fields"])
         wide_sweep = wide.decks[1]["decimal_stage_controls"]["sweep"]
         points = [Decimal(value) for value in wide_sweep["vtk_bias_points"]]
         self.assertEqual(points[0], 1)

@@ -423,7 +423,8 @@ public:
     bool usesLegacyPopulationState() const {
         return usesPopulationState() && !usesBvMethodsOperator() &&
             carrierStatisticsModel_ == CarrierStatisticsModel::Boltzmann &&
-            (mobilityConfig_.model == "masetti" || mobilityConfig_.model == "masetti_field");
+            (mobilityConfig_.model == "constant" || mobilityConfig_.model == "masetti" ||
+             mobilityConfig_.model == "masetti_field");
     }
     /// Physical internal densities; potential fields keep the existing scaled pack contract.
     VectorXd packPopulation(const VectorXd& psi_V, const VectorXd& n, const VectorXd& p) const;

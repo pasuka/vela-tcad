@@ -1122,9 +1122,9 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         if sidecar and kind == "load" and deck["solver"]["method"] != "frozen_state":
             raise DeckEmitError("E409", file="sidecar", detail="Load must retain frozen_state")
         if wide_stage_controls and not current:
-            fields = ("start", "stop", "step", "initial_step", "min_step", "max_step",
-                      "growth_factor", "shrink_factor")
-            decimal_sweep = {key: str(_decimal(sweep[key])) for key in fields if key in sweep}
+            control_keys = ("start", "stop", "step", "initial_step", "min_step", "max_step",
+                            "growth_factor", "shrink_factor")
+            decimal_sweep = {key: str(_decimal(sweep[key])) for key in control_keys if key in sweep}
             if "external_circuit" in sweep:
                 decimal_sweep["resistance_ohm_um"] = str(_decimal(sweep["external_circuit"]["resistance_ohm_um"]))
             temperature = deck["solver"].get("temperature_K", 300)

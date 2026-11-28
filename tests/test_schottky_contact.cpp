@@ -17,6 +17,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 using namespace vela;
@@ -346,13 +347,14 @@ TEST_CASE("Newton thermionic Robin Schottky equilibrium converges",
     cfg.maxUpdate = 5.0;
     cfg.quasiFermiUpdateLimit_V = 0.05;
 
-    const bool compensated = GENERATE(false, true);
-    CAPTURE(compensated);
-    if (compensated) {
+    const auto coordinates = GENERATE("potential_quasi_fermi", "potential_density", "compensated");
+    const bool compensated = std::string_view(coordinates) == "compensated";
+    CAPTURE(coordinates);
+    if (std::string_view(coordinates) != "potential_quasi_fermi") {
         cfg.stateVariables = "potential_density";
         cfg.primaryVariableCoordinates = "unit";
         cfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
-        cfg.compensatedPopulationState = true;
+        cfg.compensatedPopulationState = compensated;
         cfg.contactBoundaryMinorityElectronRelaxation = false;
         cfg.maxUpdate = 0.;
         cfg.quasiFermiUpdateLimit_V = 0.;
@@ -368,8 +370,8 @@ TEST_CASE("Newton thermionic Robin Schottky equilibrium converges",
     REQUIRE(result.solution.p.array().isFinite().all());
     REQUIRE((result.solution.n.array() > 0.0).all());
     REQUIRE((result.solution.p.array() > 0.0).all());
-    if (compensated) {
-        REQUIRE(result.solution.populationLow.size() == 3 * mesh.numNodes());
+    if (cfg.stateVariables == "potential_density") {
+        REQUIRE(result.solution.populationLow.size() == (compensated ? 3 * mesh.numNodes() : 0));
         const NewtonSolver forward(mesh, matdb, doping,
             {{"anode", 0.1}, {"cathode", 0.0}}, cfg, {}, {}, specs);
         const auto biased = forward.solve(result.solution);
