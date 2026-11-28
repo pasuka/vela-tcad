@@ -177,9 +177,12 @@ jobs:
       - name: Build
         id: build
         run: |
-          jobs="$(nproc)"
-          if (( jobs > 4 )); then jobs=4; fi
-          echo "Building with $jobs parallel jobs"
+          raw_jobs="$(nproc)"
+          jobs="$(env -u OMP_NUM_THREADS -u OMP_THREAD_LIMIT nproc)"
+          available_jobs="$jobs"
+          if (( jobs > 2 )); then jobs=2; fi
+          printf 'nproc=%s nproc_without_omp=%s build_parallel=%s\n' \
+            "$raw_jobs" "$available_jobs" "$jobs"
           ccache --zero-stats
           args=(--build build --parallel "$jobs")
           if [[ "$REQUESTED_SUITE" == pn2d ]]; then
